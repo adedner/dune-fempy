@@ -14,7 +14,16 @@ include(DuneMacros)
 dune_project()
 dune_enable_all_packages()
 
+add_subdirectory("cmake/modules")
 add_subdirectory("dune")
 add_subdirectory("doc")
 
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
+
+if(UNIX)
+  message("=============================================================================")
+  message("  To use this build of dunefempy within python, simply type")
+  message("    export PYTHONPATH=\"${CMAKE_BINARY_DIR}/python:\$PYTHONPATH\"")
+  message("  at the command prompt.")
+  message("=============================================================================")
+endif()

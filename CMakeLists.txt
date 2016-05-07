@@ -16,7 +16,10 @@ dune_enable_all_packages()
 
 add_subdirectory("cmake/modules")
 add_subdirectory("dune")
+add_subdirectory("python")
 add_subdirectory("doc")
+add_subdirectory("data")
+add_subdirectory("demo")
 
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
 

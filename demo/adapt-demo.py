@@ -23,7 +23,7 @@ def mark(t,element):
     y = element.geometry.center
     y[0] -= 0.5 + 0.2*math.cos(t)
     y[1] -= 0.5 + 0.2*math.sin(t)
-    if y[0]*y[0]+y[1]*y[1] < 0.1*0.1:
+    if y.two_norm2 < 0.1*0.1:
       return marker.refine if element.level < maxLevel else marker.keep
     else:
       return marker.coarsen

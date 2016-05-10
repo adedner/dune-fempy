@@ -9,14 +9,14 @@ import dune.fem.gridfunction as gf
 # just get the grid (only for testing - not used)
 onedgrid = grid.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")
 
-# get the full grid module and then the grid (module needed for grid # functions and output object)
-m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
-yaspgrid = m_yaspgrid.LeafGrid("../data/unitcube-2d.dgf")
-
-for element in yaspgrid.elements:
+for element in onedgrid.elements:
     print( element.geometry.center )
 #    for corner in element.geometry.corners:
 #        print( corner )
+
+# get the full grid module and then the grid (module needed for grid # functions and output object)
+m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
+yaspgrid = m_yaspgrid.LeafGrid("../data/unitcube-2d.dgf")
 
 # ... a 3d alugrid
 #start_time = timeit.default_timer()

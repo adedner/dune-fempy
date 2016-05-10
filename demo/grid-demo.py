@@ -13,6 +13,11 @@ onedgrid = grid.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")
 m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
 yaspgrid = m_yaspgrid.LeafGrid("../data/unitcube-2d.dgf")
 
+for element in yaspgrid.elements:
+    print( element.geometry.center )
+#    for corner in element.geometry.corners:
+#        print( corner )
+
 # ... a 3d alugrid
 #start_time = timeit.default_timer()
 #grid3 = grid.leafGrid("../data/unitcube-3d.dgf","ALUSimplexGrid", dimgrid=3, refinement="conforming")

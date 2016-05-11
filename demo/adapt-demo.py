@@ -10,7 +10,8 @@ grid = grid.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, ref
 #phi = grid.interpolate(grid.getGlobal("phi", gridfunction.MathExpression(["math.sin(math.pi*x0)*math.cos(math.pi*x1)"])), "phi", polorder=2)
 
 # add phi to vtk output
-output = grid.vtkOutput()
+#output = grid.vtkOutput()
+output = grid.vtkWriter()
 #output.add(phi)
 output.write("initial")
 

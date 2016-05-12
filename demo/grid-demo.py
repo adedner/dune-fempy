@@ -4,7 +4,7 @@ import math
 
 # dune.fem modules
 import dune.fem.grid as grid
-import dune.fem.gridfunction as gf
+#import dune.fem.gridfunction as gf
 
 # just get the grid (only for testing - not used)
 onedgrid = grid.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")
@@ -17,6 +17,17 @@ for element in onedgrid.elements:
 # get the full grid module and then the grid (module needed for grid # functions and output object)
 m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
 yaspgrid = m_yaspgrid.LeafGrid("../data/unitcube-2d.dgf")
+
+def expr_global(x):
+    return [-(x[1] - 0.5)*math.sin(x[0]*12)]
+
+ggf = yaspgrid.globalFunction("expr_global", expr_global)
+print("ggf:", ggf.name, " with dimRange = ", ggf.dimRange)
+for element in yaspgrid.elements:
+    lf = ggf.localFunction(element)
+    x = [0.5, 0.5]
+    y = element.geometry.position(x)
+    print("ggf( ", y, " ) = ", lf.evaluate(x), " | ", expr_global(y))
 
 # ... a 3d alugrid
 #start_time = timeit.default_timer()

@@ -21,13 +21,25 @@ yaspgrid = m_yaspgrid.LeafGrid("../data/unitcube-2d.dgf")
 def expr_global(x):
     return [-(x[1] - 0.5)*math.sin(x[0]*12)]
 
-ggf = yaspgrid.globalFunction("expr_global", expr_global)
+ggf = yaspgrid.globalGridFunction("expr_global", expr_global)
 print("ggf:", ggf.name, " with dimRange = ", ggf.dimRange)
 for element in yaspgrid.elements:
     lf = ggf.localFunction(element)
     x = [0.5, 0.5]
     y = element.geometry.position(x)
     print("ggf( ", y, " ) = ", lf.evaluate(x), " | ", expr_global(y))
+
+def expr_local(element, x):
+  geo = element.geometry
+  return [abs(expr_global(geo.position(x))[0] - expr_global(geo.center)[0])]
+
+lgf = yaspgrid.localGridFunction("expr_local", expr_local)
+print("lgf:", lgf.name, " with dimRange = ", lgf.dimRange)
+for element in yaspgrid.elements:
+    lf = lgf.localFunction(element)
+    x = [0.5, 0.5]
+    y = element.geometry.position(x)
+    print("lgf( ", y, " ) = ", lf.evaluate(x), " | ", expr_local(element,x))
 
 # ... a 3d alugrid
 #start_time = timeit.default_timer()

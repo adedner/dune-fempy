@@ -16,7 +16,7 @@ for element in onedgrid.elements:
 
 # get the full grid module and then the grid (module needed for grid # functions and output object)
 m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
-yaspgrid = m_yaspgrid.LeafGrid("../data/unitcube-2d.dgf")
+yaspgrid = grid.leafGrid("../data/unitcube-2d.dgf", m_yaspgrid)
 
 vtk_yaspgrid = yaspgrid.vtkWriter()
 

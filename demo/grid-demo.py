@@ -33,8 +33,8 @@ for element in yaspgrid.elements:
     print("ggf( ", y, " ) = ", lf.evaluate(x), " | ", expr_global(y))
 
 def expr_local(element, x):
-  geo = element.geometry
-  return [abs(expr_global(geo.position(x))[0] - expr_global(geo.center)[0])]
+    geo = element.geometry
+    return [abs(expr_global(geo.position(x))[0] - expr_global(geo.center)[0])]
 
 lgf = yaspgrid.localGridFunction("expr_local", expr_local)
 lgf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.CellData)

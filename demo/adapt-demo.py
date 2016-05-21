@@ -1,13 +1,17 @@
 from __future__ import print_function
+
+# needed on some machines
+# from mpi4py import MPI
+
 import math
 
 import dune.fem.grid as grid
-import dune.fem.gridfunction as gridfunction
+import dune.fem.function as function
 
 grid = grid.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
 # interpolate some data onto macro grid
-#phi = grid.interpolate(grid.getGlobal("phi", gridfunction.MathExpression(["math.sin(math.pi*x0)*math.cos(math.pi*x1)"])), "phi", polorder=2)
+# phi = grid.interpolate(grid.getGlobal("phi", function.MathExpression(["math.sin(math.pi*x0)*math.cos(math.pi*x1)"])), "phi", polorder=2)
 
 # add phi to vtk output
 #output = grid.vtkOutput()

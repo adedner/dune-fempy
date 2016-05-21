@@ -1,5 +1,7 @@
 from __future__ import print_function
 
+# from mpi4py import MPI
+
 import dune.fem.grid as grid
 import dune.fem.space as space
 

@@ -26,8 +26,8 @@ namespace Dune
     // --------------
 
     template< class GridFunction >
-    // void addToVTKWriter ( const GridFunction &gf, VTKWriter< typename GridFunction::GridPartType::GridViewType > &vtkWriter, VTKDataType dataType )
-    void addToVTKWriter ( const GridFunction &gf, VTKWriter< typename GridFunction::GridPartType > &vtkWriter, VTKDataType dataType )
+    // void addToVTKWriter ( const GridFunction &gf, VTKWriter< typename GridFunction::GridViewType::GridViewType > &vtkWriter, VTKDataType dataType )
+    void addToVTKWriter ( const GridFunction &gf, VTKWriter< typename GridFunction::GridViewType > &vtkWriter, VTKDataType dataType )
     {
       VTK::FieldInfo info( gf.name(), VTK::FieldInfo::Type::scalar, GridFunction::RangeType::dimension );
       switch( dataType )

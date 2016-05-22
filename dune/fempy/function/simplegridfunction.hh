@@ -40,18 +40,18 @@ namespace Dune
     // SimpleLocalFunction
     // -------------------
 
-    template< class GridPart, class LocalEvaluator >
+    template< class GridView, class LocalEvaluator >
     class SimpleLocalFunction
     {
-      typedef SimpleLocalFunction< GridPart, LocalEvaluator > This;
+      typedef SimpleLocalFunction< GridView, LocalEvaluator > This;
 
     public:
-      typedef typename GridPart::template Codim< 0 >::Entity EntityType;
+      typedef typename GridView::template Codim< 0 >::Entity EntityType;
 
       typedef typename EntityType::Geometry::LocalCoordinate LocalCoordinateType;
       typedef std::decay_t< std::result_of_t< LocalEvaluator( EntityType, LocalCoordinateType ) > > Value;
 
-      typedef FunctionSpace< typename GridPart::ctype, typename FieldTraits< Value >::field_type, GridPart::dimensionworld, Value::dimension > FunctionSpaceType;
+      typedef FunctionSpace< typename GridView::ctype, typename FieldTraits< Value >::field_type, GridView::dimensionworld, Value::dimension > FunctionSpaceType;
 
       static const int dimDomain = FunctionSpaceType::dimDomain;
       static const int dimRange = FunctionSpaceType::dimRange;
@@ -125,15 +125,15 @@ namespace Dune
     // SimpleGridFunction
     // ------------------
 
-    template< class GridPart, class LocalEvaluator >
+    template< class GridView, class LocalEvaluator >
     class SimpleGridFunction
     {
-      typedef SimpleGridFunction< GridPart, LocalEvaluator > This;
+      typedef SimpleGridFunction< GridView, LocalEvaluator > This;
 
     public:
-      typedef GridPart GridPartType;
+      typedef GridView GridViewType;
 
-      typedef SimpleLocalFunction< GridPart, LocalEvaluator > LocalFunctionType;
+      typedef SimpleLocalFunction< GridView, LocalEvaluator > LocalFunctionType;
 
       typedef typename LocalFunctionType::EntityType EntityType;
 
@@ -142,16 +142,16 @@ namespace Dune
       typedef typename FunctionSpaceType::RangeType RangeType;
       typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
-      SimpleGridFunction ( std::string name, const GridPartType &gridPart, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
+      SimpleGridFunction ( std::string name, const GridViewType &gridView, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
         : name_( std::move( name ) ),
-          gridPart_( gridPart ),
+          gridView_( gridView ),
           localEvaluator_( std::move( localEvaluator ) ),
           order_( order )
       {}
 
-      SimpleGridFunction ( const GridPartType &gridPart, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
+      SimpleGridFunction ( const GridViewType &gridView, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
         : name_( "unnamed-" + className< LocalEvaluator >() ),
-          gridPart_( gridPart ),
+          gridView_( gridView ),
           localEvaluator_( std::move( localEvaluator ) ),
           order_( order )
       {}
@@ -160,7 +160,7 @@ namespace Dune
 
       const std::string &name () const { return name_; }
 
-      const GridPartType &gridPart () const { return gridPart_; }
+      const GridViewType &gridView () const { return gridView_; }
 
       void evaluate ( const DomainType &x, RangeType &value ) const
       {
@@ -178,7 +178,7 @@ namespace Dune
 
     protected:
       std::string name_;
-      const GridPartType &gridPart_;
+      const GridViewType &gridView_;
       LocalEvaluator localEvaluator_;
       int order_;
     };
@@ -225,25 +225,25 @@ namespace Dune
     // SimpleGlobalGridFunction
     // ------------------------
 
-    template< class GridPart, class Evaluator >
+    template< class GridView, class Evaluator >
     class SimpleGlobalGridFunction
-      : public SimpleGridFunction< GridPart, LocalEvaluatorAdapter< typename GridPart::template Codim< 0 >::Entity, Evaluator > >
+      : public SimpleGridFunction< GridView, LocalEvaluatorAdapter< typename GridView::template Codim< 0 >::Entity, Evaluator > >
     {
-      typedef SimpleGlobalGridFunction< GridPart, Evaluator > This;
-      typedef SimpleGridFunction< GridPart, LocalEvaluatorAdapter< typename GridPart::template Codim< 0 >::Entity, Evaluator > > Base;
+      typedef SimpleGlobalGridFunction< GridView, Evaluator > This;
+      typedef SimpleGridFunction< GridView, LocalEvaluatorAdapter< typename GridView::template Codim< 0 >::Entity, Evaluator > > Base;
 
     public:
-      typedef typename Base::GridPartType GridPartType;
+      typedef typename Base::GridViewType GridViewType;
 
       typedef typename Base::DomainType DomainType;
       typedef typename Base::RangeType RangeType;
 
-      SimpleGlobalGridFunction ( std::string name, const GridPartType &gridPart, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
-        : Base( std::move( name ), gridPart, std::move( evaluator ), order )
+      SimpleGlobalGridFunction ( std::string name, const GridViewType &gridView, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
+        : Base( std::move( name ), gridView, std::move( evaluator ), order )
       {}
 
-      SimpleGlobalGridFunction ( const GridPartType &gridPart, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
-        : Base( "unnamed-" + className< Evaluator >(), gridPart, std::move( evaluator ), order )
+      SimpleGlobalGridFunction ( const GridViewType &gridView, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
+        : Base( "unnamed-" + className< Evaluator >(), gridView, std::move( evaluator ), order )
       {}
 
       void evaluate ( const DomainType &x, RangeType &value ) const { value = localEvaluator_( x ); }
@@ -257,36 +257,36 @@ namespace Dune
     // simpleGridFunction
     // ------------------
 
-    template< class GridPart, class LocalEvaluator >
-    inline static std::enable_if_t< IsLocalEvaluator< GridPart, LocalEvaluator >::value, SimpleGridFunction< GridPart, LocalEvaluator > >
-    simpleGridFunction ( std::string name, const GridPart &gridPart, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
+    template< class GridView, class LocalEvaluator >
+    inline static std::enable_if_t< IsLocalEvaluator< GridView, LocalEvaluator >::value, SimpleGridFunction< GridView, LocalEvaluator > >
+    simpleGridFunction ( std::string name, const GridView &gridView, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
     {
-      return SimpleGridFunction< GridPart, LocalEvaluator >( std::move( name ), gridPart, std::move( localEvaluator ), order );
+      return SimpleGridFunction< GridView, LocalEvaluator >( std::move( name ), gridView, std::move( localEvaluator ), order );
     }
 
-    template< class GridPart, class LocalEvaluator >
-    inline static std::enable_if_t< IsLocalEvaluator< GridPart, LocalEvaluator >::value, SimpleGridFunction< GridPart, LocalEvaluator > >
-    simpleGridFunction ( const GridPart &gridPart, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
+    template< class GridView, class LocalEvaluator >
+    inline static std::enable_if_t< IsLocalEvaluator< GridView, LocalEvaluator >::value, SimpleGridFunction< GridView, LocalEvaluator > >
+    simpleGridFunction ( const GridView &gridView, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
     {
-      return SimpleGridFunction< GridPart, LocalEvaluator >( gridPart, std::move( localEvaluator ), order );
+      return SimpleGridFunction< GridView, LocalEvaluator >( gridView, std::move( localEvaluator ), order );
     }
 
 
     // simpleGridFunction
     // ------------------
 
-    template< class GridPart, class Evaluator >
-    inline static std::enable_if_t< IsEvaluator< GridPart, Evaluator >::value, SimpleGlobalGridFunction< GridPart, Evaluator > >
-    simpleGridFunction ( std::string name, const GridPart &gridPart, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
+    template< class GridView, class Evaluator >
+    inline static std::enable_if_t< IsEvaluator< GridView, Evaluator >::value, SimpleGlobalGridFunction< GridView, Evaluator > >
+    simpleGridFunction ( std::string name, const GridView &gridView, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
     {
-      return SimpleGlobalGridFunction< GridPart, Evaluator >( std::move( name ), gridPart, std::move( evaluator ), order );
+      return SimpleGlobalGridFunction< GridView, Evaluator >( std::move( name ), gridView, std::move( evaluator ), order );
     }
 
-    template< class GridPart, class Evaluator >
-    inline static std::enable_if_t< IsEvaluator< GridPart, Evaluator >::value, SimpleGlobalGridFunction< GridPart, Evaluator > >
-    simpleGridFunction ( const GridPart &gridPart, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
+    template< class GridView, class Evaluator >
+    inline static std::enable_if_t< IsEvaluator< GridView, Evaluator >::value, SimpleGlobalGridFunction< GridView, Evaluator > >
+    simpleGridFunction ( const GridView &gridView, Evaluator evaluator, int order = std::numeric_limits< int >::max() )
     {
-      return SimpleGlobalGridFunction< GridPart, Evaluator >( gridPart, std::move( evaluator ), order );
+      return SimpleGlobalGridFunction< GridView, Evaluator >( gridView, std::move( evaluator ), order );
     }
 
   } // namespace FemPy

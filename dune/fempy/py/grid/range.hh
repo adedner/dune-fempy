@@ -12,38 +12,38 @@ namespace Dune
   namespace FemPy
   {
 
-    // PyGridPartRange
+    // PyGridViewRange
     // ---------------
 
-    template< class GridPart, int codim >
-    struct PyGridPartRange
+    template< class GridView, int codim >
+    struct PyGridViewRange
     {
-      typedef typename GridPart::template Codim< codim >::Iterator Iterator;
+      typedef typename GridView::template Codim< codim >::Iterator Iterator;
 
-      PyGridPartRange ( const GridPart &gridPart, pybind11::object ref )
-        : gridPart_( gridPart ), ref_( std::move( ref ) )
+      PyGridViewRange ( const GridView &gridView, pybind11::object ref )
+        : gridView_( gridView ), ref_( std::move( ref ) )
       {}
 
-      Iterator begin () const { return gridPart_.template begin< codim >(); }
-      Iterator end () const { return gridPart_.template end< codim >(); }
+      Iterator begin () const { return gridView_.template begin< codim >(); }
+      Iterator end () const { return gridView_.template end< codim >(); }
 
     private:
-      const GridPart &gridPart_;
+      const GridView &gridView_;
       pybind11::object ref_;
     };
 
 
 
-    // PyGridPartIterator
+    // PyGridViewIterator
     // ------------------
 
-    template< class GridPart, int codim >
-    struct PyGridPartIterator
+    template< class GridView, int codim >
+    struct PyGridViewIterator
     {
-      typedef PyGridPartRange< GridPart, codim > Range;
-      typedef typename GridPart::template Codim< codim >::Entity Entity;
+      typedef PyGridViewRange< GridView, codim > Range;
+      typedef typename GridView::template Codim< codim >::Entity Entity;
 
-      PyGridPartIterator ( const Range &range ) : range_( range ), it_( range_.begin() ) {}
+      PyGridViewIterator ( const Range &range ) : range_( range ), it_( range_.begin() ) {}
 
       Entity next ()
       {
@@ -62,14 +62,14 @@ namespace Dune
 
 
 
-    // registerPyGridPartRange
+    // registerPyGridViewRange
     // -----------------------
 
-    template< class GridPart, int codim >
-    void registerPyGridPartRange ( pybind11::handle scope, const char *rgName )
+    template< class GridView, int codim >
+    void registerPyGridViewRange ( pybind11::handle scope, const char *rgName )
     {
-      typedef PyGridPartRange< GridPart, codim > Range;
-      typedef PyGridPartIterator< GridPart, codim > Iterator;
+      typedef PyGridViewRange< GridView, codim > Range;
+      typedef PyGridViewIterator< GridView, codim > Iterator;
 
       static const std::string itName = std::string( rgName ) + "Iterator";
       pybind11::class_< Iterator > itCls( scope, itName.c_str() );

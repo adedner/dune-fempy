@@ -4,8 +4,8 @@
 #include <string>
 #include <utility>
 
-#include <dune/fempy/py/grid/hierarchical.hh>
 #include <dune/fempy/py/grid/gridpart.hh>
+#include <dune/fempy/py/grid/hierarchical.hh>
 #include <dune/fempy/pybind11/pybind11.h>
 
 namespace Dune
@@ -20,8 +20,9 @@ namespace Dune
     template< class GridPart >
     void registerGrid ( pybind11::module module )
     {
-      registerHierarchicalGrid< HierarchicalGrid< typename GridPart::Grid > >( module );
-      module.def( "makeSimplexGrid", &makeSimplexGrid< HierarchicalGrid< typename GridPart::Grid > > );
+      registerHierarchicalGrid< typename GridPart::Grid >( module );
+      module.def( "readDGF", &readDGF< typename GridPart::Grid > );
+      module.def( "makeSimplexGrid", &makeSimplexGrid< typename GridPart::Grid > );
 
       registerGridPart< GridPart >( module, "LeafGrid" );
     }

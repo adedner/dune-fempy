@@ -41,6 +41,9 @@ def getGridType(grid, **parameters):
     """
     return myGenerator.getTypeName(grid, **parameters)
 
+def addMethodsToLeafGrid(module,obj):
+    setattr(obj, "_module", module)
+
 def get(grid, **parameters):
     """Create a grid module using the grid-database.
 
@@ -74,10 +77,8 @@ def get(grid, **parameters):
 
     """
     module = myGenerator.getModule(grid, **parameters)
+    addMethodsToLeafGrid(module,module.LeafGrid)
     return module
-
-def addMethodsToLeafGrid(module,obj):
-    setattr(obj, "_module", module)
 
 def leafGrid(dgf, grid, **parameters):
     """Get a LeafGrid
@@ -108,9 +109,8 @@ def leafGrid(dgf, grid, **parameters):
         module = grid
     else:
         raise TypeError("leafGrid: 'grid' must be either a string or a module")
-    addMethodsToLeafGrid(module,module.LeafGrid)
 
-    ret = module.LeafGrid(module.HierarchicalGrid(dgf))
+    ret = module.LeafGrid(module.readDGF(dgf))
     return ret
 
 #############################################

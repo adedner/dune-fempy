@@ -7,9 +7,8 @@
 #include <map>
 #include <memory>
 
-#include <dune/grid/common/gridfactory.hh>  // !!! why not needed in master !!!!
+#include <dune/grid/common/gridfactory.hh>
 
-#include <dune/fempy/grid/hierarchical.hh>
 #include <dune/fempy/py/grid/entity.hh>
 #include <dune/fempy/pybind11/functional.h>
 #include <dune/fempy/pybind11/numpy.h>
@@ -22,52 +21,16 @@ namespace Dune
   namespace FemPy
   {
 
-    namespace detail
-    {
-
-      // hierarchicalGridInstances
-      // -------------------------
-
-      template< class Grid >
-      inline std::map< Grid *, HierarchicalGrid< Grid > > &hierarchicalGridInstances ()
-      {
-        static std::map< Grid *, HierarchicalGrid< Grid > > instances;
-        return instances;
-      }
-
-
-
-      // HierarchicalGridDeleter
-      // -----------------------
-
-      template< class HierarchicalGrid >
-      struct HierarchicalGridDeleter
-      {
-        void operator() ( HierarchicalGrid *ptr )
-        {
-          auto &instances = hierarchicalGridInstances< typename HierarchicalGrid::Grid >();
-          auto it = instances.find( ptr->grid().get() );
-          if( it != instances.end() )
-            instances.erase( it );
-          delete ptr;
-        }
-      };
-
-    } // namespace detail
-
-
-
-    // hierarchicalGrid
-    // ----------------
+    // readDGF
+    // -------
 
     template< class Grid >
-    inline HierarchicalGrid< Grid > hierarchicalGrid ( Grid &grid )
+    inline Grid *readDGF ( std::string dgf )
     {
-      const auto &instances = detail::hierarchicalGridInstances< Grid >();
-      auto it = instances.find( &grid );
-      if( it == instances.end() )
-        throw std::invalid_argument( "Unknown hierarchical grid" );
-      return it->second;
+      GridPtr< Grid > gridPtr( dgf );
+      gridPtr->loadBalance();
+      Grid *grid = gridPtr.release();
+      return grid;
     }
 
 
@@ -75,10 +38,9 @@ namespace Dune
     // makeSimplexGrid
     // ---------------
 
-    template< class HierarchicalGrid, class float_t = typename HierarchicalGrid::Grid::ctype >
-    inline HierarchicalGrid makeSimplexGrid ( pybind11::array_t< float_t > points, pybind11::array_t< int > simplices )
+    template< class Grid, class float_t = typename Grid::ctype >
+    inline Grid *makeSimplexGrid ( pybind11::array_t< float_t > points, pybind11::array_t< int > simplices )
     {
-      typedef typename HierarchicalGrid::Grid Grid;
       typedef typename Grid::ctype ctype;
 
       GridFactory< Grid > factory;
@@ -114,49 +76,24 @@ namespace Dune
         factory.insertElement( type, vertices );
       }
 
-      // create and register hierarchical grid
+      // create grid
 
-      HierarchicalGrid hGrid( HierarchicalGrid( factory.createGrid() ) );
-      detail::hierarchicalGridInstances< Grid >().insert( std::make_pair( hGrid.grid().get(), hGrid ) );
-      return hGrid;
+      return factory.createGrid();
     }
 
 
     // registerHierarchicalGrid
     // ------------------------
 
-    template< class HierarchicalGrid >
+    template< class Grid >
     inline auto registerHierarchicalGrid ( pybind11::handle scope )
     {
-      typedef typename HierarchicalGrid::Grid Grid;
-
       registerGridEntities< Grid >( scope );
 
-      typedef typename HierarchicalGrid::Element Element;
-      typedef typename HierarchicalGrid::Marker Marker;
-
-      typedef detail::HierarchicalGridDeleter< HierarchicalGrid > Deleter;
-      pybind11::class_< HierarchicalGrid, std::unique_ptr< HierarchicalGrid, Deleter > > cls( scope, "HierarchicalGrid" );
-      cls.def( "__init__", [] ( HierarchicalGrid &instance, std::string dgf ) {
-          new (&instance) HierarchicalGrid( dgf );
-          detail::hierarchicalGridInstances< Grid >().insert( std::make_pair( instance.grid().get(), instance ) );
-        } );
-      cls.def( "__repr__", [] ( const HierarchicalGrid &grid ) -> std::string { return "HierarchicalGrid"; } );
-
-      cls.def( "globalRefine", &HierarchicalGrid::globalRefine );
-
-      pybind11::enum_< Marker > marker( cls, "marker" );
-      marker.value( "coarsen", HierarchicalGrid::Marker::Coarsen );
-      marker.value( "keep", HierarchicalGrid::Marker::Keep );
-      marker.value( "refine", HierarchicalGrid::Marker::Refine );
-
-      cls.def( "mark", [] ( HierarchicalGrid &grid, const std::function< Marker( const Element &e ) > &marker ) {
-          grid.mark( marker );
-        } );
-
-      cls.def( "loadBalance", [] ( HierarchicalGrid &grid ) {
-          grid.loadBalance( );
-        } );
+      pybind11::class_< Grid > cls( scope, "HierarchicalGrid" );
+      cls.def( "__repr__", [] ( const Grid &grid ) -> std::string { return "HierarchicalGrid"; } );
+      cls.def( "globalRefine", [] ( Grid &grid, int level ) { grid.globalRefine( level ); } );
+      cls.def( "loadBalance", [] ( Grid &grid ) { grid.loadBalance(); } );
 
       return cls;
     }

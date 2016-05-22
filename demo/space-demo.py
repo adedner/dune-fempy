@@ -18,6 +18,11 @@ df = lagrangespace.interpolate(gf)
 
 vtk_yaspgrid = yaspgrid.vtkWriter()
 df.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+
 df2 = lagrangespace.interpolate([5])
 df2.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.CellData)
+
+df3 = lagrangespace.interpolate(df)
+df3.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+
 vtk_yaspgrid.write("space_demo");

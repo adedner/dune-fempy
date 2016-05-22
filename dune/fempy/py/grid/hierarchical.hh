@@ -7,6 +7,8 @@
 #include <map>
 #include <memory>
 
+#include <dune/grid/common/gridfactory.hh>  // !!! why not needed in master !!!!
+
 #include <dune/fempy/grid/hierarchical.hh>
 #include <dune/fempy/py/grid/entity.hh>
 #include <dune/fempy/pybind11/functional.h>
@@ -120,7 +122,6 @@ namespace Dune
     }
 
 
-
     // registerHierarchicalGrid
     // ------------------------
 
@@ -133,8 +134,6 @@ namespace Dune
 
       typedef typename HierarchicalGrid::Element Element;
       typedef typename HierarchicalGrid::Marker Marker;
-
-      typedef AdaptiveDofVector< Grid, double > GridFunction;
 
       typedef detail::HierarchicalGridDeleter< HierarchicalGrid > Deleter;
       pybind11::class_< HierarchicalGrid, std::unique_ptr< HierarchicalGrid, Deleter > > cls( scope, "HierarchicalGrid" );
@@ -155,25 +154,8 @@ namespace Dune
           grid.mark( marker );
         } );
 
-      cls.def( "adapt", [] ( HierarchicalGrid &grid ) {
-          std::array< std::shared_ptr< GridFunction >, 0 > dfList;
-          grid.adapt( dfList.begin(), dfList.end() );
-        } );
-
-
-      cls.def( "adapt", [] ( HierarchicalGrid &grid, const std::list< std::shared_ptr< GridFunction > > &dfList ) {
-          std::cout << "adapting grid and " << dfList.size() << " functions..." << std::endl;
-          grid.adapt( dfList.begin(), dfList.end() );
-        } );
-
       cls.def( "loadBalance", [] ( HierarchicalGrid &grid ) {
-          std::array< std::shared_ptr< GridFunction >, 0 > dfList;
-          grid.loadBalance( dfList.begin(), dfList.end() );
-        } );
-
-      cls.def( "loadBalance", [] ( HierarchicalGrid &grid, const std::list< std::shared_ptr< GridFunction > > &dfList ) {
-          std::cout << "loadbalanding grid and " << dfList.size() << " functions..." << std::endl;
-          grid.loadBalance( dfList.begin(), dfList.end() );
+          grid.loadBalance( );
         } );
 
       return cls;

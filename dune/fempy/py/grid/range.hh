@@ -18,7 +18,7 @@ namespace Dune
     template< class GridPart, int codim >
     struct PyGridPartRange
     {
-      typedef typename GridPart::template Codim< codim >::IteratorType Iterator;
+      typedef typename GridPart::template Codim< codim >::Iterator Iterator;
 
       PyGridPartRange ( const GridPart &gridPart, pybind11::object ref )
         : gridPart_( gridPart ), ref_( std::move( ref ) )
@@ -41,7 +41,7 @@ namespace Dune
     struct PyGridPartIterator
     {
       typedef PyGridPartRange< GridPart, codim > Range;
-      typedef typename GridPart::template Codim< codim >::EntityType Entity;
+      typedef typename GridPart::template Codim< codim >::Entity Entity;
 
       PyGridPartIterator ( const Range &range ) : range_( range ), it_( range_.begin() ) {}
 

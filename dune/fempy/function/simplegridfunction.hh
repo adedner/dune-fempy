@@ -10,15 +10,33 @@
 #include <dune/common/classname.hh>
 #include <dune/common/exceptions.hh>
 
-#include <dune/fem/function/common/discretefunction.hh>
-#include <dune/fem/space/common/functionspace.hh>
-
 namespace Dune
 {
 
   namespace FemPy
   {
 
+    //! \brief Traits class for vector function spaces
+    template< class DomainField, class RangeField, int dimD, int dimR>
+    struct FunctionSpace
+    {
+      /** \copydoc Dune::Fem::FunctionSpaceInterface::DomainFieldType */
+      typedef DomainField DomainFieldType;
+      /** \copydoc Dune::Fem::FunctionSpaceInterface::RangeFieldType */
+      typedef RangeField RangeFieldType;
+
+      /** \brief dimension of range vector space */
+      enum { dimDomain = dimD };
+      /** \brief dimension of domain vector space */
+      enum { dimRange = dimR };
+
+      /** \copydoc Dune::Fem::FunctionSpaceInterface::DomainType */
+      typedef FieldVector< DomainFieldType, dimDomain > DomainType;
+      /** \copydoc Dune::Fem::FunctionSpaceInterface::RangeType */
+      typedef FieldVector< RangeFieldType, dimRange> RangeType;
+      /** \brief linear mapping type */
+      typedef FieldMatrix< RangeFieldType, dimRange, dimDomain > JacobianRangeType;
+    };
     // SimpleLocalFunction
     // -------------------
 
@@ -28,12 +46,12 @@ namespace Dune
       typedef SimpleLocalFunction< GridPart, LocalEvaluator > This;
 
     public:
-      typedef typename GridPart::template Codim< 0 >::EntityType EntityType;
+      typedef typename GridPart::template Codim< 0 >::Entity EntityType;
 
       typedef typename EntityType::Geometry::LocalCoordinate LocalCoordinateType;
       typedef std::decay_t< std::result_of_t< LocalEvaluator( EntityType, LocalCoordinateType ) > > Value;
 
-      typedef Fem::FunctionSpace< typename GridPart::ctype, typename FieldTraits< Value >::field_type, GridPart::dimensionworld, Value::dimension > FunctionSpaceType;
+      typedef FunctionSpace< typename GridPart::ctype, typename FieldTraits< Value >::field_type, GridPart::dimensionworld, Value::dimension > FunctionSpaceType;
 
       static const int dimDomain = FunctionSpaceType::dimDomain;
       static const int dimRange = FunctionSpaceType::dimRange;
@@ -53,11 +71,9 @@ namespace Dune
 
       void init ( const EntityType &entity ) { entity_ = &entity; }
 
-      template< class Point >
-      void evaluate ( const Point &x, RangeType &value ) const
+      void evaluate ( const DomainType &x, RangeType &value ) const
       {
-        using Fem::coordinate;
-        value = localEvaluator_( entity(), coordinate( x ) );
+        value = localEvaluator_( entity(), x );
       }
 
       template< class Quadrature, class Values >
@@ -67,8 +83,7 @@ namespace Dune
           evaluate( qp, values[ qp.index() ] );
       }
 
-      template< class Point >
-      void jacobian ( const Point &x, JacobianRangeType &jacobian ) const
+      void jacobian ( const DomainType &x, JacobianRangeType &jacobian ) const
       {
         DUNE_THROW( NotImplemented, "SimpleLocalFunction::jacobian not implemented" );
       }
@@ -102,7 +117,7 @@ namespace Dune
 
     template< class GP, class LE >
     struct IsLocalEvaluator
-      : public decltype( __isLocalEvaluator( std::declval< LE >(), std::declval< typename GP::template Codim< 0 >::EntityType >(), std::declval< typename GP::template Codim< 0 >::GeometryType::LocalCoordinate >() ) )
+      : public decltype( __isLocalEvaluator( std::declval< LE >(), std::declval< typename GP::template Codim< 0 >::Entity >(), std::declval< typename GP::template Codim< 0 >::Geometry::LocalCoordinate >() ) )
     {};
 
 
@@ -112,11 +127,8 @@ namespace Dune
 
     template< class GridPart, class LocalEvaluator >
     class SimpleGridFunction
-      : public Fem::Function< typename SimpleLocalFunction< GridPart, LocalEvaluator >::FunctionSpaceType, SimpleGridFunction< GridPart, LocalEvaluator > >,
-        public Fem::HasLocalFunction
     {
       typedef SimpleGridFunction< GridPart, LocalEvaluator > This;
-      typedef Fem::Function< typename SimpleLocalFunction< GridPart, LocalEvaluator >::FunctionSpaceType, SimpleGridFunction< GridPart, LocalEvaluator > > Base;
 
     public:
       typedef GridPart GridPartType;
@@ -125,9 +137,10 @@ namespace Dune
 
       typedef typename LocalFunctionType::EntityType EntityType;
 
-      typedef typename Base::DomainType DomainType;
-      typedef typename Base::RangeType RangeType;
-      typedef typename Base::JacobianRangeType JacobianRangeType;
+      typedef typename LocalFunctionType::FunctionSpaceType FunctionSpaceType;
+      typedef typename FunctionSpaceType::DomainType DomainType;
+      typedef typename FunctionSpaceType::RangeType RangeType;
+      typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
 
       SimpleGridFunction ( std::string name, const GridPartType &gridPart, LocalEvaluator localEvaluator, int order = std::numeric_limits< int >::max() )
         : name_( std::move( name ) ),
@@ -151,18 +164,12 @@ namespace Dune
 
       void evaluate ( const DomainType &x, RangeType &value ) const
       {
-        Fem::EntitySearch< GridPartType, 0 > entitySearch( gridPart() );
-        const EntityType entity = entitySearch( x );
-        const auto geometry = entity.geometry();
-        localFunction( entity ).evaluate( geometry.local( x ), value );
+        // needs to be implemented
       }
 
       void jacobian ( const DomainType &x, JacobianRangeType &jacobian ) const
       {
-        Fem::EntitySearch< GridPartType, 0 > entitySearch( gridPart() );
-        const EntityType entity = entitySearch( x );
-        const auto geometry = entity.geometry();
-        localFunction( entity ).jacobian( geometry.local( x ), jacobian );
+        // needs to be implemented
       }
 
       int order () const { return order_; }
@@ -188,7 +195,7 @@ namespace Dune
 
     template< class GP, class E >
     struct IsEvaluator
-      : public decltype( __isEvaluator( std::declval< E >(), std::declval< typename GP::template Codim< 0 >::GeometryType::GlobalCoordinate >() ) )
+      : public decltype( __isEvaluator( std::declval< E >(), std::declval< typename GP::template Codim< 0 >::Geometry::GlobalCoordinate >() ) )
     {};
 
 
@@ -220,10 +227,10 @@ namespace Dune
 
     template< class GridPart, class Evaluator >
     class SimpleGlobalGridFunction
-      : public SimpleGridFunction< GridPart, LocalEvaluatorAdapter< typename GridPart::template Codim< 0 >::EntityType, Evaluator > >
+      : public SimpleGridFunction< GridPart, LocalEvaluatorAdapter< typename GridPart::template Codim< 0 >::Entity, Evaluator > >
     {
       typedef SimpleGlobalGridFunction< GridPart, Evaluator > This;
-      typedef SimpleGridFunction< GridPart, LocalEvaluatorAdapter< typename GridPart::template Codim< 0 >::EntityType, Evaluator > > Base;
+      typedef SimpleGridFunction< GridPart, LocalEvaluatorAdapter< typename GridPart::template Codim< 0 >::Entity, Evaluator > > Base;
 
     public:
       typedef typename Base::GridPartType GridPartType;

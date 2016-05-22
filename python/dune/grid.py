@@ -26,13 +26,14 @@ import sys
 
 from types import ModuleType
 
-from ..generator import generator
+from .generator import generator
 
 class Generator(generator.Generator):
     def modifyIncludes(self, includes):
-        return includes + "#include <dune/fem/gridpart/adaptiveleafgridpart.hh>\n"
+        return includes
     def modifyTypeName(self, typeName):
-        return "Dune::Fem::AdaptiveLeafGridPart<" + typeName + ">";
+        return typeName+"::LeafGridView";
+
 myGenerator = Generator("Grid")
 
 def getGridType(grid, **parameters):

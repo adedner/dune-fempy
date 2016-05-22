@@ -20,8 +20,8 @@ namespace Dune
     template< class GridPart >
     void registerGrid ( pybind11::module module )
     {
-      registerHierarchicalGrid< HierarchicalGrid< typename GridPart::GridType > >( module );
-      module.def( "makeSimplexGrid", &makeSimplexGrid< HierarchicalGrid< typename GridPart::GridType > > );
+      registerHierarchicalGrid< HierarchicalGrid< typename GridPart::Grid > >( module );
+      module.def( "makeSimplexGrid", &makeSimplexGrid< HierarchicalGrid< typename GridPart::Grid > > );
 
       registerGridPart< GridPart >( module, "LeafGrid" );
     }

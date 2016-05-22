@@ -1,13 +1,13 @@
 from __future__ import print_function
 
 # needed on some machines
-# from mpi4py import MPI
+from mpi4py import MPI
 
 import math
 
 # dune.fem modules
-import dune.fem.grid as grid
-import dune.fem.function as function
+import dune.grid as grid
+import dune.function as function
 
 # just get the grid (only for testing - not used)
 onedgrid = grid.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")

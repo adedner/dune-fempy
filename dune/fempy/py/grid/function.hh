@@ -7,7 +7,6 @@
 #include <utility>
 
 #include <dune/fempy/function/simplegridfunction.hh>
-#include <dune/fempy/function/virtualizedgridfunction.hh>
 #include <dune/fempy/py/grid/vtk.hh>
 #include <dune/fempy/pybind11/pybind11.h>
 
@@ -80,18 +79,6 @@ namespace Dune
 
 
 
-      // clsVirtualizedGridFunction
-      // --------------------------
-
-      template< class GridPart, class Value >
-      inline pybind11::class_< VirtualizedGridFunction< GridPart, Value > > clsVirtualizedGridFunction ( pybind11::handle scope )
-      {
-        typedef VirtualizedGridFunction< GridPart, Value > GridFunction;
-        static const std::string clsName = "VirtualizedGridFunction" + std::to_string( Value::dimension );
-        static pybind11::class_< GridFunction > cls = registerGridFunction< GridFunction >( scope, clsName.c_str() );
-        return cls;
-      }
-
     } // namespace detail
 
 
@@ -107,22 +94,9 @@ namespace Dune
 
       auto cls = detail::registerGridFunction< GridFunction >( scope, clsName );
 
-      detail::clsVirtualizedGridFunction< GridPart, Value >( scope ).def( pybind11::init< GridFunction >() );
-      pybind11::implicitly_convertible< GridFunction, VirtualizedGridFunction< GridPart, Value > >();
-
       return cls;
     }
 
-
-
-    // registerVirtualizedGridFunction
-    // -------------------------------
-
-    template< class GridPart, int... dimRange >
-    void registerVirtualizedGridFunction ( pybind11::handle scope, std::integer_sequence< int, dimRange... > )
-    {
-      std::ignore = std::make_tuple( detail::clsVirtualizedGridFunction< GridPart, FieldVector< double, dimRange > >( scope )... );
-    };
 
 
 
@@ -135,7 +109,7 @@ namespace Dune
       template< class GridPart, int dimRange >
       auto makePyGlobalGridFunction ( const GridPart &gridPart, std::string name, pybind11::function evaluate, std::integral_constant< int, dimRange > )
       {
-        typedef typename GridPart::template Codim< 0 >::GeometryType::GlobalCoordinate Coordinate;
+        typedef typename GridPart::template Codim< 0 >::Geometry::GlobalCoordinate Coordinate;
         return simpleGridFunction( std::move( name ), gridPart, [ evaluate ] ( const Coordinate &x ) {
             pybind11::gil_scoped_acquire acq;
             pybind11::object v( evaluate( x ) );
@@ -183,7 +157,7 @@ namespace Dune
       std::array< Dispatch, sizeof...( dimRange ) > dispatch = {{ Dispatch( detail::pyGlobalGridFunction< GridPart, dimRange > )... }};
 
       return [ dispatch ] ( pybind11::object gridPart, std::string name, pybind11::function evaluate ) {
-          typename GridPart::template Codim< 0 >::GeometryType::GlobalCoordinate x( 0 );
+          typename GridPart::template Codim< 0 >::Geometry::GlobalCoordinate x( 0 );
           pybind11::gil_scoped_acquire acq;
           pybind11::object v( evaluate( x ) );
           const std::size_t dimR = len( v );
@@ -204,8 +178,8 @@ namespace Dune
       template< class GridPart, int dimRange >
       auto makePyLocalGridFunction ( const GridPart &gridPart, std::string name, pybind11::function evaluate, std::integral_constant< int, dimRange > )
       {
-        typedef typename GridPart::template Codim< 0 >::EntityType Entity;
-        typedef typename GridPart::template Codim< 0 >::GeometryType::LocalCoordinate Coordinate;
+        typedef typename GridPart::template Codim< 0 >::Entity Entity;
+        typedef typename GridPart::template Codim< 0 >::Geometry::LocalCoordinate Coordinate;
         return simpleGridFunction( std::move( name ), gridPart, [ evaluate ] ( const Entity &entity, const Coordinate &x ) {
             pybind11::gil_scoped_acquire acq;
             pybind11::object v( evaluate( entity, x ) );
@@ -256,7 +230,7 @@ namespace Dune
           int dimR = -1;
           if( gridPart.template begin< 0 >() != gridPart.template end< 0 >() )
           {
-            typename GridPart::template Codim< 0 >::GeometryType::LocalCoordinate x( 0 );
+            typename GridPart::template Codim< 0 >::Geometry::LocalCoordinate x( 0 );
             pybind11::gil_scoped_acquire acq;
             pybind11::object v( evaluate( *gridPart.template begin< 0 >(), x ) );
             dimR = len( v );

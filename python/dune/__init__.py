@@ -1,2 +1,2 @@
 import dune.common
-import dune.femmpi
+import dune.mpihelper

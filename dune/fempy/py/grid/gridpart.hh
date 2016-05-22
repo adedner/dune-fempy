@@ -27,7 +27,7 @@ namespace Dune
       const int dim = GridPart::dimension;
 
       pybind11::class_< GridPart > cls( scope, name );
-      cls.def( "__init__", [] ( GridPart &instance, HierarchicalGrid< typename GridPart::GridType > &hGrid ) {
+      cls.def( "__init__", [] ( GridPart &instance, HierarchicalGrid< typename GridPart::Grid > &hGrid ) {
           new (&instance) GridPart( *hGrid.grid() );
         }, pybind11::keep_alive< 1, 2 >() );
 
@@ -49,9 +49,9 @@ namespace Dune
 
       cls.def( "size", [] ( const GridPart &gridPart, int codim ) { return gridPart.indexSet().size( codim ); } );
 
-      registerVTKWriter< typename GridPart::GridViewType >( cls );
+      registerVTKWriter< GridPart >( cls );
       cls.def( "vtkWriter", [] ( const GridPart &gridPart ) {
-          return new VTKWriter< typename GridPart::GridViewType >( static_cast< typename GridPart::GridViewType >( gridPart ) );
+          return new VTKWriter< GridPart >( gridPart );
         }, pybind11::keep_alive< 0, 1 >() );
 
       cls.def( "globalGridFunction", defGlobalGridFunction< GridPart >( cls, "GlobalGridFunction", std::make_integer_sequence< int, 11 >() ) );

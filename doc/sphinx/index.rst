@@ -23,9 +23,9 @@ It serves three purposes:
    These classes provide the mathematical description of the partial
    differential equation to solve. Dune-Fempy uses `UFL`_ as input language
    and generates the corresponding model class. At this stage Dune-Fempy
-   does not support a subset of the full `UFL`_ language. 
+   only supports a subset of the full `UFL`_ language. 
    A simple python script provides
-   the stand alone option to generate model classes from `UFL`_ input and
+   the stand-alone option to generate model classes from `UFL`_ input and
    to do simple unit testing of the generated classes. For users and
    developers of code based on the `Dune-Fem-Howto`_ this script provides a
    fast and easy approach for generating code for new mathematical models.
@@ -39,12 +39,17 @@ It serves three purposes:
 
 .. _Dune: http://www.dune-project.org
 .. _Dune-Fem-Howto: http://dune.mathematik.uni-freiburg.de/doc/html-howto/
-.. _Dune-Fem:http://www.dune-project.org/fem/index.html
+.. _Dune-Fem: http://www.dune-project.org/fem/index.html
 .. _UFL: http://fenicsproject.org/documentation/ufl/1.0-beta2/ufl.html
 
 #################################
 Installation notes
 #################################
+
+.. toctree::
+   :maxdepth: 2
+
+   installation
 
 #################################
 Basic usage

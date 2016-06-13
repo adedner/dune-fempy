@@ -21,7 +21,7 @@ Exporting C++ Classes
 ***********************************
 
 We start off by describing the concepts used to export a Dune C++ class to python.
-Consider a class with some method we want to export 
+Consider a class with some method we want to export:
 
 .. code-block:: c++
 
@@ -35,11 +35,11 @@ Consider a class with some method we want to export
 
 ..  admonition:: :red:`Definition`
 
-  In the following we will to a C++ type as **regular** if they are
+  In the following we will refer to a C++ type as **regular** if it is
   automatically exported to python or imported from python using boost
   (e.g. *POD* and *std::string*) or by some other extension library
-  (e.g. *Dune::FildVector*). 
-  So *regular* types don't need any special treatment or wrapper classes to be used within python. 
+  (e.g. *Dune::FieldVector*). 
+  So **regular** types don't need any special treatment or wrapper classes to be used within python. 
 
 First Step: Generating a wrapper class
 =============================================
@@ -63,7 +63,7 @@ We start by specifying a class with the following structure:
     std::shared_ptr<DuneType> duneType_;
   };
 
-We will use this to export *DuneClass* to python starting with
+We will use this to export *DuneClass* to python starting with:
 
 .. code-block:: c++
 
@@ -80,9 +80,9 @@ class:
 
 .. code-block:: c++
 
-  obj.def("__init__", make_constructor( makeWrapperclass ) );
+  obj.def("__init__", make_constructor( MakeWrapperclass ) );
 
-with
+with:
 
 .. code-block:: c++
 
@@ -104,62 +104,61 @@ constructor even in the code generation phase.
 Third Step: return value conversion
 =====================================
 
-If the return values of a method to be exported is a **regular** type no
+If the return values of a method to be exported are of *regular* type, no
 special treatment is necessary and exporting the method is straightforward
-with boost python. Now assume that *RetrunValueOne* for example refers to
+with boost python. Now assume that *ReturnTypeOne* for example refers to
 some other class with the Dune framework, e.g. an instance of a discrete function.
 We make the following assumption:
 
 ..  admonition:: :red:`Assumption`
 
-  All return values are either **regular** or *references (constant or non constant)*.
+  All return values are either *regular* or *references* (constant or non constant).
   That implies that any return value given as a copy can be handled by boost
   python directly or a direct export is provided in some extension module.
 
-So taking the example from above *ReturnTypeOne* might refer to some class that
+So taking the example from above, *ReturnTypeOne* might refer to some class that
 is not directly exported to python. We thus can not directly return the
 corresponding reference stored in *DuneClass*. There are in fact two
-reasons why this is problematic
+reasons why this is problematic:
 
-#. The type is not known to boost python 
+#. The type is not known to boost python. 
 #. If the reference were to be exported to python and stored there, then
    this would result in a dangling reference once the actual instance of the
    wrapper class is not available anymore.
 
 So we need to define a wrapper class for the return value that we can
 export to python and we need to make sure that the reference to
-*ReturnTypeOne* remains active long enough. We do this using wrapper classes of
-the form
+*ReturnTypeOne* remains active long enough. We do using wrapper classes of
+the form:
 
 .. code-block:: c++
 
   template <class Container>
   struct ReturnOneWrapper
   {
-    ReturnOneWrapper(const ReturnTypeOne &ret, const std::shared_ptr<Container>& container) 
+    ReturnOneWrapper(const ReturnTypeOne &ret, const std::shared_ptr<ContainerPtr>& container) 
     : ret_(ret), container_container) {}
     ReturnValue method(...);
     // further methods to export
 
-    const ReturnTypeOne &get() const
+    const ReturnTypeOne get() const
     { return ret_; }
-    ReturnTypeOne &get() const
+    ReturnTypeOne get() const
     { return const_cast<ReturnTypeOne&>(ret_); }
     private:
     const ReturnTypeOne &ret_;
-    shared_ptr<Container> container_;
+    shared_ptr<ContainerPtr> container_;
   };
 
-Depending on the actual class *ReturnTypeOne* the class will contain additional
+Depending on the actual class *ReturnTypeOne*, the class may contain additional
 methods to be exported to python. We will now need to do three things:
 
-#. Depending on *ReturnTypeOne* use the correct wrapper class.
+#. Depending on *ReturnTypeOne*, use the correct wrapper class.
 #. Convert the return value of *methodOne* 
-#. Export the wrapper class with the corresponding methods to python (we
-   always use *std::shared_ptr* as holder type.
+#. Export the wrapper class with the corresponding methods to python.
 
-To this end we use a template class that can be specialized on different return
-values. The default implementation of this class is
+To this end we use a template class that can be specialized for different return
+values. The default implementation of this class is:
 
 .. code-block:: c++
 
@@ -175,9 +174,8 @@ values. The default implementation of this class is
     {}
   };
 
-This implementation of the class can be used for any **regular** type
-returned as a copy but needs to be specialized over any type that needs a
-wrapper class, e.g.,
+This implementation of the class can be used for any *regular* type but
+needs to be specialized for *non-regular* types, e.g.
 
 .. code-block:: c++
 
@@ -185,7 +183,7 @@ wrapper class, e.g.,
   struct ReturnValueConverter< ReturnTypeOne, Container >
   {
     typedef std::shared_ptr< ReturnOneWrapper<Container> > type;
-    static type convert(const ReturnTypeOne& r, const std::shared_ptr<Container> container) 
+    static type convert(const ReturnTypeOne& r, const std::shared_ptr<ContainerPtr> container) 
     { return type(r,container); }
     static ReturnTypeOne& get( type t )
     { return t->get(); }
@@ -196,42 +194,60 @@ wrapper class, e.g.,
     }
   };
 
-Forth Step: converting parameters
+Fourth Step: converting parameters
 ===============================================
 
 The *ReturnValueConverter* can also be used to convert back from the type
 exported to python to the underlying C++ reference type (remember that we
-only use the *ReturnValueConverter* for reference types). To this purpose
-the structure contains a *get* method. In the example given above the
+only use the *ReturnValueConverter* for reference types). For this purpose,
+the structure contains a *get* method. In the example given above, the
 exported python class is *GridFunctionDiscrete*. This class stores a
-reference the underlying Dune class and this can be accessed using the
-*get* which makes the implementation on the *ReturnValueConverter*
+reference to the underlying Dune class which can be accessed using
+*get*, making the implementation on the *ReturnValueConverter*
 straightforward. 
+
+As an example take the implementation of the constructor from above and
+assume that we need to call:
+
+.. code-block:: c++
+
+    DuneClass::DuneClass(const ReturnTypeOne &);
+
+For the constructor on the wrapper class we can now use:
+
+.. code-block:: c++
+
+  typedef ReturnValueConverter< ReturnTypeOne, DuneClass > Converter;
+  std::shared_ptr< WrapperClass<DuneClass> > makeWrapperClass( const Converter::type param)
+  {
+    return std::make_shared< WrapperClass<DuneClass> >
+        ( std::make_shared<DuneClass>( Converter::get( param )) );
+  }
 
 Fifth Step: adding methods
 ===============================================
 
 If we assume that the wrapper and required *ReturnValueConverter* implementations
-are available we can now export the *methodOne* on our *WrapperOne*:
+are available, we can now export the *methodOne* on our *WrapperOne*:
 
 .. code-block:: c++
 
   typedef ReturnValueConverter< ReturnTypeOne, DuneClass > Converter;
-  obj.def("methodOne", &methodOneWrapper );
+  obj.def("methodOne", &makeMethodOne );
   Convert::registerType( "methodOne_ret" );
 
-with (assuming here *DuneClass::methodOne* takes one parameter)
+where *makeMethodOne* is defined as follows:
 
 .. code-block:: c++
 
-  typename Converter::typer methodOneWrapper( WrapperClass<DuneClass> *self, const Converter::type param )
+  typename Converter::typer makeMethodOne( WrapperClass<DuneClass> *self, ... )
   {
-    return Converter::convert( self->duneType()->methodOne( Coverter::get(param) ), self->duneType() );
+    return Converter::convert( self->duneType()->methodOne(...), self->duneType() );
   }
 
 In many cases that is all that is required and therefore we provide a
-helper function to export. So to export *DuneClass::methodOne*, do the return value conversion, and
-registration with boost python. So the above code would be replaced with the following line:
+helper function to export *DuneClass::methodOne*, do the return value conversion and
+registration. So the above code could be replaced with the following line:
 
 .. code-block:: c++
 
@@ -240,83 +256,55 @@ registration with boost python. So the above code would be replaced with the fol
 .. note::
 
   The parameter list of the exported method will be identical to the parameter
-  list of the method on the originsal class *DuneClass*. If the parameter list has to be
-  different (e.g. some conversion is required) then the short hand version can not be
-  used. To avoid having to use the *ReturnValueConverter* explicitely a hybrid approach
+  list of the method on the original class *DuneClass*. If the parameter list has to be
+  different for some reason (e.g. some conversion is required) then the short-hand version cannot be
+  used. To avoid having to use the *ReturnValueConverter* explicitly, a hybrid approach
   to the above could be useful:
 
   .. code-block:: c++
 
-    const ReturnTypeOne &methodOneWrapper( DuneClass *self, MyParameterList... )
+    const ReturnTypeOne &makeMethodOne( DuneClass *self, MyParameterList... )
     {
       // convert MyParameterList to DuneParameterList 
       return self->methodOne(DuneParameterList);
     }
 
-    defFromDune(obj, "methodOne", &methodOneWrapper );
+    defFromDune(obj, "methodOne", &makeMethodOne );
 
-  Note that here *self* is a pointer to the *DuneClass* type and the return
-  type is the original type from *methodOne*.
 
 .. _Summary:
 
 Summary
 =======================
 
-In the above we distinguished three different C++ types
+In the above we distinguished three different types
 
-#. Types that boost python provides an export
-   mechanism by default or other classes that provide boost python exports
-   that can be used directly, i.e., without wrapper classes
-   (we referred to these as **regular**).
+#. **Regular** types that boost python provides an export
+   mechanism for by default or other classes that provide boost python exports
+   that can be used directly, i.e. without wrapper classes.
 #. Internal Dune classes that need to be wrapped before they can be
-   exported to python. These classes can not be initialized directly from
-   within python, i.e., they have no constructor. Thus instances of these
+   exported to python. These classes cannot be initialized directly from
+   within python, i.e. they have no constructor. Thus instances of these
    classes will only appear as return values of functions or methods.
    The wrapper class internally stores the reference to an instance of the actual 
-   Dune class and a shared pointer to a *container* which in most cases
+   Dune class and a shared pointer to a *container*, which in most cases
    will be the variable that constructed this reference. This provides
    reference counting to avoid dangling references. The conversion from the
    Dune class to the exported wrapper is done using the
-   *ReturnValueConverter* structure as described above. The wrapper should be derived
-   from:
-
-  .. code-block:: c++
-
-    template <class Object, class Container>
-    struct ReferenceWrapperClass
-    {
-      ReferenceWrapperClass(const Object &ret, const std::shared_ptr<Container>& container);
-      const Object &get() const;
-      Object &get();
-    };
-
+   *ReturnValueConverter* structure as described above.
 #. Finally we need to distinguish classes that need to be constructed from
    within python. These use wrappers for the Dune structures which are
-   constructed from a shared pointer of the Dune class. The following wrapper should be
-   used:
-
-   .. code-block:: c++
-
-    template <class Dune>
-    struct WrapperClass
-    {
-      typedef Dune DuneType;
-      WrapperClass(const std::shared_ptr<DuneType>& duneType);
-      std::shared_ptr<DuneType> get() const;
-    };
-
-  This third category of types will be the focus of the following discussion. 
+   constructed from a shared pointer of the Dune class.  This third
+   category of types will be the focus of the following discussion. 
 
 ****************************************************************
 Exporting Different Implementations of an Interface Class
 ****************************************************************
 
 In the following we describe the approach taken for auto generating the
-wrapper code for classes realizing a common interface. These will be types belonging to the third 
-category described in the Summary_ above, i.e.,, Dune grid classes. We will
-use the grid class as a show case in the following.
-At first We will assume that we have a wrapper class that provides the common interface, e.g.,
+wrapper code for classes that conform to a common interface. These will be types belonging to the third 
+category described in the Summary_ above. In this case, we will use the grid class from Dune as an example.
+At first we will assume that we have a wrapper class that provides this common interface, e.g.
 
 .. code-block:: c++
 
@@ -329,37 +317,35 @@ At first We will assume that we have a wrapper class that provides the common in
     void methodThree( ... );
   };
 
-that is to be exported to python. This is implemented and exported using
-boost python as described above, i.e., using the *ReturnValueConverter* and
+This is implemented and exported using
+boost python as described above, i.e. using the *ReturnValueConverter* and
 the *make_constructor* mechanism of boost python. In the following we first
 describe how the user can add a new implementation of this interface and
 how just-in-time compilation of the wrapper is achieved. After that we will
-explain how extensions of that interface can be provided by the user.
+explain how extensions to that interface can be provided by the user.
 
 Database approach
 ===================
 
 To provide the information required to export an implementation of the
-wrapper class we use python dictonary containing information to generate the
+wrapper class, we use a python dictonary containing information to generate the
 typedef for the implementation and the required include statements needed
-to compile the wrapper. For a grid examples given above files containing the required dictonaries 
-would be located in the directory *python/database/grid*. An example would
-be
-
+to compile the wrapper. Given the above, an example for generating a grid
+containing the required dictonaries would be the following:
 .. code-block:: python
 
-  "ALUCubeGrid" :
-  {
-    "type"      : "Dune::ALUGrid< $(dimgrid), $(dimworld), Dune::cube, Dune::nonconforming >",
-    "default"   : [ "dimworld=$(dimgrid)" ],
-    "checks"    : [ "$(dimgrid)==$(dimworld) or $(dimgrid)+1==$(dimworld)",
-                    "2<=$(dimworld) and $(dimworld)<=3",
-                    "2<=$(dimgrid) and $(dimgrid)<=3" ],
-    "include"   : [ "dune/alugrid/grid.hh", "dune/alugrid/dgf.hh" ]
-  }
+"ALUCubeGrid" :
+{
+  "type"      : "Dune::ALUGrid< $(dimgrid), $(dimworld), Dune::cube, Dune::nonconforming >",
+  "default"   : [ "dimworld=$(dimgrid)" ],
+  "checks"    : [ "$(dimgrid)==$(dimworld) or $(dimgrid)+1==$(dimworld)",
+                  "2<=$(dimworld) and $(dimworld)<=3",
+                  "2<=$(dimgrid) and $(dimgrid)<=3" ],
+  "include"   : [ "dune/alugrid/grid.hh", "dune/alugrid/dgf.hh" ]
+}
 
-The first line provides the information on how to construct the correct
-typedef for the Dune class:
+This would be located in the directory *python/database/grid*. The first line provides
+information on how to construct the correct typedef for the Dune class:
 
 .. code-block:: c++
 
@@ -367,7 +353,7 @@ typedef for the Dune class:
   class ALU3dGrid<dimgrid,dimworld,Dune::cube,Dune::nonconforming>;
 
 The last line contains information about which include statements are
-required to compile the wrapper, i.e., 
+required to compile the wrapper, i.e. 
 
 .. code-block:: c++
 
@@ -383,14 +369,14 @@ On the fly code generation is done with the python module *dune.generator*.
    :members:
    :special-members: __init__
 
-In the above example the extnesion module for our grid implementation would
+In the above example the extension module for our grid implementation would
 be generated by calling
 
 .. code-block:: python
 
      aluModule = Generator("grid").getModule("ALUCubeGrid", dimgrid=2, dimworld=3)
 
-The following header file is generated in this example: 
+The header file is generated in this example: 
 
 .. code-block:: c++
 
@@ -444,7 +430,7 @@ is renamed and imported into the python environment.
 
 .. note:: 
   The extension module will only be build if it does not exist
-  already, i.e., no additional checks are performed to determine if
+  already, i.e. no additional checks are performed to determine if
   the dependencies for this module have changed. 
 
 Extending on the fly generated modules
@@ -458,7 +444,7 @@ for the grid modules (see for example the implementation of the function
 extension module (e.g. :py:class:`.fem.grid.LeafGrid`) using python is just
 as straightforward.
 
-Extending the wrapped class on the C++ side, i.e., before the generation of
+Extending the wrapped class on the C++ side, i.e. before the generation of
 the extension module requires a bit more work:
 
 First we note that by using the approach described in the 
@@ -515,8 +501,6 @@ Grid Construction
 Module
 -------
 
-.. automodule:: dune.fem.grid
-   :members: get, leafGrid
 .. automodule:: griddocu
    :noindex:
    :members:

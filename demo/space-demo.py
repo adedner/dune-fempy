@@ -7,22 +7,31 @@ import dune.fem.space as space
 
 import math
 
-yaspgrid = grid.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
-lagrangespace = space.create("Lagrange", yaspgrid)
+def testSpace(gridtype, **kwargs):
+    grid2d = grid.leafGrid("../data/unitcube-2d.dgf", gridtype, dimgrid=2)
+    vtk = grid2d.vtkWriter()
+    lagrangespace = space.create("Lagrange", grid2d)
 
-def expr_global(x):
-    return [-(x[1] - 0.5)*math.sin(x[0]*12)]
+    def expr_global(x):
+        return [-(x[1] - 0.5)*math.sin(x[0]*12)]
 
-gf = yaspgrid.globalGridFunction("expr_global", expr_global)
-df = lagrangespace.interpolate(gf)
+    gf = grid2d.globalGridFunction("expr_global", expr_global)
+    df = lagrangespace.interpolate(gf)
 
-vtk_yaspgrid = yaspgrid.vtkWriter()
-df.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+    df.addToVTKWriter(vtk, vtk.PointData)
 
-df2 = lagrangespace.interpolate([5])
-df2.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.CellData)
+    df2 = lagrangespace.interpolate([5,3])
+    df2.addToVTKWriter(vtk, vtk.CellData)
 
-df3 = lagrangespace.interpolate(df)
-df3.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+    df3 = lagrangespace.interpolate(df)
+    df3.addToVTKWriter(vtk, vtk.PointData)
 
-vtk_yaspgrid.write("space_demo");
+    vtk.write("space_demo");
+
+print("ALUGRID")
+testSpace("ALUSimplexGrid")
+print("YASPGRID A")
+testSpace("YaspGrid")
+print("YASPGRID B")
+testSpace("YaspGrid")
+print("END")

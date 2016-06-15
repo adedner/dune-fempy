@@ -8,10 +8,10 @@ import dune.fem.space as space
 
 import math
 
-def testSpace(gridtype, **kwargs):
+def testSpace(gridtype, dimRange):
     grid2d = grid.leafGrid("../data/unitcube-2d.dgf", gridtype, dimgrid=2)
     vtk = grid2d.vtkWriter()
-    lagrangespace = space.create("Lagrange", grid2d, dimrange=2)
+    lagrangespace = space.create("Lagrange", grid2d, dimrange=dimRange)
 
     # would work but perhaps not desired
     # df0 = discfunc.create("Adaptive",lagrangespace,name="test")
@@ -21,18 +21,31 @@ def testSpace(gridtype, **kwargs):
     # df0.addToVTKWriter(vtk,vtk.PointData)
     # df00.addToVTKWriter(vtk,vtk.PointData)
 
-    def expr_global(x):
-        return [-(x[1] - 0.5)*math.sin(x[0]*12), 0]
+    def expr_global1(x):
+        return [-(x[1] - 0.5)*math.sin(x[0]*12)]
+    def expr_global2(x):
+        return [-(x[1] - 0.5)*math.sin(x[0]*12),x[0]*x[1]]
 
-    gf = grid2d.globalGridFunction("expr_global", expr_global)
+    print("set up a grid function")
+    if dimRange==1:
+        gf = grid2d.globalGridFunction("expr_global", expr_global1)
+    else:
+        gf = grid2d.globalGridFunction("expr_global", expr_global2)
+    print("interpolate grid function - default storage")
     df = lagrangespace.interpolate(gf,name="test")
+    print("interpolate constant values using numpy storage")
     df2 = lagrangespace.interpolate([5,3]) # , storage="Numpy" ) # , name="53" )
+    print("interpolate a given discrete function now using istl storage")
     df3 = lagrangespace.interpolate(df, name="copy", storage="Istl" )
     lagrangespace=0
 
+    print("add grid function to vtk")
     gf.addToVTKWriter(vtk, vtk.PointData)
+    print("add first discrete function to vtk")
     df.addToVTKWriter(vtk, vtk.PointData)
+    print("add second discrete function to vtk")
     df2.addToVTKWriter(vtk, vtk.CellData)
+    print("add third discrete function to vtk")
     df3.addToVTKWriter(vtk, vtk.PointData)
 
     gf=0
@@ -43,9 +56,9 @@ def testSpace(gridtype, **kwargs):
     vtk.write("space_demo");
 
 print("ALUGRID")
-testSpace("ALUSimplexGrid")
+testSpace("ALUSimplexGrid",1)
 print("YASPGRID A")
-testSpace("YaspGrid")
+testSpace("YaspGrid",1)
 print("YASPGRID B")
-testSpace("YaspGrid")
+testSpace("YaspGrid",2)
 print("END")

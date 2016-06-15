@@ -56,22 +56,25 @@ def main(argv):
    elif test:
        import dune.fem.grid as grid
        import dune.fem.scheme as scheme
+       import dune.fem.space as space
        # set up a 2d grid
        grid2d = grid.get("YaspGrid", dimgrid=2)
        Model = model.makeAndImport(grid2d)
        m = Model.get()
        g = grid.leafGrid(dgf, grid2d)
-       print('get scheme')
+       print('get space')
+       sp = space.create("Lagrange", g)
 
+       print('get scheme')
        try:
-         femSchemeModule = scheme.get("FemScheme", g, Model.getDimRange(), polorder=1, solver=solver)
+         dimrange = m.getDimRange()
+         femSchemeModule = scheme.get("FemScheme", sp, g, dimrange, polorder=1, solver=solver)
        except Exception as exception:
           print('could not compile an extension module')
           print(exception)
           # try default fem solvers
-          femSchemeModule = scheme.get("FemScheme", g, Model.getDimRange(), polorder=1)
+          femSchemeModule = scheme.get("FemScheme", sp , g, m.getDimRange(), polorder=1)
 
-       #interModule = scheme.scheme("InterpolationScheme", grid2d, gridfunc, "transport", polorder=1)
        s = femSchemeModule.Scheme( g, m.wrap(), "solution" )
        s1 = femSchemeModule.Scheme( g, m.wrap(), "solution" )
        s.solve()

@@ -4,6 +4,7 @@ from mpi4py import MPI
 
 import dune.fem.grid as grid
 import dune.fem.space as space
+# import dune.fem.discretefunction as discfunc
 
 import math
 
@@ -12,19 +13,32 @@ def testSpace(gridtype, **kwargs):
     vtk = grid2d.vtkWriter()
     lagrangespace = space.create("Lagrange", grid2d, dimrange=2)
 
+    # would work but perhaps not desired
+    # df0 = discfunc.create("Adaptive",lagrangespace,name="test")
+    # df0.clear();
+    # df00 = discfunc.create("Adaptive",lagrangespace,name="testA")
+    # df00.clear();
+    # df0.addToVTKWriter(vtk,vtk.PointData)
+    # df00.addToVTKWriter(vtk,vtk.PointData)
+
     def expr_global(x):
         return [-(x[1] - 0.5)*math.sin(x[0]*12), 0]
 
     gf = grid2d.globalGridFunction("expr_global", expr_global)
-    df = lagrangespace.interpolate(gf)
+    df = lagrangespace.interpolate(gf,name="test")
+    df2 = lagrangespace.interpolate([5,3]) # , storage="Numpy" ) # , name="53" )
+    df3 = lagrangespace.interpolate(df, name="copy", storage="Istl" )
+    lagrangespace=0
 
+    gf.addToVTKWriter(vtk, vtk.PointData)
     df.addToVTKWriter(vtk, vtk.PointData)
-
-    df2 = lagrangespace.interpolate([5,3] ) # , name="53" )
     df2.addToVTKWriter(vtk, vtk.CellData)
+    df3.addToVTKWriter(vtk, vtk.PointData)
 
-    df3 = lagrangespace.interpolate(df, name="copy" )
-    df3.addToVTKWriter(vtk, vtk.PointData )
+    gf=0
+    df=0
+    df2=0
+    df3=0
 
     vtk.write("space_demo");
 

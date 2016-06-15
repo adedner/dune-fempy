@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-from mpi4py import MPI
+# from mpi4py import MPI
 
 import dune.fem.grid as grid
 import dune.fem.space as space
@@ -26,26 +26,18 @@ def testSpace(gridtype, dimRange):
     def expr_global2(x):
         return [-(x[1] - 0.5)*math.sin(x[0]*12),x[0]*x[1]]
 
-    print("set up a grid function")
     if dimRange==1:
         gf = grid2d.globalGridFunction("expr_global", expr_global1)
     else:
         gf = grid2d.globalGridFunction("expr_global", expr_global2)
-    print("interpolate grid function - default storage")
     df = lagrangespace.interpolate(gf,name="test")
-    print("interpolate constant values using numpy storage")
     df2 = lagrangespace.interpolate([5,3]) # , storage="Numpy" ) # , name="53" )
-    print("interpolate a given discrete function now using istl storage")
     df3 = lagrangespace.interpolate(df, name="copy", storage="Istl" )
     lagrangespace=0
 
-    print("add grid function to vtk")
     gf.addToVTKWriter(vtk, vtk.PointData)
-    print("add first discrete function to vtk")
     df.addToVTKWriter(vtk, vtk.PointData)
-    print("add second discrete function to vtk")
     df2.addToVTKWriter(vtk, vtk.CellData)
-    print("add third discrete function to vtk")
     df3.addToVTKWriter(vtk, vtk.PointData)
 
     gf=0

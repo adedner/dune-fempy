@@ -63,7 +63,7 @@ def main(argv):
        m = Model.get()
        g = grid.leafGrid(dgf, grid2d)
        print('get space')
-       sp = space.create("Lagrange", g)
+       sp = space.create("Lagrange", g, dimrange=m.getDimRange() )
 
        print('get scheme')
        try:

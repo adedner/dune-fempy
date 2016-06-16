@@ -86,11 +86,11 @@ def main(argv):
        print( 0, error, -1, est, -1)
        sol = s.solution()
        for n in range(1, 4):
-          g.globalRefine(1)
+          g.hierarchicalGrid.globalRefine(1)
           olderror = error
           oldest = est
           sol = "hallo"
-          s.solve()
+          s.solve(True)
           error = s.error()
           est = 1 # s.estimate()
           print(n, error, math.log(error/olderror)/math.log(0.5),\
@@ -103,7 +103,7 @@ def main(argv):
        g = grid.leafGrid(dgf, "YaspGrid", dimgrid=2)
        m = Model.get()
        s = scheme.scheme( "FemScheme", g, m, "solution", solver="fem" )
-       s.solve()
+       s.solve(True)
        print("second scheme: ", s.error())
 
        # can we do the whole thing again?
@@ -112,7 +112,7 @@ def main(argv):
        m = 0
        g = 0
        # but this still needs to work
-       s.solve()
+       s.solve(True)
        print("second scheme with second order: ", s.error())
 
        print( "finalize" )

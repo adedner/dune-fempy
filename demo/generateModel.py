@@ -77,8 +77,8 @@ def main(argv):
 
        s = femSchemeModule.Scheme( g, m.wrap(), "solution" )
        s1 = femSchemeModule.Scheme( g, m.wrap(), "solution" )
-       s.solve()
-       s1.solve()
+       s.solve(True)
+       s1.solve(True)
        error = s.error()
        est = 1 # s.estimate()
        print( "difference between the errors of two schemes which are the same: ", s.error()-s1.error() )

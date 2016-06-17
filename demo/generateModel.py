@@ -102,12 +102,13 @@ def main(argv):
        # can we do the whole thing twice?
        g = grid.leafGrid(dgf, "YaspGrid", dimgrid=2)
        m = Model.get()
-       s = scheme.scheme( "FemScheme", g, m, "solution", solver="fem" )
+       s = scheme.create( "FemScheme", sp, g, m, "solution", solver="fem" )
        s.solve(True)
        print("second scheme: ", s.error())
 
        # can we do the whole thing again?
-       s = scheme.scheme( "FemScheme", g, m, "solution", solver="fem", polorder=2 )
+       sp = space.create("Lagrange", g, dimrange=dimR, polorder=2 )
+       s = scheme.create( "FemScheme", sp, g, m, "solution", solver="fem" )
        # these are not needed anymore
        m = 0
        g = 0

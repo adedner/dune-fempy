@@ -49,6 +49,15 @@ def get(space, gridModule, **parameters):
     setattr(module.Space, "interpolate", interpolate )
     return module
 
+def interpolate( self, func, **kwargs ):
+    storage=kwargs.pop('a',"Adaptive")
+    try:
+        df = discretefunction.create(storage,self,name=func.name, **kwargs)
+    except:
+        df = discretefunction.create(storage,self, **kwargs)
+    df.interpolate(func)
+    return df
+
 def create(space, grid, **parameters):
     """Get a Space
 

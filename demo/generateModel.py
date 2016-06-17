@@ -63,56 +63,61 @@ def main(argv):
        m = Model.get()
        g = grid.leafGrid(dgf, grid2d)
        print('get space')
-       sp = space.create("Lagrange", g)
+       dimR = m.getDimRange()
+       sp = space.create("Lagrange", g, dimrange=dimR )
 
        print('get scheme')
        try:
-         dimrange = m.getDimRange()
-         femSchemeModule = scheme.get("FemScheme", sp, g, dimrange, polorder=1, solver=solver)
+         femSchemeModule = scheme.get("FemScheme", sp, g, dimR, polorder=1, solver=solver)
        except Exception as exception:
           print('could not compile an extension module')
           print(exception)
           # try default fem solvers
-          femSchemeModule = scheme.get("FemScheme", sp , g, m.getDimRange(), polorder=1)
+          femSchemeModule = scheme.get("FemScheme", sp, g, dimR, polorder=1)
 
        s = femSchemeModule.Scheme( g, m.wrap(), "solution" )
        s1 = femSchemeModule.Scheme( g, m.wrap(), "solution" )
-       s.solve()
-       s1.solve()
+       vtk = g.vtkWriter()
+       s.solution().addToVTKWriter(vtk, vtk.PointData)
+       s.solve(True)
+       s1.solve(True)
        error = s.error()
        est = 1 # s.estimate()
        print( "difference between the errors of two schemes which are the same: ", s.error()-s1.error() )
        s1 = 0
        print( 0, error, -1, est, -1)
        sol = s.solution()
+       vtk.write("generateModel"+str(0));
        for n in range(1, 4):
-          g.globalRefine(1)
+          g.hierarchicalGrid.globalRefine(1)
           olderror = error
           oldest = est
           sol = "hallo"
-          s.solve()
+          s.solve(True)
           error = s.error()
           est = 1 # s.estimate()
           print(n, error, math.log(error/olderror)/math.log(0.5),\
                    est, math.log(est/oldest)/math.log(0.5))
           w = "hallo"  # this is to check memory management
           sol = s.solution()
+          vtk.write("generateModel"+str(n));
        g = "not a grid anymore" # let's check memory management a second time
 
        # can we do the whole thing twice?
        g = grid.leafGrid(dgf, "YaspGrid", dimgrid=2)
        m = Model.get()
-       s = scheme.scheme( "FemScheme", g, m, "solution", solver="fem" )
-       s.solve()
+       s = scheme.create( "FemScheme", sp, g, m, "solution", solver="fem" )
+       s.solve(True)
        print("second scheme: ", s.error())
 
        # can we do the whole thing again?
-       s = scheme.scheme( "FemScheme", g, m, "solution", solver="fem", polorder=2 )
+       sp = space.create("Lagrange", g, dimrange=dimR, polorder=2 )
+       s = scheme.create( "FemScheme", sp, g, m, "solution", solver="fem" )
        # these are not needed anymore
        m = 0
        g = 0
        # but this still needs to work
-       s.solve()
+       s.solve(True)
        print("second scheme with second order: ", s.error())
 
        print( "finalize" )

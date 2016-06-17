@@ -77,6 +77,8 @@ def main(argv):
 
        s = femSchemeModule.Scheme( g, m.wrap(), "solution" )
        s1 = femSchemeModule.Scheme( g, m.wrap(), "solution" )
+       vtk = g.vtkWriter()
+       s.solution().addToVTKWriter(vtk, vtk.PointData)
        s.solve(True)
        s1.solve(True)
        error = s.error()
@@ -85,6 +87,7 @@ def main(argv):
        s1 = 0
        print( 0, error, -1, est, -1)
        sol = s.solution()
+       vtk.write("generateModel"+str(0));
        for n in range(1, 4):
           g.hierarchicalGrid.globalRefine(1)
           olderror = error
@@ -97,6 +100,7 @@ def main(argv):
                    est, math.log(est/oldest)/math.log(0.5))
           w = "hallo"  # this is to check memory management
           sol = s.solution()
+          vtk.write("generateModel"+str(n));
        g = "not a grid anymore" # let's check memory management a second time
 
        # can we do the whole thing twice?

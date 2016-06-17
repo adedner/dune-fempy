@@ -13,10 +13,11 @@ import ufl
 
 import dune.models.femufl as duneuflmodel
 import dune.fem.grid as grid
+import dune.fem.space as space
 import dune.fem.scheme as scheme
+import dune.fem.function as gf
 
 grid2d = grid.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
-grid2d.globalRefine(3)
 
 ############################################################################
 # build a transport model -eps Laplace(u) + velocity.grad(u) + gamma u = f
@@ -40,7 +41,10 @@ Model = model.makeAndImport(grid2d)
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
 m = Model.get()
 
-s = scheme.scheme("FemScheme", grid2d, m, "transport", polorder=1)
+dimR = m.getDimRange()
+sp = space.create( "Lagrange", grid2d, dimrange=dimR )
+
+s = scheme.create( "FemScheme", sp, grid2d, m, "transport", polorder=1 )
 
 ############################################################################
 # Now use different way to solve this problem with given velocity field
@@ -48,12 +52,12 @@ s = scheme.scheme("FemScheme", grid2d, m, "transport", polorder=1)
 
 print("define velocity field in global coordinates (using different approaches)")
 expr1 = gf.MathExpression(["-(x1-0.5)","x0-1./2."])
-expr2 = gf.SympyExpression(["-(x1-0.5)","x0-1./2."])
+#expr2 = gf.SympyExpression(["-(x1-0.5)","x0-1./2."])
 def expr_func(x,r):
     r[0] = -(x[1]-0.5)
     r[1] = (x[0]-0.5)
-expr3 = gf.FuncExpression(2,expr_func)
-velocityGlobal = grid2d.getGlobal("global_velocity",expr1)
+#expr3 = gf.FuncExpression(2,expr_func)
+velocityGlobal = grid2d.globalGridFunction("global_velocity", expr1)
 
 m.setvelocity(velocityGlobal)
 s.solve()

@@ -64,16 +64,16 @@ def main(argv):
        g = grid.leafGrid(dgf, grid2d)
        print('get space')
        dimR = m.getDimRange()
-       sp = space.create("Lagrange", g, dimrange=dimR )
+       sp = space.create( "Lagrange", g, dimrange=dimR )
 
        print('get scheme')
        try:
-         femSchemeModule = scheme.get("FemScheme", sp, g, dimR, polorder=1, solver=solver)
+         femSchemeModule = scheme.get( "FemScheme", sp, g, dimR, polorder=1, solver=solver )
        except Exception as exception:
           print('could not compile an extension module')
           print(exception)
           # try default fem solvers
-          femSchemeModule = scheme.get("FemScheme", sp, g, dimR, polorder=1)
+          femSchemeModule = scheme.get( "FemScheme", sp, g, dimR, polorder=1)
 
        s = femSchemeModule.Scheme( g, m.wrap(), "solution" )
        s1 = femSchemeModule.Scheme( g, m.wrap(), "solution" )

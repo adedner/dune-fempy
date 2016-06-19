@@ -7,6 +7,7 @@ from __future__ import print_function
 import sys,os,math, getopt
 sys.path.append("../python")
 import timeit
+from mpi4py import MPI
 
 import sympy
 import ufl
@@ -104,12 +105,13 @@ class LocalExpr:
     def __init__(self,df):
         self.df = df
         self.dimR = 2
-    def evaluate(self,en,x,r):
+    def __call__(self,en,x):
         # y = en.geometry().position(x)
-        y = en.geometry().position( [1./3.,1./3.] )
-        rr = self.df.evaluate(en,x)
-        r[0] =  rr[0] * (1-y[1])**2
-        r[1] =  rr[1] * (1-y[1])**2
+        y = en.geometry.position( [1./3.,1./3.] )
+        rr = self.df.localFunction(en).evaluate(x)
+        r = [rr[0] * (1-y[1])**2,\
+             rr[1] * (1-y[1])**2]
+        return r
 localVelo = LocalExpr(sol)
 velocityLocal = grid2d.localGridFunction( "local_velocity", localVelo )
 m.setvelocity(velocityLocal)
@@ -125,13 +127,10 @@ class LocalExprA:
     def __init__(self,df):
         self.df = df
         self.dimR = 2
-    def evaluate(self,en,x,r):
-        y = en.geometry().position(x)
-        # FieldMatrix not exported to python
-        dx = self.df.jacobian(0,en,x)
-        dy = self.df.jacobian(1,en,x)
-        r[0] = -dy[0]
-        r[1] =  dx[0]
+    def __call__(self,en,x):
+        y = en.geometry.position(x)
+        jac = self.df.localFunction(en).jacobian(x)
+        return [ -jac[0][1],jac[0][0] ]
 localVelo = LocalExprA(sol)
 # problem: when using velocityLocal = gf.getLocal( localVelo ) we get a seg fault
 # when calling m.setVelocity(velocityLocal) - must be fixed

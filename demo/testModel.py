@@ -61,20 +61,20 @@ velocityGlobal = grid2d.globalGridFunction("global_velocity", expr1)
 
 m.setvelocity(velocityGlobal)
 s.solve()
-out_gl = grid2d.vtkOutput()
-out_gl.add(s.solution())
+vtk = grid2d.vtkWriter()
+s.solution().addToVTKWriter(vtk, vtk.PointData)
 print('solution: ', s.solution())
-out_gl.add(velocityGlobal)
-out_gl.write( "testmodel_global" )
+velocityGlobal.addToVTKWriter(vtk, vtk.PointData)
+vtk.write("testmodel_global");
 
 print("use the interpolation of the global function")
-u = grid2d.interpolate(velocityGlobal, "velocity", polorder=1)
+u = grid2d.interpolate(velocityGlobal, space="Lagrange", name="velocity", polorder=1)
 m.setvelocity(u)
 s.solve()
-out_gl = grid2d.vtkOutput()
-out_gl.add(s.solution())
-out_gl.add(u)
-out_gl.write( "testmodel_interpolation" )
+vtk = grid2d.vtkWriter()
+s.solution().addToVTKWriter(vtk, vtk.PointData)
+u.addToVTKWriter(vtk, vtk.PointData)
+vtk.write("testmodel_interpolation");
 
 print("use the discrete solution to some other scheme (vector valued)")
 c0 = sympy.cos(2*math.pi*vecmodel.x0)
@@ -88,15 +88,16 @@ vecmodel.generateFromExact(a,exact)
 VecModel = vecmodel.makeAndImport(grid2d)
 print("Building VecModel took ", timeit.default_timer() - start_time, "s")
 vecm = VecModel.get()
-vecs = scheme.scheme("FemScheme", grid2d, vecm, "vector-valued", polorder=2)
+vecsp = space.create( "Lagrange", grid2d, dimrange=2 )
+vecs = scheme.create( "FemScheme", vecsp, grid2d, vecm, "vector-valued", polorder=2 )
 vecs.solve()
 sol=vecs.solution()
 m.setvelocity(sol)
 s.solve()
-out_sol = grid2d.vtkOutput()
-out_sol.add(s.solution())
-out_sol.add(sol)
-out_sol.write( "testmodel_df" )
+vtk = grid2d.vtkWriter()
+s.solution().addToVTKWriter(vtk, vtk.PointData)
+sol.addToVTKWriter(vtk, vtk.PointData)
+vtk.write("testmodel_df");
 
 print("use a 'local function adapter'")
 class LocalExpr:
@@ -110,13 +111,13 @@ class LocalExpr:
         r[0] =  rr[0] * (1-y[1])**2
         r[1] =  rr[1] * (1-y[1])**2
 localVelo = LocalExpr(sol)
-velocityLocal = grid2d.getLocal( "local_velocity", localVelo )
+velocityLocal = grid2d.localGridFunction( "local_velocity", localVelo )
 m.setvelocity(velocityLocal)
 s.solve()
-out_locsol = grid2d.vtkOutput()
-out_locsol.add(s.solution())
-out_locsol.add(velocityLocal)
-out_locsol.write( "testmodel_local" )
+vtk = grid2d.vtkWriter()
+s.solution().addToVTKWriter(vtk, vtk.PointData)
+velocityLocal.addToVTKWriter(vtk, vtk.PointData)
+vtk.write("testmodel_local");
 velocityLocal = "remove"
 
 print("using a different 'local function adapter'")
@@ -134,12 +135,12 @@ class LocalExprA:
 localVelo = LocalExprA(sol)
 # problem: when using velocityLocal = gf.getLocal( localVelo ) we get a seg fault
 # when calling m.setVelocity(velocityLocal) - must be fixed
-velocityLocalA = grid2d.getLocal( "nabla_x_u", localVelo )
+velocityLocalA = grid2d.localGridFunction( "nabla_x_u", localVelo )
 m.setvelocity(velocityLocalA)
 s.solve()
-out_locsolA = grid2d.vtkOutput()
-out_locsolA.add(s.solution())
-out_locsolA.add(velocityLocalA)
-out_locsolA.write( "testmodel_rotation" )
+vtk = grid2d.vtkWriter()
+s.solution().addToVTKWriter(vtk, vtk.PointData)
+velocityLocalA.addToVTKWriter(vtk, vtk.PointData)
+vtk.write("testmodel_rotation");
 
 print("FINISHED")

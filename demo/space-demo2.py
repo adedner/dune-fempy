@@ -17,6 +17,8 @@ def testSpace(gridtype):
     df3 = grid2d.interpolate(df, space="Lagrange", name="copy", storage="Istl" )
     df4 = grid2d.interpolate(lambda x: [expr_global(x)[0]], variant="global", space="Lagrange", name="test")
 
+    df4 = grid2d.interpolate(gf, space="Lagrange", name="test2", polorder=2)
+
     gf.addToVTKWriter(vtk, vtk.PointData)
     df.addToVTKWriter(vtk, vtk.PointData)
     df2.addToVTKWriter(vtk, vtk.CellData)

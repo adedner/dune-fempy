@@ -42,10 +42,10 @@ Model = model.makeAndImport(grid2d)
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
 m = Model.get()
 
-dimR = m.getDimRange()
-sp = space.create( "Lagrange", grid2d, dimrange=dimR )
+dimR = m.dimRange
+sp = space.create( "Lagrange", grid2d, dimrange=dimR, polorder=1 )
 
-s = scheme.create( "FemScheme", sp, grid2d, m, "transport", polorder=1 )
+s = scheme.create( "FemScheme", sp, m, "transport" )
 
 ############################################################################
 # Now use different way to solve this problem with given velocity field
@@ -89,8 +89,8 @@ vecmodel.generateFromExact(a,exact)
 VecModel = vecmodel.makeAndImport(grid2d)
 print("Building VecModel took ", timeit.default_timer() - start_time, "s")
 vecm = VecModel.get()
-vecsp = space.create( "Lagrange", grid2d, dimrange=2 )
-vecs = scheme.create( "FemScheme", vecsp, grid2d, vecm, "vector-valued", polorder=2 )
+vecsp = space.create( "Lagrange", grid2d, dimrange=vecm.dimRange, polorder=2 )
+vecs = scheme.create( "FemScheme", vecsp, vecm, "vector-valued" )
 vecs.solve()
 sol=vecs.solution()
 m.setvelocity(sol)

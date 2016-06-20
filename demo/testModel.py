@@ -13,12 +13,12 @@ import sympy
 import ufl
 
 import dune.models.femufl as duneuflmodel
-import dune.fem.grid as grid
+import dune.fem as fem
 import dune.fem.space as space
 import dune.fem.scheme as scheme
 import dune.fem.function as gf
 
-grid2d = grid.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
+grid2d = fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
 
 ############################################################################
 # build a transport model -eps Laplace(u) + velocity.grad(u) + gamma u = f
@@ -35,22 +35,23 @@ diff = model.coefficient('diffusion')
 a = ( (ufl.dot(velo,ufl.grad(u[0]))+0.01*u[0])*v[0] + diff[0]*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) ) * ufl.dx(0)
 L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*ufl.dx(0)
 model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
-
+########
 start_time = timeit.default_timer()
 model.generate(a,L,exact)
 Model = model.makeAndImport(grid2d)
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
 m = Model.get()
 
-dimR = m.dimRange
-sp = space.create( "Lagrange", grid2d, dimrange=dimR, polorder=1 )
-solution = sp.interpolate([0,]*dimR, name="velocity")
+############################################################################
+# construct a largrange scheme for the transport problem
+############################################################################
+sp = space.create( "Lagrange", grid2d, dimrange=m.dimRange, polorder=1 )
+solution = sp.interpolate([0,]*m.dimRange) # , name="solution")
 s = scheme.create( "FemScheme", sp, m, "transport" )
 
 ############################################################################
 # Now use different way to solve this problem with given velocity field
 ############################################################################
-
 print("define velocity field in global coordinates (using different approaches)")
 expr1 = gf.MathExpression(["-(x1-0.5)","x0-1./2."])
 #expr2 = gf.SympyExpression(["-(x1-0.5)","x0-1./2."])
@@ -59,23 +60,22 @@ def expr_func(x,r):
     r[1] = (x[0]-0.5)
 #expr3 = gf.FuncExpression(2,expr_func)
 velocityGlobal = grid2d.globalGridFunction("global_velocity", expr1)
-
 m.setvelocity(velocityGlobal)
 s.solve(solution)
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 velocityGlobal.addToVTKWriter(vtk, vtk.PointData)
 vtk.write("testmodel_global");
-
+#################
 print("use the interpolation of the global function")
-u = grid2d.interpolate(velocityGlobal, space="Lagrange", name="velocity", polorder=1)
+u = grid2d.interpolate(velocityGlobal, space="Lagrange", name="interpolated_velocity", polorder=1)
 m.setvelocity(u)
-s.solve(solution)
+s.solve(target = solution)
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 u.addToVTKWriter(vtk, vtk.PointData)
 vtk.write("testmodel_interpolation");
-
+#################
 print("use the discrete solution to some other scheme (vector valued)")
 c0 = sympy.cos(2*math.pi*vecmodel.x0)
 c1 = sympy.cos(2*math.pi*vecmodel.x1)
@@ -86,19 +86,20 @@ a = (ufl.inner(u,v) + ufl.inner(ufl.grad(u),ufl.grad(v)))*ufl.dx(0)
 start_time = timeit.default_timer()
 vecmodel.generateFromExact(a,exact)
 VecModel = vecmodel.makeAndImport(grid2d)
-print("Building VecModel took ", timeit.default_timer() - start_time, "s")
 vecm = VecModel.get()
 vecsp = space.create( "Lagrange", grid2d, dimrange=vecm.dimRange, polorder=2 )
-vecs = scheme.create( "FemScheme", vecsp, vecm, "vector-valued" )
-veloh = vecsp.interpolate([0,]*vecm.dimRange, name="velocity")
-vecs.solve(veloh)
+vecs = scheme.create( "FemScheme", vecsp, vecm, "computed_velocity" )
+# the following is equivalent to:
+#   veloh = vecsp.interpolate([0,]*vecm.dimRange, name="velocity")
+#   vecs.solve(veloh)
+veloh = vecs.solve()
 m.setvelocity(veloh)
 s.solve(solution)
 vtk = grid2d.vtkWriter()
 veloh.addToVTKWriter(vtk, vtk.PointData)
 solution.addToVTKWriter(vtk, vtk.PointData)
 vtk.write("testmodel_df");
-
+#################
 print("use a 'local function adapter'")
 class LocalExpr:
     def __init__(self,df):
@@ -120,7 +121,7 @@ solution.addToVTKWriter(vtk, vtk.PointData)
 velocityLocal.addToVTKWriter(vtk, vtk.PointData)
 vtk.write("testmodel_local");
 velocityLocal = "remove"
-
+####################
 print("using a different 'local function adapter'")
 class LocalExprA:
     def __init__(self,df):
@@ -130,12 +131,10 @@ class LocalExprA:
         y = en.geometry.position(x)
         jac = self.df.localFunction(en).jacobian(x)
         return [ -jac[0][1],jac[0][0] ]
-localVelo = LocalExprA(veloh)
-# problem: when using velocityLocal = gf.getLocal( localVelo ) we get a seg fault
-# when calling m.setVelocity(velocityLocal) - must be fixed
-velocityLocalA = grid2d.localGridFunction( "nabla_x_u", localVelo )
+velocityLocalA = grid2d.localGridFunction( "nabla_x_u", LocalExprA(veloh ))
+s = scheme.create( "FemScheme", solution, m, "transport" ) # here solution is used if solve method does not specify target
 m.setvelocity(velocityLocalA)
-s.solve(solution)
+s.solve()
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 velocityLocalA.addToVTKWriter(vtk, vtk.PointData)

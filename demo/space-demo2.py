@@ -12,14 +12,16 @@ def testSpace(gridtype):
         return [-(x[1] - 0.5)*math.sin(x[0]*12),x[0]*x[1]]
 
     gf  = grid2d.globalGridFunction("expr_global", expr_global)
-    df  = grid2d.interpolate(gf, space="Lagrange", name="test")
+    df  = grid2d.interpolate(gf, space="Lagrange",name="interpolate")
     df2 = grid2d.interpolate([5,3], space="Lagrange") # , storage="Numpy" ) # , name="53" )
     df3 = grid2d.interpolate(df, space="Lagrange", name="copy", storage="Istl" )
+    df4 = grid2d.interpolate(lambda x: [expr_global(x)[0]], variant="global", space="Lagrange", name="test")
 
     gf.addToVTKWriter(vtk, vtk.PointData)
     df.addToVTKWriter(vtk, vtk.PointData)
     df2.addToVTKWriter(vtk, vtk.CellData)
     df3.addToVTKWriter(vtk, vtk.PointData)
+    df4.addToVTKWriter(vtk, vtk.PointData)
 
     vtk.write("space_demo");
 

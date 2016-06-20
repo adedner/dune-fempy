@@ -63,62 +63,59 @@ def main(argv):
        m = Model.get()
        g = grid.leafGrid(dgf, grid2d)
        print('get space')
-       dimR = m.getDimRange()
+       dimR = m.dimRange
        sp = space.create( "Lagrange", g, dimrange=dimR )
 
        print('get scheme')
        try:
-         femSchemeModule = scheme.get( "FemScheme", sp, g, dimR, polorder=1, solver=solver )
+         femSchemeModule = scheme.get( "FemScheme", sp, dimR, polorder=1, solver=solver )
        except Exception as exception:
           print('could not compile an extension module')
           print(exception)
           # try default fem solvers
-          femSchemeModule = scheme.get( "FemScheme", sp, g, dimR, polorder=1)
+          femSchemeModule = scheme.get( "FemScheme", sp, dimR, polorder=1)
 
-       s = femSchemeModule.Scheme( g, m.wrap(), "solution" )
-       s1 = femSchemeModule.Scheme( g, m.wrap(), "solution" )
+       s = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
+       s1 = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
        vtk = g.vtkWriter()
-       s.solution().addToVTKWriter(vtk, vtk.PointData)
-       s.solve(True)
-       s1.solve(True)
-       error = s.error()
+       solution = s.solve()
+       solution.addToVTKWriter(vtk, vtk.PointData)
+       solution1 = s1.solve()
+       error = s.error(solution)
        est = 1 # s.estimate()
-       print( "difference between the errors of two schemes which are the same: ", s.error()-s1.error() )
+       print( "difference between the errors of two schemes which are the same: ",\
+               s.error(solution)-s1.error(solution1) )
        s1 = 0
        print( 0, error, -1, est, -1)
-       sol = s.solution()
        vtk.write("generateModel"+str(0));
        for n in range(1, 4):
           g.hierarchicalGrid.globalRefine(1)
           olderror = error
           oldest = est
-          sol = "hallo"
-          s.solve(True)
-          error = s.error()
+          s.solve(solution)
+          error = s.error(solution)
           est = 1 # s.estimate()
           print(n, error, math.log(error/olderror)/math.log(0.5),\
                    est, math.log(est/oldest)/math.log(0.5))
           w = "hallo"  # this is to check memory management
-          sol = s.solution()
           vtk.write("generateModel"+str(n));
        g = "not a grid anymore" # let's check memory management a second time
 
        # can we do the whole thing twice?
        g = grid.leafGrid(dgf, "YaspGrid", dimgrid=2)
        m = Model.get()
-       s = scheme.create( "FemScheme", sp, g, m, "solution", solver="fem" )
-       s.solve(True)
-       print("second scheme: ", s.error())
+       s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
+       print("second scheme: ", s.error(s.solve()))
 
        # can we do the whole thing again?
        sp = space.create("Lagrange", g, dimrange=dimR, polorder=2 )
-       s = scheme.create( "FemScheme", sp, g, m, "solution", solver="fem" )
+       s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
        # these are not needed anymore
        m = 0
        g = 0
        # but this still needs to work
-       s.solve(True)
-       print("second scheme with second order: ", s.error())
+       solution = s.solve()
+       print("second scheme with second order: ", s.error(solution))
 
        print( "finalize" )
 

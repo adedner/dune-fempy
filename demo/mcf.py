@@ -14,11 +14,10 @@ import dune.fem.scheme as scheme
 # set up reference domain
 grid2d    = fem.leafGrid("../data/sphere.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=3)
 grid2d.hierarchicalGrid.globalRefine(2)
+
 # discrete function for Gamma(t) and setup surface grid
-print("positions")
-factor = lambda x,r: [x[0]*r,x[1]*r,x[2]*r]
 positions = grid2d.interpolate(lambda x: \
-            factor( x, 1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2]) ),\
+            x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2]) ),\
         space="Lagrange", name="positions", variant="global")
 surface   = gridpart.create("Geometry", positions )
 # vtk writer
@@ -64,9 +63,7 @@ t       = 0.
 vtk.write("mcf"+str(count));
 
 while t<endTime:
-    forcing.clear()
     rhs(solution,forcing)
-    solution.clear()
     solver.solve(target=solution, rhs=forcing)
     t     += dt
     count += 1

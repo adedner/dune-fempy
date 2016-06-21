@@ -14,6 +14,7 @@ import dune.fem.scheme as scheme
 # set up reference domain
 grid2d    = fem.leafGrid("../data/sphere.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=3)
 # discrete function for Gamma(t) and setup surface grid
+print("positions")
 positions = grid2d.interpolate(lambda x: x, space="Lagrange", name="psoitions", variant="global")
 surface   = gridpart.create("Geometry", positions )
 # vtk writer
@@ -47,26 +48,25 @@ rhsModel  = Model.get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
-# u^{n+1}
+# u^{n+1} and forcing
 solution  = sp.interpolate( lambda x: x, variant="global" )
-# u^n
-old_sol   = sp.interpolate( lambda x: x, variant="global" )
+forcing   = sp.interpolate( lambda x: x, variant="global" )
 # left hand side scheme
 solver    = scheme.create( "FemScheme", solution, mcfModel, "mcf" )
 # right hand side scheme
-rhs       = scheme.create( "FemScheme", old_sol, rhsModel, "rhs" )
+rhs       = scheme.create( "FemScheme", forcing, rhsModel, "rhs" )
 
 # time lopp
 # ---------
-count   = 0.
+count   = 0
 t       = 0.
 solution.addToVTKWriter(vtk, vtk.PointData)
 vtk.write("mcf"+str(count));
 
 while t<endTime:
-    solver.solve()
+    rhs(solution,forcing)
+    solver.solve(target=solution, rhs=forcing)
     t     += dt
     count += 1
     vtk.write("mcf"+str(count))
-    old_sol.assign( solution )
-    positions.assign( solution )
+    positions.assign( solution.dofVector() )

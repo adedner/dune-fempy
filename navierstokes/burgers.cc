@@ -92,12 +92,12 @@ namespace PyDune
 
     // for velocity and pressure
     typedef BurgersScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
-    typedef BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFuntion;
-    static void updatevelocity( const BurgersSchemeWrapper *self, VeloDF velocity )
+    typedef BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
+    static void updatevelocity( const BurgersSchemeWrapper *self, VelocityDiscreteFunction velocity )
     {
       self->duneType()->updatevelocity( velocity );
     }
-    static void updatepressure( const BurgersSchemeWrapper *self, PresDF pressure )
+    static void updatepressure( const BurgersSchemeWrapper *self, PressureDiscreteFunction pressure )
     {
       self->duneType()->updatepressure( pressure );
     }
@@ -124,15 +124,14 @@ namespace Dune
     void registerScheme ( pybind11::module module )
     {
       typedef typename BurgersScheme::GridPartType GridPartType;
-      typedef typename BurgersScheme::DiscreteFunctionType DiscreteFunction;
-      auto sol = detail::registerGridFunction< DiscreteFunction >( module, "DiscreteFunction" );
+      typedef typename BurgersScheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
       pybind11::class_< BurgersSchemeWrapper, std::shared_ptr<BurgersSchemeWrapper> > cls2( module, "BurgersScheme");
       cls2.def( "__init__", [] ( BurgersSchemeWrapper &instance, GridPartType &gridPart, int modelNumber ) {
           new( &instance ) BurgersSchemeWrapper( gridPart, modelNumber );
         }, pybind11::keep_alive< 1, 2 >() );
       cls2.def( "solve", &BurgersSchemeWrapper::solve );
-      cls2.def( "solution", [] (BurgersSchemeWrapper &scheme) -> DiscreteFunction& { return scheme.solution(); },
+      cls2.def( "solution", [] (BurgersSchemeWrapper &scheme) -> SolutionFunction& { return scheme.solution(); },
             pybind11::return_value_policy::reference_internal );
       cls2.def( "next", &BurgersSchemeWrapper::next );
       cls2.def( "time", &BurgersSchemeWrapper::time );

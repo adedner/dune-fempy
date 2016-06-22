@@ -147,7 +147,6 @@ namespace Dune
       typedef typename StokesScheme::DiscreteFunctionType DiscreteFunction;
       typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
       typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-      // auto sol = detail::registerGridFunction< DiscreteFunction >( module, "DiscreteFunction" );
       auto velo = detail::registerGridFunction< VelocityDiscreteFunction >( module, "VelocityDiscreteFunction" );
       auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
@@ -160,8 +159,6 @@ namespace Dune
       cls.def( "pressure", [] (StokesSchemeWrapper &scheme) -> PressureDiscreteFunction& { return scheme.pressure(); },
             pybind11::return_value_policy::reference_internal );
       cls.def( "solve", &StokesSchemeWrapper::solve );
-      //cls.def( "solution", [] (StokesSchemeWrapper &scheme) -> DiscreteFunction& { return scheme.solution(); },
-      //      pybind11::return_value_policy::reference_internal );
       cls.def( "next", &StokesSchemeWrapper::next );
       cls.def( "time", &StokesSchemeWrapper::time );
       // add the user extensions

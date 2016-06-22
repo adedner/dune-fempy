@@ -19,40 +19,43 @@ bs = scheme.get( "BurgersScheme", space, grid2d, 3 )
 burgersScheme = bs.BurgersScheme( grid2d, problemNumber )
 stokesScheme.initialize()
 
-def solve_method(timeStep, endTime):
+vtk = grid2d.vtkWriter()
+stokesScheme.pressure().addToVTKWriter( vtk, vtk.PointData )
+stokesScheme.velocity().addToVTKWriter( vtk, vtk.PointData )
+
+def solve_method( timeStep, endTime ):
     time = 0
     counter = 0
-    outName = str(counter).zfill(4)
-    #out_vtk.write( "ns_"+outName )
+    outName = str( counter ).zfill( 4 )
+    vtk.write( "ns_"+outName )
     while time < endTime:
         # first step (solve Stokes for velocity and pressure)
-        print('Solve step 1 - Stokes')
+        print( 'Solve step 1 - Stokes' )
         stokesScheme.preparestep1()
-        stokesScheme.solve(time == 0) # assemble only on first iteration
+        stokesScheme.solve( time == 0 ) # assemble only on first iteration
 
         # second step (solve Burgers for velocity)
-        pressure = stokesScheme.pressure()
-        burgersScheme.updatepressure(pressure)
-        burgersScheme.updatevelocity(stokesScheme.velocity())
-        print('Solve step 2 - Burgers')
+        burgersScheme.updatepressure( stokesScheme.pressure() )
+        burgersScheme.updatevelocity( stokesScheme.velocity() )
+        print( 'Solve step 2 - Burgers' )
         burgersScheme.prepare()
-        burgersScheme.solve(time == 0)
+        burgersScheme.solve( time == 0 )
 
         # third step (solve Stokes for velocity and pressure)
-        stokesScheme.updatevelocity(burgersScheme.solution())
-        print('Solve step 3 - Stokes')
+        stokesScheme.updatevelocity( burgersScheme.solution() )
+        print( 'Solve step 3 - Stokes' )
         stokesScheme.preparestep3()
-        stokesScheme.solve(0)
+        stokesScheme.solve( False )
 
         time = time + timeStep
         stokesScheme.next()
         burgersScheme.next()
-        counter = counter+1
-        outName = str(counter).zfill(4)
-        #out_vtk.write( "ns_"+outName )
+        counter = counter + 1
+        outName = str( counter ).zfill( 4 )
+        vtk.write( "ns_"+outName )
 
 timeStep = 0.29
 endTime = 1.0
-solve_method(timeStep, endTime)
+solve_method( timeStep, endTime )
 
-print('Finished')
+print( 'Finished' )

@@ -10,12 +10,19 @@ import dune.fem.space as space
 import dune.fem.scheme as scheme
 
 # http://www.scholarpedia.org/article/Barkley_model
-endTime    = 20.
-dt         = 0.05
-spiral_a   = 0.75
-spiral_b   = 0.02
-spiral_eps = 0.02
 dimRange   = 2
+endTime    = 50.
+dt         = 0.1
+if 1:
+    spiral_a   = 0.75
+    spiral_b   = 0.02
+    spiral_eps = 0.02
+    def spiral_h(u,v): return u - v
+else:
+    spiral_a   = 0.75
+    spiral_b   = 0.0006
+    spiral_eps = 0.08
+    def spiral_h(u,v): return u**3 - v
 
 def initial(x):
     return [ 1   if x[1]>1.75 else 0,\
@@ -27,7 +34,7 @@ implicitCode = """\
       double a=0.75;
       double b=0.02;
       double eps=0.02;
-      double dt=0.025;
+      double dt=0.1;
       RangeType unValue;
       unLocal_->evaluate( point, unValue );
       double uth = (unValue[1]+b)/a;
@@ -40,7 +47,7 @@ explicitCode = """\
       double a=0.75;
       double b=0.02;
       double eps=0.02;
-      double dt=0.025;
+      double dt=0.1;
       double uth = (value[1]+b)/a;
       if (value[0]>uth)
         flux[0] += dt/eps * value[0] * (value[0]-uth);
@@ -62,7 +69,7 @@ u         = model.trialFunction()
 v         = model.testFunction()
 
 # right hand sie (time derivative part + explicit forcing in v)
-a = ( ufl.inner(u,v) + dt*ufl.inner(u[0]-u[1],v[1]) ) * ufl.dx(0)
+a = ( ufl.inner(u,v) + dt*ufl.inner( spiral_h( u[0],u[1]), v[1] ) ) * ufl.dx(0)
 model.generate(a,"spiral_right" )
 # now add implicit part of forcing to source
 model.add2Source( explicitCode )
@@ -90,21 +97,20 @@ solver    = scheme.create( "FemScheme", solution, lhsModel, "left" )
 rhs       = scheme.create( "FemScheme", forcing,  rhsModel, "rhs" )
 solution.addToVTKWriter(vtk, vtk.PointData)
 
-
 lhsModel.setun(solution_n)
 
 # time lopp
 # ---------
 count   = 0
 t       = 0.
-vtk.write("spiral"+str(count));
+vtk.write( "spiral"+str(count) )
 
 while t<endTime:
-    rhs(solution,forcing)
-    solver.solve(target=solution, rhs=forcing)
+    rhs( solution_n, forcing )
+    solver.solve( target=solution, rhs=forcing )
     t     += dt
     count += 1
-    vtk.write("spiral"+str(count))
-    solution_n.assign(solution)
+    vtk.write( "spiral"+str(count) )
+    solution_n.assign( solution )
 
 print("END")

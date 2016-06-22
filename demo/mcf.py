@@ -60,12 +60,12 @@ solution.addToVTKWriter(vtk, vtk.PointData)
 # ---------
 count   = 0
 t       = 0.
-vtk.write("mcf"+str(count));
+vtk.write( "mcf"+str(count) )
 
 while t<endTime:
-    rhs(solution,forcing)
-    solver.solve(target=solution, rhs=forcing)
+    rhs( solution,forcing )
+    solver.solve( target=solution, rhs=forcing )
     t     += dt
     count += 1
-    vtk.write("mcf"+str(count))
+    vtk.write( "mcf"+str(count) )
     positions.assign( solution.dofVector() )

@@ -6,19 +6,21 @@ import dune.fem.scheme as scheme
 import dune.fem.space as space
 
 # initialise grid
-# grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
+grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+#grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
 #grid2d.hierarchicalGrid.globalRefine(2)
 
-problemNumber = 0
+timeStep = 0.01
+endTime = 10
+problemNumber = 4
 # initialise Stokes scheme
 space = space.create( "Lagrange", grid2d ) # not actually used
 ss = scheme.get( "StokesScheme", space, grid2d, 1 ) # ideally this should be ss = scheme.get( "StokesScheme" )
-stokesScheme = ss.StokesScheme( grid2d, problemNumber )
+stokesScheme = ss.StokesScheme( grid2d, problemNumber, timeStep )
 # initialise Burgers scheme
 bs = scheme.get( "BurgersScheme", space, grid2d, 1 )
-burgersScheme = bs.BurgersScheme( grid2d, problemNumber )
+burgersScheme = bs.BurgersScheme( grid2d, problemNumber, timeStep )
 stokesScheme.initialize()
 
 vtk = grid2d.vtkWriter()
@@ -56,8 +58,6 @@ def solve_method( timeStep, endTime ):
         outName = str( counter ).zfill( 4 )
         vtk.write( "ns_"+outName )
 
-timeStep = 0.29
-endTime = 1.0
 solve_method( timeStep, endTime )
 
 print( 'Finished' )

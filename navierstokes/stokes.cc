@@ -29,9 +29,10 @@ struct StokesSchemeWrapper
   typedef typename GridPartType::GridType HGridType;
   typedef typename StokesScheme::FullFunctionSpaceType FunctionSpaceType;
 
-  StokesSchemeWrapper( GridPartType &gridPart, int problemNumber ) :
+  StokesSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep ) :
     gridPart_( gridPart ),
-    timeProvider_( gridPart_.grid() )
+    timeProvider_( gridPart_.grid() ),
+    timestep_( timestep )
     {
       switch (problemNumber)
       {
@@ -48,8 +49,8 @@ struct StokesSchemeWrapper
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
     delete problemPtr_;
   }
-  StokesSchemeWrapper(StokesSchemeWrapper&) = delete;
-  StokesSchemeWrapper& operator=(const StokesSchemeWrapper&) = delete;
+  StokesSchemeWrapper( StokesSchemeWrapper& ) = delete;
+  StokesSchemeWrapper& operator=( const StokesSchemeWrapper& ) = delete;
 
   DiscreteFunction &solution()
   {
@@ -69,7 +70,7 @@ struct StokesSchemeWrapper
   }
   void next()
   {
-    timeProvider_.next(timestep_);
+    timeProvider_.next( timestep_ );
   }
   void time()
   {
@@ -81,11 +82,12 @@ struct StokesSchemeWrapper
   }
   protected:
   const double viscosity_ = 0.01;
-  const double timestep_ = 0.29;
+  const double timestepfactor_ = 0.29;
+  double timestep_;
   const double factor_ = 0.5;
   const double viscosityActual_ = viscosity_*factor_;
-  const double timestepStokes_ = 1/timestep_;
-  const double timestepBurgers_ = 1/(1-2*timestep_);
+  const double timestepStokes_ = 1/timestepfactor_;
+  const double timestepBurgers_ = 1/( 1 - 2*timestepfactor_ );
   GridPartType &gridPart_;
   Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
   ProblemType* problemPtr_ = 0;
@@ -153,8 +155,8 @@ namespace Dune
       auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
       pybind11::class_< StokesSchemeType, std::shared_ptr<StokesSchemeType> > cls( module, "StokesScheme");
-      cls.def( "__init__", [] ( StokesSchemeType &instance, GridPartType &gridPart, int modelNumber ) {
-          new( &instance ) StokesSchemeType( gridPart, modelNumber );
+      cls.def( "__init__", [] ( StokesSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
+          new( &instance ) StokesSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
       cls.def( "velocity", [] (StokesSchemeType &scheme) -> VelocityDiscreteFunction& { return scheme.velocity(); },
             pybind11::return_value_policy::reference_internal );

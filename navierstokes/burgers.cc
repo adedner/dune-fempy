@@ -27,9 +27,10 @@ struct BurgersSchemeWrapper
   typedef typename GridPartType::GridType HGridType;
   typedef typename BurgersScheme::FullFunctionSpaceType FunctionSpaceType;
 
-  BurgersSchemeWrapper( GridPartType &gridPart, int problemNumber ) :
+  BurgersSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep ) :
     gridPart_( gridPart ),
-    timeProvider_( gridPart_.grid() )
+    timeProvider_( gridPart_.grid() ),
+    timestep_( timestep)
     {
       switch (problemNumber)
       {
@@ -71,11 +72,12 @@ struct BurgersSchemeWrapper
   }
   protected:
   const double viscosity_ = 0.01;
-  const double timestep_ = 0.29;
+  const double timestepfactor_ = 0.29;
+  double timestep_;
   const double factor_ = 0.5;
   const double viscosityActual_ = viscosity_*factor_;
-  const double timestepStokes_ = 1/timestep_;
-  const double timestepBurgers_ = 1/(1-2*timestep_);
+  const double timestepStokes_ = 1/timestepfactor_;
+  const double timestepBurgers_ = 1/( 1 - 2*timestepfactor_ );
   GridPartType &gridPart_;
   Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
   ProblemType* problemPtr_ = 0;
@@ -129,8 +131,8 @@ namespace Dune
       typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
       pybind11::class_< BurgersSchemeType, std::shared_ptr<BurgersSchemeType> > cls2( module, "BurgersScheme");
-      cls2.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber ) {
-          new( &instance ) BurgersSchemeType( gridPart, modelNumber );
+      cls2.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
+          new( &instance ) BurgersSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
       cls2.def( "solve", &BurgersSchemeType::solve );
       cls2.def( "solution", [] (BurgersSchemeType &scheme) -> SolutionFunction& { return scheme.solution(); },

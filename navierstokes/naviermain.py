@@ -1,19 +1,23 @@
+from mpi4py import MPI
+
 import dune.fem.function as gf
 import dune.fem.grid as grid
 import dune.fem.scheme as scheme
 import dune.fem.space as space
 
 # initialise grid
-grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-#grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
+# grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
+
+#grid2d.globalRefine(1)
 
 problemNumber = 4
 # initialise Stokes scheme
 space = space.create( "Lagrange", grid2d ) # not actually used
-ss = scheme.get( "StokesScheme", space, grid2d, 3 ) # ideally this should be ss = scheme.get( "StokesScheme" )
+ss = scheme.get( "StokesScheme", space, grid2d, 1 ) # ideally this should be ss = scheme.get( "StokesScheme" )
 stokesScheme = ss.StokesScheme( grid2d, problemNumber )
 # initialise Burgers scheme
-bs = scheme.get( "BurgersScheme", space, grid2d, 3 )
+bs = scheme.get( "BurgersScheme", space, grid2d, 1 )
 burgersScheme = bs.BurgersScheme( grid2d, problemNumber )
 stokesScheme.initialize()
 

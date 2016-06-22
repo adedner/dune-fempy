@@ -2,7 +2,7 @@
 
 // dune-fempy
 #include <dune/fempy/python.hh>
-#include <dune/fempy/function/virtualizedgridfunction.hh>
+#include <dune/fempy/py/grid/function.hh>
 #include <dune/fempy/pybind11/pybind11.h>
 
 // dune-fem
@@ -22,7 +22,7 @@ typedef UzawaScheme< Dune::Fem::AdaptiveLeafGridPart< Dune::ALUGrid< 2, 2, Dune:
 // the wrapper for the Stokes scheme which we would like to expose to python
 struct StokesSchemeWrapper
 {
-  typedef typename StokesScheme::DiscreteFunctionType DiscreteFunctionType;
+  typedef typename StokesScheme::DiscreteFunctionType DiscreteFunction;
   typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
   typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef Dune::GridSelector::GridType HGridType;
@@ -52,15 +52,15 @@ struct StokesSchemeWrapper
   StokesSchemeWrapper(StokesSchemeWrapper&) = delete;
   StokesSchemeWrapper& operator=(const StokesSchemeWrapper&) = delete;
 
-  DiscreteFunctionType solution()
+  DiscreteFunction &solution()
   {
     return duneType()->solution();
   }
-  VelocityDiscreteFunction velocity()
+  VelocityDiscreteFunction &velocity()
   {
     return duneType()->velocity();
   }
-  PressureDiscreteFunction pressure()
+  PressureDiscreteFunction &pressure()
   {
     return duneType()->pressure();
   }
@@ -102,11 +102,11 @@ namespace PyDune
     typedef StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
     typedef StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
 
-    static void updatevelocity( const StokesSchemeWrapper *self, VelocityDiscreteFunction velocity )
+    static void updatevelocity( const StokesSchemeWrapper *self, VelocityDiscreteFunction &velocity )
     {
       self->duneType()->updatevelocity( velocity );
     }
-    static void updatepressure( const StokesSchemeWrapper *self, PressureDiscreteFunction pressure )
+    static void updatepressure( const StokesSchemeWrapper *self, PressureDiscreteFunction &pressure )
     {
       self->duneType()->updatepressure( pressure );
     }
@@ -144,8 +144,12 @@ namespace Dune
     void registerScheme ( pybind11::module module )
     {
       typedef typename StokesScheme::GridPartType GridPartType;
+      typedef typename StokesScheme::DiscreteFunctionType DiscreteFunction;
       typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
       typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
+      // auto sol = detail::registerGridFunction< DiscreteFunction >( module, "DiscreteFunction" );
+      auto velo = detail::registerGridFunction< VelocityDiscreteFunction >( module, "VelocityDiscreteFunction" );
+      auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
       pybind11::class_< StokesSchemeWrapper, std::shared_ptr<StokesSchemeWrapper> > cls( module, "StokesScheme");
       cls.def( "__init__", [] ( StokesSchemeWrapper &instance, GridPartType &gridPart, int modelNumber ) {
@@ -156,7 +160,8 @@ namespace Dune
       cls.def( "pressure", [] (StokesSchemeWrapper &scheme) -> PressureDiscreteFunction& { return scheme.pressure(); },
             pybind11::return_value_policy::reference_internal );
       cls.def( "solve", &StokesSchemeWrapper::solve );
-      cls.def( "solution", &StokesSchemeWrapper::solution, pybind11::return_value_policy::reference_internal );
+      //cls.def( "solution", [] (StokesSchemeWrapper &scheme) -> DiscreteFunction& { return scheme.solution(); },
+      //      pybind11::return_value_policy::reference_internal );
       cls.def( "next", &StokesSchemeWrapper::next );
       cls.def( "time", &StokesSchemeWrapper::time );
       // add the user extensions

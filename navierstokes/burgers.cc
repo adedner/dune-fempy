@@ -2,7 +2,7 @@
 
 // dune-fempy
 #include <dune/fempy/python.hh>
-#include <dune/fempy/function/virtualizedgridfunction.hh>
+#include <dune/fempy/py/grid/function.hh>
 #include <dune/fempy/pybind11/pybind11.h>
 
 // dune-fem
@@ -50,7 +50,7 @@ struct BurgersSchemeWrapper
   BurgersSchemeWrapper(BurgersSchemeWrapper&) = delete;
   BurgersSchemeWrapper& operator=(const BurgersSchemeWrapper&) = delete;
 
-  DiscreteFunctionType solution()
+  DiscreteFunctionType &solution()
   {
     return duneType()->solution();
   }
@@ -91,12 +91,8 @@ namespace PyDune
     typedef BurgersScheme::GridPartType GridPartType;
 
     // for velocity and pressure
-    typedef BurgersScheme::VelocityDiscreteFunctionType VeloDF;
-    typedef BurgersScheme::PressureDiscreteFunctionType PresDF;
-    static PresDF pressure( const BurgersSchemeWrapper *self )
-    {
-      return self->duneType()->pressure();
-    }
+    typedef BurgersScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
+    typedef BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFuntion;
     static void updatevelocity( const BurgersSchemeWrapper *self, VeloDF velocity )
     {
       self->duneType()->updatevelocity( velocity );
@@ -114,7 +110,6 @@ namespace PyDune
   bool addToPython (pybind11::class_< BurgersSchemeWrapper, Args... > &cls )
   {
     cls.def("updatevelocity", &PythonExt2::updatevelocity);
-    cls.def("pressure", &PythonExt2::pressure, pybind11::return_value_policy::reference_internal);
     cls.def("updatepressure", &PythonExt2::updatepressure);
     cls.def("prepare", &PythonExt2::prepare);
     return false;
@@ -129,13 +124,16 @@ namespace Dune
     void registerScheme ( pybind11::module module )
     {
       typedef typename BurgersScheme::GridPartType GridPartType;
+      typedef typename BurgersScheme::DiscreteFunctionType DiscreteFunction;
+      auto sol = detail::registerGridFunction< DiscreteFunction >( module, "DiscreteFunction" );
       // export PRPScheme
       pybind11::class_< BurgersSchemeWrapper, std::shared_ptr<BurgersSchemeWrapper> > cls2( module, "BurgersScheme");
       cls2.def( "__init__", [] ( BurgersSchemeWrapper &instance, GridPartType &gridPart, int modelNumber ) {
           new( &instance ) BurgersSchemeWrapper( gridPart, modelNumber );
         }, pybind11::keep_alive< 1, 2 >() );
       cls2.def( "solve", &BurgersSchemeWrapper::solve );
-      cls2.def( "solution", &BurgersSchemeWrapper::solution, pybind11::return_value_policy::reference_internal );
+      cls2.def( "solution", [] (BurgersSchemeWrapper &scheme) -> DiscreteFunction& { return scheme.solution(); },
+            pybind11::return_value_policy::reference_internal );
       cls2.def( "next", &BurgersSchemeWrapper::next );
       cls2.def( "time", &BurgersSchemeWrapper::time );
       // add the user extensions

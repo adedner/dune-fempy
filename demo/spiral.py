@@ -66,15 +66,16 @@ v         = model.testFunction()
 
 # right hand sie (time derivative part + explicit forcing in v)
 a = ( ufl.inner(u,v) + dt*ufl.inner( spiral_h( u[0],u[1]), v[1] ) ) * ufl.dx(0)
-model.generate(a,"spiral_right" )
+model.generate(a, name="spiral_right" )
 # now add implicit part of forcing to source
 model.add2Source( explicitCode )
 rhsModel = model.makeAndImport(grid2d).get()
+model.clear()
 
 # left hand side (heat equation in first variable + backward Euler in time)
 a = ( dt/100.*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) +
       ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a,"spiral_left")
+model.generate(a, name="spiral_left")
 # now add implicit part of forcing to source and un coefficient function
 model.addCoefficient( "un", 2 )
 model.add2Source( implicitCode )
@@ -84,8 +85,8 @@ lhsModel = model.makeAndImport(grid2d).get()
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
-solution    = sp.interpolate( initial, name="solution", variant="global" )
-solution_n  = sp.interpolate( initial, name="solution_n", variant="global" )
+solution    = sp.interpolate( initial, name="solution" )
+solution_n  = sp.interpolate( initial, name="solution_n" )
 forcing     = sp.interpolate( [0,0,0], name="forcing" )
 # left hand side scheme
 solver    = scheme.create( "FemScheme", solution, lhsModel, "left" )

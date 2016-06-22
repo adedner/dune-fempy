@@ -75,8 +75,8 @@ def main(argv):
           # try default fem solvers
           femSchemeModule = scheme.get( "FemScheme", sp, dimR, polorder=1)
 
-       s = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
-       s1 = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
+       s   = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
+       s1  = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
        vtk = g.vtkWriter()
        solution = s.solve()
        solution.addToVTKWriter(vtk, vtk.PointData)
@@ -92,7 +92,9 @@ def main(argv):
           g.hierarchicalGrid.globalRefine(1)
           olderror = error
           oldest = est
-          s.solve(solution)
+          solution.clear()
+          s.solve( None, solution )
+          # s.solve( target=solution )
           error = s.error(solution)
           est = 1 # s.estimate()
           print(n, error, math.log(error/olderror)/math.log(0.5),\

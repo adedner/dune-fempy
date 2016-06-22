@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 # needed on some machines
-# from mpi4py import MPI
+from mpi4py import MPI
 
 import math
 
@@ -20,16 +20,16 @@ for element in onedgrid.elements:
 # get the full grid module and then the grid (module needed for grid # functions and output object)
 m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
 yaspgrid = grid.leafGrid("../data/unitcube-2d.dgf", m_yaspgrid)
+# yaspgrid = m_yaspgrid.LeafGrid(m_yaspgrid.readDGF("../data/unitcube-2d.dgf")) # , m_yaspgrid)
 # yaspgrid.hierarchicalGrid.globalRefine(3)
 
 vtk_yaspgrid = yaspgrid.vtkWriter()
-
 def expr_global(x):
     return [-(x[1] - 0.5)*math.sin(x[0]*12)]
 
 ggf = yaspgrid.globalGridFunction("expr_global", expr_global)
 print("ggf:", ggf, " | ", ggf.name, " with dimRange = ", ggf.dimRange)
-ggf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+ggf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.PointData)
 for element in yaspgrid.elements:
     lf = ggf.localFunction(element)
     x = [0.5, 0.5]
@@ -42,7 +42,7 @@ def expr_local(element, x):
             expr_global(geo.position(x))[0]]
 
 lgf = yaspgrid.localGridFunction("expr_local", expr_local)
-lgf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+lgf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.PointData)
 print("lgf:", lgf, " | ", lgf.name, " with dimRange = ", lgf.dimRange)
 for element in yaspgrid.elements:
     lf = lgf.localFunction(element)
@@ -52,7 +52,7 @@ for element in yaspgrid.elements:
 
 ggf = yaspgrid.globalGridFunction("MathExpression",
       function.MathExpression(["-(x1-0.5)","x0-1./2.","x0","x1*x1","x0*x1","math.sin(x0*x1)","math.exp(-(x0-0.5)**2)"]))
-ggf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+ggf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.PointData)
 print("ggf:", ggf, " | ", ggf.name, " with dimRange = ", ggf.dimRange)
 for element in yaspgrid.elements:
     lf = ggf.localFunction(element)
@@ -68,7 +68,7 @@ class ExprLocal:
     return [abs(self.gf_(geo.position(x))[0] - self.gf_(geo.center)[0]),
             self.gf_(geo.position(x))[0]]
 lgf = yaspgrid.localGridFunction("ExprLocal", ExprLocal(expr_global))
-lgf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.DataType.PointData)
+lgf.addToVTKWriter(vtk_yaspgrid, vtk_yaspgrid.PointData)
 print("lgf:", lgf, " | ", lgf.name, " with dimRange = ", lgf.dimRange)
 for element in yaspgrid.elements:
     lf = lgf.localFunction(element)

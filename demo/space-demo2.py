@@ -15,7 +15,7 @@ def testSpace(gridtype):
     df  = grid2d.interpolate(gf, space="Lagrange",name="interpolate")
     df2 = grid2d.interpolate([5,3], space="Lagrange") # , storage="Numpy" ) # , name="53" )
     df3 = grid2d.interpolate(df, space="Lagrange", name="copy", storage="Istl" )
-    df4 = grid2d.interpolate(lambda x: [expr_global(x)[0]], variant="global", space="Lagrange", name="test")
+    df4 = grid2d.interpolate(lambda x: [expr_global(x)[0]], space="Lagrange", name="test")
 
     df4 = grid2d.interpolate(gf, space="Lagrange", name="test2", polorder=2)
 

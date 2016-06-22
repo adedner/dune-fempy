@@ -14,4 +14,5 @@ u = model.trialFunction()
 v = model.testFunction()
 x = model.spatialCoordinate()
 a = ( u[0]*u[0]*u[0]/3*v[0] + (u[0]*u[0]+2)*dot(grad(u[0]), grad(v[0])) ) * dx(0)
-model.generateFromExact(a,exact)
+
+model.generate(a,exact=exact)

@@ -17,4 +17,4 @@ v = model.testFunction()
 x = model.spatialCoordinate()
 a = ( inner(grad(u),grad(v))/sqrt(1+inner(grad(u),grad(u))) ) * dx(0)
 
-model.generateFromExact(a,exact)
+model.generate(a,exact=exact)

@@ -20,4 +20,5 @@ x = model.spatialCoordinate()
 a = ( inner(u,u)*u[0]/3*v[0] + (inner(u,u)+2)*dot(grad(u[0]), grad(v[0])) ) * dx(0)
 a = a + dot(grad(u[1]),grad(v[1])) * dx(0)
 a = a + u[2]*v[2] * dx(0)
-model.generateFromExact(a,exact)
+
+model.generate(a,exact=exact)

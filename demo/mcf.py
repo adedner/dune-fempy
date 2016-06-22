@@ -17,8 +17,8 @@ grid2d.hierarchicalGrid.globalRefine(2)
 
 # discrete function for Gamma(t) and setup surface grid
 positions = grid2d.interpolate(lambda x: \
-            x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2]) ),\
-        space="Lagrange", name="positions", variant="global")
+                x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2]) ),\
+            space="Lagrange", name="positions")
 surface   = gridpart.create("Geometry", positions )
 # vtk writer
 vtk       = surface.vtkWriter()
@@ -37,18 +37,19 @@ v         = model.testFunction()
 
 a = ( dt*0.5*ufl.inner(ufl.grad(u),ufl.grad(v)) +
       ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a,"mcf_left")
+model.generate(a, name="mcf_left")
 mcfModel = model.makeAndImport(surface).get()
+model.clear()
 
 a = ( -dt*0.5*ufl.inner(ufl.grad(u),ufl.grad(v)) +
       ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a,"mcf_right")
+model.generate(a, name="mcf_right")
 rhsModel = model.makeAndImport(surface).get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
-solution  = sp.interpolate( lambda x: x, name="solution", variant="global" )
+solution  = sp.interpolate( lambda x: x, name="solution")
 forcing   = sp.interpolate( [0,0,0], name="forcing" )
 # left hand side scheme
 solver    = scheme.create( "FemScheme", solution, mcfModel, "mcf" )
@@ -64,7 +65,7 @@ vtk.write( "mcf"+str(count) )
 
 while t<endTime:
     rhs( solution,forcing )
-    solver.solve( target=solution, rhs=forcing )
+    solver.solve( forcing, solution )
     t     += dt
     count += 1
     vtk.write( "mcf"+str(count) )

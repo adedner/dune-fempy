@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-# from mpi4py import MPI
+from mpi4py import MPI
 
 import dune.fem.grid as grid
 import dune.fem.space as space
@@ -30,20 +30,23 @@ def testSpace(gridtype, dimRange):
         gf = grid2d.globalGridFunction("expr_global", expr_global1)
     else:
         gf = grid2d.globalGridFunction("expr_global", expr_global2)
-    df = lagrangespace.interpolate(gf,name="test")
-    df2 = lagrangespace.interpolate([5,3]) # , storage="Numpy" ) # , name="53" )
-    df3 = lagrangespace.interpolate(df, name="copy", storage="Istl" )
+    df1 = lagrangespace.interpolate( gf, name="test" )
+    df2 = lagrangespace.interpolate( [5,3] ) # , storage="Numpy" ) # , name="53" )
+    df3 = lagrangespace.interpolate( df1, name="copy", storage="Istl" )
+    df4 = lagrangespace.interpolate( lambda x: [(x-[0.5,0.5]).infinity_norm,]*dimRange, name="radius"  )
     lagrangespace=0
 
     gf.addToVTKWriter(vtk, vtk.PointData)
-    df.addToVTKWriter(vtk, vtk.PointData)
+    df1.addToVTKWriter(vtk, vtk.PointData)
     df2.addToVTKWriter(vtk, vtk.CellData)
     df3.addToVTKWriter(vtk, vtk.PointData)
+    df4.addToVTKWriter(vtk, vtk.PointData)
 
     gf=0
-    df=0
+    df1=0
     df2=0
     df3=0
+    df4=0
 
     vtk.write("space_demo");
 

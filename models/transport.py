@@ -23,5 +23,4 @@ velo = [-model.x1,model.x0]
 # model.setCoefficient("velocity",velo)
 model.setCoefficient("diffusion",[1+0.*model.x0*model.x0])
 
-# model.generateFromExact(a,exact)
 model.generate(a,L,exact)

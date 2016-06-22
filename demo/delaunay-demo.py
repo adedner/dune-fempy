@@ -1,4 +1,5 @@
 import numpy
+from mpi4py import MPI
 import dune.fem.grid
 
 from scipy.spatial import Delaunay

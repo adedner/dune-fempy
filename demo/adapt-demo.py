@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 # needed on some machines
-# from mpi4py import MPI
+from mpi4py import MPI
 
 import math
 

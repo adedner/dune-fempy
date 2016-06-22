@@ -139,7 +139,6 @@ namespace PyDune
 
 namespace Dune
 {
-
   namespace FemPy
   {
     template< class Scheme >

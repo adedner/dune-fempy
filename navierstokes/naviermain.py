@@ -9,9 +9,9 @@ import dune.fem.space as space
 # grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-#grid2d.globalRefine(1)
+#grid2d.hierarchicalGrid.globalRefine(2)
 
-problemNumber = 4
+problemNumber = 0
 # initialise Stokes scheme
 space = space.create( "Lagrange", grid2d ) # not actually used
 ss = scheme.get( "StokesScheme", space, grid2d, 1 ) # ideally this should be ss = scheme.get( "StokesScheme" )

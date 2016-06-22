@@ -15,18 +15,17 @@
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
-//typedef PRPScheme< Dune::Fem::AdaptiveLeafGridPart< Dune::YaspGrid< 2, Dune::EquidistantCoordinates< double, 2 > > > > BurgersScheme;
-typedef PRPScheme< Dune::Fem::AdaptiveLeafGridPart< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > > BurgersScheme;
-
 ///////////////////////////////////////////////////////////////////////
 // the wrapper for the Burgers scheme which we would like to expose to python
+template <class BurgersScheme>
 struct BurgersSchemeWrapper
 {
-  typedef typename BurgersScheme::DiscreteFunctionType DiscreteFunctionType;
-  typedef Dune::GridSelector::GridType HGridType;
+  typedef BurgersScheme BaseScheme;
+  typedef typename BurgersScheme::DiscreteFunctionType DiscreteFunction;
   typedef typename BurgersScheme::ProblemType ProblemType;
   typedef typename BurgersScheme::GridPartType GridPartType;
-  typedef BurgersScheme::FullFunctionSpaceType FunctionSpaceType;
+  typedef typename GridPartType::GridType HGridType;
+  typedef typename BurgersScheme::FullFunctionSpaceType FunctionSpaceType;
 
   BurgersSchemeWrapper( GridPartType &gridPart, int problemNumber ) :
     gridPart_( gridPart ),
@@ -50,7 +49,7 @@ struct BurgersSchemeWrapper
   BurgersSchemeWrapper(BurgersSchemeWrapper&) = delete;
   BurgersSchemeWrapper& operator=(const BurgersSchemeWrapper&) = delete;
 
-  DiscreteFunctionType &solution()
+  DiscreteFunction &solution()
   {
     return duneType()->solution();
   }
@@ -85,33 +84,35 @@ struct BurgersSchemeWrapper
 
 namespace PyDune
 {
+  template <class Scheme>
   struct PythonExt2
   {
-    typedef BurgersScheme::ProblemType ProblemType;
-    typedef BurgersScheme::GridPartType GridPartType;
+    typedef Scheme BurgersSchemeType;
+    typedef typename Scheme::BaseScheme BurgersScheme;
+    typedef typename BurgersScheme::ProblemType ProblemType;
+    typedef typename BurgersScheme::GridPartType GridPartType;
+    typedef typename BurgersScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
+    typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
 
-    // for velocity and pressure
-    typedef BurgersScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
-    typedef BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-    static void updatevelocity( const BurgersSchemeWrapper *self, VelocityDiscreteFunction velocity )
+    static void updatevelocity( const BurgersSchemeType *self, VelocityDiscreteFunction velocity )
     {
       self->duneType()->updatevelocity( velocity );
     }
-    static void updatepressure( const BurgersSchemeWrapper *self, PressureDiscreteFunction pressure )
+    static void updatepressure( const BurgersSchemeType *self, PressureDiscreteFunction pressure )
     {
       self->duneType()->updatepressure( pressure );
     }
-    static void prepare(const BurgersSchemeWrapper *self)
+    static void prepare(const BurgersSchemeType *self)
     {
       self->duneType()->prepare();
     }
   };
-  template< class... Args >
-  bool addToPython (pybind11::class_< BurgersSchemeWrapper, Args... > &cls )
+  template< class BurgersSchemeType, class... Args >
+  bool addToPython (pybind11::class_< BurgersSchemeType, Args... > &cls )
   {
-    cls.def("updatevelocity", &PythonExt2::updatevelocity);
-    cls.def("updatepressure", &PythonExt2::updatepressure);
-    cls.def("prepare", &PythonExt2::prepare);
+    cls.def("updatevelocity", &PythonExt2<BurgersSchemeType>::updatevelocity);
+    cls.def("updatepressure", &PythonExt2<BurgersSchemeType>::updatepressure);
+    cls.def("prepare", &PythonExt2<BurgersSchemeType>::prepare);
     return false;
   }
 }
@@ -123,18 +124,19 @@ namespace Dune
     template< class Scheme >
     void registerScheme ( pybind11::module module )
     {
-      typedef typename BurgersScheme::GridPartType GridPartType;
-      typedef typename BurgersScheme::DiscreteFunctionType SolutionFunction;
+      typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
+      typedef typename Scheme::GridPartType GridPartType;
+      typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
-      pybind11::class_< BurgersSchemeWrapper, std::shared_ptr<BurgersSchemeWrapper> > cls2( module, "BurgersScheme");
-      cls2.def( "__init__", [] ( BurgersSchemeWrapper &instance, GridPartType &gridPart, int modelNumber ) {
-          new( &instance ) BurgersSchemeWrapper( gridPart, modelNumber );
+      pybind11::class_< BurgersSchemeType, std::shared_ptr<BurgersSchemeType> > cls2( module, "BurgersScheme");
+      cls2.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber ) {
+          new( &instance ) BurgersSchemeType( gridPart, modelNumber );
         }, pybind11::keep_alive< 1, 2 >() );
-      cls2.def( "solve", &BurgersSchemeWrapper::solve );
-      cls2.def( "solution", [] (BurgersSchemeWrapper &scheme) -> SolutionFunction& { return scheme.solution(); },
+      cls2.def( "solve", &BurgersSchemeType::solve );
+      cls2.def( "solution", [] (BurgersSchemeType &scheme) -> SolutionFunction& { return scheme.solution(); },
             pybind11::return_value_policy::reference_internal );
-      cls2.def( "next", &BurgersSchemeWrapper::next );
-      cls2.def( "time", &BurgersSchemeWrapper::time );
+      cls2.def( "next", &BurgersSchemeType::next );
+      cls2.def( "time", &BurgersSchemeType::time );
       // add the user extensions
       PyDune::addToPython(cls2);
     }

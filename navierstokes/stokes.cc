@@ -15,20 +15,19 @@
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
-//typedef UzawaScheme< Dune::Fem::AdaptiveLeafGridPart< Dune::YaspGrid< 2, Dune::EquidistantCoordinates< double, 2 > > > > StokesScheme;
-typedef UzawaScheme< Dune::Fem::AdaptiveLeafGridPart< Dune::ALUGrid< 2, 2, Dune::simplex, Dune::conforming > > > StokesScheme;
-
 ///////////////////////////////////////////////////////////////////////
 // the wrapper for the Stokes scheme which we would like to expose to python
+template <class StokesScheme>
 struct StokesSchemeWrapper
 {
+  typedef StokesScheme BaseScheme;
   typedef typename StokesScheme::DiscreteFunctionType DiscreteFunction;
   typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
   typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-  typedef Dune::GridSelector::GridType HGridType;
   typedef typename StokesScheme::ProblemType ProblemType;
   typedef typename StokesScheme::GridPartType GridPartType;
-  typedef StokesScheme::FullFunctionSpaceType FunctionSpaceType;
+  typedef typename GridPartType::GridType HGridType;
+  typedef typename StokesScheme::FullFunctionSpaceType FunctionSpaceType;
 
   StokesSchemeWrapper( GridPartType &gridPart, int problemNumber ) :
     gridPart_( gridPart ),
@@ -95,42 +94,45 @@ struct StokesSchemeWrapper
 
 namespace PyDune
 {
+  template <class Scheme>
   struct PythonExt
   {
-    typedef StokesScheme::ProblemType ProblemType;
-    typedef StokesScheme::GridPartType GridPartType;
-    typedef StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
-    typedef StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
+    typedef Scheme StokesSchemeType;
+    typedef typename Scheme::BaseScheme StokesScheme;
+    typedef typename StokesScheme::ProblemType ProblemType;
+    typedef typename StokesScheme::GridPartType GridPartType;
+    typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
+    typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
 
-    static void updatevelocity( const StokesSchemeWrapper *self, VelocityDiscreteFunction &velocity )
+    static void updatevelocity( const StokesSchemeType *self, VelocityDiscreteFunction &velocity )
     {
       self->duneType()->updatevelocity( velocity );
     }
-    static void updatepressure( const StokesSchemeWrapper *self, PressureDiscreteFunction &pressure )
+    static void updatepressure( const StokesSchemeType *self, PressureDiscreteFunction &pressure )
     {
       self->duneType()->updatepressure( pressure );
     }
-    static void initialize(const StokesSchemeWrapper *self)
+    static void initialize(const StokesSchemeType *self)
     {
       self->duneType()->initialize();
     }
-    static void preparestep1(const StokesSchemeWrapper *self)
+    static void preparestep1(const StokesSchemeType *self)
     {
       self->duneType()->preparestep1();
     }
-    static void preparestep3(const StokesSchemeWrapper *self)
+    static void preparestep3(const StokesSchemeType *self)
     {
       self->duneType()->preparestep3();
     }
   };
-  template< class... Args >
-  bool addToPython (pybind11::class_< StokesSchemeWrapper, Args... > &cls )
+  template< class StokesSchemeType, class... Args >
+  bool addToPython (pybind11::class_< StokesSchemeType, Args... > &cls )
   {
-    cls.def( "updatevelocity", &PythonExt::updatevelocity );
-    cls.def( "updatepressure", &PythonExt::updatepressure );
-    cls.def( "initialize", &PythonExt::initialize );
-    cls.def( "preparestep1", &PythonExt::preparestep1 );
-    cls.def( "preparestep3", &PythonExt::preparestep3 );
+    cls.def( "updatevelocity", &PythonExt<StokesSchemeType>::updatevelocity );
+    cls.def( "updatepressure", &PythonExt<StokesSchemeType>::updatepressure );
+    cls.def( "initialize",     &PythonExt<StokesSchemeType>::initialize );
+    cls.def( "preparestep1",   &PythonExt<StokesSchemeType>::preparestep1 );
+    cls.def( "preparestep3",   &PythonExt<StokesSchemeType>::preparestep3 );
     return false;
   }
 }
@@ -143,24 +145,25 @@ namespace Dune
     template< class Scheme >
     void registerScheme ( pybind11::module module )
     {
-      typedef typename StokesScheme::GridPartType GridPartType;
-      typedef typename StokesScheme::DiscreteFunctionType DiscreteFunction;
-      typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
-      typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
+      typedef StokesSchemeWrapper<Scheme> StokesSchemeType;
+      typedef typename Scheme::GridPartType GridPartType;
+      typedef typename Scheme::DiscreteFunctionType DiscreteFunction;
+      typedef typename Scheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
+      typedef typename Scheme::PressureDiscreteFunctionType PressureDiscreteFunction;
       auto velo = detail::registerGridFunction< VelocityDiscreteFunction >( module, "VelocityDiscreteFunction" );
       auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
-      pybind11::class_< StokesSchemeWrapper, std::shared_ptr<StokesSchemeWrapper> > cls( module, "StokesScheme");
-      cls.def( "__init__", [] ( StokesSchemeWrapper &instance, GridPartType &gridPart, int modelNumber ) {
-          new( &instance ) StokesSchemeWrapper( gridPart, modelNumber );
+      pybind11::class_< StokesSchemeType, std::shared_ptr<StokesSchemeType> > cls( module, "StokesScheme");
+      cls.def( "__init__", [] ( StokesSchemeType &instance, GridPartType &gridPart, int modelNumber ) {
+          new( &instance ) StokesSchemeType( gridPart, modelNumber );
         }, pybind11::keep_alive< 1, 2 >() );
-      cls.def( "velocity", [] (StokesSchemeWrapper &scheme) -> VelocityDiscreteFunction& { return scheme.velocity(); },
+      cls.def( "velocity", [] (StokesSchemeType &scheme) -> VelocityDiscreteFunction& { return scheme.velocity(); },
             pybind11::return_value_policy::reference_internal );
-      cls.def( "pressure", [] (StokesSchemeWrapper &scheme) -> PressureDiscreteFunction& { return scheme.pressure(); },
+      cls.def( "pressure", [] (StokesSchemeType &scheme) -> PressureDiscreteFunction& { return scheme.pressure(); },
             pybind11::return_value_policy::reference_internal );
-      cls.def( "solve", &StokesSchemeWrapper::solve );
-      cls.def( "next", &StokesSchemeWrapper::next );
-      cls.def( "time", &StokesSchemeWrapper::time );
+      cls.def( "solve", &StokesSchemeType::solve );
+      cls.def( "next", &StokesSchemeType::next );
+      cls.def( "time", &StokesSchemeType::time );
       // add the user extensions
       PyDune::addToPython(cls);
     }

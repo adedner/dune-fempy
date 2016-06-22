@@ -11,7 +11,7 @@ import dune.fem.scheme as scheme
 
 # http://www.scholarpedia.org/article/Barkley_model
 dimRange   = 2
-endTime    = 50.
+endTime    = 30.
 dt         = 0.1
 if 1:
     spiral_a   = 0.75
@@ -31,27 +31,23 @@ def initial(x):
 #################################################################
 ### Extra model code:
 implicitCode = """\
-      double a=0.75;
-      double b=0.02;
-      double eps=0.02;
-      double dt=0.1;
       RangeType unValue;
       unLocal_->evaluate( point, unValue );
-      double uth = (unValue[1]+b)/a;
+      double uth = (unValue[1]+spiral_b)/spiral_a;
       if ( unValue[0] <= uth )
-        flux[ 0 ] += -dt/eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
+        flux[ 0 ] += -dt/spiral_eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
       else
-        flux[ 0 ] +=  dt/eps * value[0] * unValue[0] * (unValue[0]-uth);
+        flux[ 0 ] +=  dt/spiral_eps * value[0] * unValue[0] * (unValue[0]-uth);
 """
 explicitCode = """\
-      double a=0.75;
-      double b=0.02;
-      double eps=0.02;
-      double dt=0.1;
-      double uth = (value[1]+b)/a;
+      double uth = (value[1]+spiral_b)/spiral_a;
       if (value[0]>uth)
-        flux[0] += dt/eps * value[0] * (value[0]-uth);
+        flux[0] += dt/spiral_eps * value[0] * (value[0]-uth);
 """
+repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
+        ('spiral_eps', str(spiral_eps)), ('dt',str(dt))
+implicitCode = reduce(lambda a, kv: a.replace(*kv), repls, implicitCode)
+explicitCode = reduce(lambda a, kv: a.replace(*kv), repls, explicitCode)
 #################################################################
 
 # Basic setup

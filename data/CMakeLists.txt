@@ -3,6 +3,7 @@ set(DGFFILES
   corner.dgf
   sphere.dgf
   spiral-2d.dgf
+  crystal-2d.dgf
   unitcube-1d.dgf
   unitcube-2d.dgf
   unitcube-3d.dgf

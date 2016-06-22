@@ -6,7 +6,6 @@ from mpi4py import MPI
 import math
 
 import dune.fem.grid as grid
-import dune.fem.function as function
 
 grid = grid.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 

@@ -1,0 +1,58 @@
+import dune.fem.function as gf
+import dune.fem.grid as grid
+import dune.fem.scheme as scheme
+import dune.fem.space as space
+
+# initialise grid
+grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+#grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
+
+#grid2d.globalRefine(1)
+
+problemNumber = 4
+# initialise Stokes scheme
+space = space.create( "Lagrange", grid2d ) # not actually used
+ss = scheme.get( "StokesScheme", space, grid2d, 3 ) # ideally this should be ss = scheme.get( "StokesScheme" )
+stokesScheme = ss.StokesScheme( grid2d, problemNumber )
+# initialise Burgers scheme
+bs = scheme.get( "BurgersScheme", space, grid2d, 3 )
+burgersScheme = bs.BurgersScheme( grid2d, problemNumber )
+stokesScheme.initialize()
+
+def solve_method(timeStep, endTime):
+    time = 0
+    counter = 0
+    outName = str(counter).zfill(4)
+    #out_vtk.write( "ns_"+outName )
+    while time < endTime:
+        # first step (solve Stokes for velocity and pressure)
+        print('Solve step 1 - Stokes')
+        stokesScheme.preparestep1()
+        stokesScheme.solve(time == 0) # assemble only on first iteration
+
+        # second step (solve Burgers for velocity)
+        pressure = stokesScheme.pressure()
+        burgersScheme.updatepressure(pressure)
+        burgersScheme.updatevelocity(stokesScheme.velocity())
+        print('Solve step 2 - Burgers')
+        burgersScheme.prepare()
+        burgersScheme.solve(time == 0)
+
+        # third step (solve Stokes for velocity and pressure)
+        stokesScheme.updatevelocity(burgersScheme.solution())
+        print('Solve step 3 - Stokes')
+        stokesScheme.preparestep3()
+        stokesScheme.solve(0)
+
+        time = time + timeStep
+        stokesScheme.next()
+        burgersScheme.next()
+        counter = counter+1
+        outName = str(counter).zfill(4)
+        #out_vtk.write( "ns_"+outName )
+
+timeStep = 0.29
+endTime = 1.0
+solve_method(timeStep, endTime)
+
+print('Finished')

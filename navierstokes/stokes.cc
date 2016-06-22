@@ -10,8 +10,8 @@
 #include <dune/fem/io/file/dataoutput.hh>
 
 // dune-chns
-#include "../../dune-chns/src/navier_stokes/uzawascheme.hh"
-#include "../../dune-chns/src/navier_stokes/testingquantities.hh"
+#include "uzawascheme.hh"
+#include "testingquantities.hh"
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 

@@ -7,8 +7,6 @@ import dune.fem.space as space
 grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 #grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-#grid2d.globalRefine(1)
-
 problemNumber = 4
 # initialise Stokes scheme
 space = space.create( "Lagrange", grid2d ) # not actually used

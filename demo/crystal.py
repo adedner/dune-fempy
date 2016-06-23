@@ -11,14 +11,14 @@ import dune.fem.scheme as scheme
 
 #################################################################
 dimRange     = 2
-gamma        = 0.675
-eps          = 0.015
-dt           = 0.001
+alpha        = 0.015
+tau          = 3.e-4
+dt           = 0.0005
 endTime      = 10
 saveinterval = 0.02
 def initial(x):
     r  = (x-[6,6]).two_norm
-    r0 = 0.5;
+    r0 = 0.5
     return [ (math.tanh(-(r-r0)/0.1)+1.)*0.5 , -0.5 ]
 
 #################################################################
@@ -27,7 +27,7 @@ def initial(x):
 # -----------
 # set up reference domain
 grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=2, refinement="conforming")
-grid2d.hierarchicalGrid.globalRefine(1)
+grid2d.hierarchicalGrid.globalRefine(5)
 # vtk writer
 vtk       = grid2d.vtkWriter()
 sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
@@ -59,9 +59,9 @@ d0         = ufl.as_vector( [ diag, offdiag ] )
 d1         = ufl.as_vector( [ -offdiag, diag ] )
 
 c = 0.5 + 0.9/ufl.pi*ufl.atan(20.*u[1])
-s = ufl.as_vector( [ u[0] *  (1.-u[0]) * (u[0]-c) * gamma/eps/eps*dt , u[0] ] )
+s = ufl.as_vector( [ u[0] *  (1.-u[0]) * (u[0]-c) / tau * dt , u[0] ] )
 
-a = ( gamma*dt *
+a = ( alpha*alpha/tau*dt *
         ( ufl.inner( ufl.dot( d0, ufl.grad(u[0]) ), ufl.grad(v[0])[0] ) +
           ufl.inner( ufl.dot( d1, ufl.grad(u[0]) ), ufl.grad(v[0])[1] ) ) +
       2.25*dt * ufl.inner( ufl.grad(u[1]), ufl.grad(v[1]) ) +
@@ -99,7 +99,7 @@ dun_gf = grid2d.localGridFunction( "nabla_un0", dunLocal )
 lhsModel.setdun(dun_gf)
 
 # start adaptation
-maxLevel = 6
+maxLevel = 9
 hgrid = grid2d.hierarchicalGrid
 
 marker = hgrid.marker
@@ -134,10 +134,9 @@ while t < endTime:
     t     += dt
     print('count: ',count,"t = ",t)
     if t > savestep:
-        vtk.write( "crystal"+str(count) )
-        count += 1
         savestep += saveinterval
-
+        count += 1
+        vtk.write( "crystal"+str(count) )
     hgrid.mark( mark )
     hgrid.adapt( [solution] )
     hgrid.loadBalance( [solution] )

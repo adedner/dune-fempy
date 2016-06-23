@@ -73,7 +73,7 @@ public:
     else
       {
     timeStepFactor_ = -1.0;
-    double theta = Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.5);
+    double theta = Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.585786);
     timeStepTheta_ = (1.0-theta)/theta;
       }
   }

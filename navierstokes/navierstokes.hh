@@ -85,6 +85,10 @@ public:
   {
     value = RangeType(0);
   }
+  virtual double deltaT() const
+  {
+    return timeProvider().deltaT();
+  }
 
 protected:
   double viscosity_,sFactor_,bFactor_;
@@ -653,9 +657,9 @@ public:
     value=RangeType(0);
     //  if ((x[0]<(-1+1e-8))&&(std::abs(x[1])<0.1))
     if (x[0]<(-1+1e-8))
-      {
-    value[0]=std::min(1.0,(((x[1]+1.)*(1.-x[1])*timeProvider().time())/(10*timeProvider().deltaT())));
-      }
+    {
+      value[0]=std::min(1.0,(((x[1]+1.)*(1.-x[1])*timeProvider().time())/(10.*timeProvider().deltaT())));
+    }
   }
   //! return true if given point belongs to the Dirichlet boundary (default is true)
   virtual bool isDirichletPoint( const DomainType& x ) const

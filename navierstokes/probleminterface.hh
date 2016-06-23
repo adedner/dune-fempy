@@ -115,6 +115,7 @@ public:
   {
     uJacobian( x, jac );
   }
+  virtual double deltaT() const = 0;
 };
 
 #endif // #ifndef ELLIPTC_PROBLEMINTERFACE_HH

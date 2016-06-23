@@ -9,9 +9,9 @@ import dune.fem.space as space
 grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 #grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-#grid2d.hierarchicalGrid.globalRefine(2)
+# grid2d.hierarchicalGrid.globalRefine(2)
 
-timeStep = 0.01
+timeStep = 0.001
 endTime = 10
 problemNumber = 4
 # initialise Stokes scheme
@@ -33,6 +33,7 @@ def solve_method( timeStep, endTime ):
     outName = str( counter ).zfill( 4 )
     vtk.write( "ns_"+outName )
     while time < endTime:
+        print( time, " burgers=", burgersScheme.time(), "  stokes=", stokesScheme.time())
         # first step (solve Stokes for velocity and pressure)
         print( 'Solve step 1 - Stokes' )
         stokesScheme.preparestep1()

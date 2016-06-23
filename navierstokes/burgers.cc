@@ -62,22 +62,22 @@ struct BurgersSchemeWrapper
   {
     timeProvider_.next(timestep_);
   }
-  void time()
+  double time()
   {
-    std::cout << timeProvider_.time() << std::endl;
+    return timeProvider_.time();
   }
   std::shared_ptr<BurgersScheme> duneType() const
   {
     return burgersScheme_;
   }
   protected:
-  const double viscosity_ = 0.01;
+  const double viscosity_ = 0.0001;
   const double timestepfactor_ = 0.29;
   double timestep_;
-  const double factor_ = 0.5;
+  const double factor_ = 0.585756;
   const double viscosityActual_ = viscosity_*factor_;
-  const double timestepStokes_ = 1/timestepfactor_;
-  const double timestepBurgers_ = 1/( 1 - 2*timestepfactor_ );
+  const double timestepStokes_ = 1./timestepfactor_;
+  const double timestepBurgers_ = 1./( 1. - 2.*timestepfactor_ );
   GridPartType &gridPart_;
   Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
   ProblemType* problemPtr_ = 0;

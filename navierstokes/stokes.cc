@@ -43,7 +43,7 @@ struct StokesSchemeWrapper
         case 4: problemPtr_ = new KarmanVortexStreet<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
         default: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
       }
-      stokesScheme_ = std::make_shared<StokesScheme>( gridPart_, *problemPtr_, viscosityActual_, timestepBurgers_ );
+      stokesScheme_ = std::make_shared<StokesScheme>( gridPart_, *problemPtr_, viscosityActual_, timestepStokes_ );
       timeProvider_.init( timestep_ );
     }
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
@@ -72,22 +72,22 @@ struct StokesSchemeWrapper
   {
     timeProvider_.next( timestep_ );
   }
-  void time()
+  double time()
   {
-    std::cout << timeProvider_.time() << std::endl;
+    return timeProvider_.time();
   }
   std::shared_ptr<StokesScheme> duneType() const
   {
     return stokesScheme_;
   }
   protected:
-  const double viscosity_ = 0.01;
+  const double viscosity_ = 0.0001;
   const double timestepfactor_ = 0.29;
   double timestep_;
-  const double factor_ = 0.5;
+  const double factor_ = 0.585756;
   const double viscosityActual_ = viscosity_*factor_;
-  const double timestepStokes_ = 1/timestepfactor_;
-  const double timestepBurgers_ = 1/( 1 - 2*timestepfactor_ );
+  const double timestepStokes_ = 1./timestepfactor_;
+  const double timestepBurgers_ = 1./( 1. - 2.*timestepfactor_ );
   GridPartType &gridPart_;
   Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
   ProblemType* problemPtr_ = 0;

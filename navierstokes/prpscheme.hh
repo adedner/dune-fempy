@@ -226,7 +226,7 @@ typedef Dune::Fem::ISTLLinearOperator< PressureDiscreteFunctionType, VelocityDis
     : gridPart_( gridPart ),
       alphaOne_(alphaOne),
       alphaTwo_(alphaTwo),
-      deltaT_(Dune::Fem::Parameter::getValue< double >( "navierstokes.timestep", 0.125 )),
+      deltaT_( 0.001 ), // problem.deltaT() ),
       stateModel_( problem, gridPart,alphaOne,alphaTwo,true),
       explicitStateModel_( problem, gridPart,alphaOne,alphaTwo,false),
       gradModel_(gridPart),
@@ -253,9 +253,9 @@ typedef Dune::Fem::ISTLLinearOperator< PressureDiscreteFunctionType, VelocityDis
       explicitStateLinearOperator_("assembled state operator",velocitySpace_,velocitySpace_),
       gradLinearOperator_("assembled gradient operator",pressureSpace_,velocitySpace_),
       // tolerance for iterative solver
-      solverEps_( Dune::Fem::Parameter::getValue< double >( "stokes.solvereps", 1e-8 )),
-      lineSearchAccept_(Dune::Fem::Parameter::getValue<double>("burgers.linesearchaccept", 0.25)),
-      theta_(Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.5))
+      solverEps_( Dune::Fem::Parameter::getValue< double >( "stokes.solvereps", 1e-12 )),
+      lineSearchAccept_(Dune::Fem::Parameter::getValue<double>("burgers.linesearchaccept", 0.001)),
+      theta_(Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.585786))
   {
     // set all DoF to zero
     solution_.clear();pressure_.clear();

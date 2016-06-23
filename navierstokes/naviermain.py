@@ -9,7 +9,7 @@ import dune.fem.space as space
 grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 #grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-# grid2d.hierarchicalGrid.globalRefine(2)
+grid2d.hierarchicalGrid.globalRefine(3)
 
 timeStep = 0.001
 endTime = 10
@@ -28,23 +28,25 @@ stokesScheme.pressure().addToVTKWriter( vtk, vtk.PointData )
 stokesScheme.velocity().addToVTKWriter( vtk, vtk.PointData )
 
 def solve_method( timeStep, endTime ):
-    time = 0
     counter = 0
     outName = str( counter ).zfill( 4 )
     vtk.write( "ns_"+outName )
+    stokesScheme.next()
+    burgersScheme.next()
+    time = timeStep
     while time < endTime:
         print( time, " burgers=", burgersScheme.time(), "  stokes=", stokesScheme.time())
         # first step (solve Stokes for velocity and pressure)
         print( 'Solve step 1 - Stokes' )
         stokesScheme.preparestep1()
-        stokesScheme.solve( time == 0 ) # assemble only on first iteration
+        stokesScheme.solve( counter == 0 ) # assemble only on first iteration
 
         # second step (solve Burgers for velocity)
         burgersScheme.updatepressure( stokesScheme.pressure() )
         burgersScheme.updatevelocity( stokesScheme.velocity() )
         print( 'Solve step 2 - Burgers' )
         burgersScheme.prepare()
-        burgersScheme.solve( time == 0 )
+        burgersScheme.solve( counter == 0 )
 
         # third step (solve Stokes for velocity and pressure)
         stokesScheme.updatevelocity( burgersScheme.solution() )

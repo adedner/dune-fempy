@@ -32,6 +32,7 @@ struct BurgersSchemeWrapper
     timeProvider_( gridPart_.grid() ),
     timestep_( timestep)
     {
+      timeProvider_.init( timestep_ );
       switch (problemNumber)
       {
         case 0: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
@@ -42,7 +43,6 @@ struct BurgersSchemeWrapper
         default: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
       }
       burgersScheme_ = std::make_shared<BurgersScheme>( gridPart_, *problemPtr_, timestepBurgers_, viscosityActual_ );
-      timeProvider_.init( timestep_ );
     }
   ~BurgersSchemeWrapper() {std::cout << "BurgersSchemeWrapper destructor\n";
     delete problemPtr_;

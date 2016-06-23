@@ -226,7 +226,7 @@ typedef Dune::Fem::ISTLLinearOperator< PressureDiscreteFunctionType, VelocityDis
     : gridPart_( gridPart ),
       alphaOne_(alphaOne),
       alphaTwo_(alphaTwo),
-      deltaT_( 0.001 ), // problem.deltaT() ),
+      deltaT_( problem.deltaT() ),
       stateModel_( problem, gridPart,alphaOne,alphaTwo,true),
       explicitStateModel_( problem, gridPart,alphaOne,alphaTwo,false),
       gradModel_(gridPart),

@@ -38,7 +38,7 @@ L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*ufl.dx(0)
 start_time = timeit.default_timer()
 model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
 model.generate(a,L,exact)
-Model = model.makeAndImport(grid2d)
+Model = model.makeAndImport(grid2d, exact=exact)
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
 m = Model.get()
 

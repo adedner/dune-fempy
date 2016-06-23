@@ -1,7 +1,7 @@
 print 'Warning: this model does not lead a converging scheme'
 from dune.models.femufl import *
 
-model    = DuneUFLModel(2,3,'System') # this is utility.init and sets the dim range
+model    = DuneUFLModel(2,3) # this is utility.init and sets the dim range
 
 #########################################
 # define exact solution for testing
@@ -22,3 +22,4 @@ a = a + dot(grad(u[1]),grad(v[1])) * dx(0)
 a = a + u[2]*v[2] * dx(0)
 
 model.generate(a,exact=exact)
+model.write(exact=exact, name="System")

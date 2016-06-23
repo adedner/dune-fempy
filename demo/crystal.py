@@ -11,11 +11,12 @@ import dune.fem.scheme as scheme
 
 #################################################################
 dimRange     = 2
-alpha        = 0.015
-tau          = 3.e-4
-dt           = 0.0005
+gamma        = 0.675
+eps          = 0.015
+dt           = 0.00025
 endTime      = 10
-saveinterval = 0.02
+saveinterval = 0.01
+maxLevel = 8
 def initial(x):
     r  = (x-[6,6]).two_norm
     r0 = 0.5
@@ -27,9 +28,7 @@ def initial(x):
 # -----------
 # set up reference domain
 grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=2, refinement="conforming")
-grid2d.hierarchicalGrid.globalRefine(5)
-# vtk writer
-vtk       = grid2d.vtkWriter()
+grid2d.hierarchicalGrid.globalRefine(3)
 sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
 
 # set up left and right hand side models
@@ -40,9 +39,9 @@ v         = model.testFunction()
 
 # right hand sie (time derivative part + explicit forcing in v)
 a = ( ufl.inner(u,v) - ufl.inner(u[0],v[1]) ) * ufl.dx(0)
-model.generate(a, name="crystal_right" )
+model.generate(a)
 # now add implicit part of forcing to source
-rhsModel = model.makeAndImport(grid2d).get()
+rhsModel = model.makeAndImport(grid2d,name="crystal_right").get()
 model.clear()
 
 # left hand side (heat equation in first variable + backward Euler in time)
@@ -59,9 +58,9 @@ d0         = ufl.as_vector( [ diag, offdiag ] )
 d1         = ufl.as_vector( [ -offdiag, diag ] )
 
 c = 0.5 + 0.9/ufl.pi*ufl.atan(20.*u[1])
-s = ufl.as_vector( [ u[0] *  (1.-u[0]) * (u[0]-c) / tau * dt , u[0] ] )
+s = ufl.as_vector( [ u[0] *  (1.-u[0]) * (u[0]-c) * gamma / (eps*eps) * dt , u[0] ] )
 
-a = ( alpha*alpha/tau*dt *
+a = ( gamma*dt *
         ( ufl.inner( ufl.dot( d0, ufl.grad(u[0]) ), ufl.grad(v[0])[0] ) +
           ufl.inner( ufl.dot( d1, ufl.grad(u[0]) ), ufl.grad(v[0])[1] ) ) +
       2.25*dt * ufl.inner( ufl.grad(u[1]), ufl.grad(v[1]) ) +
@@ -69,9 +68,9 @@ a = ( alpha*alpha/tau*dt *
       ufl.inner(s,v)
     ) * ufl.dx(0)
 
-model.generate(a, name="crystal_left")
+model.generate(a)
 # now add implicit part of forcing to source and un coefficient function
-lhsModel = model.makeAndImport(grid2d).get()
+lhsModel = model.makeAndImport(grid2d,name="crystal_left").get()
 
 
 # now set up schemes for left and right hand side
@@ -85,7 +84,6 @@ forcing     = sp.interpolate( [0,0,0], name="forcing" )
 solver    = scheme.create( "FemScheme", solution, lhsModel, "left" )
 # right hand side scheme
 rhs       = scheme.create( "FemScheme", forcing,  rhsModel, "rhs" )
-solution.addToVTKWriter(vtk, vtk.PointData)
 
 class LocalExprA:
     def __init__(self,df):
@@ -99,7 +97,6 @@ dun_gf = grid2d.localGridFunction( "nabla_un0", dunLocal )
 lhsModel.setdun(dun_gf)
 
 # start adaptation
-maxLevel = 9
 hgrid = grid2d.hierarchicalGrid
 
 marker = hgrid.marker
@@ -126,7 +123,7 @@ solution_n.assign( solution )
 count    = 0
 t        = 0.
 savestep = saveinterval
-vtk.write( "crystal"+str(count) )
+grid2d.writeVTK( "crystal", pointdata=[solution], number=count )
 
 while t < endTime:
     rhs( solution_n, forcing )
@@ -136,7 +133,7 @@ while t < endTime:
     if t > savestep:
         savestep += saveinterval
         count += 1
-        vtk.write( "crystal"+str(count) )
+        grid2d.writeVTK( "crystal", pointdata=[solution], number=count )
     hgrid.mark( mark )
     hgrid.adapt( [solution] )
     hgrid.loadBalance( [solution] )

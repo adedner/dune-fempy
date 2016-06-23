@@ -37,14 +37,14 @@ v         = model.testFunction()
 
 a = ( dt*0.5*ufl.inner(ufl.grad(u),ufl.grad(v)) +
       ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a, name="mcf_left")
-mcfModel = model.makeAndImport(surface).get()
+model.generate(a)
+mcfModel = model.makeAndImport(surface,name="mcf_left").get()
 model.clear()
 
 a = ( -dt*0.5*ufl.inner(ufl.grad(u),ufl.grad(v)) +
       ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a, name="mcf_right")
-rhsModel = model.makeAndImport(surface).get()
+model.generate(a)
+rhsModel = model.makeAndImport(surface,name="mcf_right").get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------

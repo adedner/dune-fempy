@@ -54,8 +54,6 @@ explicitCode = reduce(lambda a, kv: a.replace(*kv), repls, explicitCode)
 # -----------
 # set up reference domain
 grid2d    = fem.leafGrid("../data/spiral-2d.dgf", "YaspGrid", dimgrid=2, dimworld=2)
-# vtk writer
-vtk       = grid2d.vtkWriter()
 sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
 
 # set up left and right hand side models
@@ -66,20 +64,20 @@ v         = model.testFunction()
 
 # right hand sie (time derivative part + explicit forcing in v)
 a = ( ufl.inner(u,v) + dt*ufl.inner( spiral_h( u[0],u[1]), v[1] ) ) * ufl.dx(0)
-model.generate(a, name="spiral_right" )
+model.generate(a)
 # now add implicit part of forcing to source
 model.add2Source( explicitCode )
-rhsModel = model.makeAndImport(grid2d).get()
+rhsModel = model.makeAndImport(grid2d,name="spiral_right").get()
 model.clear()
 
 # left hand side (heat equation in first variable + backward Euler in time)
 a = ( dt/100.*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) +
       ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a, name="spiral_left")
+model.generate(a)
 # now add implicit part of forcing to source and un coefficient function
 model.addCoefficient( "un", 2 )
 model.add2Source( implicitCode )
-lhsModel = model.makeAndImport(grid2d).get()
+lhsModel = model.makeAndImport(grid2d,name="spiral_left").get()
 
 
 # now set up schemes for left and right hand side
@@ -92,7 +90,6 @@ forcing     = sp.interpolate( [0,0,0], name="forcing" )
 solver    = scheme.create( "FemScheme", solution, lhsModel, "left" )
 # right hand side scheme
 rhs       = scheme.create( "FemScheme", forcing,  rhsModel, "rhs" )
-solution.addToVTKWriter(vtk, vtk.PointData)
 
 lhsModel.setun(solution_n)
 
@@ -100,14 +97,14 @@ lhsModel.setun(solution_n)
 # ---------
 count   = 0
 t       = 0.
-vtk.write( "spiral"+str(count) )
+grid2d.writeVTK("spiral", pointdata=[solution], number=count)
 
 while t<endTime:
     rhs( solution_n, forcing )
-    solver.solve( target=solution, rhs=forcing )
+    solver.solve( target=solution, rhs=forcing, assemble=(count==0) )
     t     += dt
     count += 1
-    vtk.write( "spiral"+str(count) )
+    grid2d.writeVTK("spiral", pointdata=[solution], number=count)
     solution_n.assign( solution )
 
 print("END")

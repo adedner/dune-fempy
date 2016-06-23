@@ -1,7 +1,6 @@
 #include <config.h>
 
 // dune-fempy
-#include <dune/fempy/python.hh>
 #include <dune/fempy/py/grid/function.hh>
 #include <dune/fempy/pybind11/pybind11.h>
 
@@ -11,87 +10,62 @@
 
 // dune-chns
 #include "uzawascheme.hh"
+#include "nsbasescheme.hh"
 #include "testingquantities.hh"
-
-PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
 ///////////////////////////////////////////////////////////////////////
 // the wrapper for the Stokes scheme which we would like to expose to python
 template <class StokesScheme>
-struct StokesSchemeWrapper
+struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
 {
+  typedef NSBaseScheme<StokesScheme> BaseType;
   typedef StokesScheme BaseScheme;
-  typedef typename StokesScheme::DiscreteFunctionType DiscreteFunction;
   typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
   typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef typename StokesScheme::ProblemType ProblemType;
   typedef typename StokesScheme::GridPartType GridPartType;
   typedef typename GridPartType::GridType HGridType;
   typedef typename StokesScheme::FullFunctionSpaceType FunctionSpaceType;
+  typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
+          SolutionType;
 
-  StokesSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep ) :
-    gridPart_( gridPart ),
-    timeProvider_( gridPart_.grid() ),
-    timestep_( timestep )
-    {
-      switch (problemNumber)
-      {
-        case 0: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 1: problemPtr_ = new VorticityFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 2: problemPtr_ = new MovingPlate<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 3: problemPtr_ = new CouetteFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 4: problemPtr_ = new KarmanVortexStreet<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        default: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-      }
-      stokesScheme_ = std::make_shared<StokesScheme>( gridPart_, *problemPtr_, viscosityActual_, timestepStokes_ );
-      timeProvider_.init( timestep_ );
-    }
+  StokesSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep )
+  : BaseType(gridPart,problemNumber,timestep)
+  , stokesScheme_( BaseType::gridPart_, *BaseType::problemPtr_, BaseType::viscosityActual_, BaseType::timestepStokes_ )
+  , solution_( stokesScheme_.velocity(), stokesScheme_.pressure() )
+  {}
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
-    delete problemPtr_;
   }
   StokesSchemeWrapper( StokesSchemeWrapper& ) = delete;
   StokesSchemeWrapper& operator=( const StokesSchemeWrapper& ) = delete;
 
-  DiscreteFunction &solution()
+  SolutionType &solution()
   {
-    return duneType()->solution();
+    return solution_;
   }
   VelocityDiscreteFunction &velocity()
   {
-    return duneType()->velocity();
+    return duneType().velocity();
   }
   PressureDiscreteFunction &pressure()
   {
-    return duneType()->pressure();
+    return duneType().pressure();
   }
   void solve( bool assemble )
   {
-    duneType()->solve( assemble );
+    duneType().solve( assemble );
   }
-  void next()
+  StokesScheme& duneType()
   {
-    timeProvider_.next( timestep_ );
+    return stokesScheme_;
   }
-  double time()
-  {
-    return timeProvider_.time();
-  }
-  std::shared_ptr<StokesScheme> duneType() const
+  const StokesScheme& duneType() const
   {
     return stokesScheme_;
   }
   protected:
-  const double viscosity_ = 0.0001;
-  const double timestepfactor_ = 0.29;
-  double timestep_;
-  const double factor_ = 0.585756;
-  const double viscosityActual_ = viscosity_*factor_;
-  const double timestepStokes_ = 1./timestepfactor_;
-  const double timestepBurgers_ = 1./( 1. - 2.*timestepfactor_ );
-  GridPartType &gridPart_;
-  Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
-  ProblemType* problemPtr_ = 0;
-  std::shared_ptr<StokesScheme> stokesScheme_;
+  StokesScheme stokesScheme_;
+  SolutionType solution_;
 };
 
 namespace PyDune
@@ -103,35 +77,32 @@ namespace PyDune
     typedef typename Scheme::BaseScheme StokesScheme;
     typedef typename StokesScheme::ProblemType ProblemType;
     typedef typename StokesScheme::GridPartType GridPartType;
+    typedef typename Scheme::SolutionType SolutionType;
     typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
     typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
 
-    static void updatevelocity( const StokesSchemeType *self, VelocityDiscreteFunction &velocity )
+    static void update( StokesSchemeType &self, const SolutionType &solution )
     {
-      self->duneType()->updatevelocity( velocity );
+      self.duneType().updatevelocity( std::get<0>(solution) );
+      self.duneType().updatepressure( std::get<1>(solution) );
     }
-    static void updatepressure( const StokesSchemeType *self, PressureDiscreteFunction &pressure )
+    static void initialize(StokesSchemeType &self)
     {
-      self->duneType()->updatepressure( pressure );
+      self.duneType().initialize();
     }
-    static void initialize(const StokesSchemeType *self)
+    static void preparestep1(StokesSchemeType &self)
     {
-      self->duneType()->initialize();
+      self.duneType().preparestep1();
     }
-    static void preparestep1(const StokesSchemeType *self)
+    static void preparestep3(StokesSchemeType &self)
     {
-      self->duneType()->preparestep1();
-    }
-    static void preparestep3(const StokesSchemeType *self)
-    {
-      self->duneType()->preparestep3();
+      self.duneType().preparestep3();
     }
   };
   template< class StokesSchemeType, class... Args >
   bool addToPython (pybind11::class_< StokesSchemeType, Args... > &cls )
   {
-    cls.def( "updatevelocity", &PythonExt<StokesSchemeType>::updatevelocity );
-    cls.def( "updatepressure", &PythonExt<StokesSchemeType>::updatepressure );
+    cls.def( "update", &PythonExt<StokesSchemeType>::update );
     cls.def( "initialize",     &PythonExt<StokesSchemeType>::initialize );
     cls.def( "preparestep1",   &PythonExt<StokesSchemeType>::preparestep1 );
     cls.def( "preparestep3",   &PythonExt<StokesSchemeType>::preparestep3 );
@@ -154,13 +125,16 @@ namespace Dune
       auto velo = detail::registerGridFunction< VelocityDiscreteFunction >( module, "VelocityDiscreteFunction" );
       auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
-      pybind11::class_< StokesSchemeType, std::shared_ptr<StokesSchemeType> > cls( module, "StokesScheme");
+      pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
+      pybind11::class_< StokesSchemeType > cls( module, "StokesScheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( StokesSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
           new( &instance ) StokesSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
       cls.def( "velocity", [] (StokesSchemeType &scheme) -> VelocityDiscreteFunction& { return scheme.velocity(); },
             pybind11::return_value_policy::reference_internal );
       cls.def( "pressure", [] (StokesSchemeType &scheme) -> PressureDiscreteFunction& { return scheme.pressure(); },
+            pybind11::return_value_policy::reference_internal );
+      cls.def( "solution", &StokesSchemeType::solution,
             pybind11::return_value_policy::reference_internal );
       cls.def( "solve", &StokesSchemeType::solve );
       cls.def( "next", &StokesSchemeType::next );

@@ -11,77 +11,53 @@
 
 // dune-chns
 #include "prpscheme.hh"
+#include "nsbasescheme.hh"
 #include "testingquantities.hh"
-
-PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
 ///////////////////////////////////////////////////////////////////////
 // the wrapper for the Burgers scheme which we would like to expose to python
 template <class BurgersScheme>
-struct BurgersSchemeWrapper
+struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
 {
+  typedef NSBaseScheme<BurgersScheme> BaseType;
   typedef BurgersScheme BaseScheme;
-  typedef typename BurgersScheme::DiscreteFunctionType DiscreteFunction;
+  typedef typename BurgersScheme::DiscreteFunctionType VelocityDiscreteFunction;
+  typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef typename BurgersScheme::ProblemType ProblemType;
   typedef typename BurgersScheme::GridPartType GridPartType;
-  typedef typename GridPartType::GridType HGridType;
-  typedef typename BurgersScheme::FullFunctionSpaceType FunctionSpaceType;
+  typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
+          SolutionType;
 
-  BurgersSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep ) :
-    gridPart_( gridPart ),
-    timeProvider_( gridPart_.grid() ),
-    timestep_( timestep)
-    {
-      timeProvider_.init( timestep_ );
-      switch (problemNumber)
-      {
-        case 0: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 1: problemPtr_ = new VorticityFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 2: problemPtr_ = new MovingPlate<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 3: problemPtr_ = new CouetteFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        case 4: problemPtr_ = new KarmanVortexStreet<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-        default: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-      }
-      burgersScheme_ = std::make_shared<BurgersScheme>( gridPart_, *problemPtr_, timestepBurgers_, viscosityActual_ );
-    }
+  BurgersSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep )
+  : BaseType( gridPart, problemNumber, timestep ),
+    burgersScheme_ (BaseType::gridPart_, *BaseType::problemPtr_, BaseType::timestepBurgers_, BaseType::viscosityActual_ )
+  , solution_( burgersScheme_.solution(), burgersScheme_.pressure() )
+  {
+  }
   ~BurgersSchemeWrapper() {std::cout << "BurgersSchemeWrapper destructor\n";
-    delete problemPtr_;
   }
   BurgersSchemeWrapper(BurgersSchemeWrapper&) = delete;
   BurgersSchemeWrapper& operator=(const BurgersSchemeWrapper&) = delete;
 
-  DiscreteFunction &solution()
+  SolutionType &solution()
   {
-    return duneType()->solution();
+    return solution_;
   }
   void solve( bool assemble )
   {
-    duneType()->solve( assemble );
+    duneType().solve( assemble );
   }
-  void next()
+  const BurgersScheme& duneType() const
   {
-    timeProvider_.next(timestep_);
+    return burgersScheme_;
   }
-  double time()
-  {
-    return timeProvider_.time();
-  }
-  std::shared_ptr<BurgersScheme> duneType() const
+  BurgersScheme& duneType()
   {
     return burgersScheme_;
   }
   protected:
-  const double viscosity_ = 0.0001;
-  const double timestepfactor_ = 0.29;
-  double timestep_;
-  const double factor_ = 0.585756;
-  const double viscosityActual_ = viscosity_*factor_;
-  const double timestepStokes_ = 1./timestepfactor_;
-  const double timestepBurgers_ = 1./( 1. - 2.*timestepfactor_ );
-  GridPartType &gridPart_;
-  Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
-  ProblemType* problemPtr_ = 0;
-  std::shared_ptr<BurgersScheme> burgersScheme_;
+  BurgersScheme burgersScheme_;
+  SolutionType solution_;
 };
 
 namespace PyDune
@@ -95,25 +71,21 @@ namespace PyDune
     typedef typename BurgersScheme::GridPartType GridPartType;
     typedef typename BurgersScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
     typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
+    typedef typename Scheme::SolutionType SolutionType;
 
-    static void updatevelocity( const BurgersSchemeType *self, VelocityDiscreteFunction velocity )
+    static void update( BurgersSchemeType &self, const SolutionType &solution )
     {
-      self->duneType()->updatevelocity( velocity );
+      self.duneType().updatevelocity( std::get<0>(solution) );
     }
-    static void updatepressure( const BurgersSchemeType *self, PressureDiscreteFunction pressure )
+    static void prepare( BurgersSchemeType &self)
     {
-      self->duneType()->updatepressure( pressure );
-    }
-    static void prepare(const BurgersSchemeType *self)
-    {
-      self->duneType()->prepare();
+      self.duneType().prepare();
     }
   };
   template< class BurgersSchemeType, class... Args >
   bool addToPython (pybind11::class_< BurgersSchemeType, Args... > &cls )
   {
-    cls.def("updatevelocity", &PythonExt2<BurgersSchemeType>::updatevelocity);
-    cls.def("updatepressure", &PythonExt2<BurgersSchemeType>::updatepressure);
+    cls.def("update", &PythonExt2<BurgersSchemeType>::update);
     cls.def("prepare", &PythonExt2<BurgersSchemeType>::prepare);
     return false;
   }
@@ -130,12 +102,14 @@ namespace Dune
       typedef typename Scheme::GridPartType GridPartType;
       typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
-      pybind11::class_< BurgersSchemeType, std::shared_ptr<BurgersSchemeType> > cls2( module, "BurgersScheme");
+      pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
+      pybind11::class_< BurgersSchemeType > cls2( module, "BurgersScheme",
+          pybind11::base<NSBaseScheme<Scheme>>() );
       cls2.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
           new( &instance ) BurgersSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
       cls2.def( "solve", &BurgersSchemeType::solve );
-      cls2.def( "solution", [] (BurgersSchemeType &scheme) -> SolutionFunction& { return scheme.solution(); },
+      cls2.def( "solution", &BurgersSchemeType::solution,
             pybind11::return_value_policy::reference_internal );
       cls2.def( "next", &BurgersSchemeType::next );
       cls2.def( "time", &BurgersSchemeType::time );

@@ -24,8 +24,8 @@ burgersScheme = bs.BurgersScheme( grid2d, problemNumber, timeStep )
 stokesScheme.initialize()
 
 vtk = grid2d.vtkWriter()
-stokesScheme.pressure().addToVTKWriter( vtk, vtk.PointData )
-stokesScheme.velocity().addToVTKWriter( vtk, vtk.PointData )
+stokesScheme.solution()[0].addToVTKWriter( vtk, vtk.PointData )
+stokesScheme.solution()[1].addToVTKWriter( vtk, vtk.PointData )
 
 def solve_method( timeStep, endTime ):
     counter = 0
@@ -40,19 +40,21 @@ def solve_method( timeStep, endTime ):
         print( 'Solve step 1 - Stokes' )
         stokesScheme.preparestep1()
         stokesScheme.solve( counter == 0 ) # assemble only on first iteration
+        # stokesScheme.solve( rhs=burgerScheme.solution(), target=stokesScheme.solution(), counter==0 )
 
         # second step (solve Burgers for velocity)
-        burgersScheme.updatepressure( stokesScheme.pressure() )
-        burgersScheme.updatevelocity( stokesScheme.velocity() )
+        burgersScheme.update( stokesScheme.solution() )
         print( 'Solve step 2 - Burgers' )
         burgersScheme.prepare()
         burgersScheme.solve( counter == 0 )
+        # burgersScheme.solve( rhs=stokesScheme.solution(), target=burgersScheme.solution(), counter==0 )
 
         # third step (solve Stokes for velocity and pressure)
-        stokesScheme.updatevelocity( burgersScheme.solution() )
+        stokesScheme.update( burgersScheme.solution() )
         print( 'Solve step 3 - Stokes' )
         stokesScheme.preparestep3()
         stokesScheme.solve( False )
+        # stokesScheme.solve( rhs=burgerScheme.solution(), target=stokesScheme.solution(), False )
 
         time = time + timeStep
         stokesScheme.next()

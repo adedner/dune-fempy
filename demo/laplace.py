@@ -21,15 +21,16 @@ grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2)
 spc = space.create( "Lagrange", grid, dimrange=1, polorder=2)
 
 # why dimWorld?
-model     = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
-u         = model.trialFunction()
-v         = model.testFunction()
+model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
+u = model.trialFunction()
+v = model.testFunction()
+x = model.spatialCoordinate()
 
 a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx(0)
-model.generate(a)
+b = ufl.sin(x[0])*ufl.sin(x[1]) * v[0] * ufl.dx(0)
+model.generate(a,b)
 laplaceModel = model.makeAndImport(grid,name="laplace").get()
 
 laplace = scheme.create("FemScheme", spc, laplaceModel, "laplace")
-rhs = laplace(grid.globalGridFunction("f", lambda x: [math.sin(x[0]) * math.sin(x[1])]))
 
-grid.writeVTK("laplace", pointdata=[laplace.solve(rhs)])
+grid.writeVTK("laplace", pointdata=[laplace.solve()])

@@ -34,8 +34,8 @@ struct NSBaseScheme
     return timeProvider_.time();
   }
   const double viscosity_ = 0.0001;
-  const double timestepfactor_ = 0.29;
-  const double factor_ = 0.585756;
+  const double timestepfactor_ = 0.29289321881;
+  const double factor_ = 0.58578643762;
   const double viscosityActual_ = viscosity_*factor_;
   const double timestepStokes_ = 1./timestepfactor_;
   const double timestepBurgers_ = 1./( 1. - 2.*timestepfactor_ );

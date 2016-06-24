@@ -1,7 +1,6 @@
 #include <config.h>
 
 // dune-fempy
-#include <dune/fempy/python.hh>
 #include <dune/fempy/py/grid/function.hh>
 #include <dune/fempy/pybind11/pybind11.h>
 

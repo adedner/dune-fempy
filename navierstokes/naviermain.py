@@ -29,8 +29,7 @@ stokesScheme.solution()[1].addToVTKWriter( vtk, vtk.PointData )
 
 def solve_method( timeStep, endTime ):
     counter = 0
-    outName = str( counter ).zfill( 4 )
-    vtk.write( "ns_"+outName )
+    vtk.write( "ns_0000" )
     stokesScheme.next()
     burgersScheme.next()
     time = timeStep
@@ -56,12 +55,13 @@ def solve_method( timeStep, endTime ):
         stokesScheme.solve( False )
         # stokesScheme.solve( rhs=burgerScheme.solution(), target=stokesScheme.solution(), False )
 
-        time = time + timeStep
+        time += timeStep
         stokesScheme.next()
         burgersScheme.next()
-        counter = counter + 1
-        outName = str( counter ).zfill( 4 )
-        vtk.write( "ns_"+outName )
+        counter += 1
+        if abs(time%0.1) < 0.001:
+            outName = str( counter ).zfill( 4 )
+            vtk.write( "ns_"+outName )
 
 solve_method( timeStep, endTime )
 

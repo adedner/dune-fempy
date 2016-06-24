@@ -37,6 +37,7 @@ a = ( dt*0.5*ufl.inner(ufl.grad(u),ufl.grad(v)) +
       ufl.inner(u,v) ) * ufl.dx(0)
 model.generate(a)
 mcfModel = model.makeAndImport(surface,name="mcf_left").get()
+
 model.clear()
 
 a = ( -dt*0.5*ufl.inner(ufl.grad(u),ufl.grad(v)) +
@@ -58,12 +59,12 @@ rhs       = scheme.create( "FemScheme", forcing,  rhsModel, "rhs" )
 # ---------
 count   = 0
 t       = 0.
-surface.writeVTK( "mcf", pointdata=[solution], number=coun) )
+surface.writeVTK( "mcf", pointdata=[solution], number=count)
 
 while t<endTime:
     rhs( solution,forcing )
-    solver.solve( forcing, solution )
+    solver.solve( forcing, solution, assemble=(count==0) )
     t     += dt
     count += 1
-    surface.writeVTK( "mcf", pointdata=[solution], number=coun) )
+    surface.writeVTK( "mcf", pointdata=[solution], number=count)
     positions.assign( solution.dofVector() )

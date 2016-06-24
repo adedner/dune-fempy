@@ -9,7 +9,6 @@ model    = DuneUFLModel(2,2) # this is utility.init and sets the dim range
 c0 = sympy.cos(2*math.pi*model.x0)
 c1 = sympy.cos(2*math.pi*model.x1)
 exact = [c0*c1,c0*c0]
-# exact = [sympy.cos(2*math.pi*model.x0)*sympy.cos(2*math.pi*model.x1)]
 #########################################
 # define main ufl form a
 #########################################

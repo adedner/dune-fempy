@@ -15,7 +15,7 @@ dimRange     = 2
 dimDomain    = 2
 maxLevel     = 10
 dt           = 5.e-4
-endTime      = 0.1
+endTime      = 1
 saveinterval = 0.001
 
 ## model taken from www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html

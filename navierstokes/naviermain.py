@@ -9,7 +9,7 @@ import dune.fem.space as space
 grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 #grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-grid2d.hierarchicalGrid.globalRefine(3)
+grid2d.hierarchicalGrid.globalRefine(0)
 
 timeStep = 0.001
 endTime = 10
@@ -28,11 +28,11 @@ stokesScheme.solution()[0].addToVTKWriter( vtk, vtk.PointData )
 stokesScheme.solution()[1].addToVTKWriter( vtk, vtk.PointData )
 
 def solve_method( timeStep, endTime ):
-    counter = 0
-    vtk.write( "ns_0000" )
     stokesScheme.next()
     burgersScheme.next()
     time = timeStep
+    counter = 0
+    vtk.write( "ns_0000" )
     while time < endTime:
         print( time, " burgers=", burgersScheme.time(), "  stokes=", stokesScheme.time())
         # first step (solve Stokes for velocity and pressure)
@@ -51,7 +51,7 @@ def solve_method( timeStep, endTime ):
         # third step (solve Stokes for velocity and pressure)
         stokesScheme.update( burgersScheme.solution() )
         print( 'Solve step 3 - Stokes' )
-        stokesScheme.preparestep3()
+        stokesScheme.preparestep1()
         stokesScheme.solve( False )
         # stokesScheme.solve( rhs=burgerScheme.solution(), target=stokesScheme.solution(), False )
 
@@ -59,9 +59,9 @@ def solve_method( timeStep, endTime ):
         stokesScheme.next()
         burgersScheme.next()
         counter += 1
-        if abs(time%0.1) < 0.001:
-            outName = str( counter ).zfill( 4 )
-            vtk.write( "ns_"+outName )
+        #if abs(time%0.01) < 0.001:
+        outName = str( counter ).zfill( 4 )
+        vtk.write( "ns_"+outName )
 
 solve_method( timeStep, endTime )
 

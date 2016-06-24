@@ -46,6 +46,14 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   {
     duneType().solve( assemble );
   }
+  void update( const SolutionType &solution )
+  {
+    duneType().updatevelocity( std::get<0>(solution) );
+  }
+  void prepare()
+  {
+    duneType().prepare();
+  }
   const BurgersScheme& duneType() const
   {
     return burgersScheme_;
@@ -59,37 +67,6 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   SolutionType solution_;
 };
 
-namespace PyDune
-{
-  template <class Scheme>
-  struct PythonExt2
-  {
-    typedef Scheme BurgersSchemeType;
-    typedef typename Scheme::BaseScheme BurgersScheme;
-    typedef typename BurgersScheme::ProblemType ProblemType;
-    typedef typename BurgersScheme::GridPartType GridPartType;
-    typedef typename BurgersScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
-    typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-    typedef typename Scheme::SolutionType SolutionType;
-
-    static void update( BurgersSchemeType &self, const SolutionType &solution )
-    {
-      self.duneType().updatevelocity( std::get<0>(solution) );
-    }
-    static void prepare( BurgersSchemeType &self)
-    {
-      self.duneType().prepare();
-    }
-  };
-  template< class BurgersSchemeType, class... Args >
-  bool addToPython (pybind11::class_< BurgersSchemeType, Args... > &cls )
-  {
-    cls.def("update", &PythonExt2<BurgersSchemeType>::update);
-    cls.def("prepare", &PythonExt2<BurgersSchemeType>::prepare);
-    return false;
-  }
-}
-
 namespace Dune
 {
   namespace FemPy
@@ -102,18 +79,18 @@ namespace Dune
       typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
-      pybind11::class_< BurgersSchemeType > cls2( module, "BurgersScheme",
+      pybind11::class_< BurgersSchemeType > cls( module, "BurgersScheme",
           pybind11::base<NSBaseScheme<Scheme>>() );
-      cls2.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
+      cls.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
           new( &instance ) BurgersSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
-      cls2.def( "solve", &BurgersSchemeType::solve );
-      cls2.def( "solution", &BurgersSchemeType::solution,
+      cls.def( "solve", &BurgersSchemeType::solve );
+      cls.def( "solution", &BurgersSchemeType::solution,
             pybind11::return_value_policy::reference_internal );
-      cls2.def( "next", &BurgersSchemeType::next );
-      cls2.def( "time", &BurgersSchemeType::time );
-      // add the user extensions
-      PyDune::addToPython(cls2);
+      cls.def( "update", &BurgersSchemeType::update );
+      cls.def( "prepare", &BurgersSchemeType::prepare );
+      cls.def( "next", &BurgersSchemeType::next );
+      cls.def( "time", &BurgersSchemeType::time );
     }
   }
 }

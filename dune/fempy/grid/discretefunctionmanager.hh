@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <dune/common/dynvector.hh>
+#include <dune/common/version.hh>
 
 #include <dune/fem/space/common/loadbalancer.hh>
 #include <dune/fem/space/common/communicationmanager.hh>
@@ -19,8 +20,11 @@
 
 namespace Dune
 {
+
   namespace FemPy
   {
+
+#if ! DUNE_VERSION_NEWER( DUNE_FEM, 3, 0 )
     template< class DofVector, class Functor >
     struct DofBlockFunctor
     {
@@ -36,15 +40,20 @@ namespace Dune
         for( int i = 0; i < blockSize; ++i )
           functor_( local*blockSize + i, dofVector_[ globalKey ][ i ] );
       }
+
     private:
       DofVector &dofVector_;
       Functor functor_;
     };
+
     template< class DofVector, class Functor >
     static inline DofBlockFunctor< DofVector, Functor > dofBlockFunctor ( DofVector &dofVector, Functor functor )
     {
       return DofBlockFunctor< DofVector, Functor >( dofVector, std::move( functor ) );
     }
+#endif // #if ! DUNE_VERSION_NEWER( DUNE_FEM, 3, 0 )
+
+
 
     // LoadBalanceContainsCheck
     // ------------------------
@@ -195,7 +204,7 @@ namespace Dune
 
         virtual std::size_t numLocalDofs ( const ElementType &element ) const override
         {
-          return blockMapper().numDofs( element ) * Impl::DiscreteFunctionSpaceType::localBlockSize;
+          return blockMapper().numDofs( impl_.gridPart().convert( element ) ) * Impl::DiscreteFunctionSpaceType::localBlockSize;
         }
 
         virtual DofType *getLocalDofs ( const ElementType &element, DofType *localDofs ) const override
@@ -203,7 +212,7 @@ namespace Dune
           //using Fem::dofBlockFunctor;
 
           Fem::AssignFunctor< DofType * > assignFunctor( localDofs );
-          blockMapper().mapEach( element, dofBlockFunctor( impl_.dofVector(), assignFunctor ) );
+          blockMapper().mapEach( impl_.gridPart().convert( element ), dofBlockFunctor( impl_.dofVector(), assignFunctor ) );
 
           return localDofs + numLocalDofs( element );
         }
@@ -213,7 +222,7 @@ namespace Dune
           //using Fem::dofBlockFunctor;
 
           Fem::LeftAssign< const DofType * > assignFunctor( localDofs );
-          blockMapper().mapEach( element, dofBlockFunctor( impl_.dofVector(), assignFunctor ) );
+          blockMapper().mapEach( impl_.gridPart().convert( element ), dofBlockFunctor( impl_.dofVector(), assignFunctor ) );
 
           return localDofs + numLocalDofs( element );
         }

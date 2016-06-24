@@ -13,10 +13,11 @@ import dune.fem.function as function
 #################################################################
 ## www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html
 dimRange     = 2
+dimDomain    = 2
 dt           = 5.e-4
 endTime      = 1
 saveinterval = 0.001
-maxLevel     = 8
+maxLevel     = 6
 def initial(x):
     r  = (x-[6,6]).two_norm
     r0 = 0.1
@@ -27,14 +28,14 @@ def initial(x):
 # Basic setup
 # -----------
 # set up reference domain
-grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=2, refinement="conforming")
+grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
 grid2d.hierarchicalGrid.globalRefine(3)
 sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
 level_gf  = grid2d.localGridFunction("level", function.Levels())
 
 # set up left and right hand side models
 # --------------------------------------
-model      = duneuflmodel.DuneUFLModel(2,dimRange)
+model      = duneuflmodel.DuneUFLModel(2,dimDomain)
 rhsModel   = model.makeAndImport(grid2d,name="crystal_right",header="crystal_rightModel.hh").get()
 model.addCoefficient("dun", dimRange)
 lhsModel   = model.makeAndImport(grid2d,name="crystal_left",header="crystal_leftModel.hh").get()
@@ -59,9 +60,9 @@ class LocalExprA:
 def dunLocal(en,x):
   jac = solution_n.localFunction(en).jacobian(x)
   return [ jac[0][0],jac[0][1] ]
-dun_gf = grid2d.localGridFunction( "nabla_un0", dunLocal )
-
-lhsModel.setdun(dun_gf)
+# dun_gf = grid2d.localGridFunction( "nabla_un0", dunLocal )
+# lhsModel.setdun(dun_gf)
+lhsModel.setdun(solution_n)
 
 # start adaptation
 hgrid = grid2d.hierarchicalGrid

@@ -13,15 +13,9 @@ import dune.fem.function as function
 #################################################################
 ## www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html
 dimRange     = 2
-alpha        = 0.015
-tau          = 3.e-4
 dt           = 5.e-4
 endTime      = 1
 saveinterval = 0.001
-kappa1       = 0.9
-kappa2       = 20.
-c            = 0.02
-N            = 6.
 maxLevel     = 8
 def initial(x):
     r  = (x-[6,6]).two_norm
@@ -40,43 +34,10 @@ level_gf  = grid2d.localGridFunction("level", function.Levels())
 
 # set up left and right hand side models
 # --------------------------------------
-model     = duneuflmodel.DuneUFLModel(2,dimRange)
-u         = model.trialFunction()
-v         = model.testFunction()
-
-# right hand sie (time derivative part + explicit forcing in v)
-a = ( ufl.inner(u,v) - ufl.inner(u[0],v[1]) ) * ufl.dx(0)
-model.generate(a)
-# now add implicit part of forcing to source
-rhsModel = model.makeAndImport(grid2d,name="crystal_right").get()
-model.clear()
-
-# left hand side (heat equation in first variable + backward Euler in time)
-dun = model.coefficient('dun',dimRange)
-psi        = ufl.pi/8. + ufl.atan( dun[1] / (dun[0]+1e-8) )
-Phi        = ufl.tan(N/2.*psi)
-beta       = ( 1 - Phi*Phi ) / (1 + Phi*Phi)
-dbeta_dPhi = -2. * N * Phi / (1 + Phi*Phi)
-fac        = 1 + c*beta
-diag       = fac*fac
-offdiag    = -fac * c * dbeta_dPhi
-d0         = ufl.as_vector( [ diag, offdiag ] )
-d1         = ufl.as_vector( [ -offdiag, diag ] )
-
-m = u[0] - 0.5 - kappa1/ufl.pi*ufl.atan(kappa2*u[1])
-s = ufl.as_vector( [ dt/tau * u[0] *  (1.-u[0]) * m , u[0] ] )
-
-a = ( alpha*alpha*dt/tau *
-        ( ufl.inner( ufl.dot( d0, ufl.grad(u[0]) ), ufl.grad(v[0])[0] ) +
-          ufl.inner( ufl.dot( d1, ufl.grad(u[0]) ), ufl.grad(v[0])[1] ) ) +
-      2.25*dt * ufl.inner( ufl.grad(u[1]), ufl.grad(v[1]) ) +
-      ufl.inner(u,v) -
-      ufl.inner(s,v)
-    ) * ufl.dx(0)
-
-model.generate(a)
-# now add implicit part of forcing to source and un coefficient function
-lhsModel = model.makeAndImport(grid2d,name="crystal_left").get()
+model      = duneuflmodel.DuneUFLModel(2,dimRange)
+rhsModel   = model.makeAndImport(grid2d,name="crystal_right",header="crystal_rightModel.hh").get()
+model.addCoefficient("dun", dimRange)
+lhsModel   = model.makeAndImport(grid2d,name="crystal_left",header="crystal_leftModel.hh").get()
 
 
 # now set up schemes for left and right hand side

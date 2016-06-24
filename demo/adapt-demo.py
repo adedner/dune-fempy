@@ -6,6 +6,7 @@ from mpi4py import MPI
 import math
 
 import dune.fem.grid as grid
+import dune.fem.function as function
 
 grid = grid.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
@@ -22,7 +23,7 @@ marker = hgrid.marker
 
 def mark(element):
     y = element.geometry.center - [0.5+0.2*math.cos(t), 0.5+0.2*math.sin(t)]
-    if y.two_norm2 < 0.1*0.1:
+    if y.two_norm2 < 0.2*0.2 and y.two_norm2 > 0.1*0.1:
       return marker.refine if element.level < maxLevel else marker.keep
     else:
       return marker.coarsen
@@ -38,7 +39,7 @@ while t < 2*math.pi:
     hgrid.mark(mark)
     hgrid.adapt([phi])
     hgrid.loadBalance([phi])
-    grid.writeVTK( "adapt", pointdata=[phi], number=str(nr) )
+    grid.writeVTK( "adapt", pointdata=[phi], celldata=[grid.localGridFunction("level", function.Levels())], number=str(nr) )
     print(grid.size(0))
     t = t+0.1
     nr = nr+1

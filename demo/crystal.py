@@ -35,7 +35,7 @@ def initial(x):
 grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=2, refinement="conforming")
 grid2d.hierarchicalGrid.globalRefine(3)
 sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
-level_gf  = grid.localGridFunction("level", function.Levels())
+level_gf  = grid2d.localGridFunction("level", function.Levels())
 
 # set up left and right hand side models
 # --------------------------------------
@@ -51,7 +51,7 @@ rhsModel = model.makeAndImport(grid2d,name="crystal_right").get()
 model.clear()
 
 # left hand side (heat equation in first variable + backward Euler in time)
-dun = model.coefficient('dun',2)
+dun = model.coefficient('dun',dimRange)
 psi        = ufl.pi/8. + ufl.atan( dun[1] / (dun[0]+1e-8) )
 Phi        = ufl.tan(N/2.*psi)
 beta       = ( 1 - Phi*Phi ) / (1 + Phi*Phi)

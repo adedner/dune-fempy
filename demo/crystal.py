@@ -10,16 +10,21 @@ import dune.fem.space as space
 import dune.fem.scheme as scheme
 
 #################################################################
+## www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html
 dimRange     = 2
-gamma        = 0.675
-eps          = 0.015
-dt           = 0.00025
-endTime      = 10
-saveinterval = 0.01
-maxLevel = 8
+alpha        = 0.015
+tau          = 3.e-4
+dt           = 5.e-4
+endTime      = 1
+saveinterval = 0.001
+kappa1       = 0.9
+kappa2       = 20.
+c            = 0.02
+N            = 6.
+maxLevel     = 8
 def initial(x):
     r  = (x-[6,6]).two_norm
-    r0 = 0.5
+    r0 = 0.1
     return [ (math.tanh(-(r-r0)/0.1)+1.)*0.5 , -0.5 ]
 
 #################################################################
@@ -30,6 +35,7 @@ def initial(x):
 grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=2, refinement="conforming")
 grid2d.hierarchicalGrid.globalRefine(3)
 sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
+level_gf  = grid.localGridFunction("level", function.Levels())
 
 # set up left and right hand side models
 # --------------------------------------
@@ -46,21 +52,20 @@ model.clear()
 
 # left hand side (heat equation in first variable + backward Euler in time)
 dun = model.coefficient('dun',2)
-N          = 6.
 psi        = ufl.pi/8. + ufl.atan( dun[1] / (dun[0]+1e-8) )
 Phi        = ufl.tan(N/2.*psi)
-beta       = ( 1 - Phi*Phi )/ (1 + Phi*Phi)
+beta       = ( 1 - Phi*Phi ) / (1 + Phi*Phi)
 dbeta_dPhi = -2. * N * Phi / (1 + Phi*Phi)
-fac        = 1 + 0.02*beta
+fac        = 1 + c*beta
 diag       = fac*fac
-offdiag    = -fac * 0.02 * dbeta_dPhi
+offdiag    = -fac * c * dbeta_dPhi
 d0         = ufl.as_vector( [ diag, offdiag ] )
 d1         = ufl.as_vector( [ -offdiag, diag ] )
 
-c = 0.5 + 0.9/ufl.pi*ufl.atan(20.*u[1])
-s = ufl.as_vector( [ u[0] *  (1.-u[0]) * (u[0]-c) * gamma / (eps*eps) * dt , u[0] ] )
+m = u[0] - 0.5 - kappa1/ufl.pi*ufl.atan(kappa2*u[1])
+s = ufl.as_vector( [ dt/tau * u[0] *  (1.-u[0]) * m , u[0] ] )
 
-a = ( gamma*dt *
+a = ( alpha*alpha*dt/tau *
         ( ufl.inner( ufl.dot( d0, ufl.grad(u[0]) ), ufl.grad(v[0])[0] ) +
           ufl.inner( ufl.dot( d1, ufl.grad(u[0]) ), ufl.grad(v[0])[1] ) ) +
       2.25*dt * ufl.inner( ufl.grad(u[1]), ufl.grad(v[1]) ) +
@@ -123,7 +128,7 @@ solution_n.assign( solution )
 count    = 0
 t        = 0.
 savestep = saveinterval
-grid2d.writeVTK( "crystal", pointdata=[solution], number=count )
+grid2d.writeVTK( "crystal", pointdata=[solution], celldata=[level_gf], number=count )
 
 while t < endTime:
     rhs( solution_n, forcing )
@@ -133,7 +138,7 @@ while t < endTime:
     if t > savestep:
         savestep += saveinterval
         count += 1
-        grid2d.writeVTK( "crystal", pointdata=[solution], number=count )
+        grid2d.writeVTK( "crystal", pointdata=[solution], celldata=[level_gf], number=count )
     hgrid.mark( mark )
     hgrid.adapt( [solution] )
     hgrid.loadBalance( [solution] )

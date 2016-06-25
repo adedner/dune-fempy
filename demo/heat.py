@@ -22,24 +22,29 @@ deltaT = 0.01
 grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2)
 spc = space.create( "Lagrange", grid, dimrange=1, polorder=2)
 
-# why dimWorld?
-model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1, 'Heat')
-u = model.trialFunction()
-v = model.testFunction()
-u_n = model.coefficient('u_n')
+ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1, 'Heat')
+u         = ufl2model.trialFunction()
+v         = ufl2model.testFunction()
+u_n       = ufl2model.coefficient('u_n')
 
-a = (ufl.inner(u, v) - deltaT * ufl.inner(ufl.grad(u), ufl.grad(v))) * ufl.dx(0)
-b = ufl.inner(u_n, v)
-model.generate(a,b)
-heatModel = model.makeAndImport(grid,name="heat").get()
+# Crank Nicholson
+a = (ufl.inner(u-u_n, v) +
+     deltaT * ufl.inner(ufl.grad((u+u_n)/2), ufl.grad(v))) * ufl.dx(0)
+ufl2model.generate(a)
+heatModel = ufl2model.makeAndImport(grid,name="heat").get()
 
-solution = spc.interpolate(lambda x: [x[0]*(1-x[0])*x[1]*(1-x[1])], name="solution")
+solution = spc.interpolate(lambda x: [x[0]*(1-x[0])*x[1]*(1-x[1])], name="heat")
 grid.writeVTK("heat", pointdata=[solution], number=0)
 
-heatScheme = scheme.create("FemScheme", spc, heatModel, "laplace")
+heatScheme = scheme.create("FemScheme", spc, heatModel, "heat")
+
+u_n = spc.interpolate(solution)
+heatModel.setu_n(u_n)
 
 steps = int(1 / deltaT)
 for n in range(0,steps):
-    heatScheme.setu_n(solution)
-    solution = heatScheme.solve()
+    # heatModel.setu_n(solution)
+    # solution = heatScheme.solve()
+    u_n.assign(solution)
+    heatScheme.solve( target=solution )
     grid.writeVTK("heat", pointdata=[solution], number=n+1)

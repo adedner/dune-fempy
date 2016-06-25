@@ -15,7 +15,7 @@ dimRange     = 2
 dimDomain    = 2
 maxLevel     = 10
 dt           = 5.e-4
-endTime      = 1
+endTime      = 0.1
 saveinterval = 0.001
 
 ## model taken from www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html
@@ -40,20 +40,14 @@ level_gf  = grid2d.localGridFunction("level", function.Levels())
 
 # set up left and right hand side models
 # --------------------------------------
-model     = duneuflmodel.DuneUFLModel(2,dimDomain)
-u         = model.trialFunction()
-v         = model.testFunction()
+ufl2model = duneuflmodel.DuneUFLModel(2,dimDomain)
+u         = ufl2model.trialFunction()
+v         = ufl2model.testFunction()
+un        = ufl2model.coefficient('un',dimRange)
 
 # right hand sie (time derivative part + explicit forcing in v)
-a = ( ufl.inner(u,v) - ufl.inner(u[0],v[1]) ) * ufl.dx(0)
-model.generate(a)
-# now add implicit part of forcing to source
-rhsModel = model.makeAndImport(grid2d,name="crystal_right").get()
-
-model.clear()
-
+a_ex = ( ufl.inner(un,v) - ufl.inner(un[0],v[1]) ) * ufl.dx(0)
 # left hand side (heat equation in first variable + backward Euler in time)
-un         = model.coefficient('un',dimRange)
 psi        = ufl.pi/8. + ufl.atan( ufl.grad(un[0])[1] / (ufl.grad(un[0])[0]+1e-8) )
 Phi        = ufl.tan(N/2.*psi)
 beta       = ( 1. - Phi*Phi ) / (1. + Phi*Phi)
@@ -63,22 +57,21 @@ diag       = fac*fac
 offdiag    = -fac * c * dbeta_dPhi
 d0         = ufl.as_vector([diag, offdiag])
 d1         = ufl.as_vector([-offdiag, diag])
-
 m = u[0] - 0.5 - kappa1/ufl.pi*ufl.atan(kappa2*u[1])
 s = ufl.as_vector([dt/tau * u[0] *  (1.-u[0]) * m , u[0]])
 
-a = ( alpha*alpha*dt/tau *
-        ( ufl.inner( ufl.dot(d0, ufl.grad(u[0])), ufl.grad(v[0])[0]) +
-          ufl.inner( ufl.dot(d1, ufl.grad(u[0])), ufl.grad(v[0])[1]) ) +
-      2.25*dt * ufl.inner(ufl.grad(u[1]), ufl.grad(v[1])) +
-      ufl.inner(u,v) -
-      ufl.inner(s,v)
-    ) * ufl.dx(0)
+a_im = ( alpha*alpha*dt/tau *
+           ( ufl.inner( ufl.dot(d0, ufl.grad(u[0])), ufl.grad(v[0])[0]) +
+             ufl.inner( ufl.dot(d1, ufl.grad(u[0])), ufl.grad(v[0])[1]) ) +
+         2.25*dt * ufl.inner(ufl.grad(u[1]), ufl.grad(v[1])) +
+         ufl.inner(u,v) -
+         ufl.inner(s,v)
+       ) * ufl.dx(0)
+a = a_im - a_ex
 
-model.generate(a)
+ufl2model.generate(a)   # implement a_im == a_ex instead
 # now add implicit part of forcing to source and un coefficient function
-lhsModel = model.makeAndImport(grid2d,name="crystal_left").get()
-
+model = ufl2model.makeAndImport(grid2d,name="crystal").get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
@@ -86,13 +79,10 @@ lhsModel = model.makeAndImport(grid2d,name="crystal_left").get()
 initial_gf  =  grid2d.globalGridFunction("initial", initial)
 solution    = sp.interpolate(initial_gf, name="solution")
 solution_n  = sp.interpolate(initial_gf, name="solution_n")
-forcing     = sp.interpolate([0,0,0], name="forcing")
-# left hand side scheme
-solver    = scheme.create("FemScheme", solution, lhsModel, "left")
-# right hand side scheme
-rhs       = scheme.create("FemScheme", forcing,  rhsModel, "rhs")
+# scheme
+solver    = scheme.create("FemScheme", solution, model, "crystel")
 
-lhsModel.setun(solution_n)
+model.setun(solution_n)
 
 # start adaptation
 hgrid = grid2d.hierarchicalGrid
@@ -124,8 +114,7 @@ savestep = saveinterval
 grid2d.writeVTK("crystal", pointdata=[solution], celldata=[level_gf], number=count)
 
 while t < endTime:
-    rhs(solution_n, forcing)
-    solver.solve(target=solution, rhs=forcing)
+    solver.solve(target=solution)
     t += dt
     print('count: ',count,"t = ",t)
     if t > savestep:

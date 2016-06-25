@@ -5,6 +5,7 @@ from mpi4py import MPI
 
 import math
 
+import dune.femmpi as femmpi
 import dune.fem.grid as grid
 import dune.fem.function as function
 
@@ -39,7 +40,12 @@ while t < 2*math.pi:
     hgrid.mark(mark)
     hgrid.adapt([phi])
     hgrid.loadBalance([phi])
-    grid.writeVTK( "adapt", pointdata=[phi], celldata=[grid.localGridFunction("level", function.Levels())], number=str(nr) )
-    print(grid.size(0))
+    phi.interpolate([0])
+    grid.writeVTK("adapt",\
+            pointdata=[phi],\
+            celldata=[grid.localGridFunction("level", function.Levels()),
+                      grid.localGridFunction("rank", function.Partition(femmpi.comm.rank))],\
+            number=str(nr))
+    print(femmpi.comm.rank, grid.size(0))
     t = t+0.1
     nr = nr+1

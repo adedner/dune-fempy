@@ -28,13 +28,13 @@ v         = ufl2model.testFunction()
 u_n       = ufl2model.coefficient('u_n')
 
 # Crank Nicholson
-theta = 1.
+theta = 0.5
 a = (ufl.inner(u-u_n, v) +
      deltaT * ufl.inner(ufl.grad(theta*u+(1-theta)*u_n), ufl.grad(v))) * ufl.dx(0)
 ufl2model.generate(a)
 heatModel = ufl2model.makeAndImport(grid,name="heat").get()
 
-solution = spc.interpolate(lambda x: [x[0]*(1-x[0])*x[1]*(1-x[1])], name="heat")
+solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="heat")
 grid.writeVTK("heat", pointdata=[solution], number=0)
 
 heatScheme = scheme.create("FemScheme", spc, heatModel, "heat")

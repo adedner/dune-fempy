@@ -17,6 +17,7 @@ if 1:
     spiral_a   = 0.75
     spiral_b   = 0.02
     spiral_eps = 0.02
+    spiral_D   = 1./100
     def spiral_h(u,v): return u - v
 else:
     spiral_a   = 0.75
@@ -30,24 +31,28 @@ def initial(x):
 
 #################################################################
 ### Extra model code:
-implicitCode = """\
+sourceCode = """\
       RangeType unValue;
       unLocal_->evaluate( point, unValue );
       double uth = (unValue[1]+spiral_b)/spiral_a;
       if ( unValue[0] <= uth )
-        flux[ 0 ] += -dt/spiral_eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
+        flux[ 0 ] -= dt/spiral_eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
       else
-        flux[ 0 ] +=  dt/spiral_eps * value[0] * unValue[0] * (unValue[0]-uth);
+        flux[ 0 ] -= dt/spiral_eps * unValue[0] * (1.-value[0]) * (unValue[0]-uth);
 """
-explicitCode = """\
-      double uth = (value[1]+spiral_b)/spiral_a;
-      if (value[0]>uth)
-        flux[0] += dt/spiral_eps * value[0] * (value[0]-uth);
+linSourceCode = """\
+      RangeType unValue;
+      unLocal_->evaluate( point, unValue );
+      double uth = (unValue[1]+spiral_b)/spiral_a;
+      if ( unValue[0] <= uth )
+        flux[ 0 ] -= dt/spiral_eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
+      else
+        flux[ 0 ] -= dt/spiral_eps * unValue[0] * (-value[0]) * (unValue[0]-uth);
 """
 repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
         ('spiral_eps', str(spiral_eps)), ('dt',str(dt))
-implicitCode = reduce(lambda a, kv: a.replace(*kv), repls, implicitCode)
-explicitCode = reduce(lambda a, kv: a.replace(*kv), repls, explicitCode)
+sourceCode    = reduce(lambda a, kv: a.replace(*kv), repls, sourceCode)
+linSourceCode = reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode)
 #################################################################
 
 # Basic setup
@@ -58,27 +63,20 @@ sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
 
 # set up left and right hand side models
 # --------------------------------------
-model     = duneuflmodel.DuneUFLModel(2,dimRange)
-u         = model.trialFunction()
-v         = model.testFunction()
+ufl2model = duneuflmodel.DuneUFLModel(grid2d.dimWorld,dimRange)
+u         = ufl2model.trialFunction()
+v         = ufl2model.testFunction()
+un        = ufl2model.coefficient('un',dimRange)
 
 # right hand sie (time derivative part + explicit forcing in v)
-a = ( ufl.inner(u,v) + dt*ufl.inner( spiral_h( u[0],u[1]), v[1] ) ) * ufl.dx(0)
-model.generate(a)
-# now add implicit part of forcing to source
-model.add2Source( explicitCode )
-rhsModel = model.makeAndImport(grid2d,name="spiral_right").get()
-model.clear()
-
+a_ex = ( ufl.inner(un,v) + dt*ufl.inner( spiral_h( un[0],un[1]), v[1] ) ) * ufl.dx(0)
 # left hand side (heat equation in first variable + backward Euler in time)
-a = ( dt/100.*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) +
-      ufl.inner(u,v) ) * ufl.dx(0)
-model.generate(a)
+a_im = ( dt*spiral_D*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) +
+         ufl.inner(u,v) ) * ufl.dx(0)
+ufl2model.generate(a_im-a_ex)
 # now add implicit part of forcing to source and un coefficient function
-model.addCoefficient( "un", 2 )
-model.add2Source( implicitCode )
-lhsModel = model.makeAndImport(grid2d,name="spiral_left").get()
-
+ufl2model.add2Source( sourceCode, linSourceCode )
+model = ufl2model.makeAndImport(grid2d,name="spiral").get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
@@ -86,12 +84,9 @@ lhsModel = model.makeAndImport(grid2d,name="spiral_left").get()
 solution    = sp.interpolate( initial, name="solution" )
 solution_n  = sp.interpolate( initial, name="solution_n" )
 forcing     = sp.interpolate( [0,0,0], name="forcing" )
-# left hand side scheme
-solver    = scheme.create( "FemScheme", solution, lhsModel, "left" )
-# right hand side scheme
-rhs       = scheme.create( "FemScheme", forcing,  rhsModel, "rhs" )
+solver    = scheme.create( "FemScheme", solution, model, "spiral" )
 
-lhsModel.setun(solution_n)
+model.setun(solution_n)
 
 # time lopp
 # ---------
@@ -100,8 +95,7 @@ t       = 0.
 grid2d.writeVTK("spiral", pointdata=[solution], number=count)
 
 while t<endTime:
-    rhs( solution_n, forcing )
-    solver.solve( target=solution, rhs=forcing, assemble=(count==0) )
+    solver.solve( target=solution, assemble=(count==0) )
     t     += dt
     count += 1
     grid2d.writeVTK("spiral", pointdata=[solution], number=count)

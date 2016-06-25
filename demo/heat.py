@@ -26,7 +26,6 @@ spc = space.create( "Lagrange", grid, dimrange=1, polorder=2)
 model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1, 'Heat')
 u = model.trialFunction()
 v = model.testFunction()
-x = model.spatialCoordinate()
 u_n = model.coefficient('u_n')
 
 a = (ufl.inner(u, v) - deltaT * ufl.inner(ufl.grad(u), ufl.grad(v))) * ufl.dx(0)

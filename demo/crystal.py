@@ -13,7 +13,7 @@ import dune.fem.function as function
 #################################################################
 dimRange     = 2
 dimDomain    = 2
-maxLevel     = 10
+maxLevel     = 12
 dt           = 5.e-4
 endTime      = 0.1
 saveinterval = 0.001
@@ -27,7 +27,7 @@ c            = 0.02
 N            = 6.
 def initial(x):
     r  = (x-[6,6]).two_norm
-    return [ 0 if r>0.1 else 1, -0.5 ]
+    return [ 0 if r>0.3 else 1, -0.5 ]
 
 #################################################################
 # Basic setup
@@ -76,7 +76,7 @@ model = ufl2model.makeAndImport(grid2d,name="crystal").get()
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
-initial_gf  =  grid2d.globalGridFunction("initial", initial)
+initial_gf  = grid2d.globalGridFunction("initial", initial)
 solution    = sp.interpolate(initial_gf, name="solution")
 solution_n  = sp.interpolate(initial_gf, name="solution_n")
 # scheme
@@ -91,19 +91,20 @@ marker = hgrid.marker
 def mark(element):
     # return marker.keep
     solutionLocal = solution.localFunction(element)
-    x = [1/3,1/3]
-    grad = solutionLocal.jacobian(x)
+    grad = solutionLocal.jacobian(element.geometry.domain.center)
     if grad[0].infinity_norm > 1.:
       return marker.refine if element.level < maxLevel+1 else marker.keep
     else:
       return marker.coarsen
 
+hgrid.globalRefine(2)
 for i in range(0,maxLevel+1):
     hgrid.mark(mark)
     hgrid.adapt([solution])
     hgrid.loadBalance([solution])
-    solution.interpolate(initial_gf)
-
+    solution.interpolate(initial_gf)    # here I need a grid function,
+                                        # lambda will not work because direct C++ is used and that has not been
+                                        # implemented yet
 solution_n.assign(solution)
 
 # time lopp

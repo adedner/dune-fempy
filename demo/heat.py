@@ -1,12 +1,10 @@
 from __future__ import print_function
 import math
 from mpi4py import MPI
+import dune.fem as fem
 
 import ufl
 import dune.models.femufl as duneuflmodel
-import dune.fem as fem
-import dune.fem.space as space
-import dune.fem.scheme as scheme
 
 dgf = """DGF
 
@@ -20,7 +18,7 @@ INTERVAL
 deltaT = 0.01
 
 grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2)
-spc = space.create( "Lagrange", grid, dimrange=1, polorder=2)
+spc = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
 
 ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1, 'Heat')
 u         = ufl2model.trialFunction()
@@ -35,17 +33,18 @@ ufl2model.generate(a)
 heatModel = ufl2model.makeAndImport(grid,name="heat").get()
 
 solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="heat")
+heatScheme = fem.create.scheme("FemScheme", spc, heatModel, "heat")
+
 grid.writeVTK("heat", pointdata=[solution], number=0)
-
-heatScheme = scheme.create("FemScheme", spc, heatModel, "heat")
-
+# vtk = grid.writeVTK("heat", pointdata=[solution], number=0)
 # u_n = spc.interpolate(solution)
 # heatModel.setu_n(u_n)
 
 steps = int(1 / deltaT)
-for n in range(0,steps):
+for n in range(1,steps+1):
     heatModel.setu_n(solution)
     solution = heatScheme.solve()
+    grid.writeVTK("heat", pointdata=[solution], number=n)
     # u_n.assign(solution)
     # heatScheme.solve( target=solution )
-    grid.writeVTK("heat", pointdata=[solution], number=n+1)
+    # vtk.write("heat", n)

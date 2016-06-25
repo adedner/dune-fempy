@@ -5,10 +5,6 @@ from mpi4py import MPI
 import ufl
 import dune.models.femufl as duneuflmodel
 import dune.fem as fem
-import dune.fem.gridpart as gridpart
-import dune.fem.space as space
-import dune.fem.scheme as scheme
-import dune.fem.function as function
 
 #################################################################
 dimRange     = 2
@@ -33,14 +29,12 @@ def initial(x):
 # Basic setup
 # -----------
 # set up reference domain
-grid2d    = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
+grid2d = fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
 grid2d.hierarchicalGrid.globalRefine(3)
-sp        = space.create("Lagrange", grid2d, dimrange=dimRange, polorder=1)
-level_gf  = grid2d.localGridFunction("level", function.Levels())
 
 # set up left and right hand side models
 # --------------------------------------
-ufl2model = duneuflmodel.DuneUFLModel(2,dimDomain)
+ufl2model = duneuflmodel.DuneUFLModel(dimDomain,dimRange)
 u         = ufl2model.trialFunction()
 v         = ufl2model.testFunction()
 un        = ufl2model.coefficient('un',dimRange)
@@ -57,8 +51,8 @@ diag       = fac*fac
 offdiag    = -fac * c * dbeta_dPhi
 d0         = ufl.as_vector([diag, offdiag])
 d1         = ufl.as_vector([-offdiag, diag])
-m = u[0] - 0.5 - kappa1/ufl.pi*ufl.atan(kappa2*u[1])
-s = ufl.as_vector([dt/tau * u[0] *  (1.-u[0]) * m , u[0]])
+m          = u[0] - 0.5 - kappa1/ufl.pi*ufl.atan(kappa2*u[1])
+s          = ufl.as_vector([dt/tau * u[0] *  (1.-u[0]) * m , u[0]])
 
 a_im = ( alpha*alpha*dt/tau *
            ( ufl.inner( ufl.dot(d0, ufl.grad(u[0])), ufl.grad(v[0])[0]) +
@@ -67,20 +61,19 @@ a_im = ( alpha*alpha*dt/tau *
          ufl.inner(u,v) -
          ufl.inner(s,v)
        ) * ufl.dx(0)
-a = a_im - a_ex
 
-ufl2model.generate(a)   # implement a_im == a_ex instead
-# now add implicit part of forcing to source and un coefficient function
+ufl2model.generate(a_im-a_ex)   # implement a_im == a_ex instead
 model = ufl2model.makeAndImport(grid2d,name="crystal").get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
-initial_gf  = grid2d.globalGridFunction("initial", initial)
-solution    = sp.interpolate(initial_gf, name="solution")
-solution_n  = sp.interpolate(initial_gf, name="solution_n")
+sp         = fem.create.space("Lagrange", grid2d, dimrange=dimRange, polorder=1)
+initial_gf = grid2d.globalGridFunction("initial", initial)
+solution   = sp.interpolate(initial_gf, name="solution")
+solution_n = sp.interpolate(initial_gf, name="solution_n")
 # scheme
-solver    = scheme.create("FemScheme", solution, model, "crystel")
+solver    = fem.create.scheme("FemScheme", solution, model, "crystel")
 
 model.setun(solution_n)
 
@@ -102,9 +95,7 @@ for i in range(0,maxLevel+1):
     hgrid.mark(mark)
     hgrid.adapt([solution])
     hgrid.loadBalance([solution])
-    solution.interpolate(initial_gf)    # here I need a grid function,
-                                        # lambda will not work because direct C++ is used and that has not been
-                                        # implemented yet
+    solution.interpolate(initial_gf)
 solution_n.assign(solution)
 
 # time lopp
@@ -112,7 +103,9 @@ solution_n.assign(solution)
 count    = 0
 t        = 0.
 savestep = saveinterval
-grid2d.writeVTK("crystal", pointdata=[solution], celldata=[level_gf], number=count)
+vtk = grid2d.writeVTK("crystal", pointdata=[solution],
+        celldata=[grid2d.levelFunction(),grid2d.partitionFunction()],
+        number=count)
 
 while t < endTime:
     solver.solve(target=solution)
@@ -121,7 +114,7 @@ while t < endTime:
     if t > savestep:
         savestep += saveinterval
         count += 1
-        grid2d.writeVTK("crystal", pointdata=[solution], celldata=[level_gf], number=count)
+        vtk.write("crystal",count)
     hgrid.mark(mark)
     hgrid.adapt([solution])
     hgrid.loadBalance([solution])

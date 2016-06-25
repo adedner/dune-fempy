@@ -5,8 +5,6 @@ from mpi4py import MPI
 import ufl
 import dune.models.femufl as duneuflmodel
 import dune.fem as fem
-import dune.fem.space as space
-import dune.fem.scheme as scheme
 
 dgf = """DGF
 
@@ -18,7 +16,7 @@ INTERVAL
 """
 
 grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2, refinement="conforming")
-spc = space.create("Lagrange", grid, dimrange=1, polorder=2)
+spc = fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
 # why dimWorld?
 ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
@@ -31,7 +29,7 @@ b = ufl.sin(x[0])*ufl.sin(x[1]) * v[0] * ufl.dx(0)
 ufl2model.generate(a,b)
 model = ufl2model.makeAndImport(grid,name="laplace").get()
 
-laplace = scheme.create("FemScheme", spc, model, "laplace")
+laplace = fem.create.scheme("FemScheme", spc, model, "laplace")
 grid.writeVTK("laplace_1", pointdata=[laplace.solve()])
 
 #ufl2model.clear()

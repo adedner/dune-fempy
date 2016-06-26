@@ -42,16 +42,13 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   {
     return solution_;
   }
-  void solve( bool assemble )
+  void _solve( const SolutionType &target, bool assemble )
   {
     duneType().solve( assemble );
   }
-  void update( const SolutionType &solution )
+  void _prepare( const SolutionType &solution )
   {
     duneType().updatevelocity( std::get<0>(solution) );
-  }
-  void prepare()
-  {
     duneType().prepare();
   }
   const BurgersScheme& duneType() const
@@ -79,16 +76,14 @@ namespace Dune
       typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
-      pybind11::class_< BurgersSchemeType > cls( module, "BurgersScheme",
-          pybind11::base<NSBaseScheme<Scheme>>() );
+      pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
           new( &instance ) BurgersSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
-      cls.def( "solve", &BurgersSchemeType::solve );
+      cls.def( "_solve", &BurgersSchemeType::_solve );
       cls.def( "solution", &BurgersSchemeType::solution,
             pybind11::return_value_policy::reference_internal );
-      cls.def( "update", &BurgersSchemeType::update );
-      cls.def( "prepare", &BurgersSchemeType::prepare );
+      cls.def( "_prepare", &BurgersSchemeType::_prepare );
       cls.def( "next", &BurgersSchemeType::next );
       cls.def( "time", &BurgersSchemeType::time );
     }

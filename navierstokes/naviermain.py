@@ -9,18 +9,16 @@ import dune.fem.space as space
 grid2d = grid.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 #grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-grid2d.hierarchicalGrid.globalRefine(0)
+grid2d.hierarchicalGrid.globalRefine(2)
 
 timeStep = 0.001
 endTime = 10
 problemNumber = 4
-# initialise Stokes scheme
 space = space.create( "Lagrange", grid2d ) # not actually used
-ss = scheme.get( "StokesScheme", space, grid2d, 1 ) # ideally this should be ss = scheme.get( "StokesScheme" )
-stokesScheme = ss.StokesScheme( grid2d, problemNumber, timeStep )
-# initialise Burgers scheme
+ss = scheme.get( "StokesScheme", space, grid2d, 1 ) # ideally remove space and dimrange here
+stokesScheme = ss.Scheme( grid2d, problemNumber, timeStep )
 bs = scheme.get( "BurgersScheme", space, grid2d, 1 )
-burgersScheme = bs.BurgersScheme( grid2d, problemNumber, timeStep )
+burgersScheme = bs.Scheme( grid2d, problemNumber, timeStep )
 stokesScheme.initialize()
 
 vtk = grid2d.vtkWriter()
@@ -34,32 +32,18 @@ def solve_method( timeStep, endTime ):
     counter = 0
     vtk.write( "ns_0000" )
     while time < endTime:
-        print( time, " burgers=", burgersScheme.time(), "  stokes=", stokesScheme.time())
-        # first step (solve Stokes for velocity and pressure)
+        print( "time is: " time )
         print( 'Solve step 1 - Stokes' )
-        stokesScheme.preparestep1()
-        stokesScheme.solve( counter == 0 ) # assemble only on first iteration
-        # stokesScheme.solve( rhs=burgerScheme.solution(), target=stokesScheme.solution(), counter==0 )
-
-        # second step (solve Burgers for velocity)
-        burgersScheme.update( stokesScheme.solution() )
+        stokesScheme.solve( rhs = burgersScheme.solution(), target = stokesScheme.solution(), assemble = counter==0 )
         print( 'Solve step 2 - Burgers' )
-        burgersScheme.prepare()
-        burgersScheme.solve( counter == 0 )
-        # burgersScheme.solve( rhs=stokesScheme.solution(), target=burgersScheme.solution(), counter==0 )
-
-        # third step (solve Stokes for velocity and pressure)
-        stokesScheme.update( burgersScheme.solution() )
+        burgersScheme.solve( rhs = stokesScheme.solution(), target = burgersScheme.solution(), assemble = counter==0 )
         print( 'Solve step 3 - Stokes' )
-        stokesScheme.preparestep1()
-        stokesScheme.solve( False )
-        # stokesScheme.solve( rhs=burgerScheme.solution(), target=stokesScheme.solution(), False )
-
+        stokesScheme.solve( rhs = burgersScheme.solution(), target = stokesScheme.solution(), assemble = False )
         time += timeStep
         stokesScheme.next()
         burgersScheme.next()
         counter += 1
-        #if abs(time%0.01) < 0.001:
+        # if abs(time%0.01) < 0.001:
         outName = str( counter ).zfill( 4 )
         vtk.write( "ns_"+outName )
 

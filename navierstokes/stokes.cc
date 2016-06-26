@@ -40,26 +40,19 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   {
     return solution_;
   }
-  void solve( bool assemble )
+  void _solve( const SolutionType &target, bool assemble )
   {
     duneType().solve( assemble );
-  }
-  void update( const SolutionType &solution )
-  {
-    duneType().updatevelocity( std::get<0>(solution) );
-    duneType().updatepressure( std::get<1>(solution) );
   }
   void initialize()
   {
     duneType().initialize();
   }
-  void preparestep1()
+  void _prepare( const SolutionType &solution )
   {
+    duneType().updatevelocity( std::get<0>(solution) );
+    duneType().updatepressure( std::get<1>(solution) );
     duneType().preparestep1();
-  }
-  void preparestep3()
-  {
-    duneType().preparestep3();
   }
   StokesScheme& duneType()
   {
@@ -89,17 +82,15 @@ namespace Dune
       auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
-      pybind11::class_< StokesSchemeType > cls( module, "StokesScheme", pybind11::base<NSBaseScheme<Scheme>>() );
+      pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( StokesSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
           new( &instance ) StokesSchemeType( gridPart, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
       cls.def( "solution", &StokesSchemeType::solution,
             pybind11::return_value_policy::reference_internal );
-      cls.def( "solve", &StokesSchemeType::solve );
-      cls.def( "update", &StokesSchemeType::update );
+      cls.def( "_solve", &StokesSchemeType::_solve );
       cls.def( "initialize", &StokesSchemeType::initialize );
-      cls.def( "preparestep1", &StokesSchemeType::preparestep1 );
-      cls.def( "preparestep3", &StokesSchemeType::preparestep3 );
+      cls.def( "_prepare", &StokesSchemeType::_prepare );
       cls.def( "next", &StokesSchemeType::next );
       cls.def( "time", &StokesSchemeType::time );
     }

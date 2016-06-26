@@ -75,8 +75,8 @@ def main(argv):
           # try default fem solvers
           femSchemeModule = scheme.get( "FemScheme", sp, dimR, polorder=1)
 
-       s   = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
-       s1  = femSchemeModule.Scheme( sp, m.wrap(), "solution" )
+       s   = femSchemeModule.Scheme( sp, m, "solution" )
+       s1  = femSchemeModule.Scheme( sp, m, "solution" )
        vtk = g.vtkWriter()
        solution = s.solve()
        solution.addToVTKWriter(vtk, vtk.PointData)

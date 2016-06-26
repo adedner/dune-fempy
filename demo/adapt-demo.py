@@ -6,10 +6,9 @@ from mpi4py import MPI
 import math
 
 import dune.femmpi as femmpi
-import dune.fem.grid as grid
-import dune.fem.function as function
+import dune.fem as fem
 
-grid = grid.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid = fem.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
 # interpolate some data onto macro grid
 phi = grid.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], space="Lagrange", name="phi")
@@ -41,11 +40,7 @@ while t < 2*math.pi:
     hgrid.adapt([phi])
     hgrid.loadBalance([phi])
     phi.interpolate([0])
-    grid.writeVTK("adapt",\
-            pointdata=[phi],\
-            celldata=[grid.localGridFunction("level", function.Levels()),
-                      grid.localGridFunction("rank", function.Partition(femmpi.comm.rank))],\
-            number=str(nr))
+    grid.writeVTK("adapt", pointdata=[phi], celldata=[grid.levelFunction(), grid.partitionFunction()], number=nr)
     print(femmpi.comm.rank, grid.size(0))
     t = t+0.1
     nr = nr+1

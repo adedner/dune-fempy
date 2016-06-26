@@ -6,16 +6,7 @@ import ufl
 import dune.models.femufl as duneuflmodel
 import dune.fem as fem
 
-dgf = """DGF
-
-INTERVAL
-0  0
-1  1
-16 16
-#
-"""
-
-grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid = fem.leafGrid(fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 spc = fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
 # why dimWorld?

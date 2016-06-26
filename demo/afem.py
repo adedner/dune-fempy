@@ -6,8 +6,7 @@ import ufl
 import dune.models.femufl as duneuflmodel
 import dune.fem as fem
 
-dgf = """DGF
-
+dgf = """
 INTERVAL
  0  0
  1  1
@@ -15,7 +14,7 @@ INTERVAL
 #
 """
 
-grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid = fem.leafGrid(fem.string2dgf(dgf), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
 
 ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
@@ -38,7 +37,7 @@ count = 0
 tol = 0.3
 while count < 20:
     [estimate, marked] = laplace.mark(uh, tol)
-    grid.writeVTK("afem", pointdata=[uh], celldata=[grid.levelFunction()], number=str(count) )
+    grid.writeVTK("afem", pointdata=[uh], celldata=[grid.levelFunction()], number=count )
     print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",laplace.error(uh))
     if marked == False or estimate < tol:
         break

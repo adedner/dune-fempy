@@ -1,6 +1,6 @@
 add_python_target(adapt-demo)
 add_python_target(afem)
-add_python_target(delaunay-demo)
+add_python_target(grid-construction)
 add_python_target(grid-demo)
 add_python_target(space-demo)
 add_python_target(space-demo2)

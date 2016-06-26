@@ -17,7 +17,7 @@ INTERVAL
 
 deltaT = 0.01
 
-grid = fem.leafGrid(dgf, "ALUSimplexGrid", dimgrid=2)
+grid = fem.leafGrid(fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2)
 spc = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
 
 ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1, 'Heat')
@@ -42,7 +42,8 @@ grid.writeVTK("heat", pointdata=[solution], number=0)
 
 steps = int(1 / deltaT)
 for n in range(1,steps+1):
-    heatModel.setu_n(solution)
+    old_solution = solution          # BUG: this is needed to keep solution alive
+    heatModel.setu_n(old_solution)
     solution = heatScheme.solve()
     grid.writeVTK("heat", pointdata=[solution], number=n)
     # u_n.assign(solution)

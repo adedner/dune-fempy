@@ -19,15 +19,12 @@ template <class BurgersScheme>
 struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
 {
   typedef NSBaseScheme<BurgersScheme> BaseType;
-  typedef BurgersScheme BaseScheme;
   typedef typename BurgersScheme::VelocitySpaceType VelocitySpaceType;
   typedef typename BurgersScheme::PressureSpaceType PressureSpaceType;
   typedef typename BurgersScheme::DiscreteFunctionType VelocityDiscreteFunction;
   typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-  typedef typename BurgersScheme::ProblemType ProblemType;
-  typedef typename BurgersScheme::GridPartType GridPartType;
   typedef std::tuple<VelocitySpaceType&, PressureSpaceType&>
-          SolutionSpaceType;
+          SolutionSpaceType;b
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
@@ -76,9 +73,7 @@ namespace Dune
     void registerScheme ( pybind11::module module )
     {
       typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
-      typedef typename Scheme::GridPartType GridPartType;
       typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
-      typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
       pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );

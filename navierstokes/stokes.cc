@@ -23,8 +23,6 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   typedef typename StokesScheme::PressureSpaceType PressureSpaceType;
   typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
   typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-  typedef typename StokesScheme::ProblemType ProblemType;
-  typedef typename StokesScheme::GridPartType GridPartType;
   typedef std::tuple<VelocitySpaceType&, PressureSpaceType&>
           SolutionSpaceType;
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>

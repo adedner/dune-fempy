@@ -1,6 +1,7 @@
 from __future__ import print_function
 import math
 from mpi4py import MPI
+from functools import reduce
 
 import ufl
 import dune.models.femufl as duneuflmodel

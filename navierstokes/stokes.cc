@@ -85,9 +85,17 @@ namespace Dune
       // export the scheme wrapper
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
       pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
-      cls.def( "__init__", [] ( StokesSchemeType &instance, const SolutionSpaceType &spaces, int modelNumber, double timestep ) {
-          new( &instance ) StokesSchemeType( spaces, modelNumber, timestep );
-        }, pybind11::keep_alive< 1, 2 >() );
+      cls.def( "__init__", [] ( StokesSchemeType &instance, const SolutionSpaceType &spaces,
+                         int problemNumber,
+                         const std::string &name,
+                         double timeStep ) {
+          new( &instance ) StokesSchemeType( spaces, problemNumber, timeStep );
+        }, pybind11::keep_alive< 1, 2 >(),
+           pybind11::arg("spaces"),
+           pybind11::arg("problemNumber"),
+           pybind11::arg("name"),
+           pybind11::arg("timeStep")
+          );
       cls.def( "solution", &StokesSchemeType::solution,
             pybind11::return_value_policy::reference_internal );
       cls.def( "_solve", &StokesSchemeType::_solve );

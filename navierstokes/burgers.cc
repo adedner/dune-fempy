@@ -24,7 +24,7 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   typedef typename BurgersScheme::DiscreteFunctionType VelocityDiscreteFunction;
   typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef std::tuple<VelocitySpaceType&, PressureSpaceType&>
-          SolutionSpaceType;b
+          SolutionSpaceType;
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 

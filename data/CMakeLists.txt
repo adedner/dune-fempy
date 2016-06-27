@@ -7,6 +7,7 @@ set(DGFFILES
   unitcube-1d.dgf
   unitcube-2d.dgf
   unitcube-3d.dgf
+  hole2_larger.dgf
 )
 
 foreach(DGFFILE ${DGFFILES})

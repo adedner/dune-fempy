@@ -1,0 +1,1 @@
+add_python_target(naviermain)

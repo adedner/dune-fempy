@@ -20,6 +20,7 @@ add_subdirectory("python")
 add_subdirectory("doc")
 add_subdirectory("data")
 add_subdirectory("demo")
+add_subdirectory("navierstokes")
 
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
 

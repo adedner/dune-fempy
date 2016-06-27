@@ -183,63 +183,64 @@ double energyFunctional(const DiscreteFunction &u,const double &alphaOne,const d
 //------------------------------------------------------------//
 //------------------------------------------------------------//
 
-template < class GridPart >
+template < class VelocitySpace, class PressureSpace >
 class PRPScheme
 {
 public:
-  typedef GridPart GridPartType;
+  typedef typename VelocitySpace::GridPartType GridPartType;
   typedef typename GridPartType::GridType GridType;
 
   //Models we need to create
-  typedef BurgersStateModel<GridPart>      BurgersStateModelType;//This will construct the model L in disc notes
-  typedef BurgersTransportModel<GridPart>  BurgersTransportModelType;//This will construct the model L_B - L in disc notes
-  typedef BurgersDescentModel<GridPart>    BurgersDescentModelType;//This will construct the model D_J - L in disc notes
-  typedef BurgersGradModel<GridPart>       BurgersGradModelType;
+  typedef BurgersStateModel<GridPartType>      BurgersStateModelType;//This will construct the model L in disc notes
+  typedef BurgersTransportModel<GridPartType>  BurgersTransportModelType;//This will construct the model L_B - L in disc notes
+  typedef BurgersDescentModel<GridPartType>    BurgersDescentModelType;//This will construct the model D_J - L in disc notes
+  typedef BurgersGradModel<GridPartType>       BurgersGradModelType;
 
   //Our function space
   typedef typename BurgersStateModelType::VelocityFunctionSpaceType VelocityFunctionSpaceType;
   typedef typename BurgersStateModelType::PressureFunctionSpaceType PressureFunctionSpaceType;
   //Our discrete function space
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< VelocityFunctionSpaceType, GridPartType, POLORDER+1 > VelocityDiscreteFunctionSpaceType;
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< PressureFunctionSpaceType, GridPartType, POLORDER > PressureDiscreteFunctionSpaceType;
+  typedef VelocitySpace VelocityDiscreteFunctionSpaceType;
+  typedef PressureSpace PressureDiscreteFunctionSpaceType;
   //Our discrete functions
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocityDiscreteFunctionSpaceType > VelocityDiscreteFunctionType;
-   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureDiscreteFunctionSpaceType > PressureDiscreteFunctionType;
+  typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureDiscreteFunctionSpaceType > PressureDiscreteFunctionType;
   typedef VelocityDiscreteFunctionType DiscreteFunctionType;
   //Invertable Operator type
   typedef Dune::Fem::ISTLLinearOperator< VelocityDiscreteFunctionType, VelocityDiscreteFunctionType > BurgersStateLinearOperatorType;
-typedef Dune::Fem::ISTLLinearOperator< PressureDiscreteFunctionType, VelocityDiscreteFunctionType > BurgersGradLinearOperatorType;
+  typedef Dune::Fem::ISTLLinearOperator< PressureDiscreteFunctionType, VelocityDiscreteFunctionType > BurgersGradLinearOperatorType;
   //Inverse operators constructed from above
   typedef Dune::Fem::ISTLCGOp< VelocityDiscreteFunctionType, BurgersStateLinearOperatorType > BurgersStateLinearInverseOperatorType;
 
- typedef typename Dune::Fem::FunctionSpace<double,double,GridPart::dimensionworld,GridPart::dimensionworld+1> FullFunctionSpaceType;
+  typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
   typedef NavierStokesProblemInterface<FullFunctionSpaceType> ProblemType ;
   //Define the linearisable/non-linearisable elliptic operator type + dirichlet constraints
   //typedef Dune::DirichletConstraints<BurgersStateModelType, VelocityDiscreteFunctionSpaceType> StateConstraintsType;
- typedef Dune::DirichletConstraints<BurgersStateModelType, VelocityDiscreteFunctionSpaceType> StateConstraintsType;
+  typedef Dune::DirichletConstraints<BurgersStateModelType, VelocityDiscreteFunctionSpaceType> StateConstraintsType;
   typedef DifferentiableEllipticOperator< BurgersStateLinearOperatorType, BurgersStateModelType, StateConstraintsType > BurgersStateOperatorType;
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType, BurgersTransportModelType, NoConstraints > BurgersTransportOperatorType;
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType,  BurgersDescentModelType, NoConstraints > BurgersDescentOperatorType;
   typedef DifferentiableEllipticOperator< BurgersGradLinearOperatorType, BurgersGradModelType,NoConstraints > BurgersGradOperatorType;
 
-  PRPScheme( GridPartType &gridPart, const ProblemType &problem,const double& alphaOne,const double& alphaTwo)
-    : gridPart_( gridPart ),
+  PRPScheme( const VelocitySpace &velocitySpace, const PressureSpace &pressureSpace,
+             const ProblemType &problem,const double& alphaOne,const double& alphaTwo)
+    : gridPart_( velocitySpace.gridPart() ),
       alphaOne_(alphaOne),
       alphaTwo_(alphaTwo),
       deltaT_( problem.deltaT() ),
-      stateModel_( problem, gridPart,alphaOne,alphaTwo,true),
-      explicitStateModel_( problem, gridPart,alphaOne,alphaTwo,false),
-      gradModel_(gridPart),
-      transportModel_( problem,gridPart ),
-      velocitySpace_( gridPart ),
-      pressureSpace_(gridPart),
+      stateModel_( problem, gridPart_,alphaOne,alphaTwo,true),
+      explicitStateModel_( problem, gridPart_,alphaOne,alphaTwo,false),
+      gradModel_(gridPart_),
+      transportModel_( problem,gridPart_ ),
+      velocitySpace_( velocitySpace ),
+      pressureSpace_( pressureSpace ),
       pressure_( "p", pressureSpace_),
       solution_( "u", velocitySpace_ ),
       rhsU_( "rhsU", velocitySpace_ ),
       dummyOne_("dummyOne",velocitySpace_),
       dummyTwo_("dummyTwo",velocitySpace_),
       xi_("xi",velocitySpace_),
-      descentModel_( problem,gridPart,xi_),//requires memory location of xi_;
+      descentModel_( problem,gridPart_,xi_),//requires memory location of xi_;
       g_("g",velocitySpace_),
       gdiff_("gdiff", velocitySpace_),
       d_("d",velocitySpace_),
@@ -483,8 +484,8 @@ protected:
   const BurgersTransportModelType transportModel_;
 
 
-  VelocityDiscreteFunctionSpaceType velocitySpace_;
-  PressureDiscreteFunctionSpaceType pressureSpace_;
+  const VelocityDiscreteFunctionSpaceType& velocitySpace_;
+  const PressureDiscreteFunctionSpaceType& pressureSpace_;
   PressureDiscreteFunctionType pressure_;
   VelocityDiscreteFunctionType solution_,rhsU_,dummyOne_,dummyTwo_,xi_;
   const BurgersDescentModelType descentModel_;

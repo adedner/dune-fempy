@@ -14,11 +14,14 @@ grid2d.hierarchicalGrid.globalRefine(2)
 timeStep = 0.001
 endTime = 10
 problemNumber = 4
-space = space.create( "Lagrange", grid2d ) # not actually used
-ss = scheme.get( "StokesScheme", space, grid2d, 1 ) # ideally remove space and dimrange here
+velocitySpace = space.create( "Lagrange", grid2d, polorder=2, dimrange=2 )
+pressureSpace = space.create( "Lagrange", grid2d, polorder=1 )
+ss = scheme.get( "StokesScheme", velocitySpace, gridpart=grid2d._module._typeName ) # ideally remove space and dimrange here
 stokesScheme = ss.Scheme( grid2d, problemNumber, timeStep )
-bs = scheme.get( "BurgersScheme", space, grid2d, 1 )
-burgersScheme = bs.Scheme( grid2d, problemNumber, timeStep )
+# bs = scheme.get( "BurgersScheme", (velocitySpace,pressureSpace))
+bs = scheme.get( "BurgersScheme", (velocitySpace,pressureSpace))
+                   # velocitySpace=velocitySpace, pressureSpace=pressureSpace
+burgersScheme = bs.Scheme( (velocitySpace,pressureSpace), problemNumber, timeStep )
 stokesScheme.initialize()
 
 vtk = grid2d.vtkWriter()
@@ -32,7 +35,7 @@ def solve_method( timeStep, endTime ):
     counter = 0
     vtk.write( "ns_0000" )
     while time < endTime:
-        print( "time is: " time )
+        print( "time is: ", time )
         print( 'Solve step 1 - Stokes' )
         stokesScheme.solve( rhs = burgersScheme.solution(), target = stokesScheme.solution(), assemble = counter==0 )
         print( 'Solve step 2 - Burgers' )

@@ -20,16 +20,20 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
 {
   typedef NSBaseScheme<BurgersScheme> BaseType;
   typedef BurgersScheme BaseScheme;
+  typedef typename BurgersScheme::VelocityDiscreteFunctionSpaceType VelocityDiscreteFunctionSpaceType;
+  typedef typename BurgersScheme::PressureDiscreteFunctionSpaceType PressureDiscreteFunctionSpaceType;
   typedef typename BurgersScheme::DiscreteFunctionType VelocityDiscreteFunction;
   typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef typename BurgersScheme::ProblemType ProblemType;
   typedef typename BurgersScheme::GridPartType GridPartType;
+  typedef std::tuple<VelocityDiscreteFunctionSpaceType&, PressureDiscreteFunctionSpaceType&>
+          SolutionSpaceType;
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
-  BurgersSchemeWrapper( GridPartType &gridPart, int problemNumber, double timestep )
-  : BaseType( gridPart, problemNumber, timestep ),
-    burgersScheme_ (BaseType::gridPart_, *BaseType::problemPtr_, BaseType::timestepBurgers_, BaseType::viscosityActual_ )
+  BurgersSchemeWrapper( const SolutionSpaceType &spaces, int problemNumber, double timestep )
+  : BaseType( std::get<0>(spaces).gridPart(), problemNumber, timestep ),
+    burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces), *BaseType::problemPtr_, BaseType::timestepBurgers_, BaseType::viscosityActual_ )
   , solution_( burgersScheme_.solution(), burgersScheme_.pressure() )
   {
   }
@@ -73,12 +77,14 @@ namespace Dune
     {
       typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
       typedef typename Scheme::GridPartType GridPartType;
+      typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
       typedef typename Scheme::DiscreteFunctionType SolutionFunction;
       // export PRPScheme
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
       pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
-      cls.def( "__init__", [] ( BurgersSchemeType &instance, GridPartType &gridPart, int modelNumber, double timestep ) {
-          new( &instance ) BurgersSchemeType( gridPart, modelNumber, timestep );
+      cls.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
+                                int modelNumber, double timestep ) {
+          new( &instance ) BurgersSchemeType( spaces, modelNumber, timestep );
         }, pybind11::keep_alive< 1, 2 >() );
       cls.def( "_solve", &BurgersSchemeType::_solve );
       cls.def( "solution", &BurgersSchemeType::solution,

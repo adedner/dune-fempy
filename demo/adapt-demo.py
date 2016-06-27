@@ -39,7 +39,6 @@ while t < 2*math.pi:
     hgrid.mark(mark)
     hgrid.adapt([phi])
     hgrid.loadBalance([phi])
-    phi.interpolate([0])
     grid.writeVTK("adapt", pointdata=[phi], celldata=[grid.levelFunction(), grid.partitionFunction()], number=nr)
     print(femmpi.comm.rank, grid.size(0))
     t = t+0.1

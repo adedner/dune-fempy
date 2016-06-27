@@ -56,5 +56,6 @@ Bugs:
 2)  Problem with model.set*(gf) not keeping gf alive long enough
 3)  GMSH reader not working with YaspGrid due to non interface gridfactory method used
 4)  estimator only correct for dimworld=dimgrid
+5)  database can not contain parameters with numbers (at least space0 failed)
 
 ------------------------------------------------------------------------------------

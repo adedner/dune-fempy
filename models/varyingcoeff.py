@@ -2,7 +2,7 @@ print 'Warning: this model includes a coefficient for the mass and diffusion coe
        this can not yet be set so the model does not compile'
 from dune.models.femufl import *
 
-model    = DuneUFLModel(2,1,'VaryingCoeff') # this is utility.init and sets the dim range
+model    = DuneUFLModel(2,1) # this is utility.init and sets the dim range
 
 #########################################
 # define exact solution for testing
@@ -20,4 +20,6 @@ m = model.coefficient('mass')
 dx0 = dx(0)
 a = ( m[0]*inner(u,v) + D[0]*inner(grad(u),grad(v)) )*dx0
 L = sin(x[0])*sin(x[1])*v[0]*dx(0)
-model.generate(a,L,exact)
+
+model.generate(a,L,exact=exact)
+model.write(exact=exact, name="VaryingCoeff")

@@ -200,11 +200,11 @@ public:
   typedef typename BurgersStateModelType::VelocityFunctionSpaceType VelocityFunctionSpaceType;
   typedef typename BurgersStateModelType::PressureFunctionSpaceType PressureFunctionSpaceType;
   //Our discrete function space
-  typedef VelocitySpace VelocityDiscreteFunctionSpaceType;
-  typedef PressureSpace PressureDiscreteFunctionSpaceType;
+  typedef VelocitySpace VelocitySpaceType;
+  typedef PressureSpace PressureSpaceType;
   //Our discrete functions
-  typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocityDiscreteFunctionSpaceType > VelocityDiscreteFunctionType;
-  typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureDiscreteFunctionSpaceType > PressureDiscreteFunctionType;
+  typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocitySpaceType > VelocityDiscreteFunctionType;
+  typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureSpaceType > PressureDiscreteFunctionType;
   typedef VelocityDiscreteFunctionType DiscreteFunctionType;
   //Invertable Operator type
   typedef Dune::Fem::ISTLLinearOperator< VelocityDiscreteFunctionType, VelocityDiscreteFunctionType > BurgersStateLinearOperatorType;
@@ -215,8 +215,8 @@ public:
   typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
   typedef NavierStokesProblemInterface<FullFunctionSpaceType> ProblemType ;
   //Define the linearisable/non-linearisable elliptic operator type + dirichlet constraints
-  //typedef Dune::DirichletConstraints<BurgersStateModelType, VelocityDiscreteFunctionSpaceType> StateConstraintsType;
-  typedef Dune::DirichletConstraints<BurgersStateModelType, VelocityDiscreteFunctionSpaceType> StateConstraintsType;
+  //typedef Dune::DirichletConstraints<BurgersStateModelType, VelocitySpaceType> StateConstraintsType;
+  typedef Dune::DirichletConstraints<BurgersStateModelType, VelocitySpaceType> StateConstraintsType;
   typedef DifferentiableEllipticOperator< BurgersStateLinearOperatorType, BurgersStateModelType, StateConstraintsType > BurgersStateOperatorType;
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType, BurgersTransportModelType, NoConstraints > BurgersTransportOperatorType;
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType,  BurgersDescentModelType, NoConstraints > BurgersDescentOperatorType;
@@ -484,8 +484,8 @@ protected:
   const BurgersTransportModelType transportModel_;
 
 
-  const VelocityDiscreteFunctionSpaceType& velocitySpace_;
-  const PressureDiscreteFunctionSpaceType& pressureSpace_;
+  const VelocitySpaceType& velocitySpace_;
+  const PressureSpaceType& pressureSpace_;
   PressureDiscreteFunctionType pressure_;
   VelocityDiscreteFunctionType solution_,rhsU_,dummyOne_,dummyTwo_,xi_;
   const BurgersDescentModelType descentModel_;

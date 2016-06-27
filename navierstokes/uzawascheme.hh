@@ -80,18 +80,18 @@ private:
   int step_;
 };
 
-template < class GridPart >
+template < class VelocitySpace, class PressureSpace >
 class UzawaScheme
 {
 public:
-  typedef GridPart GridPartType;
+  typedef typename VelocitySpace::GridPartType GridPartType;
 
-  typedef StokesMainModel<GridPart>       MainModelType;
-  typedef StokesGradModel<GridPart>       GradModelType;
-  typedef StokesDivergenceModel<GridPart> DivergenceModelType;
-  typedef StokesMassModel<GridPart>       MassModelType;
-  typedef StokesPrecondModel<GridPart>    PrecondModelType;
-  typedef StokesTransportModel<GridPart>  TransportModelType;
+  typedef StokesMainModel<GridPartType>       MainModelType;
+  typedef StokesGradModel<GridPartType>       GradModelType;
+  typedef StokesDivergenceModel<GridPartType> DivergenceModelType;
+  typedef StokesMassModel<GridPartType>       MassModelType;
+  typedef StokesPrecondModel<GridPartType>    PrecondModelType;
+  typedef StokesTransportModel<GridPartType>  TransportModelType;
 
   typedef typename GridPartType::GridType GridType;
 
@@ -102,9 +102,9 @@ public:
 #error SHOULD NOT BE USING MINIELEMENT
  typedef Dune::Fem::BubbleElementSpace< VelocityFunctionSpaceType, GridPartType > VelocitySpaceType;
 #else
- typedef Dune::Fem::LagrangeDiscreteFunctionSpace< VelocityFunctionSpaceType, GridPartType, POLORDER+1 > VelocitySpaceType;
+ typedef VelocitySpace VelocitySpaceType;
 #endif
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< PressureFunctionSpaceType, GridPartType, POLORDER > PressureSpaceType;
+  typedef PressureSpace PressureSpaceType;
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocitySpaceType > VelocityDiscreteFunctionType;
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureSpaceType > PressureDiscreteFunctionType;
 
@@ -119,7 +119,7 @@ public:
 
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType,TransportModelType, NoConstraints > TransportOperatorType;
 
-  typedef typename Dune::Fem::FunctionSpace<double,double,GridPart::dimensionworld,GridPart::dimensionworld+1> FullFunctionSpaceType;
+  typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
   typedef NavierStokesProblemInterface< FullFunctionSpaceType> ProblemType ;
 
   struct LocalCombinedFunction
@@ -127,7 +127,7 @@ public:
     typedef FullFunctionSpaceType FunctionSpaceType;
     typedef typename FunctionSpaceType::RangeType RangeType;
 
-   typedef UzawaScheme::GridPartType GridPartType;
+    typedef UzawaScheme::GridPartType GridPartType;
     typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
 
     // constructor
@@ -174,18 +174,18 @@ public:
   typedef typename  MainModelType::InitialVelocityFunctionType InitialVelocityFunctionType;
   typedef typename  MainModelType::InitialPressureFunctionType InitialPressureFunctionType;
 
-  UzawaScheme( GridPartType &gridPart, const ProblemType &problem, double mu, double nu )
-    : gridPart_( gridPart ),
+  UzawaScheme( const VelocitySpace &velocitySpace, const PressureSpace &pressureSpace, const ProblemType &problem, double mu, double nu )
+    : gridPart_( velocitySpace.gridPart() ),
       mu_(mu), nu_(nu),
-      mainModel_( problem, gridPart, mu,nu,true ),
-      explicitMainModel_( problem, gridPart, mu,nu,false ),
-      gradModel_( gridPart ),
-      divModel_( gridPart ),
-      massModel_( gridPart ),
-      precondModel_( problem, gridPart, mu,nu ),
-      transportModel_(problem,gridPart),
-      velocitySpace_( gridPart ),
-      pressureSpace_( gridPart ),
+      mainModel_( problem, gridPart_, mu, nu, true ),
+      explicitMainModel_( problem, gridPart_, mu, nu, false ),
+      gradModel_( gridPart_ ),
+      divModel_( gridPart_ ),
+      massModel_( gridPart_ ),
+      precondModel_( problem, gridPart_, mu, nu ),
+      transportModel_( problem, gridPart_ ),
+      velocitySpace_( velocitySpace ),
+      pressureSpace_( pressureSpace ),
       velocity_( "velocity", velocitySpace_ ),
       pressure_( "pressure", pressureSpace_ ),
       rhsU_( "rhsU", velocitySpace_ ),
@@ -413,8 +413,8 @@ protected:
   const PrecondModelType precondModel_;
   const TransportModelType transportModel_;
 
-  VelocitySpaceType velocitySpace_;
-  PressureSpaceType pressureSpace_;
+  const VelocitySpaceType& velocitySpace_;
+  const PressureSpaceType& pressureSpace_;
   VelocityDiscreteFunctionType velocity_;
   PressureDiscreteFunctionType pressure_;
   VelocityDiscreteFunctionType rhsU_,xi_;

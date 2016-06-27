@@ -20,13 +20,13 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
 {
   typedef NSBaseScheme<BurgersScheme> BaseType;
   typedef BurgersScheme BaseScheme;
-  typedef typename BurgersScheme::VelocityDiscreteFunctionSpaceType VelocityDiscreteFunctionSpaceType;
-  typedef typename BurgersScheme::PressureDiscreteFunctionSpaceType PressureDiscreteFunctionSpaceType;
+  typedef typename BurgersScheme::VelocitySpaceType VelocitySpaceType;
+  typedef typename BurgersScheme::PressureSpaceType PressureSpaceType;
   typedef typename BurgersScheme::DiscreteFunctionType VelocityDiscreteFunction;
   typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef typename BurgersScheme::ProblemType ProblemType;
   typedef typename BurgersScheme::GridPartType GridPartType;
-  typedef std::tuple<VelocityDiscreteFunctionSpaceType&, PressureDiscreteFunctionSpaceType&>
+  typedef std::tuple<VelocitySpaceType&, PressureSpaceType&>
           SolutionSpaceType;
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;

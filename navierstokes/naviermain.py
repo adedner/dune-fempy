@@ -24,8 +24,8 @@ stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace
                problemNumber,"stokes", timeStep )
 bs = scheme.get( "BurgersScheme", ( velocitySpace, pressureSpace ) )
 burgersScheme = bs.Scheme( ( velocitySpace, pressureSpace ), problemNumber, timeStep )
-velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity" )
-pressure = pressureSpace.interpolate( lambda x: [0], name = "pressure" )
+velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity", storage="Istl" )
+pressure = pressureSpace.interpolate( lambda x: [0], name = "pressure", storage="Istl" )
 solution = velocity, pressure
 
 stokesScheme.initialize( solution )

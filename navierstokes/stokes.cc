@@ -31,30 +31,23 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   StokesSchemeWrapper( const SolutionSpaceType &spaces, int problemNumber, double timestep )
   : BaseType( std::get<0>(spaces).gridPart(), problemNumber, timestep )
   , stokesScheme_( std::get<0>(spaces), std::get<1>(spaces), *BaseType::problemPtr_, BaseType::viscosityActual_, BaseType::timestepStokes_ )
-  , solution_( stokesScheme_.velocity(), stokesScheme_.pressure() )
   {}
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
   }
   StokesSchemeWrapper( StokesSchemeWrapper& ) = delete;
   StokesSchemeWrapper& operator=( const StokesSchemeWrapper& ) = delete;
 
-  SolutionType &solution()
+  void _solve( SolutionType &target, bool assemble )
   {
-    return solution_;
+    duneType().solve( std::get<0>(target), std::get<1>(target), assemble );
   }
-  void _solve( const SolutionType &target, bool assemble )
+  void initialize( SolutionType &solution )
   {
-    duneType().solve( assemble );
+    duneType().initialize( std::get<0>(solution), std::get<1>(solution) );
   }
-  void initialize()
+  void _prepare( SolutionType &solution )
   {
-    duneType().initialize();
-  }
-  void _prepare( const SolutionType &solution )
-  {
-    duneType().updatevelocity( std::get<0>(solution) );
-    duneType().updatepressure( std::get<1>(solution) );
-    duneType().preparestep1();
+    duneType().prepare( std::get<0>(solution) );
   }
   StokesScheme& duneType()
   {
@@ -66,7 +59,6 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   }
   protected:
   StokesScheme stokesScheme_;
-  SolutionType solution_;
 };
 
 namespace Dune
@@ -78,10 +70,6 @@ namespace Dune
     {
       typedef StokesSchemeWrapper<Scheme> StokesSchemeType;
       typedef typename StokesSchemeType::SolutionSpaceType SolutionSpaceType;
-      typedef typename Scheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
-      typedef typename Scheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-      auto velo = detail::registerGridFunction< VelocityDiscreteFunction >( module, "VelocityDiscreteFunction" );
-      auto pres = detail::registerGridFunction< PressureDiscreteFunction >( module, "PressureDiscreteFunction" );
       // export the scheme wrapper
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
       pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
@@ -96,8 +84,6 @@ namespace Dune
            pybind11::arg("name"),
            pybind11::arg("timeStep")
           );
-      cls.def( "solution", &StokesSchemeType::solution,
-            pybind11::return_value_policy::reference_internal );
       cls.def( "_solve", &StokesSchemeType::_solve );
       cls.def( "initialize", &StokesSchemeType::initialize );
       cls.def( "_prepare", &StokesSchemeType::_prepare );

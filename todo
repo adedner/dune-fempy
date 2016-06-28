@@ -57,5 +57,8 @@ Bugs:
 3)  GMSH reader not working with YaspGrid due to non interface gridfactory method used
 4)  estimator only correct for dimworld=dimgrid
 5)  database can not contain parameters with numbers (at least space0 failed)
+6)  if a scheme has a fixed storage one has to make sure that the correct storage is
+    really used and the correct discrete function types are registered. An easier approach
+    to registration should be made available in the C++ bindings as well
 
 ------------------------------------------------------------------------------------

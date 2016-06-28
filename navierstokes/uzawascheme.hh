@@ -98,12 +98,7 @@ public:
   typedef typename GradModelType::VelocityFunctionSpaceType VelocityFunctionSpaceType;
   typedef typename GradModelType::PressureFunctionSpaceType PressureFunctionSpaceType;
 
-#if MINIELEMENT
-#error SHOULD NOT BE USING MINIELEMENT
- typedef Dune::Fem::BubbleElementSpace< VelocityFunctionSpaceType, GridPartType > VelocitySpaceType;
-#else
  typedef VelocitySpace VelocitySpaceType;
-#endif
   typedef PressureSpace PressureSpaceType;
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocitySpaceType > VelocityDiscreteFunctionType;
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureSpaceType > PressureDiscreteFunctionType;

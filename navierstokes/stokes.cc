@@ -37,15 +37,15 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   StokesSchemeWrapper( StokesSchemeWrapper& ) = delete;
   StokesSchemeWrapper& operator=( const StokesSchemeWrapper& ) = delete;
 
-  void _solve( SolutionType &target, bool assemble )
+  void _solve( const SolutionType &target, bool assemble )
   {
     duneType().solve( std::get<0>(target), std::get<1>(target), assemble );
   }
-  void initialize( SolutionType &solution )
+  void initialize( const SolutionType &solution )
   {
     duneType().initialize( std::get<0>(solution), std::get<1>(solution) );
   }
-  void _prepare( SolutionType &solution )
+  void _prepare( const SolutionType &solution )
   {
     duneType().prepare( std::get<0>(solution) );
   }
@@ -70,6 +70,7 @@ namespace Dune
     {
       typedef StokesSchemeWrapper<Scheme> StokesSchemeType;
       typedef typename StokesSchemeType::SolutionSpaceType SolutionSpaceType;
+      typedef typename StokesSchemeType::SolutionType SolutionType;
       // export the scheme wrapper
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
       pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
@@ -84,7 +85,9 @@ namespace Dune
            pybind11::arg("name"),
            pybind11::arg("timeStep")
           );
-      cls.def( "_solve", &StokesSchemeType::_solve );
+      cls.def( "_solve",
+          []( StokesSchemeType &instance, const SolutionType &solution, bool assemble)
+          { instance._solve(solution,assemble); } );
       cls.def( "initialize", &StokesSchemeType::initialize );
       cls.def( "_prepare", &StokesSchemeType::_prepare );
       cls.def( "next", &StokesSchemeType::next );

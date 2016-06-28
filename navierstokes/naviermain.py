@@ -3,12 +3,12 @@ import dune.fem as fem
 import dune.fem.scheme as scheme
 
 # initialise grid
-grid2d = fem.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 #grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
 
-grid2d.hierarchicalGrid.globalRefine(1)
+grid2d.hierarchicalGrid.globalRefine(6)
 
-timeStep = 0.001
+timeStep = 0.005
 endTime = 10
 problemNumber = 4
 velocitySpace = fem.create.space( "Lagrange", grid2d, polorder = 2, dimrange = 2 )

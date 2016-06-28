@@ -234,8 +234,6 @@ public:
       transportModel_( problem,gridPart_ ),
       velocitySpace_( velocitySpace ),
       pressureSpace_( pressureSpace ),
-      pressure_( "p", pressureSpace_),
-      solution_( "u", velocitySpace_ ),
       rhsU_( "rhsU", velocitySpace_ ),
       dummyOne_("dummyOne",velocitySpace_),
       dummyTwo_("dummyTwo",velocitySpace_),
@@ -259,51 +257,27 @@ public:
       theta_(Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.585786))
   {
     // set all DoF to zero
-    solution_.clear();pressure_.clear();
+    //solution_.clear();pressure_.clear();
     const std::string lineSearchMethods[] = { "backtracking","quadratic","cubic" };
     enum { backtracking, quadratic,cubic};
     const int lineSearchMethod = Dune::Fem::Parameter::getEnum("burgers.linesearchmethod", lineSearchMethods, backtracking);
     lineSearchMethod_=lineSearchMethod;
   }
-  void updatevelocity(VelocityDiscreteFunctionType &solution)
-  {
-   solution_.assign(solution);
-  }
-  void updatepressure(PressureDiscreteFunctionType &pressure)
-  {
-    pressure_.assign(pressure);
-  }
-  VelocityDiscreteFunctionType &solution()
-  {
-    return solution_;
-  }
-  const VelocityDiscreteFunctionType &solution() const
-  {
-    return solution_;
-  }
-   PressureDiscreteFunctionType &pressure()
-  {
-    return pressure_;
-  }
-  const PressureDiscreteFunctionType &pressure() const
-  {
-    return pressure_;
-  }
   //! setup the right hand side
-  void prepare()
+  void prepare( VelocityDiscreteFunctionType &solution )
   {
     // set boundary values for velocity
-    stateOperator_.prepare( stateModel_.dirichletBoundary(), solution_ );
+    stateOperator_.prepare( stateModel_.dirichletBoundary(), solution );
     // assemble rhs
     assembleRHS ( stateModel_, stateModel_.rightHandSide(), stateModel_.neumanBoundary(), rhsU_ );
 
     //NEED TO OBTAIN THE PRESSURE FROM STOKES.
   }
 
-  void solve ( bool assemble )
+  void solve ( VelocityDiscreteFunctionType &solution, PressureDiscreteFunctionType &pressure, bool assemble )
   {
 
-    VelocityDiscreteFunctionType solutiontemp(solution_);//We wish to differentiate between solution at time n, and solutions in prior Conjugate gradient steps.
+    VelocityDiscreteFunctionType solutiontemp(solution);//We wish to differentiate between solution at time n, and solutions in prior Conjugate gradient steps.
 
     //! [Solve the system]
     if( assemble )
@@ -315,7 +289,7 @@ public:
     BurgersStateLinearInverseOperatorType invStateOp( stateLinearOperator_, solverEps_, solverEps_ );
 
     //assemble RHS
-    gradOperator_(pressure_,dummyOne_);
+    gradOperator_(pressure,dummyOne_);
     rhsU_-=dummyOne_; dummyOne_.clear();
 
     //-------------Polack-Ribiere-Polyak Scheme ---------------
@@ -347,7 +321,7 @@ public:
     dummyTwo_ += dummyOne_; dummyTwo_ -= rhsU_;                               // set dummyTwo = Lu+Bu - f
 
     dummyOne_.clear();
-    explicitStateOperator_(solution_,dummyOne_);             // set dummyTwo = L[u0]+B[u0] + L'[u^n] - f
+    explicitStateOperator_(solution,dummyOne_);             // set dummyTwo = L[u0]+B[u0] + L'[u^n] - f
     dummyTwo_+= dummyOne_;///////
 
     stateOperator_.prepare(stateModel_.zeroVelocity(),dummyTwo_);
@@ -411,7 +385,7 @@ public:
             dummyTwo_ += dummyOne_; dummyTwo_-= rhsU_;
 
             dummyOne_.clear();
-            explicitStateOperator_(solution_,dummyOne_);// set dummyTwo = L[u0]+B[u0] - L[u^n] - f
+            explicitStateOperator_(solution,dummyOne_);// set dummyTwo = L[u0]+B[u0] - L[u^n] - f
             dummyTwo_+= dummyOne_;/////////
 
             stateOperator_.prepare(stateModel_.zeroVelocity(),dummyTwo_);
@@ -472,7 +446,7 @@ public:
     d_ *= prpBeta;
          d_ -= g_; // d^{n+1} = -g^{n+1} + prpBeta*d^n       (recall g is gradient, -g descent dir)
       }
-    solution_.assign(solutiontemp);//update solution to scheme
+    solution.assign(solutiontemp);//update solution to scheme
 
   }
 protected:
@@ -486,8 +460,7 @@ protected:
 
   const VelocitySpaceType& velocitySpace_;
   const PressureSpaceType& pressureSpace_;
-  PressureDiscreteFunctionType pressure_;
-  VelocityDiscreteFunctionType solution_,rhsU_,dummyOne_,dummyTwo_,xi_;
+  VelocityDiscreteFunctionType rhsU_,dummyOne_,dummyTwo_,xi_;
   const BurgersDescentModelType descentModel_;
   VelocityDiscreteFunctionType g_,gdiff_,d_;
 

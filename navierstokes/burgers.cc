@@ -31,7 +31,6 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   BurgersSchemeWrapper( const SolutionSpaceType &spaces, int problemNumber, double timestep )
   : BaseType( std::get<0>(spaces).gridPart(), problemNumber, timestep ),
     burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces), *BaseType::problemPtr_, BaseType::timestepBurgers_, BaseType::viscosityActual_ )
-  , solution_( burgersScheme_.solution(), burgersScheme_.pressure() )
   {
   }
   ~BurgersSchemeWrapper() {std::cout << "BurgersSchemeWrapper destructor\n";
@@ -39,18 +38,13 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   BurgersSchemeWrapper(BurgersSchemeWrapper&) = delete;
   BurgersSchemeWrapper& operator=(const BurgersSchemeWrapper&) = delete;
 
-  SolutionType &solution()
-  {
-    return solution_;
-  }
   void _solve( const SolutionType &target, bool assemble )
   {
-    duneType().solve( assemble );
+    duneType().solve( std::get<0>(target), std::get<1>(target), assemble );
   }
   void _prepare( const SolutionType &solution )
   {
-    duneType().updatevelocity( std::get<0>(solution) );
-    duneType().prepare();
+    duneType().prepare( std::get<0>(solution) );
   }
   const BurgersScheme& duneType() const
   {
@@ -62,7 +56,6 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   }
   protected:
   BurgersScheme burgersScheme_;
-  SolutionType solution_;
 };
 
 namespace Dune
@@ -74,16 +67,24 @@ namespace Dune
     {
       typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
       typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
+      typedef typename BurgersSchemeType::SolutionType SolutionType;
       // export PRPScheme
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
       pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
-                                int modelNumber, double timestep ) {
-          new( &instance ) BurgersSchemeType( spaces, modelNumber, timestep );
-        }, pybind11::keep_alive< 1, 2 >() );
-      cls.def( "_solve", &BurgersSchemeType::_solve );
-      cls.def( "solution", &BurgersSchemeType::solution,
-            pybind11::return_value_policy::reference_internal );
+                         int problemNumber,
+                         const std::string &name,
+                         double timeStep ) {
+          new( &instance ) BurgersSchemeType( spaces, problemNumber, timeStep );
+        }, pybind11::keep_alive< 1, 2 >(),
+           pybind11::arg("spaces"),
+           pybind11::arg("problemNumber"),
+           pybind11::arg("name"),
+           pybind11::arg("timeStep")
+          );
+      cls.def( "_solve",
+          []( BurgersSchemeType &instance, const SolutionType &solution, bool assemble)
+          { instance._solve(solution,assemble); } );
       cls.def( "_prepare", &BurgersSchemeType::_prepare );
       cls.def( "next", &BurgersSchemeType::next );
       cls.def( "time", &BurgersSchemeType::time );

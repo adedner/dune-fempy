@@ -5,7 +5,7 @@ import dune.fem.scheme as scheme
 # initialise grid
 grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUSimplexGrid", dimgrid=2 )
 
-grid2d.hierarchicalGrid.globalRefine(1)
+grid2d.hierarchicalGrid.globalRefine(6)
 
 timeStep = 0.005
 endTime = 10

@@ -9,6 +9,7 @@ set(DGFFILES
   unitcube-3d.dgf
   hole2_larger.dgf
   karmanvortexstreet.msh
+  hole2.dgf
 )
 
 foreach(DGFFILE ${DGFFILES})

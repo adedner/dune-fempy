@@ -3,22 +3,22 @@ import dune.fem as fem
 import dune.fem.scheme as scheme
 
 # initialise grid
-grid2d = fem.leafGrid( "../data/hole2_larger.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-#grid2d = grid.leafGrid( "../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2 )
+grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUSimplexGrid", dimgrid=2 )
 
-grid2d.hierarchicalGrid.globalRefine(5)
+grid2d.hierarchicalGrid.globalRefine(1)
 
-timeStep = 0.001
+timeStep = 0.005
 endTime = 10
+saveinterval = 0.1
 problemNumber = 4
 velocitySpace = fem.create.space( "Lagrange", grid2d, polorder=2, dimrange=2 )
+# velocitySpace = fem.create.space( "P1Bubble", grid2d, dimrange=2 )
+# probem with missing dirichlet points in bubble space - need to update
+# dirichletconstraints
 pressureSpace = fem.create.space( "Lagrange", grid2d, polorder=1, dimrange=1 )
-# ss = scheme.get( "StokesScheme", ( velocitySpace, pressureSpace) )
-# stokesScheme = ss.Scheme( ( velocitySpace, pressureSpace ), problemNumber, timeStep )
-stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),\
-               problemNumber,"stokes", timeStep )
+stokesScheme  = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),\
+                           problemNumber,"stokes", timeStep )
 bs = scheme.get( "BurgersScheme", ( velocitySpace, pressureSpace ) )
-                   # velocitySpace=velocitySpace, pressureSpace=pressureSpace
 burgersScheme = bs.Scheme( ( velocitySpace, pressureSpace ), problemNumber, timeStep )
 
 velocitySpace = 0
@@ -26,13 +26,20 @@ pressureSpace = 0
 
 stokesScheme.initialize()
 
-vtk = grid2d.writeVTK( "ns_", pointdata=stokesScheme.solution(), number=0 )
+def vorticityLocal(element,x):
+    jac = stokesScheme.solution()[0].localFunction(element).jacobian(x)
+    return [ jac[1][0] - jac[0][1] ]
+vorticity = grid2d.localGridFunction( "vorticity", vorticityLocal)
+
+vtk = grid2d.writeVTK( "ns_", pointdata=stokesScheme.solution()+(vorticity,), number=0 )
 
 def solve_method( timeStep, endTime ):
     stokesScheme.next()
     burgersScheme.next()
     time = timeStep
     counter = 0
+    save_counter = 1
+    savestep = saveinterval
     while time < endTime:
         print( "Time is:", time )
         print( 'Solve step 1 - Stokes' )
@@ -44,8 +51,11 @@ def solve_method( timeStep, endTime ):
         time += timeStep
         stokesScheme.next()
         burgersScheme.next()
+        if time > savestep:
+            savestep += saveinterval
+            vtk.write( "ns_", save_counter )
+            save_counter += 1
         counter += 1
-        vtk.write( "ns_", counter )
 
 solve_method( timeStep, endTime )
 

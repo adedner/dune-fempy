@@ -254,7 +254,7 @@ public:
       explicitStateLinearOperator_("assembled state operator",velocitySpace_,velocitySpace_),
       gradLinearOperator_("assembled gradient operator",pressureSpace_,velocitySpace_),
       // tolerance for iterative solver
-      solverEps_( Dune::Fem::Parameter::getValue< double >( "stokes.solvereps", 1e-12 )),
+      solverEps_( Dune::Fem::Parameter::getValue< double >( "stokes.solvereps", 1e-8 )),
       lineSearchAccept_(Dune::Fem::Parameter::getValue<double>("burgers.linesearchaccept", 0.001)),
       theta_(Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.585786))
   {

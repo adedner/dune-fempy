@@ -23,7 +23,7 @@ velocitySpace = fem.create.space( "Lagrange", grid2d, polorder = 2, dimrange = 2
 stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),\
                viscosity, problemNumber, "stokes", timeStep, storage = "Istl" )
 burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace),\
-               viscosity, problemNumber, "stokes", timeStep, storage = "Istl" )
+               viscosity, problemNumber, "burgers", timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0
 velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity", storage = "Istl" )

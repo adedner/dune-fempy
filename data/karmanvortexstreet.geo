@@ -14,18 +14,18 @@ Z0 =    0 ; // plane
 R  =  1.0/10. ; // unity radius
 F  =  2.0 ; // factor around the cilinder (2.0)
 
-X0 = -5.0 * R ;
-X1 = -(1+F)* R ;
-X2 = -1. * R ;
-X3 = -1. * 0.70710678 * R ;
-X4 = 1. * 0.70710678 * R ;
-X5 = 1. * R ;
-X6 = (1+F)* R ;
+X0 = -10.0 * R ;
+X1 = -(3.5+F)* R ;
+X2 = -2.5 * R ;
+X3 = -2.5 * 0.70710678 * R ;
+X4 = 2.5 * 0.70710678 * R ;
+X5 = 2.5 * R ;
+X6 = (3.5+F)* R ;
 X7 = 50.0 * R ;
 
 Y0 = 0.0 ;
-Y1 = 1. * 0.70710678 * R ;
-Y2 = 1. * 0.70710678 * R * (1+F) ;
+Y1 = 2.5 * 0.70710678 * R ;
+Y2 = 1. * 0.70710678 * R * (3.5+F) ;
 Y3 = 10.0 * R ;                 // 10.0
 
 Point( 0) = { 0, 0, Z0};
@@ -106,14 +106,14 @@ Line Loop(8) = {10,21,-13,-19};
 Ruled Surface(8) = {8};
 Transfinite Surface(8) = {11,12,16,15};
 
-// Recombine Surface(1);
-// Recombine Surface(2);
-// Recombine Surface(3);
-// Recombine Surface(4);
-// Recombine Surface(5);
-// Recombine Surface(6);
-// Recombine Surface(7);
-// Recombine Surface(8);
+Recombine Surface(1);
+Recombine Surface(2);
+Recombine Surface(3);
+Recombine Surface(4);
+Recombine Surface(5);
+Recombine Surface(6);
+Recombine Surface(7);
+Recombine Surface(8);
 
 Symmetry { 0.0,1.0,0.0,0.0 }{Duplicata{Surface{1};}}
 Transfinite Line{27} = NX1 Using Progression 1/RX1 ;

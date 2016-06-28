@@ -8,8 +8,9 @@ struct NSBaseScheme
   typedef typename GridPartType::GridType HGridType;
   typedef typename Scheme::FullFunctionSpaceType FunctionSpaceType;
 
-  NSBaseScheme( GridPartType &gridPart, int problemNumber, double timestep )
+  NSBaseScheme( GridPartType &gridPart, double viscosity, int problemNumber, double timestep )
   : gridPart_( gridPart ),
+    viscosity_(viscosity),
     timeProvider_( gridPart_.grid() ),
     timestep_( timestep )
   {
@@ -33,13 +34,13 @@ struct NSBaseScheme
   {
     return timeProvider_.time();
   }
-  const double viscosity_ = 0.02;
+  GridPartType &gridPart_;
+  const double viscosity_; //  = 0.02;
   const double timestepfactor_ = 0.29289321881;
   const double factor_ = 0.58578643762;
   const double viscosityActual_ = viscosity_*factor_;
   const double timestepStokes_ = 1./timestepfactor_;
   const double timestepBurgers_ = 1./( 1. - 2.*timestepfactor_ );
-  GridPartType &gridPart_;
   Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
   double timestep_;
   ProblemType* problemPtr_ = 0;

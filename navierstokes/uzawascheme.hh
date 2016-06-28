@@ -160,7 +160,7 @@ public:
       massLinearOperator_( "assembled mass operator", pressureSpace_, pressureSpace_ ),
       precondLinearOperator_( "assembled precond operator", pressureSpace_, pressureSpace_ ),
       // tolerance for iterative solver
-      solverEps_( Dune::Fem::Parameter::getValue< double >( "stokes.solvereps", 1e-8 ) ),
+      solverEps_( Dune::Fem::Parameter::getValue< double >( "stokes.solvereps", 1e-6 ) ),
       usePrecond_( Dune::Fem::Parameter::getValue< bool >( "stokes.cg.usepreconditioner", true ) )
   {
     // set all DoF to zero

@@ -8,9 +8,9 @@ set(DGFFILES
   unitcube-2d.dgf
   unitcube-3d.dgf
   hole2_larger.dgf
-  karmanvortexstreet.msh
   hole2.dgf
 )
+# add_gmshgeo_target(karmanvortexstreet)
 
 foreach(DGFFILE ${DGFFILES})
   configure_file(${DGFFILE} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)

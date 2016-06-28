@@ -14,11 +14,11 @@ problemNumber = 4
 velocitySpace = fem.create.space( "Lagrange", grid2d, polorder = 2, dimrange = 2 )
 pressureSpace = fem.create.space( "Lagrange", grid2d, polorder = 1, dimrange = 1 )
 stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),\
-               problemNumber,"stokes", timeStep )
-bs = scheme.get( "BurgersScheme", ( velocitySpace, pressureSpace ) )
+               problemNumber,"stokes", timeStep, storage="Istl" )
+bs = scheme.get( "BurgersScheme", ( velocitySpace, pressureSpace ), storage="Istl" )
 burgersScheme = bs.Scheme( ( velocitySpace, pressureSpace ), problemNumber, timeStep )
-velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity" )
-pressure = pressureSpace.interpolate( lambda x: [0], name = "pressure" )
+velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity", storage="Istl" )
+pressure = pressureSpace.interpolate( lambda x: [0], name = "pressure", storage="Istl" )
 solution = velocity, pressure
 
 stokesScheme.initialize( solution )

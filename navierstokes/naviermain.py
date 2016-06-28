@@ -11,22 +11,19 @@ grid2d.hierarchicalGrid.globalRefine(5)
 timeStep = 0.001
 endTime = 10
 problemNumber = 4
-velocitySpace = fem.create.space( "Lagrange", grid2d, polorder=2, dimrange=2 )
-pressureSpace = fem.create.space( "Lagrange", grid2d, polorder=1, dimrange=1 )
-# ss = scheme.get( "StokesScheme", ( velocitySpace, pressureSpace) )
-# stokesScheme = ss.Scheme( ( velocitySpace, pressureSpace ), problemNumber, timeStep )
+velocitySpace = fem.create.space( "Lagrange", grid2d, polorder = 2, dimrange = 2 )
+pressureSpace = fem.create.space( "Lagrange", grid2d, polorder = 1, dimrange = 1 )
 stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),\
                problemNumber,"stokes", timeStep )
 bs = scheme.get( "BurgersScheme", ( velocitySpace, pressureSpace ) )
-                   # velocitySpace=velocitySpace, pressureSpace=pressureSpace
 burgersScheme = bs.Scheme( ( velocitySpace, pressureSpace ), problemNumber, timeStep )
+velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity" )
+pressure = pressureSpace.interpolate( lambda x: [0], name = "pressure" )
+solution = velocity, pressure
 
-velocitySpace = 0
-pressureSpace = 0
+stokesScheme.initialize( solution )
 
-stokesScheme.initialize()
-
-vtk = grid2d.writeVTK( "ns_", pointdata=stokesScheme.solution(), number=0 )
+vtk = grid2d.writeVTK( "ns_", pointdata = solution, number = 0 )
 
 def solve_method( timeStep, endTime ):
     stokesScheme.next()
@@ -36,11 +33,11 @@ def solve_method( timeStep, endTime ):
     while time < endTime:
         print( "Time is:", time )
         print( 'Solve step 1 - Stokes' )
-        stokesScheme.solve( rhs = burgersScheme.solution(), target = stokesScheme.solution(), assemble = counter==0 )
+        stokesScheme.solve( rhs = solution, target = solution, assemble = counter==0 )
         print( 'Solve step 2 - Burgers' )
-        burgersScheme.solve( rhs = stokesScheme.solution(), target = burgersScheme.solution(), assemble = counter==0 )
+        burgersScheme.solve( rhs = solution, target = solution, assemble = counter==0 )
         print( 'Solve step 3 - Stokes' )
-        stokesScheme.solve( rhs = burgersScheme.solution(), target = stokesScheme.solution(), assemble = False )
+        stokesScheme.solve( rhs = solution, target = solution, assemble = False )
         time += timeStep
         stokesScheme.next()
         burgersScheme.next()

@@ -122,48 +122,6 @@ public:
   typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
   typedef NavierStokesProblemInterface< FullFunctionSpaceType> ProblemType ;
 
-  struct LocalCombinedFunction
-  {
-    typedef FullFunctionSpaceType FunctionSpaceType;
-    typedef typename FunctionSpaceType::RangeType RangeType;
-
-    typedef UzawaScheme::GridPartType GridPartType;
-    typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-
-    // constructor
-    LocalCombinedFunction ( const VelocityDiscreteFunctionType &velo, const PressureDiscreteFunctionType &press )
-      :    lvelo_( velo ),
-    lpress_( press )
-    {}
-
-    // evaluate local function
-    template< class PointType >
-    void evaluate ( const PointType &x, RangeType &val )
-    {
-      typename VelocityDiscreteFunctionType::RangeType retU;
-      typename PressureDiscreteFunctionType::RangeType retP;
-      lvelo_.evaluate(x,retU);
-      lpress_.evaluate(x,retP);
-      for (unsigned int i=0;i<retU.size();++i)
-        val[i] = retU[i];
-      val[retU.size()] = retP[0];
-    }
-
-    // initialize to new entity
-    void init ( const EntityType &entity )
-    {
-      lvelo_.init( entity );
-      lpress_.init( entity );
-    }
-
-  private:
-    typename VelocityDiscreteFunctionType::LocalFunctionType lvelo_;
-    typename PressureDiscreteFunctionType::LocalFunctionType lpress_;
-  };
-  typedef Dune::Fem::LocalFunctionAdapter< LocalCombinedFunction > CombinedGridFunctionType;
-
-  typedef CombinedGridFunctionType DiscreteFunctionType;//NOTE IT IS NOT A DISCRETEFUNCTION IT IS STILL A GRIDFUNCTION
-
   typedef Dune::DirichletConstraints<MainModelType, VelocitySpaceType> MainConstraintsType;
   typedef DifferentiableEllipticOperator< MainLinearOperatorType, MainModelType, MainConstraintsType > MainOperatorType;
   typedef DifferentiableEllipticOperator< GradLinearOperatorType, GradModelType, NoConstraints > GradOperatorType;
@@ -186,16 +144,12 @@ public:
       transportModel_( problem, gridPart_ ),
       velocitySpace_( velocitySpace ),
       pressureSpace_( pressureSpace ),
-      velocity_( "velocity", velocitySpace_ ),
-      pressure_( "pressure", pressureSpace_ ),
       rhsU_( "rhsU", velocitySpace_ ),
       xi_( "xi", velocitySpace_ ),
       rhsP_( "rhsP", pressureSpace_ ),
       d_( "d", pressureSpace_ ),
       r_( "r", pressureSpace_ ),
       precond_( "precond", pressureSpace_ ),
-      localCombinedFunction_( velocity_, pressure_ ),
-      solution_( "solution", localCombinedFunction_, gridPart_, 2*POLORDER+1 ),
       mainOperator_( mainModel_, velocitySpace_ ),
       explicitMainOperator_( explicitMainModel_, velocitySpace_ ),
       gradOperator_( gradModel_, velocitySpace_ ),
@@ -215,84 +169,41 @@ public:
       usePrecond_( Dune::Fem::Parameter::getValue< bool >( "stokes.cg.usepreconditioner", true ) )
   {
     // set all DoF to zero
-    pressure_.clear();
-    velocity_.clear();
+    //pressure_.clear();
+    //velocity_.clear();
   }
-
-  DiscreteFunctionType &solution()
-  {
-    return solution_;
-  }
-  const DiscreteFunctionType &solution() const
-  {
-    return solution_;
-  }
-  PressureDiscreteFunctionType &pressure()
-  {
-    return pressure_;
-  }
-  const PressureDiscreteFunctionType &pressure() const
-  {
-    return pressure_;
-  }
-  VelocityDiscreteFunctionType &velocity()
-  {
-    return velocity_;
-  }
-  const VelocityDiscreteFunctionType &velocity() const
-  {
-    return velocity_;
-  }
-  void updatevelocity(VelocityDiscreteFunctionType &velocity)
-  {
-    velocity_.assign(velocity);
-  }
-  void updatepressure(PressureDiscreteFunctionType &pressure)
-  {
-    pressure_.assign(pressure);
-  }
-  void initialize ()
+  void initialize ( VelocityDiscreteFunctionType &velocity, PressureDiscreteFunctionType &pressure )
   {
 
     Dune::Fem::LagrangeInterpolation<InitialVelocityFunctionType, VelocityDiscreteFunctionType > mainVelocityInterpolation;
-    mainVelocityInterpolation(mainModel_.initialVelocityFunction(), velocity_ );
+    mainVelocityInterpolation(mainModel_.initialVelocityFunction(), velocity );
       Dune::Fem::LagrangeInterpolation<InitialPressureFunctionType, PressureDiscreteFunctionType > mainPressureInterpolation;
-     mainPressureInterpolation( mainModel_.initialPressureFunction(), pressure_ );
+     mainPressureInterpolation( mainModel_.initialPressureFunction(), pressure );
   }
 
   //! setup the right hand side
-  void preparestep1()
+  void prepare( VelocityDiscreteFunctionType &velocity )
   {
     // set boundary values for velocity
-    mainOperator_.prepare( mainModel_.dirichletBoundary(), velocity_ );
+    mainOperator_.prepare( mainModel_.dirichletBoundary(), velocity );
 
     // assemble rhs
     assembleRHS ( mainModel_, mainModel_.rightHandSide(), mainModel_.neumanBoundary(), rhsU_ );
 
   }
 
-  void preparestep3()//RHS IS FOR 'NEXT' TIMESTEP
-  {
-    // set boundary values for velocity
-    mainOperator_.prepare( mainModel_.dirichletBoundary(), velocity_ );
-
-    // assemble rhs
-    assembleRHS ( mainModel_, mainModel_.rightHandSideNext(), mainModel_.neumanBoundary(), rhsU_ );
-
-  }
-
-  void solve ( bool assemble )
+  void solve ( VelocityDiscreteFunctionType &velocity, PressureDiscreteFunctionType &pressure, bool assemble )
   {
     //! [Solve the system]
     if( assemble )
     {
       // assemble linear operator (i.e. setup matrix)
-      mainOperator_.jacobian( velocity_ , mainLinearOperator_ );
-      explicitMainOperator_.jacobian( velocity_ , explicitMainLinearOperator_ );
-      gradOperator_.jacobian( pressure_ , gradLinearOperator_ );
-      divOperator_.jacobian( velocity_  , divLinearOperator_ );
-      massOperator_.jacobian( pressure_ , massLinearOperator_ );
-      precondOperator_.jacobian( pressure_ , precondLinearOperator_ );
+      mainOperator_.jacobian( velocity , mainLinearOperator_ );
+      explicitMainOperator_.jacobian( velocity , explicitMainLinearOperator_ );
+      gradOperator_.jacobian( pressure , gradLinearOperator_ );
+      divOperator_.jacobian( velocity  , divLinearOperator_ );
+      massOperator_.jacobian( pressure , massLinearOperator_ );
+      precondOperator_.jacobian( pressure , precondLinearOperator_ );
     }
 
     MainLinearInverseOperatorType invMainOp( mainLinearOperator_, solverEps_, solverEps_ );
@@ -300,16 +211,16 @@ public:
     PrecondLinearInverseOperatorType invPrecondOp( precondLinearOperator_, solverEps_, solverEps_ );
 
     //Prepare the RHS f^* + Au^n - bu^n
-    explicitMainOperator_(velocity_,xi_);
+    explicitMainOperator_(velocity, xi_);
     rhsU_+=xi_; xi_.clear();
-    transportOperator_(velocity_,xi_);
+    transportOperator_(velocity, xi_);
     rhsU_-=xi_; xi_.clear();
 
     //adjust for Schur complement
-    gradOperator_(pressure_, xi_);
+    gradOperator_( pressure, xi_ );
     rhsU_ -= xi_;
     //apply BCs
-    mainOperator_.prepare( velocity_, rhsU_ );
+    mainOperator_.prepare( velocity, rhsU_ );
 
     //
     //
@@ -336,12 +247,12 @@ public:
     //
     // Choose d_2 := r search direction
 
-    //  gradOperator_(pressure_, xi_);
+    //  gradOperator_(pressure, xi_);
     //  rhsU_ -= xi_;
 
 
-    invMainOp( rhsU_, velocity_ );//            solve Au =(b_1-B^Tx_2) => u = A^{-1}(b_1-B^Tx_2)
-    divLinearOperator_( velocity_, rhsP_ );//   set rhsP = BA^{-1}(b_1 -B^Tx_2)
+    invMainOp( rhsU_, velocity );//            solve Au =(b_1-B^Tx_2) => u = A^{-1}(b_1-B^Tx_2)
+    divLinearOperator_( velocity, rhsP_ );//   set rhsP = BA^{-1}(b_1 -B^Tx_2)
     invMassOp( rhsP_, r_ );//                   solve mass*r =rhsP  => r=rhsP
     if (usePrecond_ && nu_>0.)
     {
@@ -380,9 +291,9 @@ public:
       invMainOp( rhsU_, xi_ );                                  // solve Ax = B^Td_2  => store x= A^{-1}B^Td_2 (we call x "d_1")
       divLinearOperator_( xi_, rhsP_ );                         // set rhsP = Bx =BA^{-1}B^Td_2   (we call rhsP "a_2")
       double rho = delta / d_.scalarProductDofs(rhsP_);         // scale factor rho = r^Tr/(d_2^T S d_2) = delta/(d_2 . a_2)
-      pressure_.axpy(rho,d_);                                   //update pressure p=p-rho*d_2
-      velocity_.axpy(-rho,xi_);                                 //update velocity unew=u-rho*d_1
-      divLinearOperator_( velocity_, rhsP_ );                   // set rhsP = Bunew = Bu - rho*a_2
+      pressure.axpy(rho,d_);                                   //update pressure p=p-rho*d_2
+      velocity.axpy(-rho,xi_);                                 //update velocity unew=u-rho*d_1
+      divLinearOperator_( velocity, rhsP_ );                   // set rhsP = Bunew = Bu - rho*a_2
       invMassOp( rhsP_, r_ );                                   // solve mass*r=rhsP => r= r - rho*a_2
       if (usePrecond_ && nu_>0.)
       {
@@ -415,13 +326,8 @@ protected:
 
   const VelocitySpaceType& velocitySpace_;
   const PressureSpaceType& pressureSpace_;
-  VelocityDiscreteFunctionType velocity_;
-  PressureDiscreteFunctionType pressure_;
   VelocityDiscreteFunctionType rhsU_,xi_;
   PressureDiscreteFunctionType rhsP_,d_,r_,precond_;
-
-  LocalCombinedFunction localCombinedFunction_;
-  CombinedGridFunctionType solution_;
 
   MainOperatorType mainOperator_,explicitMainOperator_;
   GradOperatorType gradOperator_;

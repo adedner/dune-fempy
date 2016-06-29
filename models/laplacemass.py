@@ -16,5 +16,5 @@ u = model.trialFunction()
 v = model.testFunction()
 a = (inner(u,v) + inner(grad(u),grad(v)))*dx(0)
 
-model.generate(a,exact=exact)
+model.generate(a, exact=exact)
 model.write(exact=exact, name="LaplaceMass")

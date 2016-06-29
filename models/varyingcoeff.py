@@ -21,5 +21,5 @@ dx0 = dx(0)
 a = ( m[0]*inner(u,v) + D[0]*inner(grad(u),grad(v)) )*dx0
 L = sin(x[0])*sin(x[1])*v[0]*dx(0)
 
-model.generate(a,L,exact=exact)
+model.generate(a,L=L,exact=exact)
 model.write(exact=exact, name="VaryingCoeff")

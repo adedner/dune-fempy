@@ -19,6 +19,7 @@ import dune.fem.scheme as scheme
 import dune.fem.function as gf
 
 grid2d = fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
+grid2d.hierarchicalGrid.globalRefine(3)
 
 ############################################################################
 # build a transport model -eps Laplace(u) + velocity.grad(u) + gamma u = f
@@ -64,7 +65,7 @@ m.setvelocity(velocityGlobal)
 s.solve( None, solution )
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
-velocityGlobal.addToVTKWriter(vtk, vtk.PointData)
+velocityGlobal.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_global");
 #################
 print("use the interpolation of the global function")
@@ -73,7 +74,7 @@ m.setvelocity(u)
 s.solve( target = solution )
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
-u.addToVTKWriter(vtk, vtk.PointData)
+u.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_interpolation");
 #################
 print("use the discrete solution to some other scheme (vector valued)")
@@ -96,8 +97,8 @@ veloh = vecs.solve()
 m.setvelocity(veloh)
 s.solve( None, solution )
 vtk = grid2d.vtkWriter()
-veloh.addToVTKWriter(vtk, vtk.PointData)
 solution.addToVTKWriter(vtk, vtk.PointData)
+veloh.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_df");
 #################
 print("use a 'local function adapter'")
@@ -118,7 +119,7 @@ m.setvelocity(velocityLocal)
 s.solve( None, solution )
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
-velocityLocal.addToVTKWriter(vtk, vtk.PointData)
+velocityLocal.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_local");
 velocityLocal = "remove"
 ####################
@@ -137,7 +138,7 @@ m.setvelocity(velocityLocalA)
 s.solve()
 vtk = grid2d.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
-velocityLocalA.addToVTKWriter(vtk, vtk.PointData)
+velocityLocalA.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_rotation");
 
 print("FINISHED")

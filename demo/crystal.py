@@ -73,7 +73,7 @@ initial_gf = grid2d.globalGridFunction("initial", initial)
 solution   = sp.interpolate(initial_gf, name="solution")
 solution_n = sp.interpolate(initial_gf, name="solution_n")
 # scheme
-solver    = fem.create.scheme("FemScheme", solution, model, "crystel")
+solver    = fem.create.scheme("FemScheme", solution, model, "crystal")
 
 model.setun(solution_n)
 

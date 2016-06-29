@@ -75,8 +75,8 @@ namespace Dune
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
       pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( StokesSchemeType &instance, const SolutionSpaceType &spaces,
-                         int problemNumber,
                          double viscosity,
+                         int problemNumber,
                          const std::string &name,
                          double timeStep ) {
           new( &instance ) StokesSchemeType( spaces, viscosity, problemNumber, timeStep );

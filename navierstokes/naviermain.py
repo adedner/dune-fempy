@@ -4,11 +4,11 @@ import dune.fem.scheme as scheme
 
 # initialise grid
 grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
-# grid2d.hierarchicalGrid.globalRefine(1)
+grid2d.hierarchicalGrid.globalRefine(1)
 
-viscosity = 0.01
+viscosity = 0.006
 timeStep = 0.005
-endTime = 10
+endTime = 70
 saveinterval = 0.1
 problemNumber = 4   # this should be a model
 

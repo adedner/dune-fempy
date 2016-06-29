@@ -28,8 +28,8 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
-  BurgersSchemeWrapper( const SolutionSpaceType &spaces, int problemNumber, double timestep )
-  : BaseType( std::get<0>(spaces).gridPart(), problemNumber, timestep ),
+  BurgersSchemeWrapper( const SolutionSpaceType &spaces, double viscosity, int problemNumber, double timestep )
+  : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep ),
     burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces), *BaseType::problemPtr_, BaseType::timestepBurgers_, BaseType::viscosityActual_ )
   {
   }
@@ -72,12 +72,14 @@ namespace Dune
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
       pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
+                         double viscosity,
                          int problemNumber,
                          const std::string &name,
                          double timeStep ) {
-          new( &instance ) BurgersSchemeType( spaces, problemNumber, timeStep );
+          new( &instance ) BurgersSchemeType( spaces, viscosity, problemNumber, timeStep );
         }, pybind11::keep_alive< 1, 2 >(),
            pybind11::arg("spaces"),
+           pybind11::arg("viscosity"),
            pybind11::arg("problemNumber"),
            pybind11::arg("name"),
            pybind11::arg("timeStep")

@@ -28,8 +28,8 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
-  StokesSchemeWrapper( const SolutionSpaceType &spaces, int problemNumber, double timestep )
-  : BaseType( std::get<0>(spaces).gridPart(), problemNumber, timestep )
+  StokesSchemeWrapper( const SolutionSpaceType &spaces, double viscosity, int problemNumber, double timestep )
+  : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep )
   , stokesScheme_( std::get<0>(spaces), std::get<1>(spaces), *BaseType::problemPtr_, BaseType::viscosityActual_, BaseType::timestepStokes_ )
   {}
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
@@ -75,12 +75,14 @@ namespace Dune
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
       pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( StokesSchemeType &instance, const SolutionSpaceType &spaces,
+                         double viscosity,
                          int problemNumber,
                          const std::string &name,
                          double timeStep ) {
-          new( &instance ) StokesSchemeType( spaces, problemNumber, timeStep );
+          new( &instance ) StokesSchemeType( spaces, viscosity, problemNumber, timeStep );
         }, pybind11::keep_alive< 1, 2 >(),
            pybind11::arg("spaces"),
+           pybind11::arg("viscosity"),
            pybind11::arg("problemNumber"),
            pybind11::arg("name"),
            pybind11::arg("timeStep")

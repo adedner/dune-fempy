@@ -46,10 +46,12 @@ Other stuff:
 10) subsampling vtk (add subsampling=sample to grid.writVTK)
 11) shouldn't it be leafGrid("ALUGridSimplex,dgf,...) instead of other
     way. In all other cases the first string is the database entry
-12) make hgrid.globalRefine() always reduce h by 0.5, i.e., use refineStepsForHalf?
-13) add option to generate to force recompilation of shared library
+12) make hgrid.globalRefine(factor=0.3) always reduce h by 0.5, i.e., use refineStepsForHalf?
+13) add option to generate to force recompilation of shared library -
+    compile separate 
 14) change name of refinement for ALU - it is not about conforming/non
     conforming but about bisection and ...
+15) extension="yes": not needed because generateScheme<BurgersScheme>
 
 --------------------------------------------------------------------------------------
 
@@ -61,5 +63,18 @@ Bugs:
 6)  if a scheme has a fixed storage one has to make sure that the correct storage is
     really used and the correct discrete function types are registered. An easier approach
     to registration should be made available in the C++ bindings as well
+    Solution: Have a const parameter in the scheme
 
 ------------------------------------------------------------------------------------
+
+heat and copy/initialization?
+
+- writeVTK: number->sequence or padding
+    >>> a = "hallo" + '%04d' % n
+    >>> aa = '{0:03d}'.format(4)
+
+- construction of grids: geometry type for dictonary
+- element.geometry -> element
+
+pointData=[uh,vh,wh] oder
+pointData={scalar:[uh,vh,wh],vector:[velocity]}

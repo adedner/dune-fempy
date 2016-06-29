@@ -58,7 +58,7 @@ def main(argv):
        import dune.fem.scheme as scheme
        import dune.fem.space as space
        # set up a 2d grid
-       grid2d = grid.get("YaspGrid", dimgrid=2)
+       grid2d = grid.get("ALUSimplexGrid", dimgrid=2)
        Model = model.makeAndImport(grid2d)
        m = Model.get()
        g = grid.leafGrid(dgf, grid2d)
@@ -68,12 +68,12 @@ def main(argv):
 
        print('get scheme')
        try:
-         femSchemeModule = scheme.get( "FemScheme", sp, dimR, polorder=1, solver=solver )
+         femSchemeModule = scheme.get( "FemScheme", sp, solver=solver )
        except Exception as exception:
           print('could not compile an extension module')
           print(exception)
           # try default fem solvers
-          femSchemeModule = scheme.get( "FemScheme", sp, dimR, polorder=1)
+          femSchemeModule = scheme.get( "FemScheme", sp)
 
        s   = femSchemeModule.Scheme( sp, m, "solution" )
        s1  = femSchemeModule.Scheme( sp, m, "solution" )

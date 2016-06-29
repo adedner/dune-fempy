@@ -6,19 +6,10 @@ import dune.fem as fem
 import ufl
 import dune.models.femufl as duneuflmodel
 
-dgf = """DGF
-
-INTERVAL
-0  0
-1  1
-16 16
-#
-"""
-
 deltaT = 0.01
 
 grid = fem.leafGrid(fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2)
-spc = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
+spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
 
 ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1, 'Heat')
 u         = ufl2model.trialFunction()
@@ -35,17 +26,12 @@ heatModel = ufl2model.makeAndImport(grid,name="heat").get()
 solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="heat")
 heatScheme = fem.create.scheme("FemScheme", spc, heatModel, "heat")
 
-grid.writeVTK("heat", pointdata=[solution], number=0)
-# vtk = grid.writeVTK("heat", pointdata=[solution], number=0)
-# u_n = spc.interpolate(solution)
-# heatModel.setu_n(u_n)
+vtk = grid.writeVTK("heat", pointdata=[solution], number=0)
+u_n = spc.interpolate(solution)
+heatModel.setu_n(u_n)
 
 steps = int(1 / deltaT)
 for n in range(1,steps+1):
-    old_solution = solution          # BUG: this is needed to keep solution alive
-    heatModel.setu_n(old_solution)
-    solution = heatScheme.solve()
-    grid.writeVTK("heat", pointdata=[solution], number=n)
-    # u_n.assign(solution)
-    # heatScheme.solve( target=solution )
-    # vtk.write("heat", n)
+    u_n.assign(solution)
+    heatScheme.solve( target=solution )
+    vtk.write("heat", n)

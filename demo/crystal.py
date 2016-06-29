@@ -119,5 +119,3 @@ while t < endTime:
     hgrid.adapt([solution])
     hgrid.loadBalance([solution])
     solution_n.assign(solution)
-
-print("END")

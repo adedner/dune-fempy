@@ -3,6 +3,7 @@ import math,sympy
 from mpi4py import MPI
 
 import ufl
+import dune.ufl
 import dune.models.femufl as duneuflmodel
 import dune.fem as fem
 
@@ -10,13 +11,14 @@ grid = fem.leafGrid(fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", 
 spc = fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
 # why dimWorld?
-ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
-u = ufl2model.trialFunction()
-v = ufl2model.testFunction()
-x = ufl2model.spatialCoordinate()
+uflSpace = dune.ufl.Space(grid.dimGrid, 1)
+u = ufl.TrialFunction(uflSpace)
+v = ufl.TestFunction(uflSpace)
+x = ufl.SpatialCoordinate(uflSpace.cell())
 
 a = (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u,v)) * ufl.dx(0)
-b = ufl.sin(x[0])*ufl.sin(x[1]) * v[0] * ufl.dx(0)
+b = ufl.sin(2*math.pi*x[0])*ufl.sin(2*math.pi*x[1]) * v[0] * ufl.dx(0)
+ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
 ufl2model.generate(a,b)
 model = ufl2model.makeAndImport(grid,name="laplace").get()
 

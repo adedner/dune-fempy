@@ -1,3 +1,4 @@
+add_python_target(ellipticmodel)
 add_python_target(adapt-demo)
 add_python_target(afem)
 add_python_target(grid-construction)

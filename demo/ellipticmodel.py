@@ -12,7 +12,7 @@ v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
 a = (inner(grad(u), grad(v)) + inner(u, v)) * dx(0)
-b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx(0)
+b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx(0) - x[0]*(1-x[0]) * v[0] * ds(0)
 
 model = dune.models.elliptic.compileUFL(a == b, dimRange=1)
 

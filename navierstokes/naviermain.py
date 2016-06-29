@@ -3,12 +3,12 @@ import dune.fem as fem
 import dune.fem.scheme as scheme
 
 # initialise grid
-grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-grid2d.hierarchicalGrid.globalRefine(6)
-# grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
-# grid2d.hierarchicalGrid.globalRefine(1)
+# grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+# grid2d.hierarchicalGrid.globalRefine(6)
+grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
+grid2d.hierarchicalGrid.globalRefine(1)
 
-viscosity = 0.006
+viscosity = 0.003
 timeStep = 0.005
 endTime = 70
 saveinterval = 0.1

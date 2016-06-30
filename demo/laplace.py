@@ -17,8 +17,7 @@ u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
-#f = sin(2*math.pi*x[0])*sin(2*math.pi*x[1])
-f = (x[0] + x[1])
+f = cos(2*math.pi*x[0])*cos(2*math.pi*x[1])
 
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx(0)
 b = f * v[0] * dx(0)

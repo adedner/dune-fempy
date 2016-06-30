@@ -27,8 +27,8 @@ model.write(exact=exact, name="LaplaceMass")
 DGF="""
 Interval
 0 0
-1 1
-23 23
+1 1.3
+13 13
 #
 Boundarydomain
 default 1

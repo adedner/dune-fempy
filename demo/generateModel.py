@@ -109,7 +109,7 @@ def main(argv):
        g = "not a grid anymore" # let's check memory management a second time
 
        # can we do the whole thing twice?
-       g = grid.leafGrid(dgf, "YaspGrid", dimgrid=2)
+       g = grid.leafGrid(dgf, grid2d)
        m = Model.get()
        s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
        print("second scheme: ", s.error(s.solve()))

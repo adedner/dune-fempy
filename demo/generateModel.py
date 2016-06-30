@@ -44,8 +44,8 @@ def main(argv):
    # read in the ufl to model translater
    print('input script used:' , name , 'from ' , path)
    sys.path.append(path)
-   Model = __import__(name)
-   model = Model.model
+   ModelDescription = __import__(name)
+   model = ModelDescription.model
 
    if make:
        import dune.fem.grid as grid
@@ -54,6 +54,7 @@ def main(argv):
        grid1d = grid.get("OneDGrid")
        model.make(grid1d)
    elif test:
+       import dune.fem as fem
        import dune.fem.grid as grid
        import dune.fem.scheme as scheme
        import dune.fem.space as space
@@ -61,7 +62,11 @@ def main(argv):
        grid2d = grid.get("ALUSimplexGrid", dimgrid=2)
        Model = model.makeAndImport(grid2d)
        m = Model.get()
-       g = grid.leafGrid(dgf, grid2d)
+       if hasattr(ModelDescription,"DGF"):
+          print("using: ",ModelDescription.DGF)
+          g = grid.leafGrid(fem.string2dgf(ModelDescription.DGF), grid2d)
+       else:
+          g = grid.leafGrid(dgf, grid2d)
        print('get space')
        dimR = m.dimRange
        sp = space.create( "Lagrange", g, dimrange=dimR )
@@ -110,11 +115,13 @@ def main(argv):
        print("second scheme: ", s.error(s.solve()))
 
        # can we do the whole thing again?
-       sp = space.create("Lagrange", g, dimrange=dimR, polorder=2 )
+       # sp = space.create("Lagrange", g, dimrange=dimR, polorder=1 )
+       sp = space.create( "Lagrange", g, dimrange=dimR )
        s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
        # these are not needed anymore
        m = 0
        g = 0
+       sp = 0
        # but this still needs to work
        solution = s.solve()
        print("second scheme with second order: ", s.error(solution))

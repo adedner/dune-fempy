@@ -52,6 +52,8 @@ Other stuff:
 14) change name of refinement for ALU - it is not about conforming/non
     conforming but about bisection and ...
 15) extension="yes": not needed because generateScheme<BurgersScheme>
+16) have the model return the exact solution as a grid function so that one can write
+    fem.h1norm(solution, m.exact() )
 
 --------------------------------------------------------------------------------------
 

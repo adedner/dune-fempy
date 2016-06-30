@@ -23,3 +23,15 @@ g = [c0*c1,c0*c0]
 # model.generate(a,exact=exact)
 model.generate(a,diric={1:g},exact=exact)
 model.write(exact=exact, name="LaplaceMass")
+
+DGF="""
+Interval
+0 0
+1 1
+23 23
+#
+Boundarydomain
+default 1
+2 -0.5 -0.5 0.5 0.5
+#
+"""

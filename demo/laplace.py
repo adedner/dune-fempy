@@ -2,7 +2,7 @@ from __future__ import print_function
 import math,sympy
 from mpi4py import MPI
 
-import ufl
+from ufl import *
 import dune.models.femufl as duneuflmodel
 import dune.fem as fem
 
@@ -15,9 +15,13 @@ u = ufl2model.trialFunction()
 v = ufl2model.testFunction()
 x = ufl2model.spatialCoordinate()
 
-a = (ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u,v)) * ufl.dx(0)
-b = ufl.sin(x[0])*ufl.sin(x[1]) * v[0] * ufl.dx(0)
-ufl2model.generate(a,b)
+#f = sin(2*math.pi*x[0])*sin(2*math.pi*x[1])
+f = (x[0] + x[1])
+
+a = (inner(grad(u), grad(v)) + inner(u,v)) * dx(0)
+b = f * v[0] * dx(0)
+
+ufl2model.generate(a-b)
 model = ufl2model.makeAndImport(grid,name="laplace").get()
 
 laplace = fem.create.scheme("FemScheme", spc, model, "laplace")

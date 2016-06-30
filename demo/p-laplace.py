@@ -26,7 +26,7 @@ a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u
 #b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx(0)
 b = rhs * dx(0) + 10*rhs * ds(0)
 
-model = dune.models.elliptic.compileUFL(a == b, dimRange=1)
+model = dune.models.elliptic.compileUFL(a == b)
 
 scheme = dune.fem.create.scheme("FemScheme", spc, dune.models.elliptic.importModel("laplacemodel", grid, model).get(), "scheme")
 grid.writeVTK("p-laplace", pointdata=[scheme.solve()])

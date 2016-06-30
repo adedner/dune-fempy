@@ -23,7 +23,7 @@ f = (x[0] + x[1])
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx(0)
 b = f * v[0] * dx(0)
 
-model = dune.models.elliptic.compileUFL(a == b, dimRange=1)
+model = dune.models.elliptic.compileUFL(a == b)
 
 scheme = dune.fem.create.scheme("FemScheme", spc, dune.models.elliptic.importModel("laplacemodel", grid, model).get(), "scheme")
 grid.writeVTK("laplace", pointdata=[scheme.solve()])

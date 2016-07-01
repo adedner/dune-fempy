@@ -189,12 +189,14 @@ class PRPScheme
 public:
   typedef typename VelocitySpace::GridPartType GridPartType;
   typedef typename GridPartType::GridType GridType;
+  typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
+  typedef DiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
 
   //Models we need to create
-  typedef BurgersStateModel<GridPartType>      BurgersStateModelType;//This will construct the model L in disc notes
-  typedef BurgersTransportModel<GridPartType>  BurgersTransportModelType;//This will construct the model L_B - L in disc notes
-  typedef BurgersDescentModel<GridPartType>    BurgersDescentModelType;//This will construct the model D_J - L in disc notes
-  typedef BurgersGradModel<GridPartType>       BurgersGradModelType;
+  typedef BurgersStateModel<AdditionalModelType>      BurgersStateModelType;//This will construct the model L in disc notes
+  typedef BurgersTransportModel<AdditionalModelType>  BurgersTransportModelType;//This will construct the model L_B - L in disc notes
+  typedef BurgersDescentModel<AdditionalModelType>    BurgersDescentModelType;//This will construct the model D_J - L in disc notes
+  typedef BurgersGradModel<AdditionalModelType>       BurgersGradModelType;
 
   //Our function space
   typedef typename BurgersStateModelType::VelocityFunctionSpaceType VelocityFunctionSpaceType;
@@ -212,8 +214,6 @@ public:
   //Inverse operators constructed from above
   typedef Dune::Fem::ISTLCGOp< VelocityDiscreteFunctionType, BurgersStateLinearOperatorType > BurgersStateLinearInverseOperatorType;
 
-  typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
-  typedef NavierStokesProblemInterface<FullFunctionSpaceType> ProblemType ;
   //Define the linearisable/non-linearisable elliptic operator type + dirichlet constraints
   //typedef Dune::DirichletConstraints<BurgersStateModelType, VelocitySpaceType> StateConstraintsType;
   typedef Dune::DirichletConstraints<BurgersStateModelType, VelocitySpaceType> StateConstraintsType;
@@ -222,23 +222,25 @@ public:
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType,  BurgersDescentModelType, NoConstraints > BurgersDescentOperatorType;
   typedef DifferentiableEllipticOperator< BurgersGradLinearOperatorType, BurgersGradModelType,NoConstraints > BurgersGradOperatorType;
 
+  typedef NavierStokesProblemInterface< FullFunctionSpaceType> ProblemType ;
   PRPScheme( const VelocitySpace &velocitySpace, const PressureSpace &pressureSpace,
-             const ProblemType &problem,const double& alphaOne,const double& alphaTwo)
+             const AdditionalModelType &model, const double dt,const double& alphaTwo,const double& alphaOne)
     : gridPart_( velocitySpace.gridPart() ),
+      model_(model),
       alphaOne_(alphaOne),
       alphaTwo_(alphaTwo),
-      deltaT_( problem.deltaT() ),
-      stateModel_( problem, gridPart_,alphaOne,alphaTwo,true),
-      explicitStateModel_( problem, gridPart_,alphaOne,alphaTwo,false),
+      deltaT_( dt ),
+      stateModel_( model_, gridPart_,dt,alphaOne,alphaTwo,true),
+      explicitStateModel_( model_, gridPart_,dt,alphaOne,alphaTwo,false),
       gradModel_(gridPart_),
-      transportModel_( problem,gridPart_ ),
+      transportModel_( model_, gridPart_ ),
       velocitySpace_( velocitySpace ),
       pressureSpace_( pressureSpace ),
       rhsU_( "rhsU", velocitySpace_ ),
       dummyOne_("dummyOne",velocitySpace_),
       dummyTwo_("dummyTwo",velocitySpace_),
       xi_("xi",velocitySpace_),
-      descentModel_( problem,gridPart_,xi_),//requires memory location of xi_;
+      descentModel_( model_, gridPart_,xi_),//requires memory location of xi_;
       g_("g",velocitySpace_),
       gdiff_("gdiff", velocitySpace_),
       d_("d",velocitySpace_),
@@ -451,6 +453,7 @@ public:
   }
 protected:
   GridPartType &gridPart_; // grid part(view), e.g. here the leaf grid the discrete space is build with
+  const AdditionalModelType &model_;
   double alphaOne_,alphaTwo_,deltaT_;
 
   const BurgersStateModelType stateModel_,explicitStateModel_;

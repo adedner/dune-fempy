@@ -85,20 +85,22 @@ class UzawaScheme
 {
 public:
   typedef typename VelocitySpace::GridPartType GridPartType;
+  typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
+  typedef DiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
 
-  typedef StokesMainModel<GridPartType>       MainModelType;
+  typedef StokesMainModel<AdditionalModelType>       MainModelType;
   typedef StokesGradModel<GridPartType>       GradModelType;
   typedef StokesDivergenceModel<GridPartType> DivergenceModelType;
   typedef StokesMassModel<GridPartType>       MassModelType;
-  typedef StokesPrecondModel<GridPartType>    PrecondModelType;
-  typedef StokesTransportModel<GridPartType>  TransportModelType;
+  typedef StokesPrecondModel<AdditionalModelType>    PrecondModelType;
+  typedef StokesTransportModel<AdditionalModelType>  TransportModelType;
 
   typedef typename GridPartType::GridType GridType;
 
   typedef typename GradModelType::VelocityFunctionSpaceType VelocityFunctionSpaceType;
   typedef typename GradModelType::PressureFunctionSpaceType PressureFunctionSpaceType;
 
- typedef VelocitySpace VelocitySpaceType;
+  typedef VelocitySpace VelocitySpaceType;
   typedef PressureSpace PressureSpaceType;
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocitySpaceType > VelocityDiscreteFunctionType;
   typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< PressureSpaceType > PressureDiscreteFunctionType;
@@ -114,7 +116,6 @@ public:
 
   typedef EllipticOperator<  VelocityDiscreteFunctionType, VelocityDiscreteFunctionType,TransportModelType, NoConstraints > TransportOperatorType;
 
-  typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
   typedef NavierStokesProblemInterface< FullFunctionSpaceType> ProblemType ;
 
   typedef Dune::DirichletConstraints<MainModelType, VelocitySpaceType> MainConstraintsType;
@@ -124,19 +125,17 @@ public:
   typedef DifferentiableEllipticOperator< MassLinearOperatorType, MassModelType, NoConstraints > MassOperatorType;
   typedef DifferentiableEllipticOperator< PrecondLinearOperatorType, PrecondModelType, NoConstraints > PrecondOperatorType;
 
-  typedef typename  MainModelType::InitialVelocityFunctionType InitialVelocityFunctionType;
-  typedef typename  MainModelType::InitialPressureFunctionType InitialPressureFunctionType;
-
-  UzawaScheme( const VelocitySpace &velocitySpace, const PressureSpace &pressureSpace, const ProblemType &problem, double mu, double nu )
+  UzawaScheme( const VelocitySpace &velocitySpace, const PressureSpace &pressureSpace, const AdditionalModelType &additionalModel, double dt, double mu, double nu )
     : gridPart_( velocitySpace.gridPart() ),
       mu_(mu), nu_(nu),
-      mainModel_( problem, gridPart_, mu, nu, true ),
-      explicitMainModel_( problem, gridPart_, mu, nu, false ),
+      additionalModel_(additionalModel),
+      mainModel_( additionalModel_, gridPart_, dt, mu, nu, true ),
+      explicitMainModel_( additionalModel_, gridPart_, dt, mu, nu, false ),
       gradModel_( gridPart_ ),
       divModel_( gridPart_ ),
       massModel_( gridPart_ ),
-      precondModel_( problem, gridPart_, mu, nu ),
-      transportModel_( problem, gridPart_ ),
+      precondModel_( additionalModel_, gridPart_, mu, nu ),
+      transportModel_( additionalModel_, gridPart_ ),
       velocitySpace_( velocitySpace ),
       pressureSpace_( pressureSpace ),
       rhsU_( "rhsU", velocitySpace_ ),
@@ -169,11 +168,10 @@ public:
   }
   void initialize ( VelocityDiscreteFunctionType &velocity, PressureDiscreteFunctionType &pressure )
   {
-
-    Dune::Fem::LagrangeInterpolation<InitialVelocityFunctionType, VelocityDiscreteFunctionType > mainVelocityInterpolation;
-    mainVelocityInterpolation(mainModel_.initialVelocityFunction(), velocity );
-      Dune::Fem::LagrangeInterpolation<InitialPressureFunctionType, PressureDiscreteFunctionType > mainPressureInterpolation;
-     mainPressureInterpolation( mainModel_.initialPressureFunction(), pressure );
+    // Dune::Fem::LagrangeInterpolation<InitialVelocityFunctionType, VelocityDiscreteFunctionType > mainVelocityInterpolation;
+    // mainVelocityInterpolation(mainModel_.initialVelocityFunction(), velocity );
+    // Dune::Fem::LagrangeInterpolation<InitialPressureFunctionType, PressureDiscreteFunctionType > mainPressureInterpolation;
+    // mainPressureInterpolation( mainModel_.initialPressureFunction(), pressure );
   }
 
   //! setup the right hand side
@@ -311,6 +309,7 @@ protected:
   GridPartType &gridPart_;         // grid part(view), e.g. here the leaf grid the discrete space is build with
   double mu_,nu_;
 
+  const AdditionalModelType additionalModel_;
   const MainModelType mainModel_;
   const MainModelType explicitMainModel_;
   const GradModelType gradModel_;

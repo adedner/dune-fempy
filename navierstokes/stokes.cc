@@ -28,9 +28,11 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
+  using BaseType::model;
   StokesSchemeWrapper( const SolutionSpaceType &spaces, double viscosity, int problemNumber, double timestep )
   : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep )
-  , stokesScheme_( std::get<0>(spaces), std::get<1>(spaces), *BaseType::problemPtr_, BaseType::viscosityActual_, BaseType::timestepStokes_ )
+  , stokesScheme_( std::get<0>(spaces), std::get<1>(spaces), model(),
+      BaseType::timestep_, BaseType::viscosityActual_, BaseType::timestepStokes_ )
   {}
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
   }

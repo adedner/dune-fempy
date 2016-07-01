@@ -184,8 +184,8 @@ public:
   template <class Intersection>
   bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
   {
-    // dirichletComponent[0] = problem_.isDirichletPoint( inter.geometry().center() );
-    return problem_.isDirichletPoint( inter.geometry().center() );
+    dirichletComponent = Dune::FieldVector<bool,dimRange>( problem_.isDirichletPoint( inter.geometry().center() ) );
+    return dirichletComponent[0];
   }
   // return Fem :: Function for Dirichlet boundary values
   DirichletBoundaryType dirichletBoundary( ) const
@@ -201,6 +201,11 @@ public:
   RightHandSideType rightHandSide(  ) const
   {
     return RightHandSideType( "right hand side", rhs_, gridPart_, 5 );
+  }
+
+  const ProblemType &problem() const
+  {
+    return problem_;
   }
 
 protected:
@@ -243,5 +248,45 @@ protected:
   FunctionWrapper<bndD> bndD_;
   FunctionWrapper<bndN> bndN_;
 };
+
+template <class FullDF>
+struct LocalVelocityExtractor
+{
+  typedef typename FullDF::GridPartType GridPartType;
+  typedef Dune::Fem::FunctionSpace<double,double, GridPartType::dimensionworld, GridPartType::dimensionworld > FunctionSpaceType;
+  typedef Dune::Fem::FunctionSpace<double,double, GridPartType::dimensionworld, GridPartType::dimensionworld+1 > FullFunctionSpaceType;
+  typedef typename FunctionSpaceType::RangeType RangeType;
+  typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
+  typedef typename FunctionSpaceType::DomainType DomainType;
+  typedef typename FullDF::EntityType EntityType;
+
+  LocalVelocityExtractor( const FullDF df )
+  : df_( df ), ldf_(df) {}
+
+  //! evaluate function
+  template <class Point>
+  void evaluate( const Point& x, RangeType& ret ) const
+  {
+    typename FullFunctionSpaceType::RangeType fullRet;
+    ldf_.evaluate(x,fullRet);
+    for (int i=0;i<RangeType::dimension;++i)
+      ret[i] = fullRet[i];
+  }
+  //! jacobian function (only for exact)
+  void jacobian( const DomainType& x, JacobianRangeType& ret ) const
+  {
+    typename FullFunctionSpaceType::JacobianRangeType fullJacobianRet;
+    ldf_.evaluate(x,fullJacobianRet);
+    for (int i=0;i<RangeType::dimension;++i)
+      ret[i] = fullJacobianRet[i];
+  }
+  void init(const typename FullDF::EntityType &entity)
+  {
+    ldf_.init(entity);
+  }
+  FullDF df_;
+  typename FullDF::LocalFunctionType ldf_;
+};
+
 
 #endif // #ifndef ELLIPTC_MODEL_HH

@@ -471,6 +471,5 @@ public:
     return blockSize * mapper_.numEntityDofs( entity );
   }
 };
-
 } // end namespace Dune
 #endif

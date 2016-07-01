@@ -28,9 +28,11 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
+  using BaseType::model;
   BurgersSchemeWrapper( const SolutionSpaceType &spaces, double viscosity, int problemNumber, double timestep )
   : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep ),
-    burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces), *BaseType::problemPtr_, BaseType::timestepBurgers_, BaseType::viscosityActual_ )
+    burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces),model(),
+         BaseType::timestep_, BaseType::viscosityActual_, BaseType::timestepBurgers_ )
   {
   }
   ~BurgersSchemeWrapper() {std::cout << "BurgersSchemeWrapper destructor\n";

@@ -1,5 +1,6 @@
 #ifndef NS_BASE_SCHEME
 #define NS_BASE_SCHEME
+#include "model.hh"
 template <class Scheme>
 struct NSBaseScheme
 {
@@ -7,6 +8,7 @@ struct NSBaseScheme
   typedef typename Scheme::GridPartType GridPartType;
   typedef typename GridPartType::GridType HGridType;
   typedef typename Scheme::FullFunctionSpaceType FunctionSpaceType;
+  typedef DiffusionModel<FunctionSpaceType,GridPartType> ModelType;
 
   NSBaseScheme( GridPartType &gridPart, double viscosity, int problemNumber, double timestep )
   : gridPart_( gridPart ),
@@ -14,18 +16,23 @@ struct NSBaseScheme
     timeProvider_( gridPart_.grid() ),
     timestep_( timestep )
   {
+    timeProvider_.init( timestep_ );
     switch (problemNumber)
     {
-      case 0: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-      case 1: problemPtr_ = new VorticityFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-      case 2: problemPtr_ = new MovingPlate<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-      case 3: problemPtr_ = new CouetteFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
-      case 4: problemPtr_ = new KarmanVortexStreet<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
+      case 0:  problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
+      case 1:  problemPtr_ = new VorticityFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
+      case 2:  problemPtr_ = new MovingPlate<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
+      case 3:  problemPtr_ = new CouetteFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
+      case 4:  problemPtr_ = new KarmanVortexStreet<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
       default: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
     }
-    timeProvider_.init( timestep_ );
+    model_ = new ModelType(*problemPtr_, gridPart_);
   }
   ~NSBaseScheme() { delete problemPtr_; }
+  const ModelType &model() const
+  {
+    return *model_;
+  }
   void next()
   {
     timeProvider_.next( timestep_ );
@@ -44,5 +51,6 @@ struct NSBaseScheme
   Dune::Fem::GridTimeProvider< HGridType > timeProvider_;
   double timestep_;
   ProblemType* problemPtr_ = 0;
+  ModelType* model_;
 };
 #endif // NS_BASE_SCHEME

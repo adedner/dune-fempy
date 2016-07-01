@@ -11,12 +11,13 @@
 #include "navierstokes.hh"
 #include "model.hh"
 
-template< class FunctionSpace, class GridPart >
-struct StokesModel : public DiffusionModel<FunctionSpace,GridPart>
+
+template <class Model>
+struct StokesModel
 {
-  typedef DiffusionModel<FunctionSpace,GridPart> BaseType;
-  typedef FunctionSpace FunctionSpaceType;
-  typedef GridPart GridPartType;
+  typedef Model ModelType;
+  typedef typename ModelType::FunctionSpaceType FunctionSpaceType;
+  typedef typename ModelType::GridPartType GridPartType;
 
   typedef typename FunctionSpaceType::DomainType DomainType;
   typedef typename FunctionSpaceType::RangeType RangeType;
@@ -26,17 +27,17 @@ struct StokesModel : public DiffusionModel<FunctionSpace,GridPart>
   typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
   typedef Dune::Fem::FunctionSpace< double, double,
               GridPartType::dimensionworld, GridPartType::dimensionworld+1 > FullFunctionSpaceType;
-typedef Dune::Fem::FunctionSpace< double, double,
+  typedef Dune::Fem::FunctionSpace< double, double,
               GridPartType::dimensionworld, GridPartType::dimensionworld > VelocityFunctionSpaceType;
   typedef NavierStokesProblemInterface< FullFunctionSpaceType > ProblemType ;
   typedef Dune::Fem::TimeProviderBase TimeProviderType;
   static const int dimRange = FunctionSpaceType::dimRange;
 
   //! constructor
-  StokesModel( const ProblemType& problem,
-             const GridPart &gridPart,
-             double mu, double nu)
-    : BaseType(problem,gridPart),
+  StokesModel( const ModelType &model,
+               const GridPartType &gridPart,
+               double mu, double nu)
+    : model_(model),
       stab_( Dune::Fem::Parameter::getValue< double >( "stokes.stability", 0.0 ) ),
       mu_(mu), nu_(nu)
   {
@@ -63,7 +64,7 @@ typedef Dune::Fem::FunctionSpace< double, double,
                    RangeType &source ) const
   {
     source = 0;
-    for (unsigned int i=0;i<GridPart::dimensionworld;++i)
+    for (unsigned int i=0;i<GridPartType::dimensionworld;++i)
       source[i] = nu_*value[i];
 
     static const int dimDomain = RangeType::dimension-1;
@@ -125,13 +126,13 @@ typedef Dune::Fem::FunctionSpace< double, double,
   template <class Intersection>
   bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
   {
-    bool isDirichlet = BaseType::isDirichletIntersection(inter, dirichletComponent);
+    bool isDirichlet = model_.isDirichletIntersection(inter, dirichletComponent);
     dirichletComponent[dimRange - 1] = false;
 
     return isDirichlet;
   }
 protected:
-  using BaseType::problem_;
+  const ModelType &model_;
   double stab_;
   double mu_,nu_;
 
@@ -141,11 +142,13 @@ protected:
 //-----------------------------------------------------------
 //-----------------------------------------------------------
 
-template< class GridPart >
+template< class Model >
 struct StokesMainModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace<double,double,
-                                                    GridPart::dimensionworld, GridPart::dimensionworld > ,GridPart>
+                                                    Model::GridPartType::dimensionworld, Model::GridPartType::dimensionworld > ,
+                                                    typename Model::GridPartType>
 {
-  typedef GridPart GridPartType;
+  typedef Model ModelType;
+  typedef typename ModelType::GridPartType GridPartType;
   typedef Dune::Fem::FunctionSpace< double, double,
               GridPartType::dimensionworld, GridPartType::dimensionworld > FunctionSpaceType;
   static const int dimRange = FunctionSpaceType::dimRange;
@@ -160,47 +163,34 @@ struct StokesMainModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace
               GridPartType::dimensionworld, 1 > PressureFunctionSpaceType;
   typedef Dune::Fem::FunctionSpace< double, double,
               GridPartType::dimensionworld, GridPartType::dimensionworld+1 > FullFunctionSpaceType;
-  typedef NavierStokesProblemInterface< FullFunctionSpaceType > ProblemType ;
   typedef Dune::Fem::TimeProviderBase TimeProviderType;
-protected:
-  enum FunctionId { rhs, rhsnext, bndD, bndN };
-  template <FunctionId id>
-  class FunctionWrapper;
-public:
-  typedef Dune::Fem::GridFunctionAdapter< FunctionWrapper<rhs>, GridPartType > RightHandSideType;
-  typedef Dune::Fem::GridFunctionAdapter< FunctionWrapper<rhsnext>, GridPartType > RightHandSideNextType;
-  typedef Dune::Fem::GridFunctionAdapter< FunctionWrapper<bndD>, GridPartType > DirichletBoundaryType;
-  typedef Dune::Fem::GridFunctionAdapter< FunctionWrapper<bndN>, GridPartType > NeumanBoundaryType;
 
   //! constructor
-  StokesMainModel( const ProblemType& problem,
+  StokesMainModel( const ModelType &model,
                    const GridPartType &gridPart,
+                   double dt,
                    double mu, double nu,const bool implicit)
-    : problem_(problem),
-      timeProvider_(problem.timeProvider()),
+    : model_(model),
+      dt_(dt),
       gridPart_(gridPart),
-      localInitialPressure_(problem),
-      localInitialVelocity_(problem),
-      initialPressure_("initial pressure", localInitialPressure_,gridPart),
-      initialVelocity_("initial velocity",localInitialVelocity_,gridPart),
-      zeroVelocityFunction_( "zero velocity", localZeroVelocity_, gridPart ),
-      rhs_(problem_),
-      rhsnext_(problem_),
-      bndD_(problem_),
-      bndN_(problem_),
+      zeroVelocityFunction_( "zero velocity", localZeroVelocity_, gridPart_ ),
       mu_(mu), nu_(nu),
-      implicit_(implicit)
+      implicit_(implicit),
+      dbc_(model_.dirichletBoundary()),
+      nbc_(model_.neumanBoundary()),
+      rhs_(model_.rightHandSide())
   {
-
-    if (implicit==true){
+    if (implicit==true)
+    {
       timeStepFactor_=1.0;
-      timeStepTheta_ =1.0;}
+      timeStepTheta_ =1.0;
+    }
     else
-      {
-    double theta = Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.585786);
-    timeStepFactor_ = -1.0;
-    timeStepTheta_ = (1.0-theta)/theta;
-      }
+    {
+      double theta = Dune::Fem::Parameter::getValue< double >("navierstokes.implicitfactor",0.585786);
+      timeStepFactor_ = -1.0;
+      timeStepTheta_ = (1.0-theta)/theta;
+    }
   }
 
   template< class Entity, class Point >
@@ -224,8 +214,8 @@ public:
                    RangeType &source ) const
   {
     source = 0;
-    for (unsigned int i=0;i<GridPart::dimensionworld;++i)
-      source[i] = (1./timeProvider_.deltaT())*nu_*value[i];
+    for (unsigned int i=0;i<GridPartType::dimensionworld;++i)
+      source[i] = (1./dt_)*nu_*value[i];
   }
   //! return the diffusive flux
   template< class Entity, class Point >
@@ -280,96 +270,28 @@ public:
   //! extract some methods from the problem class for boundary traatment
   bool hasDirichletBoundary () const
   {
-    return problem_.hasDirichletBoundary() ;
+    return model_.hasDirichletBoundary() ;
   }
   bool hasNeumanBoundary () const
   {
-    return problem_.hasNeumanBoundary() ;
+    return model_.hasNeumanBoundary() ;
   }
 
   template <class Intersection>
   bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
   {
-    return problem_.isDirichletPoint( inter.geometry().center() );
+    Dune::FieldVector<bool,dimRange+1> d;
+    bool r = model_.isDirichletIntersection( inter, d );
+    for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
+    return r;
   }
   // return Fem :: Function for Dirichlet boundary values
 
 
-  //-------------------------------------------------------------------------------------
-protected:
-  class LocalInitialPressureFunction
-  {
-  public:
-    typedef GridPart GridPartType;
-    static const int dimDomain = GridPartType::dimensionworld;
-    typedef Dune::Fem::FunctionSpace<double,double,dimDomain,dimDomain+1> FullFunctionSpaceType;
-    typedef typename FullFunctionSpaceType::RangeType FullRangeType;
-    typedef Dune::Fem::FunctionSpace<double,double,dimDomain,dimDomain> VelocityFunctionSpaceType;
-    typedef Dune::Fem::FunctionSpace<double,double,dimDomain,1> FunctionSpaceType;
-    typedef typename FunctionSpaceType::DomainType DomainType;
-    typedef typename FunctionSpaceType::RangeType RangeType;
-     typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-
-    // constructor
-    LocalInitialPressureFunction ( const NavierStokesProblemInterface<FullFunctionSpaceType>& problem)
-      :    problem_(problem){}
-
-    // evaluate local function
-     template< class PointType >
-    void evaluate ( const PointType &x, RangeType &val )
-    {
-      const DomainType xDomain(coordinate(x));
-      FullRangeType retP;
-      problem_.u(entity_.geometry().global(xDomain),retP);
-      val = retP[retP.size()-1];
-    }
-    void init ( const EntityType &entity )
-    {
-      entity_=entity;
-    }
-  private:
-    EntityType entity_;
-    const NavierStokesProblemInterface<FullFunctionSpaceType>& problem_;
-  };
-
-  class LocalInitialVelocityFunction
-  {
-  public:
-    typedef GridPart GridPartType;
-    static const int dimDomain = GridPartType::dimensionworld;
-    typedef Dune::Fem::FunctionSpace<double,double,dimDomain,dimDomain+1> FullFunctionSpaceType;
-    typedef typename FullFunctionSpaceType::RangeType FullRangeType;
-    typedef Dune::Fem::FunctionSpace<double,double,dimDomain,dimDomain> FunctionSpaceType;
-    typedef typename FunctionSpaceType::DomainType DomainType;
-    typedef typename FunctionSpaceType::RangeType RangeType;
-    typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-
-    // constructor
-    LocalInitialVelocityFunction ( const NavierStokesProblemInterface<FullFunctionSpaceType>& problem)
-      :    problem_(problem){}
-
-    // evaluate local function
-    template< class PointType >
-    void evaluate ( const PointType &x, RangeType &val )
-    {
-      const DomainType xDomain(coordinate(x));
-      FullRangeType retU;
-      problem_.u(entity_.geometry().global(xDomain),retU);
-      for (unsigned int i=0;i<(retU.size()-1);++i)
-    val[i] = retU[i];
-    }
-    void init ( const EntityType &entity )
-    {
-      entity_=entity;
-    }
-  private:
-    EntityType entity_;
-    const NavierStokesProblemInterface<FullFunctionSpaceType>& problem_;
-  };
-
+  typedef GridPartType GP;
   struct LocalZeroVelocityFunction
   {
-    typedef GridPart GridPartType;
+    typedef GP GridPartType;
     static const int dimDomain = GridPartType::dimensionworld;
     typedef Dune::Fem::FunctionSpace<double,double,dimDomain,dimDomain> FunctionSpaceType;
     typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
@@ -384,100 +306,42 @@ protected:
   };
   typedef Dune::Fem::LocalFunctionAdapter< LocalZeroVelocityFunction > ZeroVelocityFunctionType;
 
-  template <FunctionId id>
-  class FunctionWrapper : public Dune::Fem::Function< FunctionSpaceType, FunctionWrapper< id > >
-  {
-    typedef Dune::Fem::TimeProviderBase TimeProviderType;
-    public:
-    FunctionWrapper( const NavierStokesProblemInterface<FullFunctionSpaceType>& impl)
-      : impl_( impl ){}
-
-    //! evaluate function
-    void evaluate( const DomainType& x, RangeType& ret ) const
-    {
-      typename FullFunctionSpaceType::RangeType fullRet;
-      if( id == rhs )
-      {
-        // call right hand side of implementation
-        impl_.f( x, fullRet );
-      }
-      else if( id == rhsnext )
-      {
-        impl_.fnext( x, fullRet );
-      }
-      else if( id == bndD )
-      {
-        // call dirichlet boudary data of implementation
-        impl_.g( x, fullRet );
-      }
-      else if( id == bndN )
-      {
-        // call dirichlet boudary data of implementation
-        impl_.n( x, fullRet );
-      }
-      else
-      {
-        DUNE_THROW(Dune::NotImplemented,"FunctionId not implemented");
-      }
-      for (unsigned int i=0;i<ret.size();++i)
-        ret[i] = fullRet[i];
-    }
-  private:
-    const NavierStokesProblemInterface<FullFunctionSpaceType>& impl_;
-  };
-
 public:
-  typedef Dune::Fem::LocalFunctionAdapter< LocalInitialPressureFunction > InitialPressureFunctionType;
-  typedef Dune::Fem::LocalFunctionAdapter< LocalInitialVelocityFunction > InitialVelocityFunctionType;
-
-  const InitialPressureFunctionType &initialPressureFunction() const
-  {
-    return initialPressure_;
-  }
- const InitialVelocityFunctionType &initialVelocityFunction() const
-  {
-    return initialVelocity_;
-  }
   const ZeroVelocityFunctionType &zeroVelocity() const
   {
     return zeroVelocityFunction_;
   }
-  DirichletBoundaryType dirichletBoundary( ) const
+  Dune::Fem::LocalFunctionAdapter< LocalVelocityExtractor<typename ModelType::DirichletBoundaryType> > dirichletBoundary(  ) const
   {
-    return DirichletBoundaryType( "boundary function", bndD_, gridPart_, 5 );
+    return Dune::Fem::LocalFunctionAdapter< decltype(dbc_) >("right hand side", dbc_, gridPart_ );
   }
-  NeumanBoundaryType neumanBoundary( ) const
+  Dune::Fem::LocalFunctionAdapter< LocalVelocityExtractor<typename ModelType::NeumanBoundaryType> > neumanBoundary(  ) const
   {
-    return NeumanBoundaryType( "boundary function", bndN_, gridPart_, 5 );
+    return Dune::Fem::LocalFunctionAdapter< decltype(nbc_) >("right hand side", nbc_, gridPart_ );
   }
   // return Fem :: Function for right hand side
-  RightHandSideType rightHandSide(  ) const
+  Dune::Fem::LocalFunctionAdapter< LocalVelocityExtractor<typename ModelType::RightHandSideType> > rightHandSide(  ) const
   {
-    return RightHandSideType( "right hand side", rhs_, gridPart_, 5 );
+    return Dune::Fem::LocalFunctionAdapter< decltype(rhs_) >("right hand side", rhs_, gridPart_ );
   }
-  RightHandSideNextType rightHandSideNext(  ) const
+  Dune::Fem::LocalFunctionAdapter< LocalVelocityExtractor<typename ModelType::RightHandSideType> > rightHandSideNext(  ) const
   {
-    return RightHandSideNextType( "right hand side - next timestep", rhsnext_, gridPart_, 5 );
+    return Dune::Fem::LocalFunctionAdapter< decltype(rhs_) >("right hand side", rhs_, gridPart_ );
   }
   //------------------------------------------------------------------------------------------
 
 private:
-  const ProblemType &problem_;
-  const TimeProviderType &timeProvider_;
-  const GridPart &gridPart_;
-  LocalInitialPressureFunction localInitialPressure_;
-  LocalInitialVelocityFunction localInitialVelocity_;
-  InitialPressureFunctionType initialPressure_;
-  InitialVelocityFunctionType initialVelocity_;
+  double dt_;
+  const ModelType &model_;
+  const GridPartType &gridPart_;
   LocalZeroVelocityFunction localZeroVelocity_;
   ZeroVelocityFunctionType zeroVelocityFunction_;
-  FunctionWrapper<rhs> rhs_;
-  FunctionWrapper<rhsnext> rhsnext_;
-  FunctionWrapper<bndD> bndD_;
-  FunctionWrapper<bndN> bndN_;
   double mu_,nu_;
   double timeStepFactor_,timeStepTheta_;
   const bool implicit_;
+  mutable LocalVelocityExtractor<typename ModelType::DirichletBoundaryType> dbc_;
+  mutable LocalVelocityExtractor<typename ModelType::NeumanBoundaryType> nbc_;
+  mutable LocalVelocityExtractor<typename ModelType::RightHandSideType> rhs_;
 };
 
 //-----------------------------------------------------------
@@ -772,10 +636,12 @@ struct StokesDivergenceModel : public DiffusionModelInterface<Dune::Fem::Functio
     return false;
   }
 };
-template< class GridPart >
-struct StokesPrecondModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace<double,double,GridPart::dimensionworld,1> ,GridPart>
+template< class Model >
+struct StokesPrecondModel :
+            public DiffusionModelInterface<Dune::Fem::FunctionSpace<double,double,Model::GridPartType::dimensionworld,1> ,typename Model::GridPartType>
 {
-  typedef GridPart GridPartType;
+  typedef Model ModelType;
+  typedef typename Model::GridPartType GridPartType;
   typedef Dune::Fem::FunctionSpace< double, double,GridPartType::dimensionworld,1> FunctionSpaceType;
   static const int dimRange = FunctionSpaceType::dimRange;
 
@@ -790,17 +656,14 @@ struct StokesPrecondModel : public DiffusionModelInterface<Dune::Fem::FunctionSp
               GridPartType::dimensionworld, GridPartType::dimensionworld+1 > FullFunctionSpaceType;
  typedef Dune::Fem::FunctionSpace< double, double,
               GridPartType::dimensionworld, GridPartType::dimensionworld > VelocityFunctionSpaceType;
-   typedef NavierStokesProblemInterface< FullFunctionSpaceType> ProblemType ;
-  typedef Dune::Fem::TimeProviderBase TimeProviderType;
 
 public:
   //! constructor
-  StokesPrecondModel( const ProblemType& problem,
-                      const GridPartType &gridPart,
+  StokesPrecondModel( const ModelType& model, const GridPartType &gridPart,
                       double mu, double nu)
-    : problem_(problem),
+    : model_(model),
       gridPart_(gridPart),
-      zeroVelocityFunction_( "zero velocity", localZeroVelocity_, gridPart ),
+      zeroVelocityFunction_( "zero velocity", localZeroVelocity_, gridPart_ ),
       mu_(mu),
       nu_(nu)
   {
@@ -864,10 +727,8 @@ public:
                 const RangeType &value,
                 RangeType &val) const
   {
-    // robin b.c on boundaries that are not dirichlet
-    if ( !problem_.isDirichletPoint( entity.geometry().global(coordinate(x)) ) )
-      for (unsigned int i=0;i<val.size();++i)
-        val[i] = nu_*value[i];
+    for (unsigned int i=0;i<val.size();++i)
+      val[i] = nu_*value[i];
   }
   //! extract some methods from the problem class for boundary traatment
   bool hasDirichletBoundary () const
@@ -882,12 +743,16 @@ public:
   template <class Intersection>
   bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
   {
-    return false;
+    Dune::FieldVector<bool,GridPartType::dimensionworld+1> d;
+    return model_.isDirichletIntersection( inter, d );
+    // for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
+    // return r;
   }
 protected:
+  typedef GridPartType GP;
   struct LocalZeroVelocityFunction
   {
-    typedef GridPart GridPartType;
+    typedef GP GridPartType;
     static const int dimDomain = GridPartType::dimensionworld;
     typedef Dune::Fem::FunctionSpace<double,double,dimDomain,1> FunctionSpaceType;
     typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
@@ -907,8 +772,8 @@ public:
     return zeroVelocityFunction_;
   }
 private:
-  const ProblemType &problem_;
-  const GridPart &gridPart_;
+  const ModelType &model_;
+  const GridPartType &gridPart_;
   LocalZeroVelocityFunction localZeroVelocity_;
   ZeroVelocityFunctionType zeroVelocityFunction_;
   double mu_,nu_;
@@ -919,11 +784,12 @@ private:
 //---------------------------------------------------------------//
 
 
-template< class GridPart >
+template< class Model >
 struct StokesTransportModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace<double,double,
-                                                   GridPart::dimensionworld, GridPart::dimensionworld > ,GridPart>
+                                            Model::GridPartType::dimensionworld, Model::GridPartType::dimensionworld >, typename Model::GridPartType>
 {
-  typedef GridPart GridPartType;
+  typedef Model ModelType;
+  typedef typename Model::GridPartType GridPartType;
   typedef Dune::Fem::FunctionSpace< double, double,
               GridPartType::dimensionworld, GridPartType::dimensionworld > VelocityFunctionSpaceType;
   static const int dimRange = VelocityFunctionSpaceType::dimRange;
@@ -941,8 +807,8 @@ struct StokesTransportModel : public DiffusionModelInterface<Dune::Fem::Function
   typedef Dune::Fem::TimeProviderBase TimeProviderType;
 
   //! constructor
-  StokesTransportModel(const ProblemType &problem, const GridPartType &gridPart)
-  : gridPart_(gridPart), problem_(problem)
+  StokesTransportModel(const ModelType &model, const GridPartType &gridPart)
+  : gridPart_(gridPart), model_(model)
   {
   }
 
@@ -980,18 +846,15 @@ struct StokesTransportModel : public DiffusionModelInterface<Dune::Fem::Function
   template <class Intersection>
   bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
   {
-    return problem_.isDirichletPoint( inter.geometry().center() );
-  }
-  // return Fem :: Function for Dirichlet boundary values
-  const InitialFunctionType &initialFunction() const
-  {
-    return problem_;
+    Dune::FieldVector<bool,dimRange+1> d;
+    bool r = model_.isDirichletIntersection( inter, d );
+    for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
+    return r;
   }
 protected:
 
 private:
-  const GridPart &gridPart_;
-  const ProblemType &problem_;
-
+  const GridPartType &gridPart_;
+  const ModelType &model_;
 };
 #endif // #ifndef Stokes_MODEL_HH

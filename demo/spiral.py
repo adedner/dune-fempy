@@ -1,14 +1,16 @@
 from __future__ import print_function
-import math
-from mpi4py import MPI
-from functools import reduce
 
+from mpi4py import MPI
+
+import math
 import ufl
-import dune.models.femufl as duneuflmodel
-import dune.fem as fem
-import dune.fem.gridpart as gridpart
-import dune.fem.space as space
-import dune.fem.scheme as scheme
+
+import dune.ufl
+import dune.models.elliptic
+
+import dune.fem
+
+from functools import reduce
 
 # http://www.scholarpedia.org/article/Barkley_model
 dimRange   = 2
@@ -30,76 +32,78 @@ def initial(x):
     return [ 1   if x[1]>1.75 else 0,\
              0.5 if x[0]<1.75 else 0. ]
 
-#################################################################
-### Extra model code:
-sourceCode = """\
-      RangeType unValue;
-      unLocal_->evaluate( point, unValue );
-      double uth = (unValue[1]+spiral_b)/spiral_a;
-      if ( unValue[0] <= uth )
-        flux[ 0 ] -= dt/spiral_eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
-      else
-        flux[ 0 ] -= dt/spiral_eps * unValue[0] * (1.-value[0]) * (unValue[0]-uth);
-"""
-linSourceCode = """\
-      RangeType unValue;
-      unLocal_->evaluate( point, unValue );
-      double uth = (unValue[1]+spiral_b)/spiral_a;
-      if ( unValue[0] <= uth )
-        flux[ 0 ] -= dt/spiral_eps * value[0] * (1.-unValue[0]) * (unValue[0]-uth);
-      else
-        flux[ 0 ] -= dt/spiral_eps * unValue[0] * (-value[0]) * (unValue[0]-uth);
-"""
-repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
-        ('spiral_eps', str(spiral_eps)), ('dt',str(dt))
-sourceCode    = reduce(lambda a, kv: a.replace(*kv), repls, sourceCode)
-linSourceCode = reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode)
-#################################################################
-
 # Basic setup
 # -----------
 # set up reference domain
-grid2d    = fem.leafGrid("../data/spiral-2d.dgf", "YaspGrid", dimgrid=2, dimworld=2)
-sp        = space.create( "Lagrange", grid2d, dimrange=dimRange, polorder=1 )
+grid = dune.fem.leafGrid("../data/spiral-2d.dgf", "YaspGrid", dimgrid=2, dimworld=2)
+spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, polorder=1 )
 
 # set up left and right hand side models
 # --------------------------------------
-ufl2model = duneuflmodel.DuneUFLModel(grid2d.dimWorld,dimRange)
-u         = ufl2model.trialFunction()
-v         = ufl2model.testFunction()
-un        = ufl2model.coefficient('un',dimRange)
+uflSpace = dune.ufl.Space(grid.dimGrid, dimRange, grid.dimWorld)
+u = ufl.TrialFunction(uflSpace)
+v = ufl.TestFunction(uflSpace)
+un = ufl.Coefficient(uflSpace)
 
 # right hand sie (time derivative part + explicit forcing in v)
-a_ex = ( ufl.inner(un,v) + dt*ufl.inner( spiral_h( un[0],un[1]), v[1] ) ) * ufl.dx(0)
+a_ex = (ufl.inner(un, v) + dt * ufl.inner(spiral_h(un[0], un[1]), v[1])) * ufl.dx(0)
 # left hand side (heat equation in first variable + backward Euler in time)
-a_im = ( dt*spiral_D*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) +
-         ufl.inner(u,v) ) * ufl.dx(0)
-ufl2model.generate(a_im-a_ex)
-# now add implicit part of forcing to source and un coefficient function
-ufl2model.add2Source( sourceCode, linSourceCode )
-model = ufl2model.makeAndImport(grid2d,name="spiral").get()
+a_im = (dt * spiral_D * ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) + ufl.inner(u,v)) * ufl.dx(0)
+
+modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
+
+# extra model source code
+# -----------------------
+sourceCode = """\
+RangeType un;
+coefficient< 0 >().evaluate( x, un );
+double uth = (un[ 1 ] + spiral_b) / spiral_a;
+if( un[ 0 ] <= uth )
+  result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
+else
+  result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (1.0 - u[ 0 ]) * (un[ 0 ] - uth);
+"""
+linSourceCode = """\
+RangeType un;
+coefficient< 0 >().evaluate( x, un );
+double uth = (un[ 1 ] + spiral_b) / spiral_a;
+if( un[ 0 ] <= uth )
+  result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
+else
+  result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (-u[ 0 ]) * (un[ 0 ] - uth);
+"""
+repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
+        ('spiral_eps', str(spiral_eps)), ('dt',str(dt))
+
+modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
+modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))
+
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
-solution    = sp.interpolate( initial, name="solution" )
-solution_n  = sp.interpolate( initial, name="solution_n" )
-forcing     = sp.interpolate( [0,0,0], name="forcing" )
-solver    = scheme.create( "FemScheme", solution, model, "spiral" )
+solution    = spc.interpolate( initial, name="solution" )
+solution_n  = spc.interpolate( initial, name="solution_n" )
+forcing     = spc.interpolate( [0,0,0], name="forcing" )
 
-model.setun(solution_n)
+model = dune.models.elliptic.importModel("spiral", grid, modelCode).get()
+model.setCoefficient(un.count(), solution_n)
 
-# time lopp
+scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
+
+
+# time loop
 # ---------
 count   = 0
 t       = 0.
-grid2d.writeVTK("spiral", pointdata=[solution], number=count)
+grid.writeVTK("spiral", pointdata=[solution], number=count)
 
-while t<endTime:
-    solver.solve( target=solution, assemble=(count==0) )
+while t < endTime:
+    print(">>> Computing solution a t = " + str(t + dt))
+    solution_n.assign(solution)
+    scheme.solve(target=solution, assemble=(count==0))
     t     += dt
     count += 1
-    grid2d.writeVTK("spiral", pointdata=[solution], number=count)
-    solution_n.assign( solution )
+    grid.writeVTK("spiral", pointdata=[solution], number=count)
 
 print("END")

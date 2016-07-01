@@ -26,12 +26,14 @@ a = (inner(u - u_n, v) + deltaT * inner(grad(theta*u + (1-theta)*u_n), grad(v)))
 model = dune.models.elliptic.importModel("heatmodel", grid, dune.models.elliptic.compileUFL(a == 0)).get()
 scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")
 
-solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="heat")
+solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="u")
 grid.writeVTK("heat", pointdata=[solution], number=0)
+
+old_solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="u_n")
 
 steps = int(1 / deltaT)
 for n in range(1,steps+1):
-    old_solution = solution          # BUG: this is needed to keep solution alive
-    heatModel.setu_n(old_solution)
-    solution = heatScheme.solve()
+    old_solution.assign(solution)
+    model.setCoefficient(u_n.count(), old_solution)
+    scheme.solve(target=solution)
     grid.writeVTK("heat", pointdata=[solution], number=n)

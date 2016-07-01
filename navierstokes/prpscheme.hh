@@ -183,14 +183,15 @@ double energyFunctional(const DiscreteFunction &u,const double &alphaOne,const d
 //------------------------------------------------------------//
 //------------------------------------------------------------//
 
-template < class VelocitySpace, class PressureSpace >
+template < class VelocitySpace, class PressureSpace, class AdditionalModel >
 class PRPScheme
 {
 public:
   typedef typename VelocitySpace::GridPartType GridPartType;
   typedef typename GridPartType::GridType GridType;
   typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
-  typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
+  // typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
+  typedef AdditionalModel AdditionalModelType;
 
   //Models we need to create
   typedef BurgersStateModel<AdditionalModelType>      BurgersStateModelType;//This will construct the model L in disc notes

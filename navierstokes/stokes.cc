@@ -18,6 +18,7 @@
 template <class StokesScheme>
 struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
 {
+  typedef typename StokesScheme::AdditionalModelType AdditionalModelType;
   typedef NSBaseScheme<StokesScheme> BaseType;
   typedef typename StokesScheme::VelocitySpaceType VelocitySpaceType;
   typedef typename StokesScheme::PressureSpaceType PressureSpaceType;
@@ -29,9 +30,9 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
           SolutionType;
 
   using BaseType::model;
-  StokesSchemeWrapper( const SolutionSpaceType &spaces, double viscosity, int problemNumber, double timestep )
+  StokesSchemeWrapper( const SolutionSpaceType &spaces, const AdditionalModelType &model, double viscosity, int problemNumber, double timestep )
   : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep )
-  , stokesScheme_( std::get<0>(spaces), std::get<1>(spaces), model(),
+  , stokesScheme_( std::get<0>(spaces), std::get<1>(spaces), model,
       BaseType::timestep_, BaseType::viscosityActual_, BaseType::timestepStokes_ )
   {}
   ~StokesSchemeWrapper() {std::cout << "StokesSchemeWrapper destructor\n";
@@ -73,17 +74,20 @@ namespace Dune
       typedef StokesSchemeWrapper<Scheme> StokesSchemeType;
       typedef typename StokesSchemeType::SolutionSpaceType SolutionSpaceType;
       typedef typename StokesSchemeType::SolutionType SolutionType;
+      typedef typename StokesSchemeType::AdditionalModelType AdditionalModelType;
       // export the scheme wrapper
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
       pybind11::class_< StokesSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( StokesSchemeType &instance, const SolutionSpaceType &spaces,
+                         const AdditionalModelType &model,
                          double viscosity,
                          int problemNumber,
                          const std::string &name,
                          double timeStep ) {
-          new( &instance ) StokesSchemeType( spaces, viscosity, problemNumber, timeStep );
+          new( &instance ) StokesSchemeType( spaces, model, viscosity, problemNumber, timeStep );
         }, pybind11::keep_alive< 1, 2 >(),
            pybind11::arg("spaces"),
+           pybind11::arg("model"),
            pybind11::arg("viscosity"),
            pybind11::arg("problemNumber"),
            pybind11::arg("name"),

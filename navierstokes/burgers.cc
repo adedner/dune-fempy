@@ -18,6 +18,7 @@
 template <class BurgersScheme>
 struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
 {
+  typedef typename BurgersScheme::AdditionalModelType AdditionalModelType;
   typedef NSBaseScheme<BurgersScheme> BaseType;
   typedef typename BurgersScheme::VelocitySpaceType VelocitySpaceType;
   typedef typename BurgersScheme::PressureSpaceType PressureSpaceType;
@@ -29,9 +30,9 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
           SolutionType;
 
   using BaseType::model;
-  BurgersSchemeWrapper( const SolutionSpaceType &spaces, double viscosity, int problemNumber, double timestep )
+  BurgersSchemeWrapper( const SolutionSpaceType &spaces, const AdditionalModelType &model, double viscosity, int problemNumber, double timestep )
   : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep ),
-    burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces),model(),
+    burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces),model,
          BaseType::timestep_, BaseType::viscosityActual_, BaseType::timestepBurgers_ )
   {
   }
@@ -70,17 +71,20 @@ namespace Dune
       typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
       typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
       typedef typename BurgersSchemeType::SolutionType SolutionType;
+      typedef typename BurgersSchemeType::AdditionalModelType AdditionalModelType;
       // export PRPScheme
       pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
       pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
+                         const AdditionalModelType &model,
                          double viscosity,
                          int problemNumber,
                          const std::string &name,
                          double timeStep ) {
-          new( &instance ) BurgersSchemeType( spaces, viscosity, problemNumber, timeStep );
+          new( &instance ) BurgersSchemeType( spaces, model, viscosity, problemNumber, timeStep );
         }, pybind11::keep_alive< 1, 2 >(),
            pybind11::arg("spaces"),
+           pybind11::arg("model"),
            pybind11::arg("viscosity"),
            pybind11::arg("problemNumber"),
            pybind11::arg("name"),

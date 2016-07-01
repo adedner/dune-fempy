@@ -1,6 +1,19 @@
+from __future__ import print_function
 from mpi4py import MPI
+import math
+import ufl
+import dune.models.femufl as duneuflmodel
 import dune.fem as fem
 import dune.fem.scheme as scheme
+
+ufl2model = duneuflmodel.DuneUFLModel(2,3) # this is utility.init and sets the dim range
+u = ufl2model.trialFunction()
+v = ufl2model.testFunction()
+x = ufl2model.spatialCoordinate()
+a = (ufl.inner(u,v) + ufl.inner(ufl.grad(u),ufl.grad(v)))*ufl.dx(0)
+bnd_u = ufl2model.coefficient("bnd_u",1)
+g = [bnd_u,0,0]
+ufl2model.generate(a,diric={1:g})
 
 # initialise grid
 # grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
@@ -22,9 +35,10 @@ velocitySpace = fem.create.space( "Lagrange", grid2d, polorder = 2, dimrange = 2
 # dirichletconstraints
 
 # schemes
-stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),\
+model = ufl2model.makeAndImport(grid2d,name="laplace").get()
+stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),model,\
                viscosity, problemNumber, "stokes", timeStep, storage = "Istl" )
-burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace),\
+burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace),model,\
                viscosity, problemNumber, "burgers", timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0
@@ -46,6 +60,12 @@ time = timeStep
 counter = 0
 save_counter = 1
 savestep = saveinterval
+def bnd_u(x):
+    if time > 0.05:
+      return [ (1+x[0])*(1-x[1]) * time / 0.05 ]
+    return [0]
+bnd_uGlobal = grid2d.globalGridFunction("bnd_velocity", bnd_u)
+model.setbnd_u( bnd_uGlobal )
 while time < endTime:
     print( "Time is:", time )
     print( 'Solve step 1 - Stokes' )

@@ -80,13 +80,14 @@ private:
   int step_;
 };
 
-template < class VelocitySpace, class PressureSpace >
+template < class VelocitySpace, class PressureSpace, class AdditionalModel >
 class UzawaScheme
 {
 public:
   typedef typename VelocitySpace::GridPartType GridPartType;
   typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
-  typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
+  // typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
+  typedef AdditionalModel AdditionalModelType;
 
   typedef StokesMainModel<AdditionalModelType>       MainModelType;
   typedef StokesGradModel<GridPartType>       GradModelType;
@@ -312,7 +313,7 @@ protected:
   GridPartType &gridPart_;         // grid part(view), e.g. here the leaf grid the discrete space is build with
   double mu_,nu_;
 
-  const AdditionalModelType additionalModel_;
+  const AdditionalModelType &additionalModel_;
   const MainModelType mainModel_;
   const MainModelType explicitMainModel_;
   const GradModelType gradModel_;

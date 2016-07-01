@@ -23,8 +23,8 @@ struct NoConstraints
   template < class DiscreteFunctionType >
   void operator ()( const DiscreteFunctionType& u, DiscreteFunctionType& w ) const
   {}
-  template < class GridFunctionType, class DiscreteFunctionType >
-  void operator ()( const GridFunctionType& u, DiscreteFunctionType& w ) const
+  template < class DiscreteFunctionType >
+  void operator ()( DiscreteFunctionType& w ) const
   {}
   template <class LinearOperator>
   void applyToOperator( LinearOperator& linearOperator ) const
@@ -73,11 +73,19 @@ public:
   {}
 
   // prepare the solution vector
-  template <class Function>
-  void prepare( const Function &func, RangeDiscreteFunctionType &u )
+  void prepare( RangeDiscreteFunctionType &u )
   {
     // set boundary values for solution
-    constraints()( func, u );
+    constraints()( u );
+  }
+  void prepare( const RangeDiscreteFunctionType &v, RangeDiscreteFunctionType &u )
+  {
+    // set boundary values for solution
+    constraints()( v, u );
+  }
+  template <class DF>
+  void prepare( const DF &v, RangeDiscreteFunctionType &u ) const
+  {
   }
 
   //! application operator
@@ -215,7 +223,7 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model, Con
         const IntersectionType &intersection = *iit;
         if ( ! intersection.boundary() )
           continue;
-        Dune::FieldVector<bool,RangeRangeType::dimension> components(true);
+        Dune::FieldVector<int,RangeRangeType::dimension> components(0);
            bool hasDirichletComponent = model().isDirichletIntersection( intersection, components);
 
         const typename IntersectionType::Geometry &intersectionGeometry = intersection.geometry();
@@ -244,7 +252,7 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model, Con
 
   w.communicate();
   // apply constraints, e.g. Dirichlet contraints, to the result
-  constraints()( u, w );
+  prepare( u, w );
 }
 
 // Implementation of DifferentiableEllipticOperator
@@ -335,7 +343,7 @@ void DifferentiableEllipticOperator< JacobianOperator, Model, Constraints >
         const IntersectionType &intersection = *iit;
         if ( ! intersection.boundary() )
           continue;
-        Dune::FieldVector<bool,RangeRangeType::dimension> components(true);
+        Dune::FieldVector<int,RangeRangeType::dimension> components(0);
         bool hasDirichletComponent = model().isDirichletIntersection( intersection, components);
 
         const typename IntersectionType::Geometry &intersectionGeometry = intersection.geometry();

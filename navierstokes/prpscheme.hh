@@ -190,7 +190,7 @@ public:
   typedef typename VelocitySpace::GridPartType GridPartType;
   typedef typename GridPartType::GridType GridType;
   typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
-  typedef DiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
+  typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
 
   //Models we need to create
   typedef BurgersStateModel<AdditionalModelType>      BurgersStateModelType;//This will construct the model L in disc notes
@@ -244,6 +244,7 @@ public:
       g_("g",velocitySpace_),
       gdiff_("gdiff", velocitySpace_),
       d_("d",velocitySpace_),
+      zeroDF_("0",velocitySpace_),
       stateOperator_(stateModel_,velocitySpace_),
       explicitStateOperator_(explicitStateModel_,velocitySpace_),
       gradOperator_(gradModel_,velocitySpace_),
@@ -264,12 +265,13 @@ public:
     enum { backtracking, quadratic,cubic};
     const int lineSearchMethod = Dune::Fem::Parameter::getEnum("burgers.linesearchmethod", lineSearchMethods, backtracking);
     lineSearchMethod_=lineSearchMethod;
+    zeroDF_.clear();
   }
   //! setup the right hand side
   void prepare( VelocityDiscreteFunctionType &solution )
   {
     // set boundary values for velocity
-    stateOperator_.prepare( stateModel_.dirichletBoundary(), solution );
+    stateOperator_.prepare( solution );
     // assemble rhs
     assembleRHS ( stateModel_, stateModel_.rightHandSide(), stateModel_.neumanBoundary(), rhsU_ );
 
@@ -326,13 +328,13 @@ public:
     explicitStateOperator_(solution,dummyOne_);             // set dummyTwo = L[u0]+B[u0] + L'[u^n] - f
     dummyTwo_+= dummyOne_;///////
 
-    stateOperator_.prepare(stateModel_.zeroVelocity(),dummyTwo_);
+    stateOperator_.prepare(zeroDF_, dummyTwo_);
     invStateOp(dummyTwo_,xi_);                                    // solve Lxi =Lu+ Bu-f for xi (=> xi=L^{-1}(Lu+ Bu-f) )
 
     //----------------------Check condition:
     double delta = 0.0;
     delta = energyFunctional(xi_,alphaOne_,alphaTwo_,deltaT_);
-    std::cout<<delta<<std::endl;
+    // std::cout << "burgers(" << 0 << ") = " << delta<<std::endl;
     if(delta < solverEps_/100.) return;
 
     //---------------------Solve for the steepest ascent direction:
@@ -340,7 +342,7 @@ public:
     stateLinearOperator_(xi_,dummyOne_);                           // dummyOne = Lxi
     descentOperator_(solutiontemp,dummyTwo_);                   // Construct dummyTwo = D[u]
     dummyTwo_ += dummyOne_;                                        // set dummyTwo = L[xi]+D[u]
-    stateOperator_.prepare(stateModel_.zeroVelocity(),dummyTwo_);  // Solving problem with zero BCs
+    stateOperator_.prepare(zeroDF_ ,dummyTwo_);  // Solving problem with zero BCs
     invStateOp(dummyTwo_,g_);                                      // solve Lg= Lxi + Du for g
 
 
@@ -353,103 +355,102 @@ public:
     double prpBetaNumerator;
     double prpBeta;
     for (unsigned int m = 0; m < 100; ++m)
-      {
-          //--------------------Line search
     {
-      switch(lineSearchMethod_)
+      //--------------------Line search
+      {
+        switch(lineSearchMethod_)
         {
-        case 0: //Backtracking
+          case 0: //Backtracking
           {
-        //Parameters
-        double stepSize = 2.0;//step size double the actual start size
-        double tolInit = lineSearchAccept_;//in (0,0.5)
-        double tol;
-        double reduction = 0.5; // how much to reduce step size if failed > 0.0
-        double eValNew = 0.0;
-        double eValOld=delta;
-        VelocityDiscreteFunctionType solutiontmp(solutiontemp);
-        VelocityDiscreteFunctionType xitmp(solutiontemp);
+            //Parameters
+            double stepSize = 2.0;//step size double the actual start size
+            double tolInit = lineSearchAccept_;//in (0,0.5)
+            double tol;
+            double reduction = 0.5; // how much to reduce step size if failed > 0.0
+            double eValNew = 0.0;
+            double eValOld=delta;
+            VelocityDiscreteFunctionType solutiontmp(solutiontemp);
+            VelocityDiscreteFunctionType xitmp(solutiontemp);
 
-        tolInit*=g_.scalarProductDofs(d_);
-        for(unsigned int m=0;m<20;++m)
-          {
-            stepSize=stepSize*std::pow(reduction,m+1);  // reduce stepsize  (1st loop reduction =1.0)
-            tol=tolInit*stepSize;                       //=tol*g*d*stepSize cancels out first loop.
+            tolInit*=g_.scalarProductDofs(d_);
+            for(unsigned int m=0;m<20;++m)
+            {
+              stepSize=stepSize*std::pow(reduction,m+1);  // reduce stepsize  (1st loop reduction =1.0)
+              tol=tolInit*stepSize;                       //=tol*g*d*stepSize cancels out first loop.
 
-            solutiontmp.clear();
-            solutiontmp.assign(solutiontemp);
-            solutiontmp.axpy(stepSize,d_);              //=u+stepSize d
+              solutiontmp.clear();
+              solutiontmp.assign(solutiontemp);
+              solutiontmp.axpy(stepSize,d_);              //=u+stepSize d
 
-            //-------------------Solve state equation for proposed step
-            xitmp.clear();dummyOne_.clear();dummyTwo_.clear();
-            stateLinearOperator_(solutiontmp,dummyOne_);
-            transportOperator_(solutiontmp,dummyTwo_);
-            dummyTwo_ += dummyOne_; dummyTwo_-= rhsU_;
+              //-------------------Solve state equation for proposed step
+              xitmp.clear();dummyOne_.clear();dummyTwo_.clear();
+              stateLinearOperator_(solutiontmp,dummyOne_);
+              transportOperator_(solutiontmp,dummyTwo_);
+              dummyTwo_ += dummyOne_; dummyTwo_-= rhsU_;
 
-            dummyOne_.clear();
-            explicitStateOperator_(solution,dummyOne_);// set dummyTwo = L[u0]+B[u0] - L[u^n] - f
-            dummyTwo_+= dummyOne_;/////////
+              dummyOne_.clear();
+              explicitStateOperator_(solution,dummyOne_);// set dummyTwo = L[u0]+B[u0] - L[u^n] - f
+              dummyTwo_+= dummyOne_;/////////
 
-            stateOperator_.prepare(stateModel_.zeroVelocity(),dummyTwo_);
-            invStateOp(dummyTwo_,xitmp);
-            //calc new energy
-            eValNew = energyFunctional(xitmp,alphaOne_,alphaTwo_,deltaT_);
+              stateOperator_.prepare(zeroDF_, dummyTwo_);
+              invStateOp(dummyTwo_,xitmp);
+              //calc new energy
+              eValNew = energyFunctional(xitmp,alphaOne_,alphaTwo_,deltaT_);
 
-            if(eValNew<=eValOld+tol)
+              if(eValNew<=eValOld+tol)
               {
-            xi_.assign(xitmp);
-            solutiontemp.assign(solutiontmp);//update u^{n+1} =u^{n} + \lambda d^n
-            break;
+                xi_.assign(xitmp);
+                solutiontemp.assign(solutiontmp);//update u^{n+1} =u^{n} + \lambda d^n
+                break;
               }
+            }
+            break;
           }
-        break;
-          }
-        case 1: //quadratic line search
+          case 1: //quadratic line search
           {
-        //Implement quadratic interpolation linesearch here
-        break;
+            //Implement quadratic interpolation linesearch here
+            break;
           }
-        case 2: //cubic
+          case 2: //cubic
           {
-        //Implement cubic interpolation linesearch here
-        break;
+            //Implement cubic interpolation linesearch here
+            break;
           }
         }
-    }
-
-
-    //-------------------Check condition: J(u^{n+1})<Tolerance=solverEps_*10
-    delta = energyFunctional(xi_,alphaOne_,alphaTwo_,deltaT_);
-    std::cout << delta << std::endl;
-    if(delta < solverEps_/100.) break;
-
-    //------------------Polak-Ribiere-Polyak beta & ascent direction
-    gdiff_.assign(g_);//gdiff = g^n
-    gdiff_ *= -1.0;
-
-    prpBetaDenominator = 0.0;
-    prpBetaDenominator += (1./deltaT_)*alphaOne_ * g_.scalarProductDofs(g_);// + int(g_i g_i )dx
-    prpBetaDenominator += alphaTwo_ * hSemiInnerProduct(g_,g_);// + int (\nabla g_i \cdot \nabla g_i) dx
-
-    dummyOne_.clear();dummyTwo_.clear();
-    stateLinearOperator_(xi_,dummyOne_);                          // dummyOne = Lxi^{n+1}
-    descentOperator_(solutiontemp,dummyTwo_);                  // Construct dummyTwo =Du^{n+1}
-    dummyTwo_ += dummyOne_;
-    stateOperator_.prepare(stateModel_.zeroVelocity(),dummyTwo_); // Solving problem with zero BCs
-    invStateOp(dummyTwo_,g_);                                     // solve Lg^{n+1}= Du^{n+1} for g^{n+1}
-
-    gdiff_+=g_;                                                               //gdiff = g^{n+1}-g^n
-    prpBetaNumerator = 0.0;
-    prpBetaNumerator += (1./deltaT_)*alphaOne_ * g_.scalarProductDofs(gdiff_);// + int(g_i gdiff_i )dx
-    prpBetaNumerator += alphaTwo_ * hSemiInnerProduct(g_,gdiff_);             // + sum_iint (\nabla g_i \cdot \nabla gdiff_i) dx
-    prpBeta=std::max(prpBetaNumerator/prpBetaDenominator,0.0);
-
-    //--------------------update search direction
-    d_ *= prpBeta;
-         d_ -= g_; // d^{n+1} = -g^{n+1} + prpBeta*d^n       (recall g is gradient, -g descent dir)
       }
-    solution.assign(solutiontemp);//update solution to scheme
 
+
+      //-------------------Check condition: J(u^{n+1})<Tolerance=solverEps_*10
+      delta = energyFunctional(xi_,alphaOne_,alphaTwo_,deltaT_);
+      // std::cout << "burgers(" << m+1 << ") = " << delta << " < " << solverEps_/100. << "?" << std::endl;
+      if(delta < solverEps_/100.)
+        break;
+      //------------------Polak-Ribiere-Polyak beta & ascent direction
+      gdiff_.assign(g_);//gdiff = g^n
+      gdiff_ *= -1.0;
+
+      prpBetaDenominator = 0.0;
+      prpBetaDenominator += (1./deltaT_)*alphaOne_ * g_.scalarProductDofs(g_);// + int(g_i g_i )dx
+      prpBetaDenominator += alphaTwo_ * hSemiInnerProduct(g_,g_);// + int (\nabla g_i \cdot \nabla g_i) dx
+
+      dummyOne_.clear();dummyTwo_.clear();
+      stateLinearOperator_(xi_,dummyOne_);                          // dummyOne = Lxi^{n+1}
+      descentOperator_(solutiontemp,dummyTwo_);                  // Construct dummyTwo =Du^{n+1}
+      dummyTwo_ += dummyOne_;
+      stateOperator_.prepare(zeroDF_,dummyTwo_); // Solving problem with zero BCs
+      invStateOp(dummyTwo_,g_);                                     // solve Lg^{n+1}= Du^{n+1} for g^{n+1}
+
+      gdiff_+=g_;                                                               //gdiff = g^{n+1}-g^n
+      prpBetaNumerator = 0.0;
+      prpBetaNumerator += (1./deltaT_)*alphaOne_ * g_.scalarProductDofs(gdiff_);// + int(g_i gdiff_i )dx
+      prpBetaNumerator += alphaTwo_ * hSemiInnerProduct(g_,gdiff_);             // + sum_iint (\nabla g_i \cdot \nabla gdiff_i) dx
+      prpBeta=std::max(prpBetaNumerator/prpBetaDenominator,0.0);
+
+      //--------------------update search direction
+      d_ *= prpBeta;
+      d_ -= g_; // d^{n+1} = -g^{n+1} + prpBeta*d^n       (recall g is gradient, -g descent dir)
+    }
+    solution.assign(solutiontemp);//update solution to scheme
   }
 protected:
   GridPartType &gridPart_; // grid part(view), e.g. here the leaf grid the discrete space is build with
@@ -465,7 +466,7 @@ protected:
   const PressureSpaceType& pressureSpace_;
   VelocityDiscreteFunctionType rhsU_,dummyOne_,dummyTwo_,xi_;
   const BurgersDescentModelType descentModel_;
-  VelocityDiscreteFunctionType g_,gdiff_,d_;
+  VelocityDiscreteFunctionType g_,gdiff_,d_,zeroDF_;
 
   BurgersStateOperatorType stateOperator_,explicitStateOperator_;
   BurgersGradOperatorType gradOperator_;

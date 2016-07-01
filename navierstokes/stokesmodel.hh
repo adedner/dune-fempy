@@ -12,6 +12,7 @@
 #include "model.hh"
 
 
+#if 0
 template <class Model>
 struct StokesModel
 {
@@ -124,11 +125,10 @@ struct StokesModel
 
   //! return true if given point belongs to the Dirichlet boundary (default is true)
   template <class Intersection>
-  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
+  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<int,dimRange> &dirichletComponent ) const
   {
     bool isDirichlet = model_.isDirichletIntersection(inter, dirichletComponent);
     dirichletComponent[dimRange - 1] = false;
-
     return isDirichlet;
   }
 protected:
@@ -137,6 +137,7 @@ protected:
   double mu_,nu_;
 
 };
+#endif
 
 //-----------------------------------------------------------
 //-----------------------------------------------------------
@@ -176,9 +177,8 @@ struct StokesMainModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace
       zeroVelocityFunction_( "zero velocity", localZeroVelocity_, gridPart_ ),
       mu_(mu), nu_(nu),
       implicit_(implicit),
-      dbc_(model_.dirichletBoundary()),
-      nbc_(model_.neumanBoundary()),
-      rhs_(model_.rightHandSide())
+      nbc_(model_.neumanBoundary(gridPart)),
+      rhs_(model_.rightHandSide(gridPart))
   {
     if (implicit==true)
     {
@@ -278,9 +278,9 @@ struct StokesMainModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace
   }
 
   template <class Intersection>
-  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
+  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<int,dimRange> &dirichletComponent ) const
   {
-    Dune::FieldVector<bool,dimRange+1> d;
+    Dune::FieldVector<int,dimRange+1> d;
     bool r = model_.isDirichletIntersection( inter, d );
     for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
     return r;
@@ -311,10 +311,6 @@ public:
   {
     return zeroVelocityFunction_;
   }
-  Dune::Fem::LocalFunctionAdapter< LocalVelocityExtractor<typename ModelType::DirichletBoundaryType> > dirichletBoundary(  ) const
-  {
-    return Dune::Fem::LocalFunctionAdapter< decltype(dbc_) >("right hand side", dbc_, gridPart_ );
-  }
   Dune::Fem::LocalFunctionAdapter< LocalVelocityExtractor<typename ModelType::NeumanBoundaryType> > neumanBoundary(  ) const
   {
     return Dune::Fem::LocalFunctionAdapter< decltype(nbc_) >("right hand side", nbc_, gridPart_ );
@@ -328,18 +324,51 @@ public:
   {
     return Dune::Fem::LocalFunctionAdapter< decltype(rhs_) >("right hand side", rhs_, gridPart_ );
   }
+  typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
+  void init(const EntityType &entity) const
+  {
+    const_cast<ModelType&>(model_).init(entity);
+  }
+  template <class Point>
+  void dirichlet( int bndId, const Point &x,
+                  RangeType &value) const
+  {
+    typename FullFunctionSpaceType::RangeType fullValue;
+    model_.dirichlet(bndId,x,fullValue);
+    for (int i=0;i<RangeType::dimension;++i)
+      value[i] = fullValue[i];
+  }
+  class BoundaryWrapper
+  {
+    const StokesMainModel<ModelType>& impl_;
+    int bndId_;
+    public:
+    BoundaryWrapper( const StokesMainModel<ModelType>& impl, int bndId )
+    : impl_( impl ), bndId_(bndId) {}
+
+    //! evaluate function
+    template <class Point>
+    void evaluate( const Point& x, RangeType& ret ) const
+    {
+      impl_.dirichlet(bndId_,Dune::Fem::coordinate(x),ret);
+    }
+    //! jacobian function (only for exact)
+    void jacobian( const DomainType& x, JacobianRangeType& ret ) const
+    {
+      DUNE_THROW(Dune::NotImplemented,"rhs jacobian not implemented");
+    }
+  };
   //------------------------------------------------------------------------------------------
 
 private:
-  double dt_;
   const ModelType &model_;
+  double dt_;
   const GridPartType &gridPart_;
   LocalZeroVelocityFunction localZeroVelocity_;
   ZeroVelocityFunctionType zeroVelocityFunction_;
   double mu_,nu_;
   double timeStepFactor_,timeStepTheta_;
   const bool implicit_;
-  mutable LocalVelocityExtractor<typename ModelType::DirichletBoundaryType> dbc_;
   mutable LocalVelocityExtractor<typename ModelType::NeumanBoundaryType> nbc_;
   mutable LocalVelocityExtractor<typename ModelType::RightHandSideType> rhs_;
 };
@@ -741,12 +770,12 @@ public:
   }
 
   template <class Intersection>
-  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
+  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<int,dimRange> &dirichletComponent ) const
   {
-    Dune::FieldVector<bool,GridPartType::dimensionworld+1> d;
-    return model_.isDirichletIntersection( inter, d );
-    // for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
-    // return r;
+    Dune::FieldVector<int,GridPartType::dimensionworld+1> d;
+    bool r = model_.isDirichletIntersection( inter, d );
+    for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
+    return r;
   }
 protected:
   typedef GridPartType GP;
@@ -844,9 +873,9 @@ struct StokesTransportModel : public DiffusionModelInterface<Dune::Fem::Function
   }
 
   template <class Intersection>
-  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<bool,dimRange> &dirichletComponent ) const
+  bool isDirichletIntersection( const Intersection& inter, Dune::FieldVector<int,dimRange> &dirichletComponent ) const
   {
-    Dune::FieldVector<bool,dimRange+1> d;
+    Dune::FieldVector<int,dimRange+1> d;
     bool r = model_.isDirichletIntersection( inter, d );
     for (int i=0;i<dimRange;++i) dirichletComponent[i] = d[i];
     return r;

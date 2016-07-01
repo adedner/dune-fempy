@@ -1,3 +1,42 @@
+/**************************************************************************
+
+  The dune-fem module is a module of DUNE (see www.dune-project.org).
+  It is based on the dune-grid interface library
+  extending the grid interface by a number of discretization algorithms
+  for solving non-linear systems of partial differential equations.
+
+  Copyright (C) 2003 - 2015 Robert Kloefkorn
+  Copyright (C) 2003 - 2010 Mario Ohlberger
+  Copyright (C) 2004 - 2015 Andreas Dedner
+  Copyright (C) 2005        Adrian Burri
+  Copyright (C) 2005 - 2015 Mirko Kraenkel
+  Copyright (C) 2006 - 2015 Christoph Gersbacher
+  Copyright (C) 2006 - 2015 Martin Nolte
+  Copyright (C) 2011 - 2015 Tobias Malkmus
+  Copyright (C) 2012 - 2015 Stefan Girke
+  Copyright (C) 2013 - 2015 Claus-Justus Heine
+  Copyright (C) 2013 - 2014 Janick Gerstenberger
+  Copyright (C) 2013        Sven Kaulman
+  Copyright (C) 2013        Tom Ranner
+  Copyright (C) 2015        Marco Agnese
+  Copyright (C) 2015        Martin Alkaemper
+
+
+  The dune-fem module is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of
+  the License, or (at your option) any later version.
+
+  The dune-fem module is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along
+  with this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+**************************************************************************/
 #ifndef DUNE_DIRICHLETCONSTRAINTS_HH
 #define DUNE_DIRICHLETCONSTRAINTS_HH
 
@@ -29,8 +68,8 @@ public:
   static const int localBlockSize = DiscreteFunctionSpaceType :: localBlockSize ;
   static_assert( localBlockSize == DiscreteFunctionSpaceType::FunctionSpaceType::dimRange,
       "local block size of the space must be identical to the dimension of the range of the function space.");
-  typedef FieldVector<bool, localBlockSize> DirichletBlock;
-  typedef FieldVector<bool, ModelType::dimRange> ModelDirichletBlock;
+  typedef FieldVector<int, localBlockSize> DirichletBlock;
+  typedef FieldVector<int, ModelType::dimRange> ModelDirichletBlock;
   static_assert( ModelType::dimRange >= localBlockSize,
       "local block size of the space must be less or equahl to the dimension of the range of the model.");
 
@@ -91,8 +130,8 @@ public:
    *   \param[in]  u   discrete function providing the constraints
    *   \param[out] w   discrete function the constraints are applied to
    */
-  template < class GridFunctionType, class DiscreteFunctionType >
-  void operator ()( const GridFunctionType& u, DiscreteFunctionType& w ) const
+  template < class DiscreteFunctionType >
+  void operator ()( DiscreteFunctionType& w ) const
   {
     updateDirichletDofs();
 
@@ -103,14 +142,13 @@ public:
 
       for( const EntityType &entity : space_ )
       {
-        typedef typename GridFunctionType :: LocalFunctionType GridLocalFunctionType;
         typedef typename DiscreteFunctionType :: LocalFunctionType LocalFunctionType;
 
+        model_.init(entity);
         LocalFunctionType wLocal = w.localFunction( entity );
-        const GridLocalFunctionType uLocal = u.localFunction( entity );
 
         // interpolate dirichlet dofs
-        dirichletDofTreatment( uLocal, wLocal );
+        dirichletDofTreatment( wLocal );
       }
     }
   }
@@ -196,15 +234,11 @@ protected:
   }
 
   //! set the dirichlet points to exact values
-  template< class GridLocalFunctionType, class LocalFunctionType >
-  void dirichletDofTreatment( const GridLocalFunctionType &uLocal,
-                              LocalFunctionType &wLocal ) const
+  template< class LocalFunctionType >
+  void dirichletDofTreatment( LocalFunctionType &wLocal ) const
   {
     // get entity
     const typename LocalFunctionType::EntityType &entity = wLocal.entity();
-
-    // get slave dof structure (for parallel runs)   /*@LST0S@*/
-    SlaveDofsType &slaveDofs = this->slaveDofs();
 
     // get number of Lagrange Points
     const int localBlocks = space_.blockMapper().numDofs( entity );
@@ -213,7 +247,6 @@ protected:
     std::vector<std::size_t> globalBlockDofs(localBlocks);
     space_.blockMapper().map(entity,globalBlockDofs);
     std::vector<double> values( localBlocks*localBlockSize );
-    space_.interpolation(entity)(uLocal, values);
 
     int localDof = 0;
 
@@ -226,6 +259,8 @@ protected:
       {
         if( dirichletBlocks_[ global ][l] )
         {
+          space_.interpolation(entity)
+            (typename ModelType::BoundaryWrapper(model_,dirichletBlocks_[global][l]), values);
           // store result
           assert( (unsigned int)localDof < wLocal.size() );
           wLocal[ localDof ] = values[ localDof ];
@@ -251,7 +286,7 @@ protected:
       const int blocks = space_.blockMapper().size() ;
       dirichletBlocks_.resize( blocks );
       for( int i=0; i<blocks; ++i )
-        dirichletBlocks_[ i ] = DirichletBlock(false) ;
+        dirichletBlocks_[ i ] = DirichletBlock(0) ;
 
       typedef typename DiscreteFunctionSpaceType :: IteratorType IteratorType;
       typedef typename IteratorType :: Entity EntityType;
@@ -325,7 +360,7 @@ protected:
       if( intersection.boundary() )
       {
         // get dirichlet information from model
-        ModelDirichletBlock block(true);
+        ModelDirichletBlock block(0);
         const bool isDirichletIntersection = model.isDirichletIntersection( intersection, block );
         if (isDirichletIntersection)
         {
@@ -471,5 +506,6 @@ public:
     return blockSize * mapper_.numEntityDofs( entity );
   }
 };
+
 } // end namespace Dune
 #endif

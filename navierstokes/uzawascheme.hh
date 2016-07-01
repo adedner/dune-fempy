@@ -86,7 +86,7 @@ class UzawaScheme
 public:
   typedef typename VelocitySpace::GridPartType GridPartType;
   typedef typename Dune::Fem::FunctionSpace<double,double,GridPartType::dimensionworld,GridPartType::dimensionworld+1> FullFunctionSpaceType;
-  typedef DiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
+  typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
 
   typedef StokesMainModel<AdditionalModelType>       MainModelType;
   typedef StokesGradModel<GridPartType>       GradModelType;
@@ -140,6 +140,7 @@ public:
       pressureSpace_( pressureSpace ),
       rhsU_( "rhsU", velocitySpace_ ),
       xi_( "xi", velocitySpace_ ),
+      zeroDF_( "0", velocitySpace_ ),
       rhsP_( "rhsP", pressureSpace_ ),
       d_( "d", pressureSpace_ ),
       r_( "r", pressureSpace_ ),
@@ -165,6 +166,7 @@ public:
     // set all DoF to zero
     //pressure_.clear();
     //velocity_.clear();
+    zeroDF_.clear();
   }
   void initialize ( VelocityDiscreteFunctionType &velocity, PressureDiscreteFunctionType &pressure )
   {
@@ -178,7 +180,7 @@ public:
   void prepare( VelocityDiscreteFunctionType &velocity )
   {
     // set boundary values for velocity
-    mainOperator_.prepare( mainModel_.dirichletBoundary(), velocity );
+    mainOperator_.prepare( velocity );
 
     // assemble rhs
     assembleRHS ( mainModel_, mainModel_.rightHandSide(), mainModel_.neumanBoundary(), rhsU_ );
@@ -257,6 +259,7 @@ public:
     d_.assign(r_);                             //set search direction d.
     double delta = r_.scalarProductDofs(rhsP_);// check preconditioning r^Tr
     assert( delta >= 0 );
+    // std::cout << "uzawa(" << 0 << ") = " << delta << " < " << solverEps_*10. << "?" << std::endl;
     if ( delta < solverEps_*10. )             //delta = ||r|| check against tolerance
       return;
 
@@ -280,7 +283,7 @@ public:
     {
       xi_.clear();
       gradLinearOperator_(d_, rhsU_);                           // set rhsU =B^Td_2
-      mainOperator_.prepare( mainModel_.zeroVelocity(), rhsU_ );// prepare Au = B^Td_2
+      mainOperator_.prepare( zeroDF_, rhsU_ );// prepare Au = B^Td_2
       invMainOp( rhsU_, xi_ );                                  // solve Ax = B^Td_2  => store x= A^{-1}B^Td_2 (we call x "d_1")
       divLinearOperator_( xi_, rhsP_ );                         // set rhsP = Bx =BA^{-1}B^Td_2   (we call rhsP "a_2")
       double rho = delta / d_.scalarProductDofs(rhsP_);         // scale factor rho = r^Tr/(d_2^T S d_2) = delta/(d_2 . a_2)
@@ -297,7 +300,7 @@ public:
       }
       double oldDelta = delta;                                  // old ||r||
       delta = r_.scalarProductDofs(rhsP_);
-      //std::cout << delta << std::endl;                    // new ||r||
+      // std::cout << "uzawa(" << m+1 << ") = " << delta << " < " << solverEps_*10. << "?" << std::endl;
       if ( delta < solverEps_*10. ) break;
       double gamma = delta/oldDelta;                            // "-1*"scale factor (we called lambda) to update search direction
       d_ *= gamma;                                              //set d_1 = (r_2 - lambda*d_1 =) r_2 + gamma*d_1
@@ -320,7 +323,7 @@ protected:
 
   const VelocitySpaceType& velocitySpace_;
   const PressureSpaceType& pressureSpace_;
-  VelocityDiscreteFunctionType rhsU_,xi_;
+  VelocityDiscreteFunctionType rhsU_,xi_,zeroDF_;
   PressureDiscreteFunctionType rhsP_,d_,r_,precond_;
 
   MainOperatorType mainOperator_,explicitMainOperator_;

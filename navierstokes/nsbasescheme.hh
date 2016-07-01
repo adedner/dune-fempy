@@ -8,7 +8,7 @@ struct NSBaseScheme
   typedef typename Scheme::GridPartType GridPartType;
   typedef typename GridPartType::GridType HGridType;
   typedef typename Scheme::FullFunctionSpaceType FunctionSpaceType;
-  typedef DiffusionModel<FunctionSpaceType,GridPartType> ModelType;
+  typedef MyDiffusionModel<FunctionSpaceType,GridPartType> ModelType;
 
   NSBaseScheme( GridPartType &gridPart, double viscosity, int problemNumber, double timestep )
   : gridPart_( gridPart ),
@@ -26,7 +26,7 @@ struct NSBaseScheme
       case 4:  problemPtr_ = new KarmanVortexStreet<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
       default: problemPtr_ = new ChannelFlow<FunctionSpaceType>( timeProvider_, viscosity_, timestepStokes_, timestepBurgers_ ); break;
     }
-    model_ = new ModelType(*problemPtr_, gridPart_);
+    model_ = new ModelType(*problemPtr_); // , gridPart_);
   }
   ~NSBaseScheme() { delete problemPtr_; }
   const ModelType &model() const

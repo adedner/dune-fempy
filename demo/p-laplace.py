@@ -28,5 +28,5 @@ b = rhs * dx(0) + 10*rhs * ds(0)
 
 model = dune.models.elliptic.compileUFL(a == b)
 
-scheme = dune.fem.create.scheme("FemScheme", spc, dune.models.elliptic.importModel("laplacemodel", grid, model).get(), "scheme")
+scheme = dune.fem.create.scheme("FemScheme", spc, dune.models.elliptic.importModel(grid, model).get(), "scheme")
 grid.writeVTK("p-laplace", pointdata=[scheme.solve()])

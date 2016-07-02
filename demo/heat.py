@@ -23,7 +23,7 @@ u_n = Coefficient(uflSpace)
 
 a = (inner(u - u_n, v) + deltaT * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx(0)
 
-model = dune.models.elliptic.importModel("heatmodel", grid, dune.models.elliptic.compileUFL(a == 0)).get()
+model = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a == 0)).get()
 scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")
 
 solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="u")

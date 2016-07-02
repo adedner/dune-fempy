@@ -64,7 +64,7 @@ solution_n = spc.interpolate(initial_gf, name="solution_n")
 
 # setup scheme
 # ------------
-model  = dune.models.elliptic.importModel("crystal", grid, dune.models.elliptic.compileUFL(a_im == a_ex)).get()
+model  = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex)).get()
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
 
 model.setCoefficient(un.count(), solution_n)

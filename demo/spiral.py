@@ -86,7 +86,7 @@ solution    = spc.interpolate( initial, name="solution" )
 solution_n  = spc.interpolate( initial, name="solution_n" )
 forcing     = spc.interpolate( [0,0,0], name="forcing" )
 
-model = dune.models.elliptic.importModel("spiral", grid, modelCode).get()
+model = dune.models.elliptic.importModel(grid, modelCode).get()
 model.setCoefficient(un.count(), solution_n)
 
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")

@@ -36,11 +36,11 @@ un = ufl.Coefficient(uflSpace)
 
 a_im = (dt * 0.5 * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
 
-mcfModel = dune.models.elliptic.importModel("mcf_left", grid, dune.models.elliptic.compileUFL(a_im == 0)).get()
+mcfModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == 0)).get()
 
 a_ex = (-dt * 0.5 * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
 
-rhsModel = dune.models.elliptic.importModel("mcf_right", grid, dune.models.elliptic.compileUFL(a_ex == 0)).get()
+rhsModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_ex == 0)).get()
 
 
 # now set up schemes for left and right hand side

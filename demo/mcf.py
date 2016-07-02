@@ -6,22 +6,22 @@ import math
 import ufl
 
 import dune.ufl
-import dune.models.elliptic
+from dune.models.elliptic import compileUFL, importModel
 
-import dune.fem
+from dune.fem import create, leafGrid
 
 # Basic setup
 # -----------
 # set up reference domain
-grid = dune.fem.leafGrid("../data/sphere.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=3)
+grid = leafGrid("../data/sphere.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=3)
 grid.hierarchicalGrid.globalRefine(2)
 
 # discrete function for Gamma(t) and setup surface grid
 positions = grid.interpolate(lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
             space="Lagrange", name="positions")
-surface   = dune.fem.create.gridpart("Geometry", positions)
+surface   = create.gridpart("Geometry", positions)
 # space for discrete solution on Gamma(t)
-spc       = dune.fem.create.space("Lagrange", surface, dimrange=surface.dimWorld, polorder=1)
+spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, polorder=1)
 # final time and time step
 endTime   = 0.25
 dt        = 0.0025
@@ -36,11 +36,11 @@ un = ufl.Coefficient(uflSpace)
 
 a_im = (dt * 0.5 * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
 
-mcfModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == 0)).get()
+mcfModel = importModel(grid, compileUFL(a_im == 0)).get()
 
 a_ex = (-dt * 0.5 * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
 
-rhsModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_ex == 0)).get()
+rhsModel = importModel(grid, compileUFL(a_ex == 0)).get()
 
 
 # now set up schemes for left and right hand side
@@ -49,9 +49,9 @@ rhsModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUF
 solution  = spc.interpolate(lambda x: x, name="solution")
 forcing   = spc.interpolate([0,0,0], name="forcing" )
 # left hand side scheme
-solver    = dune.fem.create.scheme("FemScheme", solution, mcfModel, "mcf")
+solver    = create.scheme("FemScheme", solution, mcfModel, "mcf")
 # right hand side scheme
-rhs       = dune.fem.create.scheme("FemScheme", forcing, rhsModel, "rhs")
+rhs       = create.scheme("FemScheme", forcing, rhsModel, "rhs")
 
 
 # time loop

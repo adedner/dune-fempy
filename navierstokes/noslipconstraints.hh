@@ -6,6 +6,7 @@
 #include <dune/fem/function/localfunction/converter.hh>
 #include <dune/fem/function/localfunction/localfunction.hh>
 
+// #include <dune/fem/schemes/dirichletconstraints.hh>
 #include "dirichletconstraints.hh"
 
 namespace Dune {

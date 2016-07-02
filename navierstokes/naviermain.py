@@ -16,10 +16,10 @@ g = [bnd_u,0,0]
 ufl2model.generate(a,diric={1:g})
 
 # initialise grid
-# grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-# grid2d.hierarchicalGrid.globalRefine(6)
-grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
-grid2d.hierarchicalGrid.globalRefine(1)
+grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+grid2d.hierarchicalGrid.globalRefine(6)
+# grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
+# grid2d.hierarchicalGrid.globalRefine(1)
 
 viscosity = 0.003
 timeStep = 0.005
@@ -61,9 +61,9 @@ counter = 0
 save_counter = 1
 savestep = saveinterval
 def bnd_u(x):
-    if time > 0.05:
+    if time < 0.05:
       return [ (1+x[0])*(1-x[1]) * time / 0.05 ]
-    return [0]
+    return [(1+x[0])*(1-x[1])]
 bnd_uGlobal = grid2d.globalGridFunction("bnd_velocity", bnd_u)
 model.setbnd_u( bnd_uGlobal )
 while time < endTime:

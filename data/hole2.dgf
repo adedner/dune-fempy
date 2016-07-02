@@ -619,7 +619,8 @@ BOUNDARYSEGMENTS
 2 48 39
 #
 BOUNDARYDOMAIN
-default 1
+default 3
+1 -1.0001 -1 -0.9999 1
 #
 PROJECTION
 function p(x)= (0.25*x)/|x|

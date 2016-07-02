@@ -29,7 +29,7 @@ dt        = 0.0025
 
 # set up left and right hand side models
 # --------------------------------------
-uflSpace = dune.ufl.Space(surface.dimGrid, surface.dimWorld, surface.dimWorld)
+uflSpace = dune.ufl.Space((surface.dimGrid, surface.dimWorld), surface.dimWorld)
 u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
 un = ufl.Coefficient(uflSpace)

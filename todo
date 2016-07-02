@@ -60,6 +60,10 @@ Other stuff:
     taking/returning local coordinate using this new type. On C++ side
     everything works as before due to the base class but on python side the
     cast is not available.
+18) move generate* to details removing def of __init__. Add a register* to
+    the FemPy space that calls details::register and adds the default
+    constructor. Overloading of this register can be used for specific classes with a
+    different constructor 
 
 --------------------------------------------------------------------------------------
 

@@ -29,9 +29,8 @@ struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
-  using BaseType::model;
-  BurgersSchemeWrapper( const SolutionSpaceType &spaces, const AdditionalModelType &model, double viscosity, int problemNumber, double timestep )
-  : BaseType( std::get<0>(spaces).gridPart(), viscosity, problemNumber, timestep ),
+  BurgersSchemeWrapper( const SolutionSpaceType &spaces, const AdditionalModelType &model, double viscosity, double timestep )
+  : BaseType( viscosity, timestep ),
     burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces),model,
          BaseType::timestep_, BaseType::viscosityActual_, BaseType::timestepBurgers_ )
   {
@@ -77,25 +76,21 @@ namespace Dune
       pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
       cls.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
                          const AdditionalModelType &model,
-                         double viscosity,
-                         int problemNumber,
                          const std::string &name,
+                         double viscosity,
                          double timeStep ) {
-          new( &instance ) BurgersSchemeType( spaces, model, viscosity, problemNumber, timeStep );
+          new( &instance ) BurgersSchemeType( spaces, model, viscosity, timeStep );
         }, pybind11::keep_alive< 1, 2 >(),
            pybind11::arg("spaces"),
            pybind11::arg("model"),
-           pybind11::arg("viscosity"),
-           pybind11::arg("problemNumber"),
            pybind11::arg("name"),
+           pybind11::arg("viscosity"),
            pybind11::arg("timeStep")
           );
       cls.def( "_solve",
           []( BurgersSchemeType &instance, const SolutionType &solution, bool assemble)
           { instance._solve(solution,assemble); } );
       cls.def( "_prepare", &BurgersSchemeType::_prepare );
-      cls.def( "next", &BurgersSchemeType::next );
-      cls.def( "time", &BurgersSchemeType::time );
     }
   }
 }

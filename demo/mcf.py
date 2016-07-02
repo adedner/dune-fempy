@@ -25,34 +25,30 @@ spc       = dune.fem.create.space("Lagrange", surface, dimrange=surface.dimWorld
 # final time and time step
 endTime   = 0.25
 dt        = 0.0025
-
+theta     = 0.5
 
 # set up left and right hand side models
 # --------------------------------------
+print("surface.dimWorld: ", surface.dimWorld)
 uflSpace = dune.ufl.Space(surface.dimGrid, surface.dimWorld, surface.dimWorld)
-u = ufl.TrialFunction(uflSpace)
-v = ufl.TestFunction(uflSpace)
-un = ufl.Coefficient(uflSpace)
+# uflSpace = dune.ufl.Space(3,3)
+u   = ufl.TrialFunction(uflSpace)
+v   = ufl.TestFunction(uflSpace)
+u_n = ufl.Coefficient(uflSpace)
 
-a_im = (dt * 0.5 * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
-
-mcfModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == 0)).get()
-
-a_ex = (-dt * 0.5 * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
-
-rhsModel = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_ex == 0)).get()
-
+a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
+a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
+lhsModel = dune.models.elliptic.importModel(surface, dune.models.elliptic.compileUFL(a_im == 0)).get()
+rhsModel = dune.models.elliptic.importModel(surface, dune.models.elliptic.compileUFL(a_ex == 0)).get()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
-solution  = spc.interpolate(lambda x: x, name="solution")
-forcing   = spc.interpolate([0,0,0], name="forcing" )
+solution   = spc.interpolate(lambda x: x, name="solution")
+forcing = spc.interpolate([0,]*surface.dimWorld, name="solution")
 # left hand side scheme
-solver    = dune.fem.create.scheme("FemScheme", solution, mcfModel, "mcf")
-# right hand side scheme
-rhs       = dune.fem.create.scheme("FemScheme", forcing, rhsModel, "rhs")
-
+solver    = dune.fem.create.scheme("FemScheme", solution, lhsModel, "lhs")
+rhs       = dune.fem.create.scheme("FemScheme", solution, rhsModel, "rhs")
 
 # time loop
 # ---------
@@ -62,7 +58,7 @@ surface.writeVTK("mcf", pointdata=[solution], number=count)
 
 while t < endTime:
     rhs(solution, forcing)
-    solver.solve(forcing, solution)
+    solver.solve(forcing, solution )
     t     += dt
     count += 1
     surface.writeVTK("mcf", pointdata=[solution], number=count)

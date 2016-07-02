@@ -1,4 +1,14 @@
 ufl2model:
+-1) No generate anymore that only produces a usefull header file for use in
+    C++ dune-fem context. I.e. good name no python?
+-2) tmp Hilfsvariablen ausschalten?
+-3) uflSpace = dune.ufl.Space(surface.dimGrid, surface.dimWorld, surface.dimWorld)
+    not a nice syntax, how about 
+    Space( (dimGrid,dimWorld), dimRange) bzw.
+    Space( dimGrid, dimRange) which translates to (dimGrid,dimGrid)
+-4) elliptic.importModel(grid, a == 0).get()
+
+
 1)  model.generate( a==b ) model.generate( a_ex-a_im==b )
 2)  model forcing? Always put forcing in source of DiffusionModel?
     Now all forcings are global functions (f,n). Are they needed or

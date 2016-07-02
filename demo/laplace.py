@@ -5,7 +5,7 @@ from mpi4py import MPI
 import math
 from ufl import *
 
-import dune.models.elliptic
+from dune.models.elliptic import importModel
 import dune.ufl
 import dune.fem
 
@@ -22,7 +22,5 @@ f = cos(2*math.pi*x[0])*cos(2*math.pi*x[1])
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx(0)
 b = f * v[0] * dx(0)
 
-model = dune.models.elliptic.compileUFL(a == b)
-
-scheme = dune.fem.create.scheme("FemScheme", spc, dune.models.elliptic.importModel(grid, model).get(), "scheme")
+scheme = dune.fem.create.scheme("FemScheme", spc, importModel(grid, a == b).get(), "scheme")
 grid.writeVTK("laplace", pointdata=[scheme.solve()])

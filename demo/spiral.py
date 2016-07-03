@@ -40,7 +40,7 @@ spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, polorder=1 )
 
 # set up left and right hand side models
 # --------------------------------------
-uflSpace = dune.ufl.Space(grid.dimGrid, dimRange, grid.dimWorld)
+uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
 un = ufl.Coefficient(uflSpace)

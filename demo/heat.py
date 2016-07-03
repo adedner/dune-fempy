@@ -16,7 +16,7 @@ deltaT = 0.01
 grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
-uflSpace = dune.ufl.Space(grid.dimGrid, 1, grid.dimWorld)
+uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 u_n = Coefficient(uflSpace)

@@ -16,10 +16,10 @@ g = [bnd_u,0,0]
 ufl2model.generate(a,diric={1:g})
 
 # initialise grid
-grid2d = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-grid2d.hierarchicalGrid.globalRefine(6)
-# grid2d = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
-# grid2d.hierarchicalGrid.globalRefine(1)
+grid = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
+grid.hierarchicalGrid.globalRefine(6)
+# grid = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
+# grid.hierarchicalGrid.globalRefine(1)
 
 viscosity = 0.003
 timeStep = 0.005
@@ -27,18 +27,18 @@ endTime = 70
 saveinterval = 0.1
 
 # spaces
-pressureSpace = fem.create.space( "Lagrange", grid2d, polorder = 1, dimrange = 1 )
-velocitySpace = fem.create.space( "Lagrange", grid2d, polorder = 2, dimrange = 2 )
-# velocitySpace = fem.create.space( "P1Bubble", grid2d, dimrange=2 )
+pressureSpace = fem.create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )
+velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
+# velocitySpace = fem.create.space( "P1Bubble", grid, # dimrange=grid.dimWorld )
 # probem with missing dirichlet points in bubble space - need to update
 # dirichletconstraints
 
 # schemes
-model = ufl2model.makeAndImport(grid2d,name="laplace").get()
+model = ufl2model.makeAndImport(grid,name="laplace").get()
 stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),model,"stokes",\
                viscosity, timeStep, storage = "Istl" )
 burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace),model,"burgers",\
-               viscosity, timeStep, storage = "Istl" )
+                viscosity, timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0
 velocity = velocitySpace.interpolate( lambda x: [0,0], name = "velocity", storage = "Istl" )
@@ -49,8 +49,8 @@ solution = velocity, pressure
 def vorticityLocal(element,x):
     jac = velocity.localFunction(element).jacobian(x)
     return [ jac[1][0] - jac[0][1] ]
-vorticity = grid2d.localGridFunction( "vorticity", vorticityLocal)
-vtk = grid2d.writeVTK( "ns_", pointdata=solution+(vorticity,), number=0 )
+vorticity = grid.localGridFunction( "vorticity", vorticityLocal)
+vtk = grid.writeVTK( "ns_", pointdata=solution+(vorticity,), number=0 )
 
 # time loop
 time = timeStep
@@ -67,7 +67,7 @@ def bnd_u(x):
         return [ (1+x[1])*(1-x[1]) * time / 0.05 ]
     # print(time, x,(1+x[1])*(1-x[1]))
     return [(1+x[1])*(1-x[1])]
-bnd_uGlobal = grid2d.globalGridFunction("bnd_velocity", bnd_u)
+bnd_uGlobal = grid.globalGridFunction("bnd_velocity", bnd_u)
 model.setbnd_u( bnd_uGlobal )
 while time < endTime:
     print( "Time is:", time )

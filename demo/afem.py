@@ -1,37 +1,64 @@
 from __future__ import print_function
-import math,sympy
+import math
 from mpi4py import MPI
 
-import ufl
-import dune.models.femufl as duneuflmodel
+from ufl import *
+from dune.ufl import Space as UFLSpace
+from dune.models.elliptic import compileUFL, importModel
 import dune.fem as fem
 
-dgf = """
-INTERVAL
- 0  0
- 1  1
- 5  5
+cornerAngle = 270
+def exact(x):
+    r   = x.two_norm2
+    phi = math.atan2(x[1],x[0])
+    if x[1]<0: phi += 2.*math.pi
+    return [math.pow(r,180/cornerAngle*0.5) * math.sin(180/cornerAngle*phi)]
+
+vertices = [(0,0)]
+dgf = "VERTEX\n 0 0 \n"
+
+for i in range(0,5):
+    dgf += str(math.cos(cornerAngle/4*math.pi/180*i)) + " " + str(math.sin(cornerAngle/4*math.pi/180*i)) + "\n"
+dgf += "#\n"
+dgf += """
+SIMPLEX
+  0 1 2
+  0 2 3
+  0 3 4
+  0 4 5
+#
+BOUNDARYDOMAIN
+  default 1
+#
+PROJECTION
+  function p(x) = x / |x|
+  segment  1 2  p
+  segment  2 3  p
+  segment  3 4  p
+  segment  4 5  p
 #
 """
 
+print(dgf)
+
 grid = fem.leafGrid(fem.string2dgf(dgf), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid.hierarchicalGrid.globalRefine(5)
 spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
 
-ufl2model = duneuflmodel.DuneUFLModel(grid.dimWorld, 1)
-u         = ufl2model.trialFunction()
-v         = ufl2model.testFunction()
-x         = ufl2model.spatialCoordinate()
-x0        = ufl2model.x0
-x1        = ufl2model.x1
+uflSpace = UFLSpace(2, 1)
+u = TrialFunction(uflSpace)
+v = TestFunction(uflSpace)
+x = SpatialCoordinate(uflSpace.cell())
 
-a = ( ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u,v) ) * ufl.dx(0)
-bnd   = 100.*x0*x1*(1-x0)*(1-x1)
-exact = [sympy.atan(bnd*bnd)]
-ufl2model.generate(a,exact=exact)
-laplaceModel = ufl2model.makeAndImport(grid,name="laplace",exact=exact).get()
+exact = pow( x[0]*x[0]+x[1]*x[1] , (90./cornerAngle) ) * sin(180./cornerAngle*atan_2(x[1],x[0]))
 
-laplace = fem.create.scheme("FemScheme", spc, laplaceModel, "afem")
-uh = laplace.solve()
+a = inner(grad(u), grad(v)) * dx(0)
+
+model = importModel(grid, a == 0, dirichlet={1:[exact]}, tempVars=False).get()
+
+laplace = fem.create.scheme("FemScheme", spc, model, "afem")
+uh = spc.interpolate(lambda x: [x[0]])
+laplace.solve(target=uh)
 
 count = 0
 tol = 0.3

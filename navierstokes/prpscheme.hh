@@ -193,15 +193,9 @@ public:
   // typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
   typedef AdditionalModel AdditionalModelType;
 
-  //Models we need to create
-  typedef BurgersStateModel<AdditionalModelType>      BurgersStateModelType;//This will construct the model L in disc notes
-  typedef BurgersTransportModel<AdditionalModelType>  BurgersTransportModelType;//This will construct the model L_B - L in disc notes
-  typedef BurgersDescentModel<AdditionalModelType>    BurgersDescentModelType;//This will construct the model D_J - L in disc notes
-  typedef BurgersGradModel<AdditionalModelType>       BurgersGradModelType;
-
   //Our function space
-  typedef typename BurgersStateModelType::VelocityFunctionSpaceType VelocityFunctionSpaceType;
-  typedef typename BurgersStateModelType::PressureFunctionSpaceType PressureFunctionSpaceType;
+  typedef typename VelocitySpace::FunctionSpaceType VelocityFunctionSpaceType;
+  typedef typename PressureSpace::FunctionSpaceType PressureFunctionSpaceType;
   //Our discrete function space
   typedef VelocitySpace VelocitySpaceType;
   typedef PressureSpace PressureSpaceType;
@@ -214,6 +208,12 @@ public:
   typedef Dune::Fem::ISTLLinearOperator< PressureDiscreteFunctionType, VelocityDiscreteFunctionType > BurgersGradLinearOperatorType;
   //Inverse operators constructed from above
   typedef Dune::Fem::ISTLCGOp< VelocityDiscreteFunctionType, BurgersStateLinearOperatorType > BurgersStateLinearInverseOperatorType;
+
+  //Models we need to create
+  typedef BurgersStateModel<AdditionalModelType>      BurgersStateModelType;//This will construct the model L in disc notes
+  typedef BurgersTransportModel<AdditionalModelType>  BurgersTransportModelType;//This will construct the model L_B - L in disc notes
+  typedef BurgersDescentModel<AdditionalModelType,VelocityDiscreteFunctionType>    BurgersDescentModelType;//This will construct the model D_J - L in disc notes
+  typedef BurgersGradModel<AdditionalModelType>       BurgersGradModelType;
 
   //Define the linearisable/non-linearisable elliptic operator type + dirichlet constraints
   //typedef Dune::DirichletConstraints<BurgersStateModelType, VelocitySpaceType> StateConstraintsType;

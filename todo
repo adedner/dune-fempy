@@ -101,3 +101,31 @@ heat and copy/initialization?
 
 pointData=[uh,vh,wh] oder
 pointData={scalar:[uh,vh,wh],vector:[velocity]}
+
+
+--------------------------------------------------
+
+from firedrake:
+>>>> n = FacetNormal(mesh)
+>>>> un = 0.5*(dot(u0, n) + abs(dot(u0, n)))
+
+bcval = Constant(0.0)
+bc = DirichletBC(V, bcval, 1)
+bcval.assign(sin(2*pi*5*t))
+
+
+a = inner(grad(u), grad(v))*dx
+L = -v*ds(3) + v*ds(4)
+nullspace = VectorSpaceBasis(constant=True)
+u = Function(V)
+solve(a == L, u, nullspace=nullspace)
+exact = Function(V)
+exact.interpolate(Expression('x[1] - 0.5'))
+print sqrt(assemble((u - exact)*(u - exact)*dx))
+
+Moving Meshes:
+http://firedrakeproject.org/mesh-coordinates.html
+
+UFL Expresion using TSFC:
+http://firedrakeproject.org/interpolation.html#c-string-expressions
+--------------------------------------------------

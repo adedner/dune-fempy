@@ -298,7 +298,7 @@ private:
 //---------------------------------------------------------------//
 //---------------------------------------------------------------//
 
-template< class Model >
+template< class Model, class VeloDF >
 struct BurgersDescentModel : public DiffusionModelInterface<Dune::Fem::FunctionSpace<double,double,
                                             Model::GridPartType::dimensionworld, Model::GridPartType::dimensionworld > ,typename Model::GridPartType>
 {
@@ -317,9 +317,9 @@ struct BurgersDescentModel : public DiffusionModelInterface<Dune::Fem::FunctionS
   typedef typename VelocityFunctionSpaceType::RangeFieldType RangeFieldType;
 
   //for xi_
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace< VelocityFunctionSpaceType, GridPartType, POLORDER+1 > VelocityDiscreteFunctionSpaceType;
-  typedef Dune::Fem::ISTLBlockVectorDiscreteFunction< VelocityDiscreteFunctionSpaceType > VelocityDiscreteFunctionType;
+  typedef VeloDF VelocityDiscreteFunctionType;
   typedef typename VelocityDiscreteFunctionType :: LocalFunctionType LocalVelocityFunctionType;
+  typedef typename VeloDF::DiscreteFunctionSpaceType VelocityDiscreteFunctionSpaceType;
   //
 
 

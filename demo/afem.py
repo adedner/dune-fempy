@@ -49,19 +49,25 @@ uflSpace = UFLSpace(2, 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
+bnd_u = Coefficient(uflSpace)
 
-exact = pow( x[0]*x[0]+x[1]*x[1] , (90./cornerAngle) ) * sin(180./cornerAngle*atan_2(x[1],x[0]))
+def exact(x):
+    phi = math.atan2(x[1], x[0])
+    if x[1] < 0:
+        phi += 2*math.pi
+    return [(x.two_norm2**(90./cornerAngle)) * sin(180./cornerAngle*phi)]
 
 a = inner(grad(u), grad(v)) * dx(0)
 
-model = importModel(grid, a == 0, dirichlet={1:[exact]}, tempVars=False).get()
+model = importModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False).get()
+model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", exact))
 
 laplace = fem.create.scheme("FemScheme", spc, model, "afem")
 uh = spc.interpolate(lambda x: [x[0]])
 laplace.solve(target=uh)
 
 count = 0
-tol = 0.3
+tol = 0.01
 while count < 20:
     [estimate, marked] = laplace.mark(uh, tol)
     grid.writeVTK("afem", pointdata=[uh], celldata=[grid.levelFunction()], number=count )

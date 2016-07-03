@@ -85,7 +85,8 @@ Bugs:
 6)  if a scheme has a fixed storage one has to make sure that the correct storage is
     really used and the correct discrete function types are registered. An easier approach
     to registration should be made available in the C++ bindings as well
-    Solution: Have a const parameter in the scheme
+    Solution: Have a const parameter in the schem
+7) grid._includes does not contain gridpart header
 
 ------------------------------------------------------------------------------------
 

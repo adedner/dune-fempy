@@ -39,10 +39,8 @@ PROJECTION
 #
 """
 
-print(dgf)
-
 grid = fem.leafGrid(fem.string2dgf(dgf), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
-grid.hierarchicalGrid.globalRefine(5)
+grid.globalRefine(2)
 spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
 
 uflSpace = UFLSpace(2, 1)
@@ -67,7 +65,7 @@ uh = spc.interpolate(lambda x: [x[0]])
 laplace.solve(target=uh)
 
 count = 0
-tol = 0.01
+tol = 0.05
 while count < 20:
     [estimate, marked] = laplace.mark(uh, tol)
     grid.writeVTK("afem", pointdata=[uh], celldata=[grid.levelFunction()], number=count )

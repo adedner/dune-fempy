@@ -7,7 +7,7 @@ from dune.ufl import Space as UFLSpace
 from dune.models.elliptic import compileUFL, importModel
 import dune.fem as fem
 
-cornerAngle = 270
+cornerAngle = 360
 def exact(x):
     r   = x.two_norm2
     phi = math.atan2(x[1],x[0])

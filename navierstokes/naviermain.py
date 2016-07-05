@@ -1,19 +1,11 @@
 from __future__ import print_function
 from mpi4py import MPI
 import math
-import ufl
-import dune.models.femufl as duneuflmodel
-import dune.fem as fem
-import dune.fem.scheme as scheme
 
-ufl2model = duneuflmodel.DuneUFLModel(2,3) # this is utility.init and sets the dim range
-u = ufl2model.trialFunction()
-v = ufl2model.testFunction()
-x = ufl2model.spatialCoordinate()
-a = (ufl.inner(u,v) + ufl.inner(ufl.grad(u),ufl.grad(v)))*ufl.dx(0)
-bnd_u = ufl2model.coefficient("bnd_u",1)
-g = [bnd_u,0,0]
-ufl2model.generate(a,diric={1:g})
+from ufl import *
+from dune.ufl import Space as UFLSpace
+from dune.models.elliptic import compileUFL, importModel
+import dune.fem as fem
 
 # initialise grid
 grid = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
@@ -25,6 +17,21 @@ viscosity = 0.003
 timeStep = 0.005
 endTime = 70
 saveinterval = 0.1
+def inflow_u(x):
+    ux = 0
+    if x[0]<-1+1e-8:
+        ux = min(1.0,(((x[1]+1.)*(1.-x[1])*time)/(10.*timeStep)))
+    return [ux,0,0]
+
+uflSpace    = UFLSpace((2,2), 3)
+u           = TrialFunction(uflSpace)
+v           = TestFunction(uflSpace)
+x           = SpatialCoordinate(uflSpace.cell())
+bnd_u       = Coefficient(uflSpace)
+
+a = inner(grad(u),grad(v)) * dx(0)
+model = importModel(grid, a == 0, dirichlet={1:bnd_u}, tempVars=False).get()
+model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", inflow_u))
 
 # spaces
 pressureSpace = fem.create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )
@@ -34,7 +41,6 @@ velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = gri
 # dirichletconstraints
 
 # schemes
-model = ufl2model.makeAndImport(grid,name="laplace").get()
 stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),model,"stokes",\
                viscosity, timeStep, storage = "Istl" )
 burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace),model,"burgers",\
@@ -57,18 +63,6 @@ time = timeStep
 counter = 0
 save_counter = 1
 savestep = saveinterval
-def bnd_u(x):
-    ux = 0
-    if x[0]<-1+1e-8:
-        ux = min(1.0,(((x[1]+1.)*(1.-x[1])*time)/(10.*timeStep)))
-    return [ux]
-    if time < 0.05:
-        # print(x,(1+x[1])*(1-x[1]) * time / 0.05 )
-        return [ (1+x[1])*(1-x[1]) * time / 0.05 ]
-    # print(time, x,(1+x[1])*(1-x[1]))
-    return [(1+x[1])*(1-x[1])]
-bnd_uGlobal = grid.globalGridFunction("bnd_velocity", bnd_u)
-model.setbnd_u( bnd_uGlobal )
 while time < endTime:
     print( "Time is:", time )
     print( 'Solve step 1 - Stokes' )

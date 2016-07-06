@@ -1,4 +1,13 @@
 #!/bin/sh
+if ! which git >/dev/null; then
+    echo 'Git must be installed to run this script. Install with "sudo apt install git"'
+    exit 1
+fi
+if ! which cmake >/dev/null; then
+    echo 'Cmake must be installed to run this script. Install with "sudo apt install cmake"'
+    exit 1
+fi
+
 echo 'This script is for installing dune-fempy on Linux
 
 It will install the following python modules: 

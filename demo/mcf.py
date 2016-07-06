@@ -10,18 +10,19 @@ from dune.models.elliptic import compileUFL, importModel
 
 from dune.fem import create, leafGrid
 
+order=5
 # Basic setup
 # -----------
 # set up reference domain
 grid = leafGrid("../data/sphere.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=3)
-grid.hierarchicalGrid.globalRefine(2)
+# grid.hierarchicalGrid.globalRefine(2)
 
 # discrete function for Gamma(t) and setup surface grid
 positions = grid.interpolate(lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
-            space="Lagrange", name="positions")
+            space="Lagrange", name="positions", polorder=order)
 surface   = create.gridpart("Geometry", positions)
 # space for discrete solution on Gamma(t)
-spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, polorder=1)
+spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, polorder=order)
 # final time and time step
 endTime   = 0.25
 dt        = 0.0025
@@ -52,12 +53,14 @@ rhs       = create.scheme("FemScheme", solution, rhsModel, "rhs")
 # ---------
 count   = 0
 t       = 0.
-surface.writeVTK("mcf", pointdata=[solution], number=count)
+surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
+surface.writeVTK("mcf"+str(order)+"-", pointdata=[solution], number=count, subsampling=3)
 
 while t < endTime:
     rhs(solution, forcing)
     solver.solve(forcing, solution )
     t     += dt
     count += 1
-    surface.writeVTK("mcf", pointdata=[solution], number=count)
+    surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
+    surface.writeVTK("mcf"+str(order)+"-", pointdata=[solution], number=count, subsampling=3)
     positions.assign(solution.dofVector())

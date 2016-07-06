@@ -9,44 +9,44 @@ sys.path.append("../python")
 import timeit
 from mpi4py import MPI
 
-import sympy
-import ufl
+from ufl import *
 
-import dune.models.femufl as duneuflmodel
+import dune.models.elliptic
+import dune.ufl
 import dune.fem as fem
 import dune.fem.space as space
 import dune.fem.scheme as scheme
 import dune.fem.function as gf
 
-grid2d = fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
-grid2d.hierarchicalGrid.globalRefine(3)
+grid = fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
+grid.hierarchicalGrid.globalRefine(3)
 
 ############################################################################
 # build a transport model -eps Laplace(u) + velocity.grad(u) + gamma u = f
 # with unknown velocity field
 ############################################################################
-model    = duneuflmodel.DuneUFLModel(2,1,'Transport')
-vecmodel = duneuflmodel.DuneUFLModel(2,2,'Velocity')
-exact = [sympy.cos(2*math.pi*model.x0)*sympy.cos(2*math.pi*model.x1)]
-u = model.trialFunction()
-v = model.testFunction()
-x = model.spatialCoordinate()
-velo = vecmodel.coefficient('velocity')
-diff = model.coefficient('diffusion')
-a = ( (ufl.dot(velo,ufl.grad(u[0]))+0.01*u[0])*v[0] + diff[0]*ufl.inner(ufl.grad(u[0]),ufl.grad(v[0])) ) * ufl.dx(0)
-L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*ufl.dx(0)
+scalarSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
+vectorSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), grid.dimWorld)
+u    = TrialFunction(scalarSpace)
+v    = TestFunction(scalarSpace)
+x    = SpatialCoordinate(scalarSpace.cell())
+velo = Coefficient(vectorSpace)
+
+# diff = model.coefficient('diffusion')
+diff = [1+0.1*x[0]*x[0]]
+
+a = ( (dot(velo,grad(u[0]))+0.01*u[0])*v[0] + diff[0]*inner(grad(u[0]),grad(v[0])) ) * dx(0)
+L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*dx(0)
 ########
 start_time = timeit.default_timer()
-model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
-model.generate(a,L,exact)
-Model = model.makeAndImport(grid2d, exact=exact)
+# model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
-m = Model.get()
+m = dune.models.elliptic.importModel(grid, a == L).get()
 
 ############################################################################
 # construct a largrange scheme for the transport problem
 ############################################################################
-sp = space.create( "Lagrange", grid2d, dimrange=m.dimRange, polorder=1 )
+sp = space.create( "Lagrange", grid, dimrange=m.dimRange, polorder=1 )
 solution = sp.interpolate([0,]*m.dimRange) # , name="solution")
 s = scheme.create( "FemScheme", sp, m, "transport" )
 
@@ -60,43 +60,43 @@ def expr_func(x,r):
     r[0] = -(x[1]-0.5)
     r[1] = (x[0]-0.5)
 #expr3 = gf.FuncExpression(2,expr_func)
-velocityGlobal = grid2d.globalGridFunction("global_velocity", expr1)
-m.setvelocity(velocityGlobal)
+velocityGlobal = grid.globalGridFunction("global_velocity", expr1)
+m.setCoefficient(velo.count(), velocityGlobal)
 s.solve( None, solution )
-vtk = grid2d.vtkWriter()
+vtk = grid.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 velocityGlobal.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_global");
 #################
 print("use the interpolation of the global function")
-u = grid2d.interpolate(velocityGlobal, space="Lagrange", name="interpolated_velocity", polorder=1)
-m.setvelocity(u)
+u = grid.interpolate(velocityGlobal, space="Lagrange", name="interpolated_velocity", polorder=1)
+m.setCoefficient(velo.count(), u)
 s.solve( target = solution )
-vtk = grid2d.vtkWriter()
+vtk = grid.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 u.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_interpolation");
 #################
 print("use the discrete solution to some other scheme (vector valued)")
-c0 = sympy.cos(2*math.pi*vecmodel.x0)
-c1 = sympy.cos(2*math.pi*vecmodel.x1)
-exact = [c0*c1, c0*c1]
-u = vecmodel.trialFunction()
-v = vecmodel.testFunction()
-a = (ufl.inner(u,v) + ufl.inner(ufl.grad(u),ufl.grad(v)))*ufl.dx(0)
+u    = TrialFunction(vectorSpace)
+v    = TestFunction(vectorSpace)
+x    = SpatialCoordinate(vectorSpace.cell())
+a = (inner(u,v) + inner(grad(u),grad(v)))*dx(0)
+c0 = cos(2*pi*x[0])
+c1 = cos(2*pi*x[1])
+L = ( c0*c1*v[0] + c0*c1*v[1] )*dx(0)
+
 start_time = timeit.default_timer()
-vecmodel.generate(a,exact=exact)
-VecModel = vecmodel.makeAndImport(grid2d)
-vecm = VecModel.get()
-vecsp = space.create( "Lagrange", grid2d, dimrange=vecm.dimRange, polorder=2 )
+vecm = dune.models.elliptic.importModel(grid, a == L).get()
+vecsp = space.create( "Lagrange", grid, dimrange=vecm.dimRange, polorder=2 )
 vecs = scheme.create( "FemScheme", vecsp, vecm, "computed_velocity" )
 # the following is equivalent to:
 #   veloh = vecsp.interpolate([0,]*vecm.dimRange, name="velocity")
 #   vecs.solve(target = veloh)
 veloh = vecs.solve()
-m.setvelocity(veloh)
+m.setCoefficient(velo.count(), veloh)
 s.solve( None, solution )
-vtk = grid2d.vtkWriter()
+vtk = grid.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 veloh.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_df");
@@ -114,10 +114,10 @@ class LocalExpr:
              rr[1] * (1-y[1])**2]
         return r
 localVelo = LocalExpr(veloh)
-velocityLocal = grid2d.localGridFunction( "local_velocity", localVelo )
-m.setvelocity(velocityLocal)
+velocityLocal = grid.localGridFunction( "local_velocity", localVelo )
+m.setCoefficient(velo.count(), velocityLocal)
 s.solve( None, solution )
-vtk = grid2d.vtkWriter()
+vtk = grid.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 velocityLocal.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_local");
@@ -132,11 +132,11 @@ class LocalExprA:
         y = en.geometry.position(x)
         jac = self.df.localFunction(en).jacobian(x)
         return [ -jac[0][1],jac[0][0] ]
-velocityLocalA = grid2d.localGridFunction( "nabla_x_u", LocalExprA(veloh ))
+velocityLocalA = grid.localGridFunction( "nabla_x_u", LocalExprA(veloh ))
 s = scheme.create( "FemScheme", solution, m, "transport" ) # here solution is used if solve method does not specify target
-m.setvelocity(velocityLocalA)
+m.setCoefficient(velo.count(), velocityLocalA)
 s.solve()
-vtk = grid2d.vtkWriter()
+vtk = grid.vtkWriter()
 solution.addToVTKWriter(vtk, vtk.PointData)
 velocityLocalA.addToVTKWriter(vtk, vtk.PointVector)
 vtk.write("testmodel_rotation");

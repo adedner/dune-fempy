@@ -30,10 +30,10 @@ solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1
 grid.writeVTK("heat", pointdata=[solution], number=0)
 
 old_solution = spc.interpolate(lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ], name="u_n")
+model.setCoefficient(u_n.count(), old_solution)
 
 steps = int(1 / deltaT)
 for n in range(1,steps+1):
     old_solution.assign(solution)
-    model.setCoefficient(u_n.count(), old_solution)
     scheme.solve(target=solution)
     grid.writeVTK("heat", pointdata=[solution], number=n)

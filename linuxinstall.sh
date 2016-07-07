@@ -41,7 +41,6 @@ case "$choice" in
         pip3.5 install -U pip
         pip3.5 install --user setuptools
         pip3.5 install --user mpi4py
-        pip3.5 install --user sympy
         pip3.5 install --user sphinx
         git clone https://bitbucket.org/fenics-project/ufl.git $HOME/.local/lib/python3.5/site-packages/ufl
         cd $HOME/.local/lib/python3.5/site-packages/ufl

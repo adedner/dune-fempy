@@ -17,7 +17,6 @@ The following dependencies are needed for Dune-fempy:
 
   * setuptools 
   * mpi4py 
-  * sympy 
   * ufl
   * sphinx
 
@@ -40,26 +39,24 @@ The above can all be automatically installed using the install script found in t
   $ sh linuxinstall.sh
   
 **Troubleshooting**
-
-* If during the installation of Dune, you get the error 
-
-  .. code-block:: none
-
-    cmake: command not found
-
-  Then cmake needs to be installed with e.g. :: 
-
-  $ sudo apt-get install cmake
   
+* The compiler version needs to be 4.9 or later. This can be checked in terminal with :: 
+
+  $ g++ --version
+
+  If your version is out of date, you will need to upgrade your system to run Dune-fempy. 
+
 * It is possible that the python version may be an issue. The script uses python3.5m since that is the latest version available at the time of writing. If during the Dune installation you get the error
 
   .. code-block:: none
 
     fatal error: pyconfig.h: No such file or directory
   
-  This can probably be fixed by installing python3.5 with e.g. :: 
+  This can probably be fixed by installing additional python3.5 libraries with e.g. :: 
 
   $ sudo apt-get install libpython3.5-dev
+
+  If python3.5 is not available on your system, you can simply change 3.5 for another appropriate version everywhere in the script (e.g. 3.4 or 2.7 (untested)). Otherwise, consider upgrading your system.
   
 * One other problem is that a default version of Open MPI may already be installed. This will lead to errors where Dune appears to be looking in the wrong directory for Open MPI (e.g. usr/lib/openmpi instead of the home directory where the script installs it). This can be solved by running ::
 

@@ -37,7 +37,7 @@ model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", inflow_u))
 pressureSpace = fem.create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )
 velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
 # velocitySpace = fem.create.space( "P1Bubble", grid, # dimrange=grid.dimWorld )
-# probem with missing dirichlet points in bubble space - need to update
+# problem with missing dirichlet points in bubble space - need to update
 # dirichletconstraints
 
 # schemes

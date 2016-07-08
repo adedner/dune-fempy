@@ -30,7 +30,11 @@ case "$choice" in
           * ) echo "Please choose y or n" 
               exit 1 ;;
         esac
-        read -p "Please enter a folder name: " folder_name
+        read -p "Please enter a folder name (default is dune): " folder_name
+        if [ -z "$folder_name" ]; then
+          echo 'Using default name "dune"'
+          folder_name='dune'
+        fi
         echo "Making directory: $folder_name"
         mkdir $HOME/$folder_name
         echo 'Installing python modules'

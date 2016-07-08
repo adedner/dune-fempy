@@ -30,7 +30,11 @@ case "$choice" in
           * ) echo "Please choose y or n" 
               exit 1 ;;
         esac
-        read -p "Please enter a folder name: " folder_name
+        read -p "Please enter a folder name (default is dune): " folder_name
+        if [ -z "$folder_name" ]; then
+          echo 'Using default name "dune"'
+          folder_name='dune'
+        fi
         echo "Making directory: $folder_name"
         mkdir $HOME/$folder_name
         echo 'Installing python modules'
@@ -38,6 +42,10 @@ case "$choice" in
         rm get-pip.py
         export PATH=$PATH:$HOME/.local/bin
         echo 'export PATH=$PATH:'$HOME'/.local/bin' >> $HOME/.bashrc
+        if ! which pip3.5 >/dev/null; then
+            echo 'pip3.5 failed to install. Check whether python3.5 is available (or use alternative version)'
+            exit 1
+        fi
         pip3.5 install -U pip
         pip3.5 install --user setuptools
         pip3.5 install --user mpi4py

@@ -55,7 +55,7 @@ def exact(x):
         phi += 2*math.pi
     return [(x.two_norm2**(90./cornerAngle)) * sin(180./cornerAngle*phi)]
 
-a = inner(grad(u), grad(v)) * dx(0)
+a = inner(grad(u), grad(v)) * dx
 
 model = importModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False).get()
 model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", exact))

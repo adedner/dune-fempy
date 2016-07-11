@@ -21,7 +21,7 @@ u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 u_n = Coefficient(uflSpace)
 
-a = (inner(u - u_n, v) + deltaT * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx(0)
+a = (inner(u - u_n, v) + deltaT * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
 model = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a == 0)).get()
 scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")

@@ -35,8 +35,8 @@ u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
 u_n = ufl.Coefficient(uflSpace)
 
-a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
-a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx(0)
+a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
+a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
 lhsModel = dune.models.elliptic.importModel(surface, a_im == 0).get()
 rhsModel = dune.models.elliptic.importModel(surface, a_ex == 0).get()
 

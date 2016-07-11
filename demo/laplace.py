@@ -1,3 +1,6 @@
+"""Solve the Laplace equation
+"""
+
 from mpi4py import MPI
 
 import math
@@ -17,8 +20,8 @@ x = SpatialCoordinate(uflSpace.cell())
 
 f = cos(2*math.pi*x[0])*cos(2*math.pi*x[1])
 
-a = (inner(grad(u), grad(v)) + inner(u,v)) * dx(0)
-b = f * v[0] * dx(0)
+a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
+b = f * v[0] * dx
 
 scheme = dune.fem.create.scheme("FemScheme", spc, importModel(grid, a == b).get(), "scheme")
 grid.writeVTK("laplace", pointdata=[scheme.solve()])

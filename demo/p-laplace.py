@@ -22,9 +22,9 @@ p = 1.7
 
 rhs = (x[0] + x[1]) * v[0]
 
-a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx(0) + 10*inner(u, v) * ds(0)
-#b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx(0)
-b = rhs * dx(0) + 10*rhs * ds(0)
+a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
+#b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx
+b = rhs * dx + 10*rhs * ds
 
 model = dune.models.elliptic.compileUFL(a == b)
 

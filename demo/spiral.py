@@ -46,9 +46,9 @@ v = ufl.TestFunction(uflSpace)
 un = ufl.Coefficient(uflSpace)
 
 # right hand sie (time derivative part + explicit forcing in v)
-a_ex = (ufl.inner(un, v) + dt * ufl.inner(spiral_h(un[0], un[1]), v[1])) * ufl.dx(0)
+a_ex = (ufl.inner(un, v) + dt * ufl.inner(spiral_h(un[0], un[1]), v[1])) * ufl.dx
 # left hand side (heat equation in first variable + backward Euler in time)
-a_im = (dt * spiral_D * ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) + ufl.inner(u,v)) * ufl.dx(0)
+a_im = (dt * spiral_D * ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) + ufl.inner(u,v)) * ufl.dx
 
 modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
 

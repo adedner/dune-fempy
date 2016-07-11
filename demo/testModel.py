@@ -35,8 +35,8 @@ velo = Coefficient(vectorSpace)
 # diff = model.coefficient('diffusion')
 diff = [1+0.1*x[0]*x[0]]
 
-a = ( (dot(velo,grad(u[0]))+0.01*u[0])*v[0] + diff[0]*inner(grad(u[0]),grad(v[0])) ) * dx(0)
-L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*dx(0)
+a = ( (dot(velo,grad(u[0]))+0.01*u[0])*v[0] + diff[0]*inner(grad(u[0]),grad(v[0])) ) * dx
+L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*dx
 ########
 start_time = timeit.default_timer()
 # model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
@@ -81,10 +81,10 @@ print("use the discrete solution to some other scheme (vector valued)")
 u    = TrialFunction(vectorSpace)
 v    = TestFunction(vectorSpace)
 x    = SpatialCoordinate(vectorSpace.cell())
-a = (inner(u,v) + inner(grad(u),grad(v)))*dx(0)
+a = (inner(u,v) + inner(grad(u),grad(v)))*dx
 c0 = cos(2*pi*x[0])
 c1 = cos(2*pi*x[1])
-L = ( c0*c1*v[0] + c0*c1*v[1] )*dx(0)
+L = ( c0*c1*v[0] + c0*c1*v[1] )*dx
 
 start_time = timeit.default_timer()
 vecm = dune.models.elliptic.importModel(grid, a == L).get()

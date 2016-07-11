@@ -11,8 +11,8 @@ u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
-a = (inner(grad(u), grad(v)) + u[0]*u[0]*v[0]) * dx(0)
-b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx(0) - x[0]*(1-x[0]) * v[0] * ds(0)
+a = (inner(grad(u), grad(v)) + u[0]*u[0]*v[0]) * dx
+b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx - x[0]*(1-x[0]) * v[0] * ds
 
 model = compileUFL(a == b, dirichlet={1:[x[0]], 2:[x[1]], 3:[zero(tuple())]}, tempVars = False)
 

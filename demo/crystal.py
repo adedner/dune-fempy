@@ -37,7 +37,7 @@ v = ufl.TestFunction(uflSpace)
 un = ufl.Coefficient(uflSpace)
 
 # right hand sie (time derivative part + explicit forcing in v)
-a_ex = (ufl.inner(un, v) - ufl.inner(un[0], v[1])) * ufl.dx(0)
+a_ex = (ufl.inner(un, v) - ufl.inner(un[0], v[1])) * ufl.dx
 # left hand side (heat equation in first variable + backward Euler in time)
 psi        = ufl.pi/8.0 + ufl.atan_2(ufl.grad(un[0])[1], (ufl.grad(un[0])[0]))
 Phi        = ufl.tan(N / 2.0 * psi)
@@ -52,7 +52,7 @@ m          = u[0] - 0.5 - kappa1 / ufl.pi*ufl.atan(kappa2*u[1])
 s          = ufl.as_vector([dt / tau * u[0] * (1.0 - u[0]) * m, u[0]])
 
 a_im = (alpha*alpha*dt / tau * (ufl.inner(ufl.dot(d0, ufl.grad(u[0])), ufl.grad(v[0])[0]) + ufl.inner(ufl.dot(d1, ufl.grad(u[0])), ufl.grad(v[0])[1]))
-       + 2.25 * dt * ufl.inner(ufl.grad(u[1]), ufl.grad(v[1])) + ufl.inner(u,v) - ufl.inner(s,v)) * ufl.dx(0)
+       + 2.25 * dt * ufl.inner(ufl.grad(u[1]), ufl.grad(v[1])) + ufl.inner(u,v) - ufl.inner(s,v)) * ufl.dx
 
 # basic setup
 # -----------

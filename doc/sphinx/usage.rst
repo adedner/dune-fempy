@@ -4,9 +4,7 @@
 Usage introduction
 ################################
 
-As explained in the introduction, Dune-fempy provides a python interface for solving PDEs using Dune and Dune-Fem. Here we will explain how this can be used to set up the various parts of a numerical problem. For a complete example of how this works, see :ref:`usageexample`.
-
-to do: explain how to run scripts (build-cmake -> make -> python test.pyc)
+As explained in the introduction, Dune-fempy provides a python interface for solving PDEs using Dune and Dune-fem. Here we will explain how this can be used to set up the various parts of a numerical problem. For a complete example of how this works, see :ref:`usageexample`.
 
 include a list of grids/spaces/schemes available in the database
 
@@ -15,10 +13,25 @@ perhaps a brief overview of the parts needed to set up and solve a scheme
 .. contents::
 
 ################################
+Running the examples
+################################
+
+First of all, once Dune-fempy has been installed, a good way to check whether everything works is to see whether the demos are working properly. The demos are located in the demo folder in the main directory, but in order to run them, you have to go into the build-cmake folder. For instance, to run the laplace.py demo, you would type
+
+.. code-block:: bash
+
+  cd build-cmake
+  make
+  cd demo
+  python laplace.pyc
+
+The make command is only necessary if any changes are made to the files.
+
+################################
 Setting up a computational grid
 ################################
 
-In Dune-fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use. An example of this in python is the following
+In Dune-fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approac <database>`). An example of this in python is the following
 
 .. code-block:: python
 

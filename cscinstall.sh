@@ -22,9 +22,7 @@ case "$choice" in
         read -p "Configure Open MPI in .bashrc (y/n)? " choice3
         case "$choice3" in
           y|Y|yes|Yes )
-            module load ompi/1.6.4/gnu/4.3.4
             export LD_LIBRARY_PATH="/warwick/openmpi/1.6.4/gnu/4.3.4/lib"
-            echo 'module load ompi/1.6.4/gnu/4.3.4' >> $HOME/.bashrc
             echo 'export LD_LIBRARY_PATH="/warwick/openmpi/1.6.4/gnu/4.3.4/lib"' >> $HOME/.bashrc ;;
           n|N|no|No ) ;;
           * ) echo "Please choose y or n" 

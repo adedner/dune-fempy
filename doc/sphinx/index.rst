@@ -29,13 +29,12 @@ It serves three purposes:
    to do simple unit testing of the generated classes. For users and
    developers of code based on the `Dune-Fem-Howto`_ this script provides a
    fast and easy approach for generating code for new mathematical models.
-   Details can be found in section :ref:`modelintro`
    of this documentation. 
 3. Rapid prototyping of new implementations of `Dune`_ interfaces. At the
    moment a new implementation of the `Dune`_ grid interface class can be
    tested. For `Dune-Fem`_ developers, new scheme classes following the
    `Dune-Fem-Howto`_ concept can be added and tested. More details on this
-   aspect can be found in section :ref:`constructionintro`.
+   aspect can be found in section :ref:`advancedintro`.
 
 .. _Dune: http://www.dune-project.org
 .. _Dune-Fem-Howto: http://dune.mathematik.uni-freiburg.de/doc/html-howto/
@@ -61,22 +60,13 @@ Basic usage
    usage
 
 #################################
-PDE description
+Advanced topics
 #################################
 
 .. toctree::
    :maxdepth: 1
 
-   model
-
-#################################
-On the fly module construction
-#################################
-
-.. toctree::
-   :maxdepth: 1
-
-   construction
+   advanced
 
 ###################################
 `C++ Class documentation`_

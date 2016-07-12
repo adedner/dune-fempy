@@ -1,5 +1,5 @@
-print 'Warning: this model does not lead a converging scheme - \
-       possible issue with boundary conditions or forcing'
+print('Warning: this model does not lead a converging scheme - \
+       possible issue with boundary conditions or forcing')
 from dune.models.femufl import *
 
 model    = DuneUFLModel(2,1) # this is utility.init and sets the dim range

@@ -18,7 +18,7 @@ It serves three purposes:
 
 1. High level program control for solving partial differential equations
    using classes from the `Dune`_ core and from `Dune-Fem`_. This is
-   described in detail in section :ref:`usageintro`.
+   described in detail in :ref:`usageintro`.
 2. Rapid prototyping of the model classes used in the `Dune-Fem-Howto`_.
    These classes provide the mathematical description of the partial
    differential equation to solve. Dune-Fempy uses `UFL`_ as input language
@@ -29,7 +29,7 @@ It serves three purposes:
    to do simple unit testing of the generated classes. For users and
    developers of code based on the `Dune-Fem-Howto`_ this script provides a
    fast and easy approach for generating code for new mathematical models.
-   of this documentation. 
+   of this documentation. See :ref:`dunemodel` for more information.
 3. Rapid prototyping of new implementations of `Dune`_ interfaces. At the
    moment a new implementation of the `Dune`_ grid interface class can be
    tested. For `Dune-Fem`_ developers, new scheme classes following the

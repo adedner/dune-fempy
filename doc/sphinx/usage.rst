@@ -4,7 +4,7 @@
 Usage introduction
 ################################
 
-As explained in the introduction, Dune-fempy provides a python interface for solving PDEs using Dune and Dune-fem. Here we will explain how this can be used to set up the various parts of a numerical problem. For a complete example of how this works, see :ref:`usageexample`.
+As explained in the introduction, Dune-Fempy provides a python interface for solving PDEs using Dune and Dune-fem. Here we will explain how this can be used to set up the various parts of a numerical problem. For a complete example of how this works, see :ref:`usageexample`.
 
 include a list of grids/spaces/schemes available in the database
 
@@ -16,7 +16,7 @@ perhaps a brief overview of the parts needed to set up and solve a scheme
 Running the examples
 ################################
 
-First of all, once Dune-fempy has been installed, a good way to check whether everything works is to see whether the demos are working properly. The demos are located in the demo folder in the main directory, but in order to run them, you have to go into the build-cmake folder. For instance, to run the laplace.py demo, you would type
+First of all, once Dune-Fempy has been installed, a good way to check whether everything works is to see whether the demos are working properly. The demos are located in the demo folder in the main directory, but in order to run them, you have to go into the build-cmake folder. For instance, to run the laplace.py demo, you would type
 
 .. code-block:: bash
 
@@ -31,7 +31,7 @@ The make command is only necessary if any changes are made to the files.
 Setting up a computational grid
 ################################
 
-In Dune-fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approac <database>`). An example of this in python is the following
+In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approac <database>`). An example of this in python is the following
 
 .. code-block:: python
 
@@ -49,7 +49,7 @@ Here the get() function does the following
 Setting up a space
 ###############################################
 
-In Dune-fempy the **space** refers to the function space used in our finite element method. The space can be set up in python in an identical way to the grid as follows
+In Dune-Fempy the **space** refers to the function space used in our finite element method. The space can be set up in python in an identical way to the grid as follows
 
 .. code-block:: python
 
@@ -67,7 +67,7 @@ Here the get() function does the following
 Setting up a mathematical model using UFL
 ###############################################
 
-In Dune-fempy, the **model** refers to the part of the problem that contains the weak form of the PDE and its boundary conditions. UFL is used to express the PDE, and from this we can generate a Dune model file. The module generation is done in the file python/dune/models/elliptic.hh.
+In Dune-Fempy, the **model** refers to the part of the problem that contains the weak form of the PDE and its boundary conditions. UFL is used to express the PDE, and from this we can generate a Dune model file. The module generation is done in the file python/dune/models/elliptic.hh.
 
 Let us consider an example of UFL used to represent the Laplace equation in 2D. i.e. we consider the following PDE in weak form
 
@@ -138,11 +138,28 @@ Suppose we want to create a model with a function that can be set to different v
 
 Here we declare ``bnd_u`` to be a Coefficient, and then set it to be assigned as a Dirichlet boundary condition as shown previously. Then after creating the model, we can set ``bnd_u`` using ``setCoefficient`` to be equal to the function ``exact``.
 
+.. _dunemodel:
+
+Standalone Dune model generation
+--------------------------------
+
+It is possible to just create a C++ model file using UFL code for use within the Dune-Fem-Howto framework without using any of the other python interface tools. The advantage of this is to forgo the complicated process of manually writing a model file with functions for the source, flux, linSource, linFlux and so on. This can be done quite easily in the following way.
+
+1. Create a UFL model file in a similar way to above. For examples of exactly what is required, see the models folder for reference.
+2. Run the generateModel script in the build-cmake/demos directory. For example, to generate a model file for the transport equation example, you would run
+
+  .. code-block:: bash
+
+    python generateModel.pyc ../../models/equation.py
+
+  Optionally you can add -m or -t to the call to make a python module, or test it with a FEM scheme.
+3. Use the generated model file in conjuction with your own Dune code to make a method. The file is outputted to build-cmake/python/dune/generated using the name given in the UFL file (e.g. TransportModel.hh in this case).
+
 ################################
 Setting up a numerical scheme
 ################################
 
-In Dune-fempy, the **scheme** contains information about the method used to solve the PDE. Just as before, schemes can be set up in a similar way to grids and spaces using the database found in python/database/scheme. An example of this in python is the following
+In Dune-Fempy, the **scheme** contains information about the method used to solve the PDE. Just as before, schemes can be set up in a similar way to grids and spaces using the database found in python/database/scheme. An example of this in python is the following
 
 .. code-block:: python
 

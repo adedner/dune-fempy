@@ -18,7 +18,8 @@ It serves three purposes:
 
 1. High level program control for solving partial differential equations
    using classes from the `Dune`_ core and from `Dune-Fem`_. This is
-   described in detail in :ref:`usageintro`.
+   described in detail in the :ref:`tutorial <tutorial>` and the :ref:`usage 
+   guide <usage>`.
 2. Rapid prototyping of the model classes used in the `Dune-Fem-Howto`_.
    These classes provide the mathematical description of the partial
    differential equation to solve. Dune-Fempy uses `UFL`_ as input language
@@ -34,7 +35,7 @@ It serves three purposes:
    moment a new implementation of the `Dune`_ grid interface class can be
    tested. For `Dune-Fem`_ developers, new scheme classes following the
    `Dune-Fem-Howto`_ concept can be added and tested. More details on this
-   aspect can be found in section :ref:`advancedintro`.
+   aspect can be found in :ref:`advanced topics <advanced>`.
 
 .. _Dune: http://www.dune-project.org
 .. _Dune-Fem-Howto: http://dune.mathematik.uni-freiburg.de/doc/html-howto/
@@ -51,7 +52,16 @@ Installation notes
    installation
 
 #################################
-Basic usage
+Tutorial
+#################################
+
+.. toctree::
+   :maxdepth: 1
+
+   tutorial
+
+#################################
+Usage guide
 #################################
 
 .. toctree::
@@ -67,12 +77,6 @@ Advanced topics
    :maxdepth: 1
 
    advanced
-
-###################################
-`C++ Class documentation`_
-###################################
-
-.. _C++ Class documentation: file:../../doxygen/html/annotated.html
 
 Indices and tables
 ==================

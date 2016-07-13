@@ -4,6 +4,8 @@
 
     <style> .red {color:red} </style>
 
+.. _advanced:
+
 .. raw:: html
 
   <h1> Advanced topics </h1>
@@ -13,17 +15,17 @@
    :depth: 2
    :backlinks: top
 
-
-.. _advancedintro:
-
 ****************************************************************
-Exporting Different Implementations of an Interface Class
+Introduction
 ****************************************************************
+
+This section of the documentation is aimed primarily at developers who wish to understand the inner workings of Dune-Fempy. Here we will go into more detail about the C++ code and exactly how things work. Further relevant information can be found in the documentation for the parallel project Dune-Corepy which is mostly focused on the low-level programming side of things.
 
 .. _database:
 
+****************************************************************
 Database approach
-===================
+****************************************************************
 
 To provide the information required to export an implementation of the
 wrapper class, we use a python dictonary containing information to generate the
@@ -132,7 +134,3 @@ is renamed and imported into the python environment.
   The extension module will only be built if it does not exist
   already, i.e. no additional checks are performed to determine if
   the dependencies for this module have changed.
-
-`Scheme wrapper class`_
-----------------------------------------------
-.. _Scheme wrapper class: file:../../doxygen/html/struct_scheme.html

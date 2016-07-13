@@ -1,14 +1,16 @@
-.. _usageintro:
+.. _usage:
+
+.. raw:: html
+
+  <h1> Usage guide </h1>
 
 ################################
-Usage introduction
+Introduction
 ################################
 
-As explained in the introduction, Dune-Fempy provides a python interface for solving PDEs using Dune and Dune-fem. Here we will explain how this can be used to set up the various parts of a numerical problem. For a complete example of how this works, see :ref:`usageexample`.
+In the :ref:`tutorial <tutorial>`, we looked at the basic functions available to Dune-Fempy in the context of Laplace equation. Here we will explain in more detail how we set up the various parts of a numerical problem on the python side, and the tools we have at our disposal. 
 
-include a list of grids/spaces/schemes available in the database
-
-perhaps a brief overview of the parts needed to set up and solve a scheme
+Behind all of the interface methods we use, the philosophy is that they are set up in a very similar way to the Dune-Fem structure. This should hopefully make the underlying C++ code transparent and easier to understand for a user of the python code, and vice versa. For more information about the C++ code, see the :ref:`advanced topics <advanced>` section.
 
 .. contents::
 
@@ -31,19 +33,11 @@ The make command is only necessary if any changes are made to the files.
 Setting up a computational grid
 ################################
 
-In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approac <database>`). An example of this in python is the following
+In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approach <database>`). An example of this in python is the following
 
 .. code-block:: python
 
   grid = dune.fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
-
-An explanation of what the function leafGrid() does is given in the following docstring
-
-.. autofunction:: dune.fem.grid.leafGrid()
-
-Here the get() function does the following
-
-.. autofunction:: dune.fem.grid.get()
 
 ###############################################
 Setting up a space
@@ -54,14 +48,6 @@ In Dune-Fempy the **space** refers to the function space used in our finite elem
 .. code-block:: python
 
   space = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
-
-This time the create.space() function is used, which does the following
-
-.. autofunction:: dune.fem.create.space()
-
-Here the get() function does the following
-
-.. autofunction:: dune.fem.grid.get()
 
 ###############################################
 Setting up a mathematical model using UFL
@@ -140,8 +126,8 @@ Here we declare ``bnd_u`` to be a Coefficient, and then set it to be assigned as
 
 .. _dunemodel:
 
-Standalone Dune model generation
---------------------------------
+Stand-alone Dune model generation
+---------------------------------
 
 It is possible to just create a C++ model file using UFL code for use within the Dune-Fem-Howto framework without using any of the other python interface tools. The advantage of this is to forgo the complicated process of manually writing a model file with functions for the source, flux, linSource, linFlux and so on. This can be done quite easily in the following way.
 
@@ -165,11 +151,7 @@ In Dune-Fempy, the **scheme** contains information about the method used to solv
 
   scheme = dune.fem.create.scheme("FemScheme", space, model, "scheme")
 
-Here *space* and *model* must both be previously defined, as shown above. An explanation of how scheme works is given in the following docstring
-
-.. autofunction:: dune.fem.scheme.create()
-
-Here as before, the function get() creates the C++ scheme class using the information given to it.
+Here *space* and *model* must both be previously defined, as shown above.
 
 .. _usageexample:
 
@@ -179,5 +161,4 @@ A full example
 
 Here we give a complete example for a problem that uses all the above methods. Other such examples can be found in the demo directory.
 
-.. literalinclude:: ../../demo/laplace.py
-   :language: python
+>> more complicated example goes here 

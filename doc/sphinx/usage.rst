@@ -8,7 +8,7 @@
 Introduction
 ################################
 
-In the :ref:`tutorial <tutorial>`, we looked at the basic functions available to Dune-Fempy in the context of Laplace equation. Here we will explain in more detail how we set up the various parts of a numerical problem on the python side, and the tools we have at our disposal. 
+In the :ref:`tutorial <tutorial>`, we looked at the basic functions available to Dune-Fempy in the context of the Laplace equation. Here we will explain in more detail how we set up the various parts of a numerical problem on the python side, and the tools we have at our disposal. 
 
 Behind all of the interface methods we use, the philosophy is that they are set up in a very similar way to the Dune-Fem structure. This should hopefully make the underlying C++ code transparent and easier to understand for a user of the python code, and vice versa. For more information about the C++ code, see the :ref:`advanced topics <advanced>` section.
 
@@ -18,11 +18,24 @@ Behind all of the interface methods we use, the philosophy is that they are set 
 Setting up a computational grid
 ################################
 
-In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approach <database>`). An example of this in python is the following.
+In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh used, the dimension of the domain, and the Dune type that the grid takes. Note that the `leafGrid` function always takes the following parameters
+
+* Mesh (string): Either a dgf file or a description of the mesh (we saw the latter in the tutorial). 
+* Identifier (string): The grid type that Dune uses. 
+
+To explain further, the identifier looks into the grid database, which we will talk more about in :ref:`this section <database>`. For now, we will just say that the list of possible grids is located in python/database/grid, and that optional arguments may or may not be needed depending on what identifier we use. For instance a 1D grid could simply be defined using a dgf file as
 
 .. code-block:: python
 
-  grid = dune.fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
+  onedgrid = dune.fem.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")
+
+On the other hand a grid with additional parameters might look like this
+
+.. code-block:: python
+
+  holegrid = dune.fem.leafGrid("../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=1, refinement="conforming")
+
+*gridfunctions?*
 
 ###############################################
 Setting up a space
@@ -34,18 +47,39 @@ In Dune-Fempy the **space** refers to the function space used in our finite elem
 
   space = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
+*include something about interpolation*
+
 ###############################################
 Setting up a mathematical model using UFL
 ###############################################
 
 In Dune-Fempy, the **model** refers to the part of the problem that contains the weak form of the PDE and its boundary conditions. UFL is used to express the PDE, and from this we can generate a Dune model file. The module generation is done in the file python/dune/models/elliptic.hh.
 
-*refer to usage in tutorial*
+We have already seen an example of UFL usage in the tutorial, so here let's consider a more complex example, a model for mean curvature flow.
+
+.. code-block:: python
+
+  dt        = 0.0025
+  theta     = 0.5
+
+  uflSpace = dune.ufl.Space((surface.dimGrid, surface.dimWorld), surface.dimWorld)
+  u = TrialFunction(uflSpace)
+  v = TestFunction(uflSpace)
+  u_n = Coefficient(uflSpace)
+
+  a_im = (dt * theta * inner(grad(u), grad(v)) + inner(u, v)) * dx
+  a_ex = (-dt * (1-theta) * inner(grad(u), grad(v)) + inner(u, v)) * dx
+  lhsModel = dune.models.elliptic.importModel(surface, a_im == 0).get()
+  rhsModel = dune.models.elliptic.importModel(surface, a_ex == 0).get()
+
+As we can see, it is not very difficult to set up time-dependent problems since we can make separate models for the explicit and implicit parts of the equation. Constants such as `dt` and `theta` can be simply defined on the python side and put directly into the bilinear forms, and everything else can be acquired from the UFL side. `Coefficient` is a special variable that be set to different functions that we will talk more about below. 
+
+UFL code in Dune-Fempy is mostly identical to that in the original module, so the `documentation <http://fenicsproject.org/documentation/ufl/1.0-beta2/ufl.html>`_ is a useful resource.
 
 Boundary conditions
 -------------------
 
-Additionally, boundary conditions can also be added to the model using UFL. Any *natural* boundary conditions (e.g. Neumann or Robin) can be added to the weak form directly by using a surface integral ds (instead of dx). On the other hand, *essential* boundary conditions can be added optionally using the **dirichlet** argument as follows.
+Boundary conditions can also be added to the model using UFL. Any *natural* boundary conditions (e.g. Neumann or Robin) can be added to the weak form directly by using a surface integral ds (instead of dx). On the other hand, *essential* boundary conditions can be added optionally using the **dirichlet** argument as follows.
 
 .. code-block:: python
 
@@ -58,7 +92,7 @@ Here ``1:[g1]`` tells us that the function ``g1`` is set on the boundary assigne
 Coefficients
 ------------
 
-Suppose we want to create a model with a function that can be set to different values without remaking the model each time. This has the advantage of saving time if we want to run the same model with slightly different parameters. Additionally this allows us to easily set a function to a solution previously computed in the code. We can do this using the **Coefficient** variable. Consider the following example (found in demo/afem.py).
+Suppose we want to create a model with a function that can be set to different values without remaking the model each time. This has the advantage of saving time if we want to run the same model with slightly different parameters. Additionally this allows us to easily set a function to a solution from another scheme. We can do these things using the **Coefficient** variable. Consider the following example (found in demo/afem.py).
 
 .. code-block:: python
 
@@ -118,4 +152,4 @@ A full example
 
 Here we give a complete example for a problem that uses all the above methods. Other such examples can be found in the demo directory.
 
->> more complicated example goes here 
+*more complicated example goes here*

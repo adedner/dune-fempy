@@ -62,7 +62,7 @@ The above can all be automatically installed using the install script found in t
 
   $ make uninstall
   
-  in the original MPI install directory, followed by removing the folder. It will then be necessary to reinstall Open MPI and Dune. Lastly, it may be necessary to direct mpi4py to the new MPI installation. It is possible to check whether this is a problem by running python and trying out 
+  in the original MPI install directory, followed by removing the folder. It will then be necessary to reinstall Open MPI and Dune. It may also be necessary to direct mpi4py to the new MPI installation. It is possible to check whether this is a problem by running python and trying out 
   
   .. code-block:: python
   

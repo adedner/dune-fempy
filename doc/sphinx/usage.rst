@@ -15,25 +15,10 @@ Behind all of the interface methods we use, the philosophy is that they are set 
 .. contents::
 
 ################################
-Running the examples
-################################
-
-First of all, once Dune-Fempy has been installed, a good way to check whether everything works is to see whether the demos are working properly. The demos are located in the demo folder in the main directory, but in order to run them, you have to go into the build-cmake folder. For instance, to run the laplace.py demo, you would type
-
-.. code-block:: bash
-
-  cd build-cmake
-  make
-  cd demo
-  python laplace.pyc
-
-The make command is only necessary if any changes are made to the files.
-
-################################
 Setting up a computational grid
 ################################
 
-In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approach <database>`). An example of this in python is the following
+In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh file, the dimension, and the Dune type that the grid takes. Grids, much like other parts of the problem such as the space and the scheme, can be set up easily in python using the database found in python/database/grid. This allows the user to specify grids from various parts of Dune that they want to use (more details on the topic of databases can be found in :ref:`Database approach <database>`). An example of this in python is the following.
 
 .. code-block:: python
 
@@ -43,7 +28,7 @@ In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used
 Setting up a space
 ###############################################
 
-In Dune-Fempy the **space** refers to the function space used in our finite element method. The space can be set up in python in an identical way to the grid as follows
+In Dune-Fempy the **space** refers to the function space used in our finite element method. The space can be set up in python in an identical way to the grid as follows.
 
 .. code-block:: python
 
@@ -55,40 +40,12 @@ Setting up a mathematical model using UFL
 
 In Dune-Fempy, the **model** refers to the part of the problem that contains the weak form of the PDE and its boundary conditions. UFL is used to express the PDE, and from this we can generate a Dune model file. The module generation is done in the file python/dune/models/elliptic.hh.
 
-Let us consider an example of UFL used to represent the Laplace equation in 2D. i.e. we consider the following PDE in weak form
-
-.. math::
-
-  \int uv + \nabla u\cdot\nabla v  =  \int f v
-
-Here we let the left hand side of the equation be the bilinear form :math:`a(u,v)` and the right hand side be the linear functional :math:`b(v)`. Using the 2D grid we defined earlier, we can express this in UFL as follows
-
-.. code-block:: python
-
-  grid = dune.fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
-
-  uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
-  u = TrialFunction(uflSpace)
-  v = TestFunction(uflSpace)
-  x = SpatialCoordinate(uflSpace.cell())
-
-  f = cos(2*math.pi*x[0])*cos(2*math.pi*x[1])
-
-  a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
-  b = f * v[0] * dx
-
-Once the parts of the model have been declared using the above, a python model object can be generated using
-
-.. code-block:: python
-
-  model = dune.models.elliptic.importModel(grid, a == b).get()
-
-Here ``a``, ``b`` are given above as the LHS and RHS parts of the PDE. The full implementation of this model is given in :ref:`usageexample`.
+*refer to usage in tutorial*
 
 Boundary conditions
 -------------------
 
-Additionally, boundary conditions can also be added to the model using UFL. Any *natural* boundary conditions (e.g. Neumann or Robin) can be added to the weak form directly by using a surface integral ds (instead of dx). On the other hand, *essential* boundary conditions can be added optionally using the **dirichlet** argument as follows
+Additionally, boundary conditions can also be added to the model using UFL. Any *natural* boundary conditions (e.g. Neumann or Robin) can be added to the weak form directly by using a surface integral ds (instead of dx). On the other hand, *essential* boundary conditions can be added optionally using the **dirichlet** argument as follows.
 
 .. code-block:: python
 
@@ -101,7 +58,7 @@ Here ``1:[g1]`` tells us that the function ``g1`` is set on the boundary assigne
 Coefficients
 ------------
 
-Suppose we want to create a model with a function that can be set to different values without remaking the model each time. This has the advantage of saving time if we want to run the same model with slightly different parameters. Additionally this allows us to easily set a function to a solution previously computed in the code. We can do this using the **Coefficient** variable. Consider the following example (found in demo/afem.py)
+Suppose we want to create a model with a function that can be set to different values without remaking the model each time. This has the advantage of saving time if we want to run the same model with slightly different parameters. Additionally this allows us to easily set a function to a solution previously computed in the code. We can do this using the **Coefficient** variable. Consider the following example (found in demo/afem.py).
 
 .. code-block:: python
 
@@ -132,7 +89,7 @@ Stand-alone Dune model generation
 It is possible to just create a C++ model file using UFL code for use within the Dune-Fem-Howto framework without using any of the other python interface tools. The advantage of this is to forgo the complicated process of manually writing a model file with functions for the source, flux, linSource, linFlux and so on. This can be done quite easily in the following way.
 
 1. Create a UFL model file in a similar way to above. For examples of exactly what is required, see the models folder for reference.
-2. Run the generateModel script in the build-cmake/demos directory. For example, to generate a model file for the transport equation example, you would run
+2. Run the generateModel script in the build-cmake/demos directory. For example, to generate a model file for the transport equation example, you would run.
 
   .. code-block:: bash
 
@@ -145,7 +102,7 @@ It is possible to just create a C++ model file using UFL code for use within the
 Setting up a numerical scheme
 ################################
 
-In Dune-Fempy, the **scheme** contains information about the method used to solve the PDE. Just as before, schemes can be set up in a similar way to grids and spaces using the database found in python/database/scheme. An example of this in python is the following
+In Dune-Fempy, the **scheme** contains information about the method used to solve the PDE. Just as before, schemes can be set up in a similar way to grids and spaces using the database found in python/database/scheme. An example of this in python is the following.
 
 .. code-block:: python
 

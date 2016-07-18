@@ -82,7 +82,7 @@ def mark(element):
 # initial grid refinement
 # -----------------------
 hgrid = grid.hierarchicalGrid
-hgrid.globalRefine(2)
+grid.globalRefine(2)
 for i in range(0,maxLevel):
     hgrid.mark(mark)
     hgrid.adapt([solution])

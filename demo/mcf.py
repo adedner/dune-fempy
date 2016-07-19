@@ -62,5 +62,5 @@ while t < endTime:
     t     += dt
     count += 1
     surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
-    surface.writeVTK("mcf"+str(order)+"-", pointdata=[solution], number=count, subsampling=3)
+    surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
     positions.assign(solution.dofVector())

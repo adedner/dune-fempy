@@ -10,7 +10,7 @@ from dune.models.elliptic import compileUFL, importModel
 
 from dune.fem import create, leafGrid
 
-order=5
+order=3
 # Basic setup
 # -----------
 # set up reference domain

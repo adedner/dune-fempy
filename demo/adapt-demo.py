@@ -5,7 +5,6 @@ from mpi4py import MPI
 
 import math
 
-import dune.femmpi as femmpi
 import dune.fem as fem
 
 grid = fem.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
@@ -40,6 +39,6 @@ while t < 2*math.pi:
     hgrid.adapt([phi])
     hgrid.loadBalance([phi])
     grid.writeVTK("adapt", pointdata=[phi], celldata=[grid.levelFunction(), grid.partitionFunction()], number=nr)
-    print(femmpi.comm.rank, grid.size(0))
+    print(fem.comm.rank, grid.size(0))
     t = t+0.1
     nr = nr+1

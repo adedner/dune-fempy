@@ -10,6 +10,8 @@ from dune.models.elliptic import importModel
 import dune.ufl
 import dune.fem
 
+dune.femmpi.parameter.append("../data/parameter")
+
 grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
@@ -23,5 +25,10 @@ f = cos(2*math.pi*x[0])*cos(2*math.pi*x[1])
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 b = f * v[0] * dx
 
-scheme = dune.fem.create.scheme("FemScheme", spc, importModel(grid, a == b).get(), "scheme")
+scheme = dune.fem.create.scheme("FemScheme", spc, importModel(grid, a == b).get(), "scheme",\
+   {"fem.solver.newton.linabstol": 1e-9,
+    "fem.solver.newton.linreduction": 1e-9,
+    "fem.solver.newton.verbose": 1,
+    "fem.solver.newton.linear.verbose": 1})
 grid.writeVTK("laplace", pointdata=[scheme.solve()])
+# print(str(dune.femmpi.parameter))

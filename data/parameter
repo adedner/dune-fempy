@@ -12,6 +12,12 @@ istl.preconditioning.relaxation: 1.2
 # enable simple Jacobi preconditioning (for non istl inverse operators)
 fem.preconditioning: false
 
+fem.solver.newton.verbose: true
+fem.solver.newton.linear.verbose: true
+fem.solver.newton.tolerance: 1e-6
+fem.solver.newton.linabstol: 1e-12
+fem.solver.newton.linreduction: 1e-12
+
 #### Parameters for input ######
 # macro grid files 
 fem.io.macroGridFile_1d: ../data/circle.dgf

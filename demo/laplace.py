@@ -22,17 +22,19 @@ uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 imag = Coefficient(uflSpace)
-const = VectorConstant(triangle,1)
+const = VectorConstant(triangle,2)
 coeff = Coefficient(uflSpace)
+const0 = Constant(triangle)
 x = SpatialCoordinate(uflSpace.cell())
 
-f = const[0]*coeff[0]* (cos(2*math.pi*x[0])*cos(2*math.pi*x[1]) + cos(2*math.pi*x[0])*cos(2*math.pi*x[1]))
+f = const0*const[0]*coeff[0]* (cos(2*math.pi*x[0])*cos(2*math.pi*x[1]) + cos(2*math.pi*x[0])*cos(2*math.pi*x[1]))
 
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 b = f * v[0] * dx
 
 model = importModel(grid, a==b).get()
-model.setConstant(const.number, [100.])
+model.setConstant(const.number, [10.])
+model.setConstant(const0.number, [20.]) # note: still using a list here instead of a double
 gfunc = gf.MathExpression(["1."])
 coeffFunc = grid.globalGridFunction("global_velocity", gfunc)
 model.setCoefficient(coeff.number, coeffFunc)

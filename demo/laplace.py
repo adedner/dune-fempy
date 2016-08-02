@@ -33,11 +33,11 @@ a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 b = f * v[0] * dx
 
 model = importModel(grid, a==b).get()
-model.setConstant(const.number, [10.])
-model.setConstant(const0.number, [20.]) # note: still using a list here instead of a double
+model.setConstant(const, [10.,-10.])
+model.setConstant(const0, [20.]) # note: still using a list here instead of a double
 gfunc = gf.MathExpression(["1."])
 coeffFunc = grid.globalGridFunction("global_velocity", gfunc)
-model.setCoefficient(coeff.number, coeffFunc)
+model.setCoefficient(coeff, coeffFunc)
 
 scheme = dune.fem.create.scheme("FemScheme", spc, model,\
         "scheme", storage="Istl",\

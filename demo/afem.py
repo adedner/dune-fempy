@@ -58,7 +58,7 @@ def exact(x):
 a = inner(grad(u), grad(v)) * dx
 
 model = importModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False).get()
-model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", exact))
+model.setCoefficient(bnd_u, grid.globalGridFunction("bnd", exact))
 
 laplace = fem.create.scheme("FemScheme", spc, model, "afem")
 uh = spc.interpolate(lambda x: [x[0]])

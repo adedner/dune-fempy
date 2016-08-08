@@ -12,6 +12,8 @@ set(DGFFILES
 )
 # add_gmshgeo_target(karmanvortexstreet)
 
+configure_file(parameter ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+
 foreach(DGFFILE ${DGFFILES})
   configure_file(${DGFFILE} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 endforeach()

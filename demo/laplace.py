@@ -15,6 +15,8 @@ import dune.fem.function as gf
 
 dune.femmpi.parameter.append("../data/parameter")
 
+dune.femmpi.parameter.append("../data/parameter")
+
 grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 

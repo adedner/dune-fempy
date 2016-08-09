@@ -8,7 +8,7 @@
 Introduction
 ################################
 
-In the :ref:`tutorial <tutorial>`, we looked at the basic functions available to Dune-Fempy in the context of the Laplace equation. Here we will explain in more detail how we set up the various parts of a numerical problem on the python side, and the tools we have at our disposal. 
+In the :ref:`tutorial <tutorial>`, we looked at the basic functions available to Dune-Fempy in the context of the Laplace equation. Here we will explain in more detail how we set up the various parts of a numerical problem on the python side, and the tools we have at our disposal.
 
 Behind all of the interface methods we use, the philosophy is that they are set up in a very similar way to the Dune-Fem structure. This should hopefully make the underlying C++ code transparent and easier to understand for a user of the python code, and vice versa. For more information about the C++ code, see the :ref:`advanced topics <advanced>` section.
 
@@ -20,8 +20,8 @@ Setting up a computational grid
 
 In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used in the numerical method. It contains information about the mesh used, the dimension of the domain, and the Dune type that the grid takes. Note that the `leafGrid` function always takes the following parameters
 
-* Mesh (string): Either a dgf file or a description of the mesh (we saw the latter in the tutorial). 
-* Identifier (string): The grid type that Dune uses. 
+* Mesh (string): Either a dgf file or a description of the mesh (we saw the latter in the tutorial).
+* Identifier (string): The grid type that Dune uses.
 
 To explain further, the identifier looks into the grid database, which we will talk more about in :ref:`this section <database>`. For now, we will just say that the list of possible grids is located in python/database/grid, and that optional arguments may or may not be needed depending on what identifier we use. For instance a 1D grid could simply be defined using a dgf file as
 
@@ -35,7 +35,29 @@ On the other hand a grid with additional parameters might look like this
 
   holegrid = dune.fem.leafGrid("../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=1, refinement="conforming")
 
-*gridfunctions?*
+Refinements
+"""""""""""
+
+Once the grid has been created, it can be refined using
+
+.. code-block:: python
+
+  grid.hierarchicalGrid.globalRefine(2)
+
+Here the inital mesh will be globally refined twice.
+
+It is also possible to do adaptively refine the mesh (see e.g. afem.py in /demo).
+
+Grid functions
+""""""""""""""
+
+Functions can be defined globally on the grid using `globalGridFunction`. The principal use of this is so that one can pass functions into the model after it has already been created, as explained in :ref:`coefficients <coefficients>`. Grid functions are defined using
+
+.. code-block:: python
+
+  gridFunction = grid.globalGridFunction("name", function)
+
+Here ``"name"`` is what we want to call the python object created, and ``function`` is any function we can define on the python side.
 
 ###############################################
 Setting up a space
@@ -47,7 +69,17 @@ In Dune-Fempy the **space** refers to the function space used in our finite elem
 
   space = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
-*include something about interpolation*
+Interpolation
+"""""""""""""
+
+Once the space has been set up, we can use the method **interpolate** to create functions that can be accessed on the python side. This approach has the advantage that we can have a single solution vector to use for multiple schemes. We do this as follows
+
+.. code-block:: python
+
+  u = spc.interpolate(lambda x: [x[0]])
+  scheme.solve(target = u)
+
+In the first line we interpolate ``u`` over our space using a spatial coordinate ``x[0]`` (previously defined). This ``u`` can then be passed into our ``solve`` method by specifying a ``target``.
 
 ###############################################
 Setting up a mathematical model using UFL
@@ -72,12 +104,12 @@ We have already seen an example of UFL usage in the tutorial, so here let's cons
   lhsModel = dune.models.elliptic.importModel(surface, a_im == 0).get()
   rhsModel = dune.models.elliptic.importModel(surface, a_ex == 0).get()
 
-As we can see, it is not very difficult to set up time-dependent problems since we can make separate models for the explicit and implicit parts of the equation. Constants such as `dt` and `theta` can be simply defined on the python side and put directly into the bilinear forms, and everything else can be acquired from the UFL side. `Coefficient` is a special variable that be set to different functions that we will talk more about below. 
+As we can see, it is not very difficult to set up time-dependent problems since we can make separate models for the explicit and implicit parts of the equation. Constants such as `dt` and `theta` can be simply defined on the python side and put directly into the bilinear forms, and everything else can be acquired from the UFL side. `Coefficient` is a special variable that be set to different functions that we will talk more about below.
 
 UFL code in Dune-Fempy is mostly identical to that in the original module, so the `documentation <http://fenicsproject.org/documentation/ufl/1.0-beta2/ufl.html>`_ is a useful resource.
 
 Boundary conditions
--------------------
+"""""""""""""""""""
 
 Boundary conditions can also be added to the model using UFL. Any *natural* boundary conditions (e.g. Neumann or Robin) can be added to the weak form directly by using a surface integral ds (instead of dx). On the other hand, *essential* boundary conditions can be added optionally using the **dirichlet** argument as follows.
 
@@ -89,8 +121,10 @@ Boundary conditions can also be added to the model using UFL. Any *natural* boun
 
 Here ``1:[g1]`` tells us that the function ``g1`` is set on the boundary assigned to ``1`` in the mesh file, and similarly ``2:[g2]`` sets boundary ``2`` to ``g2``. Multiple Dirichlet boundary conditions can be individually assigned to different boundaries in this way.
 
+.. _coefficients:
+
 Coefficients
-------------
+""""""""""""
 
 Suppose we want to create a model with a function that can be set to different values without remaking the model each time. This has the advantage of saving time if we want to run the same model with slightly different parameters. Additionally this allows us to easily set a function to a solution from another scheme. We can do these things using the **Coefficient** variable. Consider the following example (found in demo/afem.py).
 
@@ -111,14 +145,15 @@ Suppose we want to create a model with a function that can be set to different v
   a = inner(grad(u), grad(v)) * dx
 
   model = importModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False).get()
-  model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", exact))
+  gridFunction = grid.globalGridFunction("bnd", exact)
+  model.setCoefficient(bnd_u.count(), gridFunction)
 
-Here we declare ``bnd_u`` to be a Coefficient, and then set it to be assigned as a Dirichlet boundary condition as shown previously. Then after creating the model, we can set ``bnd_u`` using ``setCoefficient`` to be equal to the function ``exact``.
+Here we declare ``bnd_u`` to be a `Coefficient`, and then set it to be assigned as a Dirichlet boundary condition as shown previously. Then after creating the model, we use ``globalGridFunction`` defined previously to make a function defined by ``exact``. We then use the ``setCoefficient`` on the model to set ``bnd_u`` to this grid function.
 
 .. _dunemodel:
 
 Stand-alone Dune model generation
----------------------------------
+"""""""""""""""""""""""""""""""""
 
 It is possible to just create a C++ model file using UFL code for use within the Dune-Fem-Howto framework without using any of the other python interface tools. The advantage of this is to forgo the complicated process of manually writing a model file with functions for the source, flux, linSource, linFlux and so on. This can be done quite easily in the following way.
 
@@ -152,4 +187,5 @@ A full example
 
 Here we give a complete example for a problem that uses all the above methods. Other such examples can be found in the demo directory.
 
-*more complicated example goes here*
+.. literalinclude:: ../../demo/mcf.py
+   :language: python

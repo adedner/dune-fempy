@@ -35,7 +35,7 @@ Naturally we intend to solve this equation using a finite element method. Let us
 
 .. code-block:: python
 
-  grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", , refinement="conforming")
+  grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
 The first argument gives us the mesh used. In this case we set up a 16x16 square over :math:`[0,1] \times [0,1]` (though we can also give it a mesh file). The second argument, `"ALUSimplexGrid"`, tells Dune-Fempy the type of grid manager to use on the Dune side. The last two arguments are keyword arguments (note the = sign), hence the order they are given does not matter. `dimgrid=2` and `refinement="conforming"` tell us the dimension of the grid, and whether it is conforming or non-conforming.
 
@@ -45,9 +45,9 @@ Next we want to set up the function space, which we do using the method `create.
 
   spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
-As before, the argument in quotes, `"Lagrange"`, tells us what Dune type to use when constructing the space. The second argument is a python grid module, which we defined above. `dimrange=1` and `polorder=2` give us the dimension of the range and the order of the finite elements we use.
+As before, the argument in quotes, `"Lagrange"`, tells us what Dune type to use when constructing the space. The second argument, which we just defined above, is a python grid module. `dimrange=1` and `polorder=2` give us the dimension of the range and the order of the finite elements we use.
 
-The PDE itself can be expressed using UFL. In the above equation, we let the left hand side be the bilinear form :math:`a(u,v)` and the right hand side be the linear functional :math:`b(v)`. Then the code looks as follows.
+The PDE itself can be expressed using Unified Form Language (UFL), which is a package for expressing differential forms. In the above equation, we let the left hand side be the bilinear form :math:`a(u,v)` and the right hand side be the linear functional :math:`b(v)`. Then the code looks as follows.
 
 .. code-block:: python
 
@@ -61,13 +61,15 @@ The PDE itself can be expressed using UFL. In the above equation, we let the lef
   a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
   b = f * v[0] * dx
 
+Here the language we use to define our forms is pretty self-explanatory. `uflSpace` (unrelated to the previously defined space) is used purely to tell the dimensions of the domain and range to UFL. `u`, `v` and `x` are the trial function (solution), test function and spatial coordinate respectively. `f` is just an arbitrary function we choose to use for the right hand side. Then we simply define `a` and `b` fairly transparently as shown.
+
 Once the parts of the model have been declared using the above, a python model object can be generated using `importModel`.
 
 .. code-block:: python
 
   model = dune.models.elliptic.importModel(grid, a == b).get()
 
-Note that we input the grid as an argument, and for the model itself we set the LHS and RHS to be equal.
+Here the first argument is the grid we defined previously, and the model itself is defined by passing in the equation LHS == RHS.
 
 Lastly it remains to define the method we use to solve the PDE. We do this by setting up the scheme as follows.
 
@@ -75,7 +77,7 @@ Lastly it remains to define the method we use to solve the PDE. We do this by se
 
   scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")
 
-Once again `FemScheme` is the Dunetype, `space` and `model` are previously defined, and "scheme" is the name we attach to the scheme.
+Once again, `FemScheme` is the Dunetype, `spc` and `model` are previously defined, and "scheme" is the name we attach to the scheme.
 
 Finally we can solve the model and output the data. To do the first we call solve on the scheme.
 

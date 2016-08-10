@@ -83,7 +83,7 @@ while t < endTime:
     surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
     surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
     positions.assign(solution.dofVector())
-    if 1: # count % 1:
+    if count % 1:
         R      = calcRadius( surface )
         Rexact = math.sqrt(R0*R0-4.*t)
         print("R_h=",R, "Rexact=",Rexact, "difference=",R-Rexact)

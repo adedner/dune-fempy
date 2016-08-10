@@ -8,14 +8,35 @@ from dune.models.elliptic import compileUFL, importModel
 import dune.fem as fem
 
 # set the angle for the corner (0<angle<=360)
-cornerAngle = 360
+cornerAngle = 360.
 
 # exact solution for this angle
 def exact(x):
+    r2 = x.two_norm2
     phi = math.atan2(x[1], x[0])
     if x[1] < 0:
         phi += 2*math.pi
-    return [(x.two_norm2**(90./cornerAngle)) * sin(180./cornerAngle*phi)]
+    return [(r2**(90./cornerAngle)) * sin(180./cornerAngle*phi)]
+def exactJac(x):
+    r2 = x.two_norm2
+    phi = math.atan2(x[1], x[0])
+    if x[1] < 0:
+        phi += 2*math.pi
+    r2dx=2.*x[0]
+    r2dy=2.*x[1]
+    if r2 == 0:
+        phidx = 0
+        phidy = 0
+        r2pow = 0
+    else:
+        phidx=-x[1]/r2
+        phidy=x[0]/r2
+        r2pow = r2**(90./cornerAngle-1)
+    dx = r2pow * ( 90./cornerAngle*r2dx * sin(180./cornerAngle * phi)
+                  + r2 * 180./cornerAngle*cos( 180./cornerAngle * phi) * phidx )
+    dy = r2pow * ( 90./cornerAngle*r2dy * sin(180./cornerAngle * phi)
+                  + r2 * 180./cornerAngle*cos( 180./cornerAngle * phi) * phidy )
+    return [dx,dy]
 
 # define the grid for this domain (vertices are the origin and 4 equally spaces on the
 # unit sphere starting with (1,0) and ending at # (cos(cornerAngle),sin(cornerAngle))
@@ -65,19 +86,29 @@ laplace = fem.create.scheme("FemScheme", spc, model, "afem")
 uh = spc.interpolate(lambda x: [0])
 laplace.solve(target=uh)
 
+# function used for computing approximation error
+def h1error(en,x):
+    y = en.geometry.position(x)
+    val = uh.localFunction(en).evaluate(x) - exact(y)
+    jac = uh.localFunction(en).jacobian(x)[0] - exactJac(y)
+    return [ sqrt( val[0]*val[0] + jac*jac) ];
+h1error_gf = grid.localGridFunction( "error", h1error )
+
 # adaptive loop (mark, estimate, solve)
 count = 0
-tol = 0.05
+tol = 0.05 # use 0 for global refinement
 while count < 20:
-    error = grid.distance(uh,exact_gf)
+    error = grid.l2Norm(h1error_gf)
     [estimate, marked] = laplace.mark(uh, tol)
     grid.writeVTK("afem", pointdata=[uh], celldata=[grid.levelFunction()], number=count )
     print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
     if marked == False or estimate < tol:
         break
-    grid.hierarchicalGrid.globalRefine(2)
-    uh.interpolate([0])
-    # grid.hierarchicalGrid.adapt([uh])
-    # grid.hierarchicalGrid.loadBalance([uh])
+    if tol == 0.:
+        grid.hierarchicalGrid.globalRefine(2)
+        uh.interpolate([0])  # initial guess needed
+    else:
+        grid.hierarchicalGrid.adapt([uh])
+        grid.hierarchicalGrid.loadBalance([uh])
     laplace.solve( target=uh )
     count += 1

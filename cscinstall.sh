@@ -59,6 +59,7 @@ case "$choice" in
             git clone -b releases/2.4 https://gitlab.dune-project.org/core/dune-localfunctions.git dune-localfunctions
             git clone https://gitlab.dune-project.org/extensions/dune-alugrid.git dune-alugrid
             git clone -b releases/2.4 https://gitlab.dune-project.org/dune-fem/dune-fem.git dune-fem
+            git clone ssh://git@gitlab.dune-project.org:22022/michael.sghaier/dune-corepy.git dune-corepy
             git clone ssh://git@gitlab.dune-project.org:22022/dune-fem/dune-fempy.git dune-fempy
             echo 'CMAKE_FLAGS=" -DCMAKE_CXX_COMPILER=g++-4.9 \
                   -DCMAKE_CXX_FLAGS='\''$OPTFLAGS'\'' \

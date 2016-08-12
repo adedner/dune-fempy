@@ -1,8 +1,10 @@
 #include <config.h>
 
+// dune-corepy
+#include <dune/corepy/pybind11/pybind11.h>
+
 // dune-fempy
 #include <dune/fempy/py/grid/function.hh>
-#include <dune/fempy/pybind11/pybind11.h>
 
 // dune-fem
 #include <dune/fem/gridpart/adaptiveleafgridpart.hh>
@@ -64,33 +66,41 @@ namespace Dune
 {
   namespace FemPy
   {
-    template< class Scheme >
-    void registerScheme ( pybind11::module module )
+    namespace detail
     {
-      typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
-      typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
-      typedef typename BurgersSchemeType::SolutionType SolutionType;
-      typedef typename BurgersSchemeType::AdditionalModelType AdditionalModelType;
-      // export PRPScheme
-      pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
-      pybind11::class_< BurgersSchemeType > cls( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
-      cls.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
-                         const AdditionalModelType &model,
-                         const std::string &name,
-                         double viscosity,
-                         double timeStep ) {
-          new( &instance ) BurgersSchemeType( spaces, model, viscosity, timeStep );
-        }, pybind11::keep_alive< 1, 2 >(),
-           pybind11::arg("spaces"),
-           pybind11::arg("model"),
-           pybind11::arg("name"),
-           pybind11::arg("viscosity"),
-           pybind11::arg("timeStep")
-          );
-      cls.def( "_solve",
-          []( BurgersSchemeType &instance, const SolutionType &solution, bool assemble)
-          { instance._solve(solution,assemble); } );
-      cls.def( "_prepare", &BurgersSchemeType::_prepare );
+      template< class Scheme , class Cls >
+      void registerScheme ( pybind11::module module, Cls &cls )
+      {
+        typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
+        typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
+        typedef typename BurgersSchemeType::SolutionType SolutionType;
+        typedef typename BurgersSchemeType::AdditionalModelType AdditionalModelType;
+        // export PRPScheme
+        pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
+        pybind11::class_< BurgersSchemeType > cls2( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
+        cls2.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
+                           const AdditionalModelType &model,
+                           const std::string &name,
+                           double viscosity,
+                           double timeStep ) {
+            new( &instance ) BurgersSchemeType( spaces, model, viscosity, timeStep );
+          }, pybind11::keep_alive< 1, 2 >(),
+             pybind11::arg("spaces"),
+             pybind11::arg("model"),
+             pybind11::arg("name"),
+             pybind11::arg("viscosity"),
+             pybind11::arg("timeStep")
+            );
+        cls2.def( "_solve",
+            []( BurgersSchemeType &instance, const SolutionType &solution, bool assemble)
+            { instance._solve(solution,assemble); } );
+        cls2.def( "_prepare", &BurgersSchemeType::_prepare );
+      }
+    }
+    template< class Scheme, class Holder, class AliasType >
+    void registerScheme ( pybind11::module module, pybind11::class_<Scheme, Holder, AliasType> &cls )
+    {
+      detail::registerScheme<Scheme>(module,cls);
     }
   }
 }

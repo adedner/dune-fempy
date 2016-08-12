@@ -1,0 +1,79 @@
+ ##### Verbosity #####
+# number of process that prints output (-1 no output) 
+fem.verboserank: 0
+# true for iteration output, false means no output
+fem.solver.verbose: false
+
+##### Parameters for preconditioned linear solver
+# preconditioning method: none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi, amg-ilu-0
+istl.preconditioning.method: jacobi
+istl.preconditioning.iterations: 1
+istl.preconditioning.relaxation: 1.2
+istl.gmres.restart: 50
+oemsolver.gmres.restart: 50
+# enable simple Jacobi preconditioning (for non istl inverse operators)
+fem.preconditioning:true
+
+#### Parameters for input ######
+# macro grid files 
+#fem.io.macroGridFile_1d: ../navier_stokes_data/circle.dgf
+# fem.io.macroGridFile_2d: ../navier_stokes_data/shifted-unitcube-2d.dgf
+#fem.io.macroGridFile_2d: ../navier_stokes_data/unitcube-2d.dgf
+#fem.io.macroGridFile_2d: ../navier_stokes_data/cube-2d.dgf
+#fem.io.macroGridFile_2d: ../navier_stokes_data/cuboid-2d.dgf
+# fem.io.macroGridFile_2d: ../navier_stokes_data/corner.dgf
+fem.io.macroGridFile_2d: ../navier_stokes_data/hole2_larger.dgf
+# fem.io.macroGridFile_2d: ../navier_stokes_data/sphere.dgf
+#fem.io.macroGridFile_3d: ../navier_stokes_data/unitcube-3d.dgf
+
+#### Parameters for output ######
+# path for output  
+fem.prefix: ../navier_stokes_output
+# time interval for data output
+fem.io.savestep: 0.01
+# number of calls to write() after which a file is produced
+fem.io.savecount: 1
+# output format (vtk-cell, vtk-vertex, sub-vtk-cell, sub-vtk-vertex, gnuplot)
+fem.io.outputformat: vtk-cell
+# print partitioning for parallel runs: none, rank, rank+thread, rank/thread
+fem.io.partitioning: rank
+fem.timeprovider.factor: 1
+
+##### Solver and Scheme parameters #####
+# level of initial global refinement 
+navierstokes.initialRefinements: 0
+# number of EOC steps to be performed 
+navierstokes.repeats: 0
+#  valid are: channelflow | vorticityflow | movingplate | couetteflow | karmanstreet (use hole2.dgf)
+navierstokes.problem: karmanstreet
+# tolerance for linear solver 
+stokes.solvereps: 1e-12
+stokes.cg.usepreconditioner: true   # use preconditioner in shur complement cg solver 
+
+navierstokes.timestep: 0.001
+navierstokes.endtime: 50.0    
+navierstokes.reducetimestepfactor: 1
+
+##### Problem Parameters ####
+stokes.stability: 0
+
+navierstokes.stokestimestepfactor: 0.29289321881 # in (0,0.5) # second order if 1-sqrt(2)/2
+#Note: burgers timestep factor = 1-2*<above_value>
+navierstokes.viscosity: 0.0001
+navierstokes.implicitfactor: 0.58578643762  # in [0,1] for fully [explicit,implicit] diffusion
+# with 1-sqrt(2)/2 we get (alpha = 2-sqrt(2)) 
+
+## Burgers parameters
+#line search method, valid are: backtracking | (quadratic  | cubic ) 
+burgers.linesearchmethod: backtracking
+#acceptance of step tolerance in (0,0.5)
+burgers.linesearchaccept: 0.001
+
+
+##### Adaptivity parameters #####
+# valid are: none | maximum | equidistribution | uniform 
+adaptation.strategy: maximum
+# tolerance for error estimator 
+adaptation.tolerance: 0.01
+
+

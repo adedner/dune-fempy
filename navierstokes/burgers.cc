@@ -76,8 +76,7 @@ namespace Dune
         typedef typename BurgersSchemeType::SolutionType SolutionType;
         typedef typename BurgersSchemeType::AdditionalModelType AdditionalModelType;
         // export PRPScheme
-        pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseBScheme");
-        pybind11::class_< BurgersSchemeType > cls2( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
+        pybind11::class_< BurgersSchemeType > cls2( module, "Scheme" );
         cls2.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
                            const AdditionalModelType &model,
                            const std::string &name,

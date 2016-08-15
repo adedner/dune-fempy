@@ -21,7 +21,7 @@ import random
 # ------------------
 dimRange     = 2
 dimDomain    = 2
-maxLevel     = 12
+maxLevel     = 10
 dt           = 5.e-4
 endTime      = 0.2
 saveinterval = 0.001
@@ -39,7 +39,7 @@ noise = ufl.Coefficient(uflSpace)
 
 def initial(x):
     r  = (x-[6,6]).two_norm
-    return [ 0 if r>0.5 else 1, -0.5 ]
+    return [ 0 if r>0.3 else 1, -0.5 ]
 def globalNoise(x):
     return [ 0, 0 ]
 
@@ -50,8 +50,15 @@ def setup_phase(eps,K,Tau,sigma,Gamma,L,Sharp):
     #set up the anisotropy symetry
     N = 6
 
-    theta = ufl.tan(N / 2.0 * ( ufl.pi/8.0 +  ufl.atan_2(ufl.grad(un[0])[1], ufl.grad(un[0])[0])
-    ))
+    theta = un[0] # ufl.tan(N / 2.0 * ( ufl.pi/8.0 +  ufl.atan_2(ufl.grad(un[0])[1], ufl.grad(un[0])[0])))
+    fac = 1+0.02*ufl.cos(theta) # Gamma(theta)
+    tau = Tau(theta)*Gamma(theta)*eps*eps
+
+    theta = ufl.variable(N*theta)
+    # facdash = ufl.diff(fac,theta)
+
+    dbeta_dPhi = -N*ufl.sin(N*theta) # -2.0 * N * theta / (1.0 + theta*theta)
+    facdash = 0.02*dbeta_dPhi
 
     #this is the interpolation function
     #can also come in front of K in temperature equations however here using phi_t
@@ -61,20 +68,8 @@ def setup_phase(eps,K,Tau,sigma,Gamma,L,Sharp):
     a_ex = (ufl.inner(un, v) - K * ufl.inner(un[0], v[1])) * ufl.dx
     # left hand side, heat equation in first variable + backward Euler in time
 
-    fac = Gamma(theta)
-
-
     #this is so that it can include anisotropic term
     #Made sure as well it is multiplied by Gamma(theta) as the definition of the left hand side is tau(theta)/Gamma(theta)
-
-    tau = Tau(theta)*Gamma(theta)*eps*eps
-
-    #theta = ufl.variable(theta)
-
-    dbeta_dPhi = -2.0 * N * theta / (1.0 + theta*theta)
-
-    #facdash = ufl.diff(fac,theta)
-    facdash = 0.02*dbeta_dPhi
 
     #set up the diffusion tensor
     diag       = fac * fac
@@ -103,16 +98,18 @@ def setup_phase(eps,K,Tau,sigma,Gamma,L,Sharp):
 
 #interface parameter epsilon
 #eps = 0.015
-eps = 0.0151
+eps = 0.015
 
 
 #This is the latent heat at the interface in our case it is the inverse of the coefficient of u remember this, also in this case the function w(varphi) is varphi and in fact because of the way w is defined this is minus
-K = 1.05
+K = 1.
 
 
 
 #this is the coefficient in front of the anisotropic mean curvature term
 beta = 1.
+
+alpha = 4./3.
 
 #seems to break when this parameter gets too large
 #kappa1 is material parameter in front of u in the gibbs thompson equation
@@ -147,6 +144,15 @@ def Sharp(x,y):
 [a_im, a_ex] = setup_phase(eps,K,Tau,beta,Gamma,L,Sharp)
 
 
+def write():
+    from dune.models.elliptic import SourceWriter
+    writer = SourceWriter("mymodel.hh")
+    writer.openNameSpace('demo')
+    model = dune.models.elliptic.compileUFL(a_im == a_ex, tempVars = False)
+    model.write(writer, "MyModel")
+    writer.closeNameSpace('demo')
+    exit(1)
+# write()
 
 # basic setup
 # -----------

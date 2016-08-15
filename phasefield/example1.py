@@ -37,16 +37,17 @@ saveinterval = 0.001
 #time constant to keep track of time
 time_const = Constant(triangle)
 
+#pf width
+pfWidth = Constant(triangle)
+
 #should try and change this so that they don't need ot be made global
 global u,v,un
 
 # set up function spaces
 uflSpace       = dune.ufl.Space(dimDomain, dimRange)
-uflScalarSpace = dune.ufl.Space(dimDomain, 1)
 u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
 un = ufl.Coefficient(uflSpace)
-noise = ufl.Coefficient(uflSpace)
 
 #setting the time step as a constant locally on a triangle so that it can be changed at each timestep
 
@@ -55,9 +56,6 @@ def initial(x):
     #return [ 0 if z>0.5 else 1, -0.5]
     #new initial condition of the exact solution]
     return [ 0 if z> r_exact(0)  else 1, w_exact(0) if z < r_exact(0) else w_exact(0) + v_exact(z/r_exact(0))  ]
-
-def globalNoise(x):
-    return [ 0, 0 ]
 
 #takes a numer usually the radius divded by r(t) and returns expression
 def v_exact(s):
@@ -78,6 +76,12 @@ def w_exact(t):
 #gives the exact radius of the circle at each time
 def r_exact(t):
     return math.sqrt(0.5*0.5+t)
+
+def exact(t,x):
+    #t = time_const[0]
+    z  = (x-[6,6]).two_norm
+    #the first argument being the phase field doesn't matter
+    return [ 0 , w_exact(t) if z < r_exact(t) else w_exact(t) + v_exact(z/r_exact(t))  ]
 
 
 def setup_phase(eps,K,Tau,sigma,Gamma,L,Sharp):
@@ -132,7 +136,7 @@ def setup_phase(eps,K,Tau,sigma,Gamma,L,Sharp):
 
 
 #interface parameter epsilon
-eps = 0.005
+eps = 0.015
 
 #This is the latent heat at the interface in our case it is the inverse of the coefficient of u remember this, also in this case the function w(varphi) is varphi and in fact because of the way w is defined this is minus
 K = 1.
@@ -160,7 +164,7 @@ def Tau(x):
 #if unsure return x
 def L(x):
     gamma = 50.
-    return gamma*x + noise[0]
+    return gamma*x
 
 #define the right hand side of the sharp interface model in variational form and pass this
 #here y is the test function
@@ -181,19 +185,15 @@ def Sharp(x,y):
 grid       = dune.fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
 spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=1)
 initial_gf = grid.globalGridFunction("initial", initial)
-noise_gf   = grid.globalGridFunction("noise", globalNoise)
 solution   = spc.interpolate(initial_gf, name="solution")
 solution_n = spc.interpolate(initial_gf, name="solution_n")
-noise_h    = spc.interpolate(noise_gf, name="noise_n")
 
 # setup scheme
 # ------------
 model  = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex)).get()
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
 
-print(noise.count())
 model.setCoefficient(un, solution_n)
-model.setCoefficient(noise, noise_h)
 
 # marking strategy
 # ----------------
@@ -235,25 +235,17 @@ model.setConstant(time_const, [0.])
 
 #the problem is time_const is a dune constant type we need it as a float
 
-def exact(x):
-    #t = time_const[0]
-    z  = (x-[6,6]).two_norm
-    #the first argument being the phase field doesn't matter
-    return [ 0 , w_exact(t) if z < r_exact(t) else w_exact(t) + v_exact(z/r_exact(t))  ]
-
-
 # function used for computing approximation error
+exact_t = lambda x: exact(t,x)
 def l2error(en,x):
     #what was solution here was initially uh
     y = en.geometry.position(x)
-    val = solution.localFunction(en).evaluate(x) - exact(y)
+    val = solution.localFunction(en).evaluate(x) - exact_t(y)
     return [ math.sqrt( val[1]*val[1]) ];
 
 l2error_gf = grid.localGridFunction( "error", l2error )
 
-
 while t < endTime:
-    noise_h.interpolate(noise_gf)
     solution_n.assign(solution)
     scheme.solve(target=solution)
     t += dt

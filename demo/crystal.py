@@ -13,7 +13,7 @@ import dune.fem
 # ------------------
 dimRange     = 2
 dimDomain    = 2
-maxLevel     = 12
+maxLevel     = 10
 dt           = 5.e-4
 endTime      = 0.2
 saveinterval = 0.001

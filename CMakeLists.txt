@@ -21,6 +21,7 @@ add_subdirectory("doc")
 add_subdirectory("data")
 add_subdirectory("demo")
 add_subdirectory("navierstokes")
+add_subdirectory("phasefield")
 
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
 

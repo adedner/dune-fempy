@@ -20,18 +20,18 @@
 template <class BurgersScheme>
 struct BurgersSchemeWrapper : NSBaseScheme<BurgersScheme>
 {
-  typedef typename BurgersScheme::AdditionalModelType AdditionalModelType;
+  typedef typename BurgersScheme::AdditionalModelType ModelType;
   typedef NSBaseScheme<BurgersScheme> BaseType;
   typedef typename BurgersScheme::VelocitySpaceType VelocitySpaceType;
   typedef typename BurgersScheme::PressureSpaceType PressureSpaceType;
   typedef typename BurgersScheme::DiscreteFunctionType VelocityDiscreteFunction;
   typedef typename BurgersScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
   typedef std::tuple<VelocitySpaceType&, PressureSpaceType&>
-          SolutionSpaceType;
+          DiscreteFunctionSpaceType;
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
           SolutionType;
 
-  BurgersSchemeWrapper( const SolutionSpaceType &spaces, const AdditionalModelType &model, double viscosity, double timestep )
+  BurgersSchemeWrapper( const DiscreteFunctionSpaceType &spaces, const ModelType &model, double viscosity, double timestep )
   : BaseType( viscosity, timestep ),
     burgersScheme_ (std::get<0>(spaces),std::get<1>(spaces),model,
          BaseType::timestep_, BaseType::viscosityActual_, BaseType::timestepBurgers_ )
@@ -68,17 +68,15 @@ namespace Dune
   {
     namespace detail
     {
-      template< class Scheme , class Cls >
-      void registerScheme ( pybind11::module module, Cls &cls )
+      template< class Scheme, class Cls >
+      void registerScheme ( pybind11::module module, Cls &cls, std::false_type )
       {
-        typedef BurgersSchemeWrapper<Scheme> BurgersSchemeType;
-        typedef typename BurgersSchemeType::SolutionSpaceType SolutionSpaceType;
+        typedef Scheme BurgersSchemeType;
+        typedef typename BurgersSchemeType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
         typedef typename BurgersSchemeType::SolutionType SolutionType;
-        typedef typename BurgersSchemeType::AdditionalModelType AdditionalModelType;
-        // export PRPScheme
-        pybind11::class_< BurgersSchemeType > cls2( module, "Scheme" );
-        cls2.def( "__init__", [] ( BurgersSchemeType &instance, const SolutionSpaceType &spaces,
-                           const AdditionalModelType &model,
+        typedef typename BurgersSchemeType::ModelType ModelType;
+        cls.def( "__init__", [] ( BurgersSchemeType &instance, const DiscreteFunctionSpaceType &spaces,
+                           const ModelType &model,
                            const std::string &name,
                            double viscosity,
                            double timeStep ) {
@@ -90,16 +88,11 @@ namespace Dune
              pybind11::arg("viscosity"),
              pybind11::arg("timeStep")
             );
-        cls2.def( "_solve",
+        cls.def( "_solve",
             []( BurgersSchemeType &instance, const SolutionType &solution, bool assemble)
             { instance._solve(solution,assemble); } );
-        cls2.def( "_prepare", &BurgersSchemeType::_prepare );
+        cls.def( "_prepare", &BurgersSchemeType::_prepare );
       }
-    }
-    template< class Scheme, class Holder, class AliasType >
-    void registerScheme ( pybind11::module module, pybind11::class_<Scheme, Holder, AliasType> &cls )
-    {
-      detail::registerScheme<Scheme>(module,cls);
     }
   }
 }

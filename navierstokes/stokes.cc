@@ -26,10 +26,10 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   typedef typename StokesScheme::PressureSpaceType PressureSpaceType;
   typedef typename StokesScheme::VelocityDiscreteFunctionType VelocityDiscreteFunction;
   typedef typename StokesScheme::PressureDiscreteFunctionType PressureDiscreteFunction;
-  typedef std::tuple<VelocitySpaceType&, PressureSpaceType&> DiscreteFunctionSpaceType;
+  typedef std::tuple<VelocitySpaceType&, PressureSpaceType&>
+          DiscreteFunctionSpaceType;
   typedef std::tuple<VelocityDiscreteFunction&, PressureDiscreteFunction&>
-          DiscreteFunctionType;
-  typedef typename StokesScheme::GridPartType GridPartType;
+          SolutionType;
 
   StokesSchemeWrapper( const DiscreteFunctionSpaceType &spaces, const ModelType &model, double viscosity, double timestep )
   : BaseType( viscosity, timestep )
@@ -41,15 +41,15 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   StokesSchemeWrapper( StokesSchemeWrapper& ) = delete;
   StokesSchemeWrapper& operator=( const StokesSchemeWrapper& ) = delete;
 
-  void _solve( const DiscreteFunctionType &target, bool assemble )
+  void _solve( const SolutionType &target, bool assemble )
   {
     duneType().solve( std::get<0>(target), std::get<1>(target), assemble );
   }
-  void initialize( const DiscreteFunctionType &solution )
+  void initialize( const SolutionType &solution )
   {
     duneType().initialize( std::get<0>(solution), std::get<1>(solution) );
   }
-  void _prepare( const DiscreteFunctionType &solution )
+  void _prepare( const SolutionType &solution )
   {
     duneType().prepare( std::get<0>(solution) );
   }
@@ -64,3 +64,42 @@ struct StokesSchemeWrapper : public NSBaseScheme<StokesScheme>
   protected:
   StokesScheme stokesScheme_;
 };
+
+namespace Dune
+{
+  namespace FemPy
+  {
+    namespace detail
+    {
+      template< class Scheme, class Cls >
+      void registerScheme ( pybind11::module module, Cls &cls, std::false_type )
+      {
+        typedef Scheme StokesSchemeType;
+        typedef typename StokesSchemeType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+        typedef typename StokesSchemeType::SolutionType SolutionType;
+        typedef typename StokesSchemeType::ModelType ModelType;
+        // export the scheme wrapper
+        //pybind11::class_< NSBaseScheme<Scheme> > clsBase( module, "NSBaseSScheme");
+        //pybind11::class_< StokesSchemeType > cls2( module, "Scheme", pybind11::base<NSBaseScheme<Scheme>>() );
+        cls.def( "__init__", [] ( StokesSchemeType &instance, const DiscreteFunctionSpaceType &spaces,
+                           const ModelType &model,
+                           const std::string &name,
+                           double viscosity,
+                           double timeStep ) {
+            new( &instance ) StokesSchemeType( spaces, model, viscosity, timeStep );
+          }, pybind11::keep_alive< 1, 2 >(),
+             pybind11::arg("spaces"),
+             pybind11::arg("model"),
+             pybind11::arg("name"),
+             pybind11::arg("viscosity"),
+             pybind11::arg("timeStep")
+            );
+        cls.def( "_solve",
+            []( StokesSchemeType &instance, const SolutionType &solution, bool assemble)
+            { instance._solve(solution,assemble); } );
+        cls.def( "initialize", &StokesSchemeType::initialize );
+        cls.def( "_prepare", &StokesSchemeType::_prepare );
+      }
+    }
+  }
+}

@@ -24,11 +24,13 @@ f = cos(2*math.pi*x[0])*cos(2*math.pi*x[1])
 
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 b = f * v[0] * dx
+model = importModel(grid, a == b).get()
 
-scheme = dune.fem.create.scheme("FemScheme", spc, importModel(grid, a == b).get(), "scheme",\
+scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme",\
    {"fem.solver.newton.linabstol": 1e-9,
     "fem.solver.newton.linreduction": 1e-9,
     "fem.solver.newton.verbose": 1,
     "fem.solver.newton.linear.verbose": 1})
 grid.writeVTK("laplace", pointdata=[scheme.solve()])
 # print(str(dune.femmpi.parameter))
+print(model.dimRange())

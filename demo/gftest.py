@@ -11,12 +11,9 @@ spc = dune.fem.create.space("Lagrange", grid, dimrange=2, polorder=2)
 code = """value[0] = sin(x[0]);
     value[1] = cos(x[1]);
 """
-func = gridFunction(grid, code).get()
+func = gridFunction(grid, code)
 
-def initial(x):
-    r  = (x-[6,6]).two_norm
-    return [ 0 if r>0.3 else 1, -0.5 ]
-initial_gf = grid.globalGridFunction("initial", initial)
-solution   = spc.interpolate(initial_gf, name="solution")
+print(dir(func))
 
+solution   = spc.interpolate([0,0,0], name="solution")
 solution.interpolate( func )

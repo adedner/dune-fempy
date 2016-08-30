@@ -89,7 +89,7 @@ public:
   // typedef MyDiffusionModel<FullFunctionSpaceType,GridPartType> AdditionalModelType;
   typedef AdditionalModel AdditionalModelType;
 
-  typedef StokesMainModel<AdditionalModelType>       MainModelType;
+  typedef StokesMainModel<AdditionalModelType>       ModelType;
   typedef StokesGradModel<GridPartType>       GradModelType;
   typedef StokesDivergenceModel<GridPartType> DivergenceModelType;
   typedef StokesMassModel<GridPartType>       MassModelType;
@@ -119,8 +119,8 @@ public:
 
   typedef NavierStokesProblemInterface< FullFunctionSpaceType> ProblemType ;
 
-  typedef Dune::DirichletConstraints<MainModelType, VelocitySpaceType> MainConstraintsType;
-  typedef DifferentiableEllipticOperator< MainLinearOperatorType, MainModelType, MainConstraintsType > MainOperatorType;
+  typedef Dune::DirichletConstraints<ModelType, VelocitySpaceType> MainConstraintsType;
+  typedef DifferentiableEllipticOperator< MainLinearOperatorType, ModelType, MainConstraintsType > MainOperatorType;
   typedef DifferentiableEllipticOperator< GradLinearOperatorType, GradModelType, NoConstraints > GradOperatorType;
   typedef DifferentiableEllipticOperator< DivergenceLinearOperatorType, DivergenceModelType, NoConstraints > DivergenceOperatorType;
   typedef DifferentiableEllipticOperator< MassLinearOperatorType, MassModelType, NoConstraints > MassOperatorType;
@@ -314,8 +314,8 @@ protected:
   double mu_,nu_;
 
   const AdditionalModelType &additionalModel_;
-  const MainModelType mainModel_;
-  const MainModelType explicitMainModel_;
+  const ModelType mainModel_;
+  const ModelType explicitMainModel_;
   const GradModelType gradModel_;
   const DivergenceModelType divModel_;
   const MassModelType massModel_;

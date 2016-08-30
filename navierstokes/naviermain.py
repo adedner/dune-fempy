@@ -1,20 +1,23 @@
 from __future__ import print_function
 from mpi4py import MPI
 import math
-
 from ufl import *
 from dune.ufl import Space as UFLSpace
-from dune.models.elliptic import compileUFL, importModel
+from dune.models.elliptic import importModel
 import dune.fem as fem
+from dune.femmpi import parameter
+
+parameter.append("../data/parameter-navier")
 
 # initialise grid
 grid = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
 # grid = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
 grid.hierarchicalGrid.globalRefine(6)
 
-viscosity = 0.003
-timeStep = 0.005
+viscosity = 0.03
+timeStep = 0.05
 endTime = 70
+
 saveinterval = 0.1
 def inflow_u(x):
     ux = 0
@@ -40,9 +43,9 @@ velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = gri
 # dirichletconstraints
 
 # schemes
-stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace),model,"stokes",\
+stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace), model, "stokes",\
                viscosity, timeStep, storage = "Istl" )
-burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace),model,"burgers",\
+burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace), model, "burgers",\
                 viscosity, timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0

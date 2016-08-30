@@ -9,9 +9,8 @@ import dune.fem as fem
 
 # initialise grid
 grid = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-grid.hierarchicalGrid.globalRefine(6)
 # grid = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
-# grid.hierarchicalGrid.globalRefine(1)
+grid.hierarchicalGrid.globalRefine(6)
 
 viscosity = 0.003
 timeStep = 0.005
@@ -61,7 +60,6 @@ vtk = grid.writeVTK( "ns_", pointdata=solution+(vorticity,), number=0 )
 # time loop
 time = timeStep
 counter = 0
-save_counter = 1
 savestep = saveinterval
 while time < endTime:
     print( "Time is:", time )
@@ -74,6 +72,5 @@ while time < endTime:
     time += timeStep
     if time > savestep:
         savestep += saveinterval
-        vtk.write( "ns_", save_counter )
-        save_counter += 1
+        vtk.write( "ns_", counter + 1 )
     counter += 1

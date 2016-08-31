@@ -12,7 +12,7 @@ import dune.fem.function as function
 # just get the grid (only for testing - not used)
 onedgrid = grid.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")
 
-for element in onedgrid.elements:
+for element in onedgrid.elements():
     print( "Center ", element.geometry.center )
     for corner in element.geometry.corners:
         print( "Corner ", corner )
@@ -30,7 +30,7 @@ def expr_global(x):
 ggf = yaspgrid.globalGridFunction("expr_global", expr_global)
 print("ggf:", ggf, " | ", ggf.name, " with dimRange = ", ggf.dimRange)
 output.append(ggf)
-for element in yaspgrid.elements:
+for element in yaspgrid.elements():
     lf = ggf.localFunction(element)
     x = [0.5, 0.5]
     y = element.geometry.position(x)
@@ -44,7 +44,7 @@ def expr_local(element, x):
 lgf = yaspgrid.localGridFunction("expr_local", expr_local)
 output.append(lgf)
 print("lgf:", lgf, " | ", lgf.name, " with dimRange = ", lgf.dimRange)
-for element in yaspgrid.elements:
+for element in yaspgrid.elements():
     lf = lgf.localFunction(element)
     x = [0.5, 0.5]
     y = element.geometry.position(x)
@@ -54,7 +54,7 @@ ggf = yaspgrid.globalGridFunction("MathExpression",
       function.MathExpression(["-(x1-0.5)","x0-1./2.","x0","x1*x1","x0*x1","math.sin(x0*x1)","math.exp(-(x0-0.5)**2)"]))
 output.append(ggf)
 print("ggf:", ggf, " | ", ggf.name, " with dimRange = ", ggf.dimRange)
-for element in yaspgrid.elements:
+for element in yaspgrid.elements():
     lf = ggf.localFunction(element)
     x = [0.5, 0.5]
     y = element.geometry.position(x)
@@ -70,7 +70,7 @@ class ExprLocal:
 lgf = yaspgrid.localGridFunction("ExprLocal", ExprLocal(expr_global))
 output.append(lgf)
 print("lgf:", lgf, " | ", lgf.name, " with dimRange = ", lgf.dimRange)
-for element in yaspgrid.elements:
+for element in yaspgrid.elements():
     lf = lgf.localFunction(element)
     x = [0.5, 0.5]
     y = element.geometry.position(x)

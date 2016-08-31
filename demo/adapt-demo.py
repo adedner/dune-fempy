@@ -5,6 +5,7 @@ from mpi4py import MPI
 
 import math
 
+import dune.common as common
 import dune.fem as fem
 
 grid = fem.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
@@ -18,7 +19,7 @@ grid.writeVTK( "initial", pointdata=[phi] )
 
 maxLevel = 8
 hgrid = grid.hierarchicalGrid
-marker = hgrid.marker
+marker = common.Marker
 
 def mark(element):
     y = element.geometry.center - [0.5+0.2*math.cos(t), 0.5+0.2*math.sin(t)]

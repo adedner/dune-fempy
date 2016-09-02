@@ -12,7 +12,6 @@ code = """value[0] = sin(x[0]);
     value[1] = cos(x[1]);
 """
 func = gridFunction(grid, code).get()
-print(dir(func))
 
 solution   = spc.interpolate([0,0,0], name="solution")
 solution.interpolate( func )

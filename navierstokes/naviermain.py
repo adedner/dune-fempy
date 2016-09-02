@@ -11,9 +11,8 @@ parameter.append("../data/parameter-navier")
 
 # initialise grid
 grid = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-grid.hierarchicalGrid.globalRefine(6)
 # grid = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
-# grid.hierarchicalGrid.globalRefine(1)
+grid.hierarchicalGrid.globalRefine(6)
 
 viscosity = 0.03
 timeStep = 0.05
@@ -36,7 +35,7 @@ bnd_u       = Coefficient(uflSpace)
 
 a = inner(grad(u),grad(v)) * dx(0)
 model = importModel(grid, a == 0, dirichlet={1:bnd_u}, tempVars=False).get()
-model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", inflow_u))
+model.setCoefficient(bnd_u, grid.globalGridFunction("bnd", inflow_u))
 
 # spaces
 pressureSpace = fem.create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )
@@ -66,7 +65,6 @@ vtk = grid.writeVTK( "ns_", pointdata=solution+(vorticity,), number=0 )
 # time loop
 time = timeStep
 counter = 0
-save_counter = 1
 savestep = saveinterval
 while time < endTime:
     print( "Time is:", time )
@@ -79,6 +77,5 @@ while time < endTime:
     time += timeStep
     if time > savestep:
         savestep += saveinterval
-        vtk.write( "ns_", save_counter )
-        save_counter += 1
+        vtk.write( "ns_", counter + 1 )
     counter += 1

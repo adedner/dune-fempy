@@ -1,0 +1,82 @@
+\documentclass{article}
+\usepackage{a4wide}
+\usepackage{listings}
+\begin{document}
+\section{2nd order problems}
+\begin{eqnarray}
+  \int_\Omega D(x,u,\nabla u)\cdot\nabla\varphi +
+     S(x,u,\nabla u)\varphi 
+     &=& 0
+\end{eqnarray}
+Problem: need splitting of $D,S$ into parts depending only on $u$ so that
+advvection terms can be treated differently. So assume PDE of the form:
+\begin{eqnarray}
+  \int_\Omega \left( D_0(x,u) + D_1(x,u,\nabla u)\right)\cdot\nabla\varphi +
+     \left( S_0(x,u) + S_1(x,u,\nabla u)\right)\varphi 
+     &=& 0
+\end{eqnarray}
+We also need the linearization in this form
+\begin{eqnarray}
+  \int_\Omega \left( v D_{00}(x,\bar{u}) + 
+                     v D_{10}(x,\bar{u},\nabla \bar{u}) +
+              \nabla v D_{11}(x,\bar{u},\nabla \bar{u})
+              \right)\cdot\nabla\varphi +
+     \left( v S_{00}(x,\bar{u}) + 
+            v S_{10}(x,\bar{u},\nabla \bar{u})
+     \nabla v S_{11}(x,\bar{u},\nabla \bar{u})
+            \right)\varphi 
+     &=& 0
+\end{eqnarray}
+Consequently, the model needs to provide for the fully non linear model the
+terms $D_0,D_1$ which are objects behaving like \emph{JRT}s  
+and $S_0,S_1$ which are objects behaving like \emph{RT}s. It should be
+possible to write to put $D_0+D_1$ and $S_0+S_1$ into the local function
+\emph{axpy} methods.
+
+Alternatively, the methods on the model return one object which corresponds
+to $D=D_0+D_1$ ($S=S_0+S_1$), e.g., can be casted into a \emph{JRT} (\emph{RT})
+containing the sum. Then with some mechansim like $D[0],D[1]$ access to the
+compnents is made possible. 
+
+A similar approach is then used for the tensors
+$D_{00},D_{10},D_{11},S_{00},S_{10},S_{11}$. We could for example have the
+model return two object
+$S_{,0}=S_{00}+S_{10},S_{,1}=S_{11}$ where $S_{,0}$ is the tensor
+multiplied with $(v,\varphi)$ and $S_{,1}$ the tensor multiplied with
+$(\nabla v,\nabla\varphi)$. Again the splitting can be extracted using
+something like
+$S_{,0}[0]=S_{00}, S_{,0}[1]=S_{10}, S_{,1}[0]=0, S_{,1}[1]=S_{11}$.
+But note that then
+$S_{,0}[0]$ is the linearization of $S[0]=S_0$ while
+$S_{,0}[1]$ is part of the linearization of $S[1]=S_1$ 
+(the other part being $S_{,1}[1]$).
+
+\section{Model interface}
+
+To describe the non linear part of the model we could have a single method:
+\begin{lstlisting}
+  template <class TestFunctionType, class PointType> 
+  MyReturn<TestFunctionType> 
+    evaluate(const PointType &x, 
+             const RangeType &u,
+             const JacobianRangeType &jac);
+\end{lstlisting}
+In the operator one can then write
+\begin{lstlisting}
+  RangeType S = model.evaluate<RangeType>(x,u,jac);
+  JacobianRangeType D = model.evaluate<JacobianRangeType>(x,u,jac);
+  wLoc.axpy(x,S,D);
+\end{lstlisting}
+(here we use the option to explicitely cast \emph{MyReturn<A>} into
+\emph{A}).
+If more control is required one can use for example:
+\begin{lstlisting}
+  auto S = model.evaluate<RangeType>(x,u,jac);
+  auto D = model.evaluate<JacobianRangeType>(x,u,jac);
+  wLoc.axpy(x,S[0],D[0]);
+\end{lstlisting}
+Note that as long as no separation into $S_0,S_1$ or $D_0,D_1$ is required
+the methods on the model can simply return \emph{RT} and \emph{JRT} objects
+as done now. So for the simpler examples in the howto we can keep things
+more or less as they are. 
+\end{document}

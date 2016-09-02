@@ -12,4 +12,12 @@ code = """value[0] = sin(xGlobal[0]);
 func = grid.localFunction(code)
 
 solution   = spc.interpolate([0,0,0], name="solution")
+
+def expr_global(x):
+    return [math.sin(x[0]), math.cos(x[1])]
+control = grid.globalGridFunction("expr_global", expr_global)
+
+grid.writeVTK("control", pointdata=[control])
+
 solution.interpolate( func )
+grid.writeVTK("gftest", pointdata=[solution])

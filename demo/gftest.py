@@ -8,7 +8,7 @@ grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimp
 code = """value[0] = sin(xGlobal[0]);
     value[1] = cos(xGlobal[1]);
 """
-func = grid.localFunction(code)
+func = grid.localFunction("code", code)
 
 solution   = grid.interpolate(func, space="Lagrange", order=2, name="solution")
 
@@ -16,4 +16,12 @@ def expr_global(x):
     return [math.sin(x[0]), math.cos(x[1])]
 control = grid.globalGridFunction("expr_global", expr_global)
 
-grid.writeVTK("gftest", pointdata=[control,solution])
+class LocalDiff:
+    def __init__(self):
+      self.dimR = 2
+    def __call__(self,en,x):
+        y = en.geometry.position(x)
+        return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
+difference = grid.localGridFunction( "difference", LocalDiff() )
+
+grid.writeVTK("gftest", pointdata=[control,func,solution,difference])

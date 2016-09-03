@@ -58,7 +58,7 @@ a_im = (alpha*alpha*dt / tau * (ufl.inner(ufl.dot(d0, ufl.grad(u[0])), ufl.grad(
 # -----------
 grid       = dune.fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
 spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=1)
-initial_gf = grid.globalGridFunction("initial", initial)
+initial_gf = grid.Function("initial", globalExpr=initial)
 solution   = spc.interpolate(initial_gf, name="solution")
 solution_n = spc.interpolate(initial_gf, name="solution_n")
 

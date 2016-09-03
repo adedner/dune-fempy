@@ -45,9 +45,9 @@ velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = gri
 # dirichletconstraints
 
 # schemes
-stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace), model, "stokes",\
+stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace ), model, "stokes",\
                viscosity, timeStep, storage = "Istl" )
-burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace), model, "burgers",\
+burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace ), model, "burgers",\
                 viscosity, timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0

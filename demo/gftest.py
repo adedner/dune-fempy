@@ -6,20 +6,20 @@ import ufl
 
 grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
-code = """
-    double c = cos(xGlobal[1]);
-    double s = sin(xGlobal[0]);
-    value[ 0 ] = s*s;
-    value[ 1 ] = s*c;
-    value[ 2 ] = c*c;
+func1 = """
+double c = cos(xGlobal[1]);
+double s = sin(xGlobal[0]);
+value[ 0 ] = s*s;
+value[ 1 ] = s*c;
+value[ 2 ] = c*c;
 """
 func2 = """@dimrange=2
-    for( int i = 0; i < dimDomain; ++i )
-    {
-        value[ 0 ][ i ] = 2 * xGlobal[ i ];
-        for( int j = 0; j < dimDomain; ++j )
-            value[ 0 ][ i ] *= (i == j ? 1.0 : xGlobal[ j ]*xGlobal[ j ]);
-    }
+for( int i = 0; i < dimDomain; ++i )
+{
+  value[ 0 ][ i ] = 2 * xGlobal[ i ];
+  for( int j = 0; j < dimDomain; ++j )
+    value[ 0 ][ i ] *= (i == j ? 1.0 : xGlobal[ j ]*xGlobal[ j ]);
+}
 """
 code = { 'eval': func1, 'jac': func2 }
 func = grid.function("code", code=code)

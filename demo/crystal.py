@@ -7,6 +7,7 @@ import ufl
 
 import dune.models.elliptic
 import dune.ufl
+import dune.common
 import dune.fem
 
 # problem parameters
@@ -58,7 +59,7 @@ a_im = (alpha*alpha*dt / tau * (ufl.inner(ufl.dot(d0, ufl.grad(u[0])), ufl.grad(
 # -----------
 grid       = dune.fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
 spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=1)
-initial_gf = grid.Function("initial", globalExpr=initial)
+initial_gf = grid.function("initial", globalExpr=initial)
 solution   = spc.interpolate(initial_gf, name="solution")
 solution_n = spc.interpolate(initial_gf, name="solution_n")
 
@@ -72,12 +73,13 @@ model.setCoefficient(un, solution_n)
 # marking strategy
 # ----------------
 def mark(element):
+    marker = dune.common.Marker
     solutionLocal = solution.localFunction(element)
     grad = solutionLocal.jacobian(element.geometry.domain.center)
     if grad[0].infinity_norm > 1.0:
-      return hgrid.marker.refine if element.level < maxLevel else hgrid.marker.keep
+      return marker.refine if element.level < maxLevel else marker.keep
     else:
-      return hgrid.marker.coarsen
+      return marker.coarsen
 
 # initial grid refinement
 # -----------------------

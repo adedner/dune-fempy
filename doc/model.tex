@@ -53,6 +53,11 @@ $S_{,0}[1]$ is part of the linearization of $S[1]=S_1$
 
 \section{Model interface}
 
+{\bf Remark:} the following approach is probably not efficient enough because even if
+the user only wants some part of the flux for example (only the advective part) the
+whole flux will have to be evaluated - the no mechanism to restrict the result to one
+part.
+
 To describe the non linear part of the model we could have a single method:
 \begin{lstlisting}
   template <class TestFunctionType, class PointType> 

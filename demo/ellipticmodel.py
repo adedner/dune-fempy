@@ -3,6 +3,7 @@ from __future__ import print_function
 from mpi4py import MPI
 
 import math
+import ufl
 from ufl import *
 
 from dune.ufl import Space as UFLSpace
@@ -17,6 +18,7 @@ a = inner(grad(u),grad(v)) * dx
 H = grad(grad(u[0]))
 a = a + H[0,0] * v[0] * dx
 a = a + det(H) * v[0] * dx
+a = a + u[0]*u[0]*v[0] * dx
 
 b = v[0] * ds
 

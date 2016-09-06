@@ -13,13 +13,12 @@ u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
-q = cos(u[0])
-q = variable(q)
-f = q*q
-df = diff(f,q)
+a = inner(grad(u),grad(v)) * dx
+H = grad(grad(u[0]))
+a = a + H[0,0] * v[0] * dx
+a = a + det(H) * v[0] * dx
 
-a = (inner(grad(u), grad(v)) + df*u[0]*v[0]) * dx
-b = v[0] * dx
+b = v[0] * ds
 
 model = compileUFL(a == b, dirichlet={1:[x[0]], 2:[x[1]], 3:[zero(tuple())]}, tempVars = False)
 

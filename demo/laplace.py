@@ -33,6 +33,7 @@ f = const0*const[0]*coeff[0]* (cos(2*math.pi*x[0])*cos(2*math.pi*x[1]) + cos(2*m
 
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 b = f * v[0] * dx
+model = importModel(grid, a == b).get()
 
 model = importModel(grid, a==b).get()
 model.setConstant(const, [10.,-10.])

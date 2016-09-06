@@ -18,6 +18,7 @@ viscosity = 0.03
 timeStep = 0.05
 endTime = 70
 
+# boundary condition
 saveinterval = 0.1
 def inflow_u(x):
     ux = 0
@@ -25,6 +26,7 @@ def inflow_u(x):
         ux = min(1.0,(((x[1]+1.)*(1.-x[1])*time)/(10.*timeStep)))
     return [ux,0,0]
 
+# model
 uflSpace    = UFLSpace((2,2), 3)
 u           = TrialFunction(uflSpace)
 v           = TestFunction(uflSpace)
@@ -43,9 +45,9 @@ velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = gri
 # dirichletconstraints
 
 # schemes
-stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace), model, "stokes",\
+stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace ), model, "stokes",\
                viscosity, timeStep, storage = "Istl" )
-burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace), model, "burgers",\
+burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace ), model, "burgers",\
                 viscosity, timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0

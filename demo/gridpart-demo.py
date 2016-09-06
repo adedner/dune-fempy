@@ -2,6 +2,7 @@ from __future__ import print_function
 import math
 from mpi4py import MPI
 
+import dune.common as common
 import dune.fem as fem
 import dune.fem.gridpart as gridpart
 
@@ -18,7 +19,7 @@ def testGridPart(gridtype):
     geogp = gridpart.create("Geometry", df )
     vtk = geogp.vtkWriter()
     gfnew = geogp.globalGridFunction("global", expr_global)
-    gfnew.addToVTKWriter(vtk, vtk.PointData)
+    gfnew.addToVTKWriter(vtk, common.DataType.PointData)
 
     dt = 0.01
     count = 0

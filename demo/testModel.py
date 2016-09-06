@@ -13,6 +13,7 @@ from ufl import *
 
 import dune.models.elliptic
 import dune.ufl
+import dune.common as common
 import dune.fem as fem
 import dune.fem.space as space
 import dune.fem.scheme as scheme
@@ -64,8 +65,8 @@ velocityGlobal = grid.function("global_velocity", globalExpr=expr1)
 m.setCoefficient(velo, velocityGlobal)
 s.solve( None, solution )
 vtk = grid.vtkWriter()
-solution.addToVTKWriter(vtk, vtk.PointData)
-velocityGlobal.addToVTKWriter(vtk, vtk.PointVector)
+solution.addToVTKWriter(vtk, common.DataType.PointData)
+velocityGlobal.addToVTKWriter(vtk, common.DataType.PointVector)
 vtk.write("testmodel_global");
 #################
 print("use the interpolation of the global function")
@@ -73,8 +74,8 @@ u = grid.interpolate(velocityGlobal, space="Lagrange", name="interpolated_veloci
 m.setCoefficient(velo, u)
 s.solve( target = solution )
 vtk = grid.vtkWriter()
-solution.addToVTKWriter(vtk, vtk.PointData)
-u.addToVTKWriter(vtk, vtk.PointVector)
+solution.addToVTKWriter(vtk, common.DataType.PointData)
+u.addToVTKWriter(vtk, common.DataType.PointVector)
 vtk.write("testmodel_interpolation");
 #################
 print("use the discrete solution to some other scheme (vector valued)")
@@ -97,8 +98,8 @@ veloh = vecs.solve()
 m.setCoefficient(velo, veloh)
 s.solve( None, solution )
 vtk = grid.vtkWriter()
-solution.addToVTKWriter(vtk, vtk.PointData)
-veloh.addToVTKWriter(vtk, vtk.PointVector)
+solution.addToVTKWriter(vtk, common.DataType.PointData)
+veloh.addToVTKWriter(vtk, common.DataType.PointVector)
 vtk.write("testmodel_df");
 #################
 print("use a 'local function adapter'")
@@ -118,8 +119,8 @@ velocityLocal = grid.function( "local_velocity", localExpr=localVelo )
 m.setCoefficient(velo, velocityLocal)
 s.solve( None, solution )
 vtk = grid.vtkWriter()
-solution.addToVTKWriter(vtk, vtk.PointData)
-velocityLocal.addToVTKWriter(vtk, vtk.PointVector)
+solution.addToVTKWriter(vtk, common.DataType.PointData)
+velocityLocal.addToVTKWriter(vtk, common.DataType.PointVector)
 vtk.write("testmodel_local");
 velocityLocal = "remove"
 ####################
@@ -137,8 +138,8 @@ s = scheme.create( "FemScheme", solution, m, "transport" ) # here solution is us
 m.setCoefficient(velo, velocityLocalA)
 s.solve()
 vtk = grid.vtkWriter()
-solution.addToVTKWriter(vtk, vtk.PointData)
-velocityLocalA.addToVTKWriter(vtk, vtk.PointVector)
+solution.addToVTKWriter(vtk, common.DataType.PointData)
+velocityLocalA.addToVTKWriter(vtk, common.DataType.PointVector)
 vtk.write("testmodel_rotation");
 
 print("FINISHED")

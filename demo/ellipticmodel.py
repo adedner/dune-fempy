@@ -16,9 +16,8 @@ x = SpatialCoordinate(uflSpace.cell())
 
 a = inner(grad(u),grad(v)) * dx
 H = grad(grad(u[0]))
-a = a + H[0,0] * v[0] * dx
 a = a + det(H) * v[0] * dx
-a = a + u[0]*u[0]*v[0] * dx
+a = a + u[0]*inner(u,v) * dx
 
 b = v[0] * ds
 

@@ -65,8 +65,8 @@ def calcRadius(surface):
   R   = 0
   vol = 0
   for e in surface.elements():
-      rule = grid._module.QuadratureRules(surface.dimension).rule(e.type, 4)
-      for p in rule.points:
+      rule = grid._module.quadratureRule(e.type, 4)
+      for p in rule:
           geo = e.geometry
           R   += geo.position(p.position).two_norm * geo.volume * p.weight
           vol += geo.volume * p.weight

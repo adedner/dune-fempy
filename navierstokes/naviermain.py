@@ -33,7 +33,7 @@ bnd_u       = Coefficient(uflSpace)
 
 a = inner(grad(u),grad(v)) * dx(0)
 model = importModel(grid, a == 0, dirichlet={1:bnd_u}, tempVars=False).get()
-model.setCoefficient(bnd_u.count(), grid.globalGridFunction("bnd", inflow_u))
+model.setCoefficient(bnd_u, grid.globalGridFunction("bnd", inflow_u))
 
 # spaces
 pressureSpace = fem.create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )

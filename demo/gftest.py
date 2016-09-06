@@ -13,13 +13,18 @@ value[ 0 ] = s*s;
 value[ 1 ] = s*c;
 value[ 2 ] = c*c;
 """
-func2 = """@dimrange=2
-for( int i = 0; i < dimDomain; ++i )
-{
-  value[ 0 ][ i ] = 2 * xGlobal[ i ];
-  for( int j = 0; j < dimDomain; ++j )
-    value[ 0 ][ i ] *= (i == j ? 1.0 : xGlobal[ j ]*xGlobal[ j ]);
-}
+func2 = """double cx = cos(xGlobal[0]);
+    double cy = cos(xGlobal[1]);
+    double sx = sin(xGlobal[0]);
+    double sy = sin(xGlobal[1]);
+    value[ 0 ][ 0 ] = 2*cx*sx;
+    value[ 0 ][ 1 ] = cx*cy;
+    value[ 0 ][ 2 ] = 0;
+    value[ 1 ][ 0 ] = 0;
+    value[ 1 ][ 1 ] = -sx*sy;
+    value[ 1 ][ 2 ] = -2*cy*sy;
+    for( int j = 0; j < dimDomain; ++j )
+        value[ 2 ][ j ] = 0;
 """
 code = { 'eval': func1, 'jac': func2 }
 func = grid.function("code", code=code)

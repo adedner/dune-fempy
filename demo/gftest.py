@@ -3,6 +3,8 @@ from mpi4py import MPI
 import math
 import dune.fem
 import ufl
+import dune.ufl
+import dune.fem.function as gf
 
 grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
@@ -29,11 +31,16 @@ func2 = """double cx = cos(xGlobal[0]);
 code = { 'eval': func1, 'jac': func2 }
 func = grid.function("code", code=code)
 
+uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
+coeff = ufl.Coefficient(uflSpace)
 c = ufl.cos(x[1])
 s = ufl.sin(x[0])
-expr = ufl.as_vector([ s*s, s*c, c*c ])
+expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
 funcUFL = grid.function("ufl", ufl=expr)
+gfunc = gf.MathExpression(["1."])
+coeffFunc = grid.globalGridFunction("global_velocity", gfunc)
+funcUFL.setCoefficient(coeff, coeffFunc)
 
 solution = grid.interpolate(func, space="Lagrange", order=2, name="solution")
 

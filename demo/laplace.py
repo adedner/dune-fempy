@@ -29,6 +29,7 @@ exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 f = x[0]-x[0] # 8.*pi*pi*exact[0] + exact[0]
 
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
+a = 20./(u[0]*u[0]+1.) * v[0] * dx
 b = f * v[0] * dx
 
 model = importModel(grid, a==b, exact=exact).get()
@@ -42,14 +43,14 @@ scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
         storage="Istl")
 
 
-exact_gf = grid.function("exact", ufl=exact)
+exact_gf = grid.function("exact", 5, ufl=exact)
 for i in range(2):
     print("solve on level",i)
     uh = scheme.solve()
     def l2error(en,x):
         val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
         return [ val[0]*val[0] ];
-    l2error_gf = grid.function( "error", localExpr=l2error )
+    l2error_gf = grid.function( "error", 5, localExpr=l2error )
     error = math.sqrt( grid.l2Norm(l2error_gf) )
     print("size:",grid.size(0),"L2-error:",error)
     grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])

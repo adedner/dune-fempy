@@ -11,7 +11,7 @@ import dune.fem as fem
 grid = fem.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 
 # interpolate some data onto macro grid
-phi = grid.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], space="Lagrange", name="phi")
+phi = grid.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], space="Lagrange", name="phi", polorder=1)
 
 # add phi to vtk output
 t = 0

@@ -26,9 +26,9 @@ def testSpace(gridtype, dimRange):
         return [-(x[1] - 0.5)*math.sin(x[0]*12),x[0]*x[1]]
 
     if dimRange==1:
-        gf = grid2d.globalGridFunction("expr_global", expr_global1)
+        gf = grid2d.function("expr_global", order=1, exprGlobal=expr_global1)
     else:
-        gf = grid2d.globalGridFunction("expr_global", expr_global2)
+        gf = grid2d.function("expr_global", order=2, exprGlobal=expr_global2)
     df1 = lagrangespace.interpolate( gf, name="test" )
     df2 = lagrangespace.interpolate( [5,3] ) # , storage="Numpy" ) # , name="53" )
     df3 = lagrangespace.interpolate( df1, name="copy", storage="Istl" )

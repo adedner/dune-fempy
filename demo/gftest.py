@@ -27,24 +27,24 @@ func2 = """double cx = cos(xGlobal[0]);
         value[ 2 ][ j ] = 0;
 """
 code = { 'eval': func1, 'jac': func2 }
-func = grid.function("code", code=code)
+func = grid.function("code", 3, code=code)
 
 x = ufl.SpatialCoordinate(ufl.triangle)
 c = ufl.cos(x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s, s*c, c*c ])
-funcUFL = grid.function("ufl", ufl=expr)
+funcUFL = grid.function("ufl", 3, ufl=expr)
 
 solution = grid.interpolate(func, space="Lagrange", order=2, name="solution")
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(x[1]), math.cos(x[1])**2]
-control = grid.function("expr_global", globalExpr=expr_global)
+control = grid.function("expr_global", order=3, globalExpr=expr_global)
 
 def expr_local(en,x):
     y = en.geometry.position(x)
     return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
-difference = grid.function( "difference", localExpr=expr_local )
+difference = grid.function( "difference", order=3, localExpr=expr_local )
 
 # method 1
 grid.writeVTK("gftest", pointdata=[control,func,funcUFL,solution,difference])

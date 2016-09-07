@@ -10,7 +10,7 @@ def testSpace(gridtype):
     def expr_global(x):
         return [-(x[1] - 0.5)*math.sin(x[0]*12),x[0]*x[1]]
 
-    gf  = grid2d.globalGridFunction("expr_global", expr_global)
+    gf  = grid2d.function("expr_global", order=1, exprGlobal=expr_global)
     df1 = grid2d.interpolate(gf, space="Lagrange",name="interpolate")
     df2 = grid2d.interpolate([5,3], space="Lagrange") # , storage="Numpy" ) # , name="53" )
     df3 = grid2d.interpolate(df1, space="Lagrange", name="copy", storage="Istl" )

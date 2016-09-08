@@ -16,8 +16,8 @@ import dune.fem.function as gf
 dune.femmpi.parameter.append("../data/parameter")
 
 grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[8,8]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
-spc  = dune.fem.create.space("DGONB", grid, dimrange=1, polorder=2)
-# spc  = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
+# spc  = dune.fem.create.space("DGONB", grid, dimrange=1, polorder=2)
+spc  = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
 u = TrialFunction(uflSpace)
@@ -28,8 +28,11 @@ exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 
 f = x[0]-x[0] # 8.*pi*pi*exact[0] + exact[0]
 
+H = grad(grad(u[0]))
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
-a = 20./(u[0]*u[0]+1.) * v[0] * dx
+# a = 20./(u[0]*u[0]+1.) * v[0] * dx
+a = a + inner(grad(u),grad(u))*v[0]*dx
+# a = a + H[0,0]*v[0]*dx
 b = f * v[0] * dx
 
 model = importModel(grid, a==b, exact=exact).get()
@@ -41,7 +44,6 @@ scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
         "fem.solver.newton.verbose": 1,
         "fem.solver.newton.linear.verbose": 0},\
         storage="Istl")
-
 
 exact_gf = grid.function("exact", 5, ufl=exact)
 for i in range(2):

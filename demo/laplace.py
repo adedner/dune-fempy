@@ -31,7 +31,8 @@ a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
 model = importModel(grid, a==0, exact=exact).get()
 
-scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
+# scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
+scheme = dune.fem.create.scheme("FemScheme", spc, model,\
        "scheme",\
        {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,

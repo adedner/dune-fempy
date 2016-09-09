@@ -29,7 +29,22 @@ func2 = """double cx = cos(xGlobal[0]);
         value[ 2 ][ j ] = 0;
 """
 code = { 'eval': func1, 'jac': func2 }
-func = grid.function("code", code=code)
+
+dimR = 2
+isConst = False
+coef = { 'test': (dimR, isConst) }
+
+coeffFunc = grid.function("global_velocity", globalExpr=lambda x: [1,2])
+func = grid.function("code", coef, code=code)
+
+# this is basically just a hack for now
+class YClass( object ):
+    pass
+y= YClass()
+setattr( y, 'number', 0 )
+y.number
+
+func.setCoefficient(y, coeffFunc)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
@@ -38,9 +53,6 @@ c = ufl.cos(x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
 funcUFL = grid.function("ufl", ufl=expr)
-#gfunc = gf.MathExpression(["1."])
-#coeffFunc = grid.globalGridFunction("global_velocity", gfunc)
-coeffFunc = grid.function("global_velocity", globalExpr=lambda x: [1,2])
 funcUFL.setCoefficient(coeff, coeffFunc)
 
 solution = grid.interpolate(func, space="Lagrange", order=2, name="solution")

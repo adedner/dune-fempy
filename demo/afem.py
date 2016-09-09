@@ -9,6 +9,7 @@ import dune.fem as fem
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 360.
+order = 2
 
 # exact solution for this angle
 def exact(x):
@@ -65,10 +66,10 @@ PROJECTION
 """
 grid = fem.leafGrid(fem.string2dgf(dgf), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
 grid.globalRefine(2)
-exact_gf = grid.globalGridFunction("exact", exact)
+exact_gf = grid.function("exact", order+1, globalExpr=exact)
 
 # use a piecewise quadratic Lagrange space
-spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=2)
+spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=order)
 
 # the model is -laplace u = 0 with Dirichlet boundary conditions
 uflSpace = UFLSpace(2, 1)
@@ -92,7 +93,7 @@ def h1error(en,x):
     val = uh.localFunction(en).evaluate(x) - exact(y)
     jac = uh.localFunction(en).jacobian(x)[0] - exactJac(y)
     return [ sqrt( val[0]*val[0] + jac*jac) ];
-h1error_gf = grid.localGridFunction( "error", h1error )
+h1error_gf = grid.function( "error", order=order+1, localExpr=h1error )
 
 # adaptive loop (mark, estimate, solve)
 count = 0

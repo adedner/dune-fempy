@@ -27,7 +27,7 @@ output = []
 def expr_global(x):
     return [-(x[1] - 0.5)*math.sin(x[0]*12)]
 
-ggf = yaspgrid.globalGridFunction("expr_global", expr_global)
+ggf = yaspgrid.globalGridFunction("expr_global", 1, expr_global)
 print("ggf:", ggf, " | ", ggf.name, " with dimRange = ", ggf.dimRange)
 output.append(ggf)
 for element in yaspgrid.elements():
@@ -41,7 +41,7 @@ def expr_local(element, x):
     return [abs(expr_global(geo.position(x))[0] - expr_global(geo.center)[0]),
             expr_global(geo.position(x))[0]]
 
-lgf = yaspgrid.localGridFunction("expr_local", expr_local)
+lgf = yaspgrid.localGridFunction("expr_local", 1, expr_local)
 output.append(lgf)
 print("lgf:", lgf, " | ", lgf.name, " with dimRange = ", lgf.dimRange)
 for element in yaspgrid.elements():
@@ -50,7 +50,7 @@ for element in yaspgrid.elements():
     y = element.geometry.position(x)
     print("lgf( ", y, " ) = ", lf.evaluate(x), " | ", expr_local(element,x))
 
-ggf = yaspgrid.globalGridFunction("MathExpression",
+ggf = yaspgrid.globalGridFunction("MathExpression",1,
       function.MathExpression(["-(x1-0.5)","x0-1./2.","x0","x1*x1","x0*x1","math.sin(x0*x1)","math.exp(-(x0-0.5)**2)"]))
 output.append(ggf)
 print("ggf:", ggf, " | ", ggf.name, " with dimRange = ", ggf.dimRange)
@@ -67,7 +67,7 @@ class ExprLocal:
     geo = element.geometry
     return [abs(self.gf_(geo.position(x))[0] - self.gf_(geo.center)[0]),
             self.gf_(geo.position(x))[0]]
-lgf = yaspgrid.localGridFunction("ExprLocal", ExprLocal(expr_global))
+lgf = yaspgrid.localGridFunction("ExprLocal", 1, ExprLocal(expr_global))
 output.append(lgf)
 print("lgf:", lgf, " | ", lgf.name, " with dimRange = ", lgf.dimRange)
 for element in yaspgrid.elements():

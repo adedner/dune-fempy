@@ -18,6 +18,7 @@ maxLevel     = 10
 dt           = 5.e-4
 endTime      = 0.2
 saveinterval = 0.001
+order        = 1
 
 ## model taken from www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html
 alpha        = 0.015
@@ -58,15 +59,20 @@ a_im = (alpha*alpha*dt / tau * (ufl.inner(ufl.dot(d0, ufl.grad(u[0])), ufl.grad(
 # basic setup
 # -----------
 grid       = dune.fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
-spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=1)
-initial_gf = grid.function("initial", globalExpr=initial)
+spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=order)
+initial_gf = grid.function("initial", order+1, globalExpr=initial)
 solution   = spc.interpolate(initial_gf, name="solution")
 solution_n = spc.interpolate(initial_gf, name="solution_n")
 
 # setup scheme
 # ------------
-model  = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex)).get()
-scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
+model  = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False)).get()
+scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme",
+       {"fem.solver.newton.linabstol": 1e-10,
+        "fem.solver.newton.linreduction": 1e-10,
+        "fem.solver.newton.verbose": 1,
+        "fem.solver.newton.linear.verbose": 1},\
+        )
 
 model.setCoefficient(un, solution_n)
 

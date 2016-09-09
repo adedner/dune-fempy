@@ -34,8 +34,8 @@ dimR = 2
 isConst = False
 coef = { 'test': (dimR, isConst) }
 
-coeffFunc = grid.function("global_velocity", globalExpr=lambda x: [1,2])
-func = grid.function("code", coef, code=code)
+coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
+func = grid.function("code", 3, coef, code=code)
 
 # this is basically just a hack for now
 class YClass( object ):
@@ -52,19 +52,19 @@ coeff = ufl.Coefficient(uflSpace)
 c = ufl.cos(x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
-funcUFL = grid.function("ufl", ufl=expr)
+funcUFL = grid.function("ufl", order=1, ufl=expr)
 funcUFL.setCoefficient(coeff, coeffFunc)
 
 solution = grid.interpolate(func, space="Lagrange", order=2, name="solution")
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(x[1]), math.cos(x[1])**2]
-control = grid.function("expr_global", globalExpr=expr_global)
+control = grid.function("expr_global", order=3, globalExpr=expr_global)
 
 def expr_local(en,x):
     y = en.geometry.position(x)
     return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
-difference = grid.function( "difference", localExpr=expr_local )
+difference = grid.function( "difference", order=3, localExpr=expr_local )
 
 # method 1
 grid.writeVTK("gftest", pointdata=[control,func,funcUFL,solution,difference])

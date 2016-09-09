@@ -3,6 +3,7 @@ from __future__ import print_function
 from mpi4py import MPI
 
 import math
+import ufl
 from ufl import *
 
 from dune.ufl import Space as UFLSpace
@@ -13,13 +14,12 @@ u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
-q = cos(u[0])
-q = variable(q)
-f = q*q
-df = diff(f,q)
+a = inner(grad(u),grad(v)) * dx
+H = grad(grad(u[0]))
+a = a + det(H) * v[0] * dx
+a = a + u[0]*inner(u,v) * dx
 
-a = (inner(grad(u), grad(v)) + df*u[0]*v[0]) * dx
-b = v[0] * dx
+b = v[0] * ds
 
 model = compileUFL(a == b, dirichlet={1:[x[0]], 2:[x[1]], 3:[zero(tuple())]}, tempVars = False)
 

@@ -15,38 +15,40 @@ import dune.fem.function as gf
 
 dune.femmpi.parameter.append("../data/parameter")
 
-dune.femmpi.parameter.append("../data/parameter")
-
-grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
-spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
+grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[8,8]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+# spc  = dune.fem.create.space("DGONB", grid, dimrange=1, polorder=2)
+spc  = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
-imag = Coefficient(uflSpace)
-const = VectorConstant(triangle,2)
-coeff = Coefficient(uflSpace)
-const0 = Constant(triangle)
 x = SpatialCoordinate(uflSpace.cell())
 
-f = const0*const[0]*coeff[0]* (cos(2*math.pi*x[0])*cos(2*math.pi*x[1]) + cos(2*math.pi*x[0])*cos(2*math.pi*x[1]))
+exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
-b = f * v[0] * dx
-model = importModel(grid, a == b).get()
+a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
-model = importModel(grid, a==b).get()
-model.setConstant(const, [10.,-10.])
-model.setConstant(const0, [20.]) # note: still using a list here instead of a double
-gfunc = gf.MathExpression(["1."])
-coeffFunc = grid.globalGridFunction("global_velocity", gfunc)
-model.setCoefficient(coeff, coeffFunc)
+model = importModel(grid, a==0, exact=exact).get()
 
+# scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
 scheme = dune.fem.create.scheme("FemScheme", spc, model,\
-        "scheme", storage="Istl",\
-   parameters={"fem.solver.newton.linabstol": 1e-9,
-    "fem.solver.newton.linreduction": 1e-9,
-    "fem.solver.newton.verbose": 1,
-    "fem.solver.newton.linear.verbose": 1})
+       "scheme",\
+       {"fem.solver.newton.linabstol": 1e-10,
+        "fem.solver.newton.linreduction": 1e-10,
+        "fem.solver.newton.verbose": 1,
+        "fem.solver.newton.linear.verbose": 1},\
+        storage="Istl")
 
-grid.writeVTK("laplace", pointdata=[ scheme.solve() ])
+exact_gf = grid.function("exact", 5, ufl=exact)
+for i in range(2):
+    print("solve on level",i)
+    uh = scheme.solve()
+    def l2error(en,x):
+        val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
+        return [ val[0]*val[0] ];
+    l2error_gf = grid.function( "error", 5, localExpr=l2error )
+    error = math.sqrt( grid.l2Norm(l2error_gf) )
+    print("size:",grid.size(0),"L2-error:",error)
+    grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
+    grid.hierarchicalGrid.globalRefine(2)

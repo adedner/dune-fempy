@@ -12,7 +12,8 @@ set(DGFFILES
 )
 # add_gmshgeo_target(karmanvortexstreet)
 
-configure_file(parameter parameter-navier ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(parameter ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
+configure_file(parameter-navier ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)
 
 foreach(DGFFILE ${DGFFILES})
   configure_file(${DGFFILE} ${CMAKE_CURRENT_BINARY_DIR} COPYONLY)

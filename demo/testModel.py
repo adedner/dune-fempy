@@ -61,7 +61,7 @@ def expr_func(x,r):
     r[0] = -(x[1]-0.5)
     r[1] = (x[0]-0.5)
 #expr3 = gf.FuncExpression(2,expr_func)
-velocityGlobal = grid.function("global_velocity", globalExpr=expr1)
+velocityGlobal = grid.function("global_velocity", 3, globalExpr=expr1)
 m.setCoefficient(velo, velocityGlobal)
 s.solve( None, solution )
 vtk = grid.vtkWriter()
@@ -115,7 +115,7 @@ class LocalExpr:
              rr[1] * (1-y[1])**2]
         return r
 localVelo = LocalExpr(veloh)
-velocityLocal = grid.function( "local_velocity", localExpr=localVelo )
+velocityLocal = grid.function( "local_velocity", 3, localExpr=localVelo )
 m.setCoefficient(velo, velocityLocal)
 s.solve( None, solution )
 vtk = grid.vtkWriter()
@@ -133,7 +133,7 @@ class LocalExprA:
         y = en.geometry.position(x)
         jac = self.df.localFunction(en).jacobian(x)
         return [ -jac[0][1],jac[0][0] ]
-velocityLocalA = grid.function( "nabla_x_u", localExpr=LocalExprA(veloh ))
+velocityLocalA = grid.function( "nabla_x_u", 3, localExpr=LocalExprA(veloh ))
 s = scheme.create( "FemScheme", solution, m, "transport" ) # here solution is used if solve method does not specify target
 m.setCoefficient(velo, velocityLocalA)
 s.solve()

@@ -5,7 +5,6 @@ from mpi4py import MPI
 import math
 from ufl import *
 
-import dune.models.elliptic
 import dune.ufl
 import dune.fem
 
@@ -35,7 +34,7 @@ u_n = Coefficient(uflSpace)
 a = (inner(u - u_n, v) + deltaT * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
 # now generate the model code and compile
-model = dune.models.elliptic.create(grid, a == 0, {u_n:old_solution})
+model = dune.fem.create.ellipticModel(grid, a == 0, {u_n:old_solution})
 
 # create the solver using a standard fem scheme
 scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")

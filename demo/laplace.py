@@ -26,23 +26,17 @@ x = SpatialCoordinate(uflSpace.cell())
 
 exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 
-f = x[0]-x[0] # 8.*pi*pi*exact[0] + exact[0]
-
-H = grad(grad(u[0]))
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
-# a = 20./(u[0]*u[0]+1.) * v[0] * dx
-a = a + inner(grad(u),grad(u))*v[0]*dx
-# a = a + H[0,0]*v[0]*dx
-b = f * v[0] * dx
+a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
-model = importModel(grid, a==b, exact=exact).get()
+model = importModel(grid, a==0, exact=exact).get()
 
 scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
        "scheme",\
        {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
         "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 0},\
+        "fem.solver.newton.linear.verbose": 1},\
         storage="Istl")
 
 exact_gf = grid.function("exact", 5, ufl=exact)

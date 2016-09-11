@@ -31,17 +31,25 @@ uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 u_n = dune.ufl.GridCoefficient(solution)
-a = (inner(u - u_n, v) + deltaT * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
+tau = Constant(triangle)
+a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
 # now generate the model code and compile
-model = dune.fem.create.ellipticModel(grid, a == 0, coefficients={u_n:old_solution})
+model = dune.fem.create.ellipticModel(grid, a == 0)(coefficients={u_n:old_solution})
 
+# setup structure for olver parameters
+solverParameter={"fem.solver.newton.linabstol": 1e-10,
+                 "fem.solver.newton.linreduction": 1e-10,
+                 "fem.solver.newton.verbose": 1,
+                 "fem.solver.newton.linear.verbose": 1}
 # create the solver using a standard fem scheme
-scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")
+scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme") # (solverParameter)
 
 # now loop through time and output the solution after each time step
 steps = int(1 / deltaT)
 for n in range(1,steps+1):
+    model.setConstant(tau,[deltaT])
     old_solution.assign(solution)
     scheme.solve(target=solution)
     grid.writeVTK("heat", pointdata=[solution], number=n)
+print("finishing off....")

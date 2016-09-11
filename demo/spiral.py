@@ -56,7 +56,7 @@ modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
 # -----------------------
 sourceCode = """\
 RangeType un;
-coefficient< 0 >().evaluate( x, un );
+coefficient< UNCOUNT >().evaluate( x, un );
 double uth = (un[ 1 ] + spiral_b) / spiral_a;
 if( un[ 0 ] <= uth )
   result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
@@ -65,7 +65,7 @@ else
 """
 linSourceCode = """\
 RangeType un;
-coefficient< 0 >().evaluate( x, un );
+coefficient< UNCOUNT >().evaluate( x, un );
 double uth = (un[ 1 ] + spiral_b) / spiral_a;
 if( un[ 0 ] <= uth )
   result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
@@ -73,11 +73,13 @@ else
   result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (-u[ 0 ]) * (un[ 0 ] - uth);
 """
 repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
-        ('spiral_eps', str(spiral_eps)), ('dt',str(dt))
+        ('spiral_eps', str(spiral_eps)), ('dt',str(dt)),\
+        ('UNCOUNT', str(un.number))
 
 modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
 modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))
 
+print(modelCode.source)
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
@@ -89,7 +91,7 @@ forcing     = spc.interpolate( [0,0,0], name="forcing" )
 model = dune.models.elliptic.importModel(grid, modelCode).get()
 model.setCoefficient(un, solution_n)
 
-scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
+scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")()
 
 
 # time loop

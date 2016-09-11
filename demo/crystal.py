@@ -66,7 +66,7 @@ solution_n = spc.interpolate(initial_gf, name="solution_n")
 
 # setup scheme
 # ------------
-model  = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False)).get()
+model  = dune.fem.create.ellipticModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False))()
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme",
        {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,

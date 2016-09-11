@@ -6,7 +6,6 @@ from mpi4py import MPI
 import math
 from ufl import *
 
-from dune.models.elliptic import importModel
 import dune.ufl
 import dune.fem
 import dune.fem.function as gf
@@ -29,7 +28,7 @@ exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
-model = importModel(grid, a==0, exact=exact).get()
+model = dune.fem.create.ellipticModel(grid, a==0, exact=exact)()
 
 # scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
 scheme = dune.fem.create.scheme("FemScheme", spc, model,\

@@ -79,7 +79,7 @@ x = SpatialCoordinate(uflSpace.cell())
 bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
 
-model = importModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False).get()
+model = fem.create.ellipticModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False)()
 model.setCoefficient(bnd_u, exact_gf)
 
 # set up the scheme

@@ -11,7 +11,6 @@ from mpi4py import MPI
 
 from ufl import *
 
-import dune.models.elliptic
 import dune.ufl
 import dune.common as common
 import dune.fem as fem
@@ -40,9 +39,8 @@ a = ( (dot(velo,grad(u[0]))+0.01*u[0])*v[0] + diff[0]*inner(grad(u[0]),grad(v[0]
 L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*dx
 ########
 start_time = timeit.default_timer()
-# model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
-m = dune.models.elliptic.importModel(grid, a == L).get()
+m = fem.ellipticModel(grid, a == L)()
 
 ############################################################################
 # construct a largrange scheme for the transport problem
@@ -88,7 +86,7 @@ c1 = cos(2*pi*x[1])
 L = ( c0*c1*v[0] + c0*c1*v[1] )*dx
 
 start_time = timeit.default_timer()
-vecm = dune.models.elliptic.importModel(grid, a == L).get()
+vecm = fem.ellipticModel(grid, a == L)()
 vecsp = space.create( "Lagrange", grid, dimrange=vecm.dimRange, polorder=2 )
 vecs = scheme.create( "FemScheme", vecsp, vecm, "computed_velocity" )
 # the following is equivalent to:

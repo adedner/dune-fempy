@@ -6,7 +6,6 @@ import math
 import ufl
 
 import dune.ufl
-from dune.models.elliptic import compileUFL, importModel
 
 from dune.fem import create, leafGrid
 
@@ -41,8 +40,8 @@ u_n = ufl.Coefficient(uflSpace)
 
 a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
 a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
-lhsModel = dune.models.elliptic.importModel(surface, a_im == 0).get()
-rhsModel = dune.models.elliptic.importModel(surface, a_ex == 0).get()
+lhsModel = dune.fem.create.ellipticModel(surface, a_im == 0)()
+rhsModel = dune.fem.create.ellipticModel(surface, a_ex == 0)()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------

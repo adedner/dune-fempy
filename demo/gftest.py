@@ -36,7 +36,6 @@ code = { 'eval': func1, 'jac': func2 }
 dimR = 2
 coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
 func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"const": dimR} )
-exit(1)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
@@ -46,7 +45,7 @@ c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
 coeffFunc = grid.function("global_velocity", order=0, globalExpr=lambda x: [1,2])
-funcUFL = grid.function("ufl", order=1, ufl=expr, coefficients={coeff:coeffFunc})
+funcUFL = grid.function("ufl", order=1, ufl=expr, coefficients={coeff: coeffFunc})
 funcUFL.setConstant(const,[factor])
 
 solution = grid.interpolate(funcUFL, space="Lagrange", order=2, name="solution")

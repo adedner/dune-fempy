@@ -3,11 +3,11 @@ import math
 from mpi4py import MPI
 
 import dune.common as common
-import dune.fem as fem
-import dune.fem.gridpart as gridpart
+from dune.fem import leafGrid
+from dune.fem.gridpart.geometry import create as geometryGridPart
 
 def testGridPart(gridtype):
-    grid2d = fem.leafGrid("../data/unitcube-2d.dgf", gridtype, dimgrid=2)
+    grid2d = leafGrid("../data/unitcube-2d.dgf", gridtype, dimgrid=2)
 
     t = 0
     def expr_global(x):
@@ -16,7 +16,8 @@ def testGridPart(gridtype):
     gf = grid2d.function("expr_global", order=1, globalExpr=expr_global)
     df = grid2d.interpolate(gf, space="Lagrange", name="test")
 
-    geogp = gridpart.create("Geometry", df )
+    #geogp = gridpart.create("Geometry", df )
+    geogp = geometryGridPart(df)
     vtk = geogp.vtkWriter()
     gfnew = geogp.function("global", order=1, globalExpr=expr_global)
     gfnew.addToVTKWriter(vtk, common.DataType.PointData)

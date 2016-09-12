@@ -22,9 +22,9 @@ double cx = cos(xGlobal[0]);
 double cy = cos(factor*xGlobal[1]);
 double sx = sin(xGlobal[0]);
 double sy = sin(factor*xGlobal[1]);
-value[ 0 ][ 0 ] = 2*cx*sx;
+value[ 0 ][ 0 ] = 2*cx*sx*@gf:test[0];
 value[ 0 ][ 1 ] = 0;
-value[ 1 ][ 0 ] = cx*cy;
+value[ 1 ][ 0 ] = cx*cy*@gf:test[1];
 value[ 1 ][ 1 ] = -factor*sx*sy;
 value[ 2 ][ 0 ] = 0;
 value[ 2 ][ 1 ] = -2.*factor*cy*sy;
@@ -35,7 +35,7 @@ code = { 'eval': func1, 'jac': func2 }
 
 dimR = 2
 coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
-func = grid.function("code", 3, code=code, coefficients={"test":coeffFunc}, constants={"const": dimR} )
+func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"const": dimR} )
 exit(1)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")

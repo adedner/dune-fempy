@@ -79,8 +79,6 @@ repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
 modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
 modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))
 
-print(modelCode.source)
-
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
@@ -88,11 +86,9 @@ solution    = spc.interpolate( initial, name="solution" )
 solution_n  = spc.interpolate( initial, name="solution_n" )
 forcing     = spc.interpolate( [0,0,0], name="forcing" )
 
-model = dune.models.elliptic.importModel(grid, modelCode).get()
-model.setCoefficient(un, solution_n)
+model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={un:solution_n} )
 
-scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")()
-
+scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
 
 # time loop
 # ---------

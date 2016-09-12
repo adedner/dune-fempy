@@ -66,7 +66,7 @@ solution_n = spc.interpolate(initial_gf, name="solution_n")
 
 # setup scheme
 # ------------
-model  = dune.fem.create.ellipticModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False))()
+model  = dune.fem.create.ellipticModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False))( coefficients={un:solution_n} )
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme",
        {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
@@ -74,7 +74,6 @@ scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme",
         "fem.solver.newton.linear.verbose": 1},\
         )
 
-model.setCoefficient(un, solution_n)
 
 # marking strategy
 # ----------------

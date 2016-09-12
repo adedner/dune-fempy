@@ -39,7 +39,6 @@ a = ( (dot(velo,grad(u[0]))+0.01*u[0])*v[0] + diff[0]*inner(grad(u[0]),grad(v[0]
 L = 10./(1.+(x[0]*x[0]+x[1]*x[1])**4 )  *  v[0]*dx
 ########
 start_time = timeit.default_timer()
-# model.setCoefficient("diffusion",[1+0.1*model.x0*model.x0])
 print("Building TransportModel took ", timeit.default_timer() - start_time, "s")
 m = fem.ellipticModel(grid, a == L)()
 

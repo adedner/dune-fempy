@@ -12,30 +12,33 @@ grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimp
 
 func1 = """
 double s = sin(xGlobal[0]);
-double c = cos(factor*xGlobal[1]);
+double c = cos(@const:fac*xGlobal[1]);
 value[ 0 ] = s*s;
 value[ 1 ] = s*c;
 value[ 2 ] = c*c;
 """
 func2 = """
 double cx = cos(xGlobal[0]);
-double cy = cos(factor*xGlobal[1]);
+double cy = cos(@const:fac*xGlobal[1]);
 double sx = sin(xGlobal[0]);
-double sy = sin(factor*xGlobal[1]);
-value[ 0 ][ 0 ] = 2*cx*sx*@gf:test[0];
+double sy = sin(@const:fac*xGlobal[1]);
+value[ 0 ][ 0 ] = cx*sx*@gf:test[1];
 value[ 0 ][ 1 ] = 0;
-value[ 1 ][ 0 ] = cx*cy*@gf:test[1];
-value[ 1 ][ 1 ] = -factor*sx*sy;
+value[ 1 ][ 0 ] = cx*cy*@gf:test[0];
+value[ 1 ][ 1 ] = -@const:fac*sx*sy;
 value[ 2 ][ 0 ] = 0;
-value[ 2 ][ 1 ] = -2.*factor*cy*sy;
+value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 """
-func1 = func1.replace("factor",str(factor)) # use some mechanism setConstant later...
-func2 = func2.replace("factor",str(factor)) # use some mechanism setConstant later...
 code = { 'eval': func1, 'jac': func2 }
 
 dimR = 2
 coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
-func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"const": dimR} )
+func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
+class Dummy(object):
+    def __init__(self, number):
+        self.number = number
+func.setConstant(Dummy(0), [factor])
+#exit(1)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
@@ -46,7 +49,7 @@ s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
 coeffFunc = grid.function("global_velocity", order=0, globalExpr=lambda x: [1,2])
 funcUFL = grid.function("ufl", order=1, ufl=expr, coefficients={coeff: coeffFunc})
-funcUFL.setConstant(const,[factor])
+funcUFL.setConstant(const, [factor])
 
 solution = grid.interpolate(funcUFL, space="Lagrange", order=2, name="solution")
 
@@ -56,7 +59,7 @@ control = grid.function("expr_global", order=3, globalExpr=expr_global)
 
 def expr_local(en,x):
     y = en.geometry.position(x)
-    return funcUFL.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
+    return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
 difference = grid.function( "difference", order=3, localExpr=expr_local )
 
 # method 1

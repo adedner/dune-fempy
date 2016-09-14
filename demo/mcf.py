@@ -8,6 +8,7 @@ import ufl
 import dune.ufl
 
 from dune.fem import create, leafGrid
+from dume.fem.gridpart.geometry import create as geometryGridPart
 
 order=3
 
@@ -23,7 +24,7 @@ positions = grid.interpolate(\
 #               lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
             space="Lagrange", name="positions", polorder=order)
 
-surface   = create.gridpart("Geometry", positions)
+surface   = geometryGridPart(positions)
 # space for discrete solution on Gamma(t)
 spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, polorder=order)
 # final time and time step

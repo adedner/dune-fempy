@@ -127,8 +127,8 @@ class phase_base(object):
         # -----------
         self.grid       = dune.fem.leafGrid(self.gridname, "ALUSimplexGrid", dimgrid=self.dimDomain, refinement="conforming")
         self.spc        = dune.fem.create.space("Lagrange", self.grid, dimrange=self.dimRange, polorder=1)
-        self.initial_gf = self.grid.globalGridFunction("initial", self.initial)
-        self.noise_gf   = self.grid.globalGridFunction("noise", self.globalNoise)
+        self.initial_gf = self.grid.function("initial", order=3, globalExpr=self.initial)
+        self.noise_gf   = self.grid.function("noise", order=3, globalExpr=self.globalNoise)
         self.solution   = self.spc.interpolate(self.initial_gf, name="solution")
         self.solution_n = self.spc.interpolate(self.initial_gf, name="solution_n")
         self.noise_h    = self.spc.interpolate(self.noise_gf, name="noise_n")

@@ -87,12 +87,13 @@ class phase_base(object):
 
 
     def mark(self,element):
+        marker = dune.common.Marker
         solutionLocal = self.solution.localFunction(element)
         grad = solutionLocal.jacobian(element.geometry.domain.center)
         if grad[0].infinity_norm > 1.0:
-          return self.hgrid.marker.refine if element.level < self.maxLevel else self.hgrid.marker.keep
+          return marker.refine if element.level < self.maxLevel else marker.keep
         else:
-          return self.hgrid.marker.coarsen
+          return marker.coarsen
 
 
     # initial grid refinement
@@ -136,9 +137,8 @@ class phase_base(object):
         [a_im, a_ex] = self.setupPhase()
 
         # setup scheme
-        self.model  = dune.models.elliptic.importModel(self.grid, dune.models.elliptic.compileUFL(a_im == a_ex)).get()
+        self.model  = dune.fem.create.ellipticModel(self.grid, a_im == a_ex)(coefficients={self.un:self.solution_n})
         self.scheme = dune.fem.create.scheme("FemScheme", self.solution, self.model, "scheme")
-        self.model.setCoefficient(self.un, self.solution_n)
 
         # time loop setup
         self.count    = 0

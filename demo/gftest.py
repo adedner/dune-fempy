@@ -1,6 +1,7 @@
 from mpi4py import MPI
 
 import math
+import dune.grid
 import dune.fem
 import ufl
 import dune.ufl
@@ -8,7 +9,7 @@ import dune.fem.function as gf
 
 factor = 10.
 
-grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 
 func1 = """
 double s = sin(xGlobal[0]);

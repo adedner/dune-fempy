@@ -7,10 +7,13 @@ from ufl import *
 
 import dune.models.elliptic
 import dune.ufl
+import dune.grid
 import dune.fem
+import dune.fem.space
+import dune.fem.scheme
 
-grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
-spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
+grid = dune.grid.create("ALUConform", dune.fem.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+spc = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
@@ -28,5 +31,5 @@ b = rhs * dx + 10*rhs * ds
 
 Model = dune.fem.create.ellipticModel(grid,a==b)
 
-scheme = dune.fem.create.scheme("FemScheme", spc, Model(), "scheme")
+scheme = dune.fem.scheme.create("h1", spc, Model(), "scheme")
 grid.writeVTK("p-laplace", pointdata=[scheme.solve()])

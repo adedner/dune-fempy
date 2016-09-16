@@ -6,16 +6,19 @@ import math
 from ufl import *
 
 import dune.ufl
+import dune.grid
 import dune.fem
+import dune.fem.space
+import dune.fem.scheme
 
 # Crank Nicholson
 theta = 0.5
 deltaT = 0.01
 
 # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
-grid = dune.fem.leafGrid(dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid = dune.grid.create("ALUConform", dune.fem.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 # set up a lagrange scalar space with polynomial order 2 over that grid
-spc = dune.fem.create.space("Lagrange", grid, dimrange=1, polorder=2)
+spc = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
 
 # set up initial conditions
 initial = lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ]
@@ -43,7 +46,7 @@ solverParameter={"fem.solver.newton.linabstol": 1e-10,
                  "fem.solver.newton.verbose": 1,
                  "fem.solver.newton.linear.verbose": 1}
 # create the solver using a standard fem scheme
-scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme") # (solverParameter)
+scheme = dune.fem.scheme.create("h1", spc, model, "scheme", parameters=solverParameter)
 
 # now loop through time and output the solution after each time step
 steps = int(1 / deltaT)

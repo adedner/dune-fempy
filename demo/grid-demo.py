@@ -6,11 +6,11 @@ from mpi4py import MPI
 import math
 
 # dune.fem modules
-import dune.fem.grid as grid
+import dune.grid as grid
 import dune.fem.function as function
 
 # just get the grid (only for testing - not used)
-onedgrid = grid.leafGrid("../data/unitcube-1d.dgf", "OneDGrid")
+onedgrid = grid.create("OneD", "../data/unitcube-1d.dgf")
 
 for element in onedgrid.elements():
     print( "Center ", element.geometry.center )
@@ -18,10 +18,7 @@ for element in onedgrid.elements():
         print( "Corner ", corner )
 
 # get the full grid module and then the grid (module needed for grid # functions and output object)
-m_yaspgrid = grid.get("YaspGrid", dimgrid=2)
-yaspgrid = grid.leafGrid("../data/unitcube-2d.dgf", m_yaspgrid)
-# yaspgrid = m_yaspgrid.LeafGrid(m_yaspgrid.readDGF("../data/unitcube-2d.dgf")) # , m_yaspgrid)
-# yaspgrid.hierarchicalGrid.globalRefine(3)
+yaspgrid = grid.create("Yasp", "../data/unitcube-2d.dgf", dimgrid=2)
 output = []
 
 def expr_global(x):

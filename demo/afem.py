@@ -5,7 +5,11 @@ from mpi4py import MPI
 from ufl import *
 from dune.ufl import Space as UFLSpace
 from dune.models.elliptic import compileUFL, importModel
+
+import dune.grid as grid
 import dune.fem as fem
+import dune.fem.space as space
+import dune.fem.scheme as scheme
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 360.
@@ -64,12 +68,12 @@ PROJECTION
   segment  4 5  p
 #
 """
-grid = fem.leafGrid(fem.string2dgf(dgf), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+grid = grid.create("ALUSimplex", fem.string2dgf(dgf), dimgrid=2, refinement="conforming")
 grid.globalRefine(2)
 exact_gf = grid.function("exact", order+1, globalExpr=exact)
 
 # use a piecewise quadratic Lagrange space
-spc  = fem.create.space( "Lagrange", grid, dimrange=1, polorder=order)
+spc  = space.create( "Lagrange", grid, dimrange=1, order=order)
 
 # the model is -laplace u = 0 with Dirichlet boundary conditions
 uflSpace = UFLSpace(2, 1)
@@ -82,7 +86,7 @@ a = inner(grad(u), grad(v)) * dx
 model = fem.create.ellipticModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False)( coefficients={bnd_u: exact_gf} )
 
 # set up the scheme
-laplace = fem.create.scheme("FemScheme", spc, model, "afem")
+laplace = scheme.create("h1", spc, model, "afem")
 uh = spc.interpolate(lambda x: [0])
 laplace.solve(target=uh)
 

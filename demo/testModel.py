@@ -13,12 +13,13 @@ from ufl import *
 
 import dune.ufl
 import dune.common as common
+import dune.grid as grid
 import dune.fem as fem
 import dune.fem.space as space
 import dune.fem.scheme as scheme
 import dune.fem.function as gf
 
-grid = fem.leafGrid("../data/unitcube-2d.dgf", "YaspGrid", dimgrid=2)
+grid = grid.create("Yasp", "../data/unitcube-2d.dgf", dimgrid=2)
 grid.hierarchicalGrid.globalRefine(3)
 
 ############################################################################
@@ -45,9 +46,9 @@ m = fem.ellipticModel(grid, a == L)()
 ############################################################################
 # construct a largrange scheme for the transport problem
 ############################################################################
-sp = space.create( "Lagrange", grid, dimrange=m.dimRange, polorder=1 )
+sp = space.create( "Lagrange", grid, dimrange=m.dimRange, order=1 )
 solution = sp.interpolate([0,]*m.dimRange) # , name="solution")
-s = scheme.create( "FemScheme", sp, m, "transport" )
+s = scheme.create( "h1", sp, m, "transport" )
 
 ############################################################################
 # Now use different way to solve this problem with given velocity field
@@ -68,7 +69,7 @@ velocityGlobal.addToVTKWriter(vtk, common.DataType.PointVector)
 vtk.write("testmodel_global");
 #################
 print("use the interpolation of the global function")
-u = grid.interpolate(velocityGlobal, space="Lagrange", name="interpolated_velocity", polorder=1)
+u = grid.interpolate(velocityGlobal, space="Lagrange", name="interpolated_velocity", order=1)
 m.setCoefficient(velo, u)
 s.solve( target = solution )
 vtk = grid.vtkWriter()
@@ -87,8 +88,8 @@ L = ( c0*c1*v[0] + c0*c1*v[1] )*dx
 
 start_time = timeit.default_timer()
 vecm = fem.ellipticModel(grid, a == L)()
-vecsp = space.create( "Lagrange", grid, dimrange=vecm.dimRange, polorder=2 )
-vecs = scheme.create( "FemScheme", vecsp, vecm, "computed_velocity" )
+vecsp = space.create( "Lagrange", grid, dimrange=vecm.dimRange, order=2 )
+vecs = scheme.create( "h1", vecsp, vecm, "computed_velocity" )
 # the following is equivalent to:
 #   veloh = vecsp.interpolate([0,]*vecm.dimRange, name="velocity")
 #   vecs.solve(target = veloh)
@@ -132,7 +133,7 @@ class LocalExprA:
         jac = self.df.localFunction(en).jacobian(x)
         return [ -jac[0][1],jac[0][0] ]
 velocityLocalA = grid.function( "nabla_x_u", 3, localExpr=LocalExprA(veloh ))
-s = scheme.create( "FemScheme", solution, m, "transport" ) # here solution is used if solve method does not specify target
+s = scheme.create( "h1", solution, m, "transport" ) # here solution is used if solve method does not specify target
 m.setCoefficient(velo, velocityLocalA)
 s.solve()
 vtk = grid.vtkWriter()

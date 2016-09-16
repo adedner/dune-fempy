@@ -48,14 +48,15 @@ def main(argv):
    model = ModelDescription.model
 
    if make:
-       import dune.fem.grid as grid
-       grid2d = grid.leafGrid(dgf, "YaspGrid", dimgrid=2)
+       import dune.grid as grid
+       grid2d = dune.grid.create("Yasp", dgf, dimgrid=2)
        model.make(grid2d)
-       grid1d = grid.get("OneDGrid")
-       model.make(grid1d)
+       # grid1d = dune.grid.create("OneD", dgf, dimgrid=2)
+       # grid1d = grid.get("OneDGrid")
+       # model.make(grid1d)
    elif test:
+       import dune.grid as grid
        import dune.fem as fem
-       import dune.fem.grid as grid
        import dune.fem.scheme as scheme
        import dune.fem.space as space
        # set up a 2d grid
@@ -64,9 +65,9 @@ def main(argv):
        m = Model.get()
        if hasattr(ModelDescription,"DGF"):
           print("using: ",ModelDescription.DGF)
-          g = grid.leafGrid(fem.string2dgf(ModelDescription.DGF), grid2d)
+          g = dune.grid.create("ALUSimplex", fem.string2dgf(ModelDescription.DGF), dimgrid=2)
        else:
-          g = grid.leafGrid(dgf, grid2d)
+          g = dune.grid.create("ALUSimplex", dgf, dimgrid=2)
        print('get space')
        dimR = m.dimRange
        sp = space.create( "Lagrange", g, dimrange=dimR )
@@ -109,13 +110,13 @@ def main(argv):
        g = "not a grid anymore" # let's check memory management a second time
 
        # can we do the whole thing twice?
-       g = grid.leafGrid(dgf, grid2d)
+       g = dune.grid.create("ALUSimplex", dgf, dimgrid=2)
        m = Model.get()
        s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
        print("second scheme: ", s.error(s.solve()))
 
        # can we do the whole thing again?
-       # sp = space.create("Lagrange", g, dimrange=dimR, polorder=1 )
+       # sp = space.create("Lagrange", g, dimrange=dimR, order=1 )
        sp = space.create( "Lagrange", g, dimrange=dimR )
        s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
        # these are not needed anymore

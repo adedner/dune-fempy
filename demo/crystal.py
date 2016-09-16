@@ -8,7 +8,10 @@ import ufl
 import dune.models.elliptic
 import dune.ufl
 import dune.common
+import dune.grid
 import dune.fem
+import dune.fem.space
+import dune.fem.scheme
 
 # problem parameters
 # ------------------
@@ -58,8 +61,8 @@ a_im = (alpha*alpha*dt / tau * (ufl.inner(ufl.dot(d0, ufl.grad(u[0])), ufl.grad(
 
 # basic setup
 # -----------
-grid       = dune.fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
-spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=order)
+grid       = dune.grid.create("ALUConform", "../data/crystal-2d.dgf", dimgrid=dimDomain)
+spc        = dune.fem.space.create("Lagrange", grid, dimrange=dimRange, order=order)
 initial_gf = grid.function("initial", order+1, globalExpr=initial)
 solution   = spc.interpolate(initial_gf, name="solution")
 solution_n = spc.interpolate(initial_gf, name="solution_n")
@@ -67,11 +70,11 @@ solution_n = spc.interpolate(initial_gf, name="solution_n")
 # setup scheme
 # ------------
 model  = dune.fem.create.ellipticModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False))( coefficients={un:solution_n} )
-scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme",
-       {"fem.solver.newton.linabstol": 1e-10,
+scheme = dune.fem.scheme.create("h1", solution, model, "scheme",
+        parameters={"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
         "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 1},\
+        "fem.solver.newton.linear.verbose": 1}\
         )
 
 

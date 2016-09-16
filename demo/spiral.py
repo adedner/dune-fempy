@@ -8,7 +8,10 @@ import ufl
 import dune.ufl
 import dune.models.elliptic
 
+import dune.grid
 import dune.fem
+import dune.fem.space
+import dune.fem.scheme
 
 from functools import reduce
 
@@ -35,8 +38,8 @@ def initial(x):
 # Basic setup
 # -----------
 # set up reference domain
-grid = dune.fem.leafGrid("../data/spiral-2d.dgf", "YaspGrid", dimgrid=2, dimworld=2)
-spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, polorder=1 )
+grid = dune.grid.create("Yasp", "../data/spiral-2d.dgf", dimgrid=2, dimworld=2)
+spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, order=1 )
 
 # set up left and right hand side models
 # --------------------------------------
@@ -88,7 +91,7 @@ forcing     = spc.interpolate( [0,0,0], name="forcing" )
 
 model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={un:solution_n} )
 
-scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
+scheme = dune.fem.scheme.create("h1", solution, model, "scheme")
 
 # time loop
 # ---------

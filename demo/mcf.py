@@ -7,26 +7,28 @@ import ufl
 
 import dune.ufl
 
-from dune.fem import create, leafGrid
-from dume.fem.gridpart.geometry import create as geometryGridPart
+import dune.grid as grid
+import dune.fem.gridpart as gridpart
+import dune.fem.space as space
+import dune.fem.scheme as scheme
 
 order=3
 
 # Basic setup
 # -----------
 # set up reference domain
-grid = leafGrid("../data/sphere.dgf", "ALUSimplexGrid", dimgrid=2, dimworld=3)
+grid = grid.create("ALUSimplex", "../data/sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
 # discrete function for Gamma(t) and setup surface grid
 positions = grid.interpolate(\
               lambda x: x*2.,
 #               lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
-            space="Lagrange", name="positions", polorder=order)
+            space="Lagrange", name="positions", order=order)
 
-surface   = geometryGridPart(positions)
+surface   = gridpart.create("Geometry",positions)
 # space for discrete solution on Gamma(t)
-spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, polorder=order)
+spc       = space.create("Lagrange", surface, dimrange=surface.dimWorld, order=order)
 # final time and time step
 endTime   = 0.25
 dt        = 0.0025
@@ -50,8 +52,8 @@ rhsModel = dune.fem.create.ellipticModel(surface, a_ex == 0)()
 solution  = spc.interpolate(lambda x: x, name="solution")
 forcing   = spc.interpolate([0,]*surface.dimWorld, name="solution")
 # left hand side scheme
-solver    = create.scheme("FemScheme", solution, lhsModel, "lhs")
-rhs       = create.scheme("FemScheme", solution, rhsModel, "rhs")
+solver    = scheme.create("h1", solution, lhsModel, "lhs")
+rhs       = scheme.create("h1", solution, rhsModel, "rhs")
 
 # time loop
 # ---------

@@ -3,8 +3,8 @@ import math
 from mpi4py import MPI
 
 import dune.common as common
-from dune.fem import leafGrid
-from dune.fem.gridpart import create as gridpart
+import dune.grid
+from dune.fem.gridpart import create as gridPart
 #from dune.fem.gridpart.geometry import create as geometryGridPart
 #from dune.fem.gridpart.filtered import create as filteredGridPart
 
@@ -16,7 +16,8 @@ def testGeometryGridPart(grid, prefix):
     gf = grid.function("expr_global", order=1, globalExpr=expr_global)
     df = grid.interpolate(gf, space="Lagrange", name="test")
 
-    geogp = gridpart("Geometry", df)
+    geogp = gridPart("geometry", df)
+    #geogp = geometryGridPart(df)
     vtk = geogp.vtkWriter()
     gfnew = geogp.function("global", order=1, globalExpr=expr_global)
     gfnew.addToVTKWriter(vtk, common.DataType.PointData)
@@ -30,12 +31,13 @@ def testGeometryGridPart(grid, prefix):
         vtk.write(prefix + str(count));
 
 def testGridPart(gridtype):
-    grid = leafGrid("../data/unitcube-2d.dgf", gridtype, dimgrid=2)
+    grid = dune.grid.create(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
     testGeometryGridPart(grid, "gridpart_demo")
 
-    subGrid = gridpart("Filtered", grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
-    testGeometryGridPart(subGrid, "gridpart_demo_sub")
+    #subGrid = filteredGridPart(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
+    # subGrid = gridPart("filtered", grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
+    # testGeometryGridPart(subGrid, "gridpart_demo_sub")
 
 print("YASPGRID B")
-testGridPart("YaspGrid")
+testGridPart("Yasp")
 print("END")

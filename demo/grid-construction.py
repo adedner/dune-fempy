@@ -1,8 +1,8 @@
 import numpy
 from mpi4py import MPI
 import dune.common
+import dune.grid
 import dune.fem
-import dune.fem.grid
 
 from scipy.spatial import Delaunay
 # import matplotlib.pyplot as plt
@@ -24,23 +24,20 @@ triangles = Delaunay(points).simplices
 # plt.plot(points[:,0], points[:,1], 'o')
 # plt.show()
 
-m_alugrid = dune.fem.grid.get("ALUSimplexGrid", dimgrid=2, refinement="conforming")
-
-print("GridFactory 1")
-alugrid = m_alugrid.LeafGrid(m_alugrid.reader( {'vertex':points, 'simplex':triangles} ))
+alugrid = dune.grid.create("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction000")
 
 print("GridFactory 2")
-alugrid = dune.fem.grid.leafGrid({'vertex':points, 'simplex':triangles}, "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+alugrid = dune.grid.create("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
 
 print("from file 1")
-alugrid = dune.fem.grid.leafGrid("../data/unitcube-2d.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+alugrid = dune.grid.create("ALUConform", "../data/unitcube-2d.dgf", dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction001")
 
 print("from file 2")
-alugrid = dune.fem.leafGrid( (dune.fem.reader.dgf,"../data/unitcube-2d.dgf"), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+alugrid = dune.grid.create("ALUConform", (dune.fem.reader.dgf,"../data/unitcube-2d.dgf"), dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction002")
 
@@ -52,9 +49,9 @@ INTERVAL
 16 16
 #
 """
-alugrid = dune.fem.leafGrid( dune.fem.string2dgf(dgf), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+alugrid = dune.grid.create("ALUConform", dune.fem.string2dgf(dgf), dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction003")
 
 print("cartsesian domain")
-alugrid = dune.fem.leafGrid( dune.fem.cartesianDomain([0,0],[1,1],[16,16]), "ALUSimplexGrid", dimgrid=2, refinement="conforming")
+alugrid = dune.grid.create("ALUConform", dune.fem.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)

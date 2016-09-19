@@ -4,7 +4,6 @@ import math
 import dune.fem
 import ufl
 import dune.ufl
-import dune.fem.function as gf
 
 factor = 10.
 
@@ -31,7 +30,6 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 """
 code = { 'eval': func1, 'jac': func2 }
 
-dimR = 2
 coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
 func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
 func.setConstant("fac", [factor])

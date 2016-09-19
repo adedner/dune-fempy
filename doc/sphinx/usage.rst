@@ -23,7 +23,7 @@ In Dune-Fempy the **grid** (somewhat self-explanatorily) refers to the grid used
 * Mesh (string): Either a dgf file or a description of the mesh (we saw the latter in the tutorial).
 * Identifier (string): The grid type that Dune uses.
 
-To explain further, the identifier looks into the grid database, which we will talk more about in :ref:`this section <database>`. For now, we will just say that the list of possible grids is located in python/database/grid, and that optional arguments may or may not be needed depending on what identifier we use. For instance a 1D grid could simply be defined using a dgf file as
+To explain further, the identifier looks into the grid database, which we will talk more about in :ref:`this section <database>`. For now, we will just say that the list of possible grids is located in python/database/grid, and that optional arguments may or may not be needed depending on what identifier we use. For instance a 1D grid on a unit cube could simply be defined using a dgf file as
 
 .. code-block:: python
 
@@ -54,7 +54,28 @@ It is also possible to do adaptively refine the mesh (see e.g. afem.py in /demo)
 Setting up functions on the grid
 ################################
 
-todo: explanation of gridfunctions (versions to consider: code, ufl, globalExpr, localExpr)
+Once we have set up the grid, it is possible to define **grid functions** on it using the method `function`. There are four different kinds of grid functions one can set up this way.
+
+1. `globalExpr`: A function using global coordinates defined on the python side.
+2. `localExpr`: A function using local coordinates defined on the python side.
+3. `ufl`: A function defined using a UFL expression.
+4. `code`: A function defined using C++ code that is inputted.
+
+Let us first look at an example of the method itself, `function`. It always needs the following
+
+* Name (string): The internal name python uses for the function.
+
+It also takes the following keyword arguments
+
+* order=(int): The order of the approximation (optional).
+* type=(object): The type of function used (from the above list), followed by the object used to define it.
+
+.. code-block:: python
+
+    func = grid.function("global_velocity", order=0, globalExpr=somefunction)
+
+
+
 
 ###############################################
 Setting up a space
@@ -123,7 +144,7 @@ Here ``1:[g1]`` tells us that the function ``g1`` is set on the boundary assigne
 Coefficients and constants
 """"""""""""""""""""""""""
 
-Suppose we want to have a scalar or vector in our model that can be set using either the solution from another scheme, or a function that we define ourselves in python. Suppose also that we might want to set that variable to something else (provided that it is a constant). We can do these things using the **Coefficient** and **Constant** variable as shown below (taken from demo/heat.py).
+Suppose we want to have a scalar or vector in our model that can be set using either the solution from another scheme, or a function that we define ourselves in python. Suppose also that we might want to have a constant in our model that can be set to different values. We can do these things using the **Coefficient** and **Constant** variables as shown below (example taken from demo/heat.py).
 
 First we set up an initial function via python called `initial` and set up two interpolated solutions with it.
 
@@ -150,7 +171,7 @@ Now when we create the model object, we add in an additional keyword argument wh
 
     model = dune.fem.create.ellipticModel(grid, a == 0)(coefficients={u_n: old_solution})
 
-Note that for each coefficient we defined in UFL, we must set its value using the dictionary format (coefficients={coef1: value, coef2: value2, coef3: value3}). We can also set any constants in the same format (constants={...}). 
+Note that for each coefficient we defined in UFL, we must set its value using the dictionary format (`coefficients={coef1: value1, coef2: value2, coef3: value3}`). We can also set any constants in the same format (`constants={...}`). 
 
 We also set up the scheme. 
 
@@ -162,6 +183,7 @@ Finally before we solve the model, we must set our constant. Here we can do this
 
 .. code-block:: python
 
+    deltaT = 0.01
     steps = int(1 / deltaT)
     for n in range(1, steps+1):
         model.setConstant(tau, [deltaT])
@@ -169,7 +191,9 @@ Finally before we solve the model, we must set our constant. Here we can do this
         scheme.solve(target=solution)
         grid.writeVTK("heat", pointdata=[solution], number=n)
 
-This allows us to change the model slightly without having to recompile it completely.
+Note that we have to pass in `deltaT` using square brackets, since the method takes a list object. 
+
+The advantage of using this method, is that it lets us change the model slightly without having to recompile it completely.
 
 Note that we can also use coefficients and constants with :ref:`grid functions <gridfunctions>`. For ordinary grid functions the procedure is the same as above, but with grid functions created using C++ code, there are a couple of extra things to consider. See the following example.
 
@@ -196,7 +220,6 @@ Note that we can also use coefficients and constants with :ref:`grid functions <
     """
     code = { 'eval': func1, 'jac': func2 }
 
-    dimR = 2
     coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
     func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
     func.setConstant("fac", [factor])
@@ -206,7 +229,7 @@ Note that we have to add placeholders directly into the code that tell the compi
 1. For a coefficient, write `@gf:name`.
 2. For a constant, write `@const:name`.
 
-Then any time they are used later on, use the string "name" instead of what would be the ufl expression.
+Then, to declare you are using this variable in your function, you would add `coefficients={"name", somefunction}` or `constants={"name"}`. `setConstant`. Constants can then be set using `func.setConstant("name", someConstant)`.
 
 .. _dunemodel:
 
@@ -215,27 +238,27 @@ Stand-alone Dune model generation
 
 It is possible to just create a C++ model file using UFL code for use within the Dune-Fem-Howto framework without using any of the other python interface tools. The advantage of this is to forgo the complicated process of manually writing a model file with functions for the source, flux, linSource, linFlux and so on. This can be done quite easily in the following way.
 
-1. Create a UFL model file in a similar way to above. For examples of exactly what is required, see the models folder for reference.
+1. Create a UFL model file in a similar way to above. For examples of exactly what is required, see the *models* folder for reference.
 2. Run the generateModel script in the build-cmake/demos directory. For example, to generate a model file for the transport equation example, you would run.
 
   .. code-block:: bash
 
-    python generateModel.pyc ../../models/equation.py
+    python generateModel.pyc ../../models/transport.py
 
   Optionally you can add -m or -t to the call to make a python module, or test it with a FEM scheme.
-3. Use the generated model file in conjuction with your own Dune code to make a method. The file is outputted to build-cmake/python/dune/generated using the name given in the UFL file (e.g. TransportModel.hh in this case).
+3. Use the generated model file in conjuction with your own Dune code to make a method. The file is outputted to *build-cmake/python/dune/generated* using the name given in the UFL file (e.g. *TransportModel.hh* in this case).
 
 ################################
 Setting up a numerical scheme
 ################################
 
-In Dune-Fempy, the **scheme** contains information about the method used to solve the PDE. Just as before, schemes can be set up in a similar way to grids and spaces using the database found in python/database/scheme. An example of this in python is the following.
+In Dune-Fempy, the **scheme** contains information about the method used to solve the PDE. Just as before, schemes can be set up in a similar way to grids and spaces using the database found in python/database/scheme. A simple example of this in python is the following.
 
 .. code-block:: python
 
   scheme = dune.fem.create.scheme("FemScheme", space, model, "scheme")
 
-Here *space* and *model* must both be previously defined, as shown above.
+Here `"FemScheme"` is the identifier for the default FEM scheme in Dune, and `space` and `model` are the Fempy objects defined above.
 
 .. _usageexample:
 
@@ -243,7 +266,7 @@ Here *space* and *model* must both be previously defined, as shown above.
 A full example
 ################################
 
-Here we give a complete example for a problem that uses all the above methods. Other such examples can be found in the demo directory.
+Here we give a complete example for a problem that uses all the above methods (an example for Mean Curvature Flow found in demo/mcf.py). Other examples can be found in the demo directory.
 
 .. literalinclude:: ../../demo/mcf.py
    :language: python

@@ -5,6 +5,9 @@ from mpi4py import MPI
 
 import math
 
+import dune
+dune.initialize()
+
 import dune.common as common
 import dune.grid as grid
 import dune.fem as fem

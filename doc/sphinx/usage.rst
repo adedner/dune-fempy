@@ -54,28 +54,99 @@ It is also possible to do adaptively refine the mesh (see e.g. afem.py in /demo)
 Setting up functions on the grid
 ################################
 
-Once we have set up the grid, it is possible to define **grid functions** on it using the method `function`. There are four different kinds of grid functions one can set up this way.
-
-1. `globalExpr`: A function using global coordinates defined on the python side.
-2. `localExpr`: A function using local coordinates defined on the python side.
-3. `ufl`: A function defined using a UFL expression.
-4. `code`: A function defined using C++ code that is inputted.
-
-Let us first look at an example of the method itself, `function`. It always needs the following
+Once we have set up the grid, it is possible to define **grid functions** on it using the method `function`. `function` takes the following arguments
 
 * Name (string): The internal name python uses for the function.
+* order = (int): The order of the approximation (optional).
+* *type* = (object): The type of function used (from the list below), followed by the object used to define it.
 
-It also takes the following keyword arguments
-
-* order=(int): The order of the approximation (optional).
-* type=(object): The type of function used (from the above list), followed by the object used to define it.
+So for instance a global function could be defined in the following way
 
 .. code-block:: python
 
-    func = grid.function("global_velocity", order=0, globalExpr=somefunction)
+    func = grid.function("global_function", order=0, globalExpr=somefunction)
 
+For the type, there are four different options available.
 
+1. `globalExpr`: A function using global coordinates that is defined on the python side.
+2. `localExpr`: A function using local coordinates that is defined on the python side.
+3. `ufl`: A function defined using a UFL expression.
+4. `code`: A function defined using C++ code that is inputted.
 
+Let us consider each of these versions in turn. For a `globalExpr`, the method takes a function set up in python. Suppose you want to have a function
+
+.. math::
+
+    \begin{equation}
+    f \left( \begin{array}{c} x_0 \\ x_1 \end{array} \right) = \left( \begin{array}{c} \sin^2(x_0) \\ \sin(x_0)\cos(x_1) \\ \cos^2(x_1)) \end{array} \right)
+    \end{equation}
+
+This could be defined in python as follows
+
+.. code-block:: python
+
+    def my_function(x):
+        return [math.sin(x[0])**2, math.sin(x[0])*math.cos(factor*x[1]), math.cos(factor*x[1])**2]
+
+Then we create the function as follows
+
+.. code-block:: python
+
+    func = grid.function("my_function", order=0, globalExpr=my_function)
+
+Another way of implementing a python function that might be more convenient is using a lambda function. e.g. for the case of :math:`f(\textbf{x}) = (1,2)`, we have
+
+.. code-block:: python
+
+    func = grid.function("my_function", order=0, globalExpr=lambda x: [1,2])
+
+`localExpr` also takes python expressions, but in this case local coordinates must be given instead. One use of this is in calculating the error between the exact solution and our calculated solution. Supposing `uh` is our calculated solution, and `exact_gf` is the exact solution, we could use the following 
+
+.. code-block:: python
+
+    def l2error(en,x):
+        val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
+        return [ val[0]*val[0] ];
+    l2error_gf = grid.function( "error", 5, localExpr=l2error )
+    error = math.sqrt( grid.l2Norm(l2error_gf) )
+
+The third version is using `ufl` to define the function. Using our example function from above, we could have
+
+.. code-block:: python
+
+    c = ufl.cos(x[1])
+    s = ufl.sin(x[0])
+    expr = ufl.as_vector([ s*s, s*c, c*c ])
+    funcUFL = grid.function("ufl", order=1, ufl=expr)
+
+As this method does not rely on python callbacks, it is a faster alternative to using `globalExpr`.
+
+Finally, we could write the C++ code that goes into our function directly with the `code` option. Grid functions in dune require at the minimum an *evaluate* method (the function itself), but can also take *jacobian* and *hessian* methods if they are required. To again use the same example function, we could write
+
+.. code-block:: python
+
+    func1 = """
+    double s = sin(xGlobal[0]);
+    double c = cos(xGlobal[1]);
+    value[ 0 ] = s*s;
+    value[ 1 ] = s*c;
+    value[ 2 ] = c*c;
+    """
+    func2 = """
+    double cx = cos(xGlobal[0]);
+    double cy = cos(xGlobal[1]);
+    double sx = sin(xGlobal[0]);
+    double sy = sin(xGlobal[1]);
+    value[ 0 ][ 0 ] = 2*cx*sx;
+    value[ 0 ][ 1 ] = 0;
+    value[ 1 ][ 0 ] = cx*cy;
+    value[ 1 ][ 1 ] = -sx*sy;
+    value[ 2 ][ 0 ] = 0;
+    value[ 2 ][ 1 ] = -2.*cy*sy;
+    """
+    func = grid.function("code", 3, code={ 'eval': func1, 'jac': func2 } )
+
+Here, `eval` or `evaluate` corresponds to the *evaluate* method, and `jac` or `jacobian` to the jacobian (`hess` or `hessian` for the hessian). Note that the dimension of the range *should* be deduced automatically, but can also be set by putting "@dimrange=x" or "@range=x" in the string.
 
 ###############################################
 Setting up a space
@@ -195,7 +266,7 @@ Note that we have to pass in `deltaT` using square brackets, since the method ta
 
 The advantage of using this method, is that it lets us change the model slightly without having to recompile it completely.
 
-Note that we can also use coefficients and constants with :ref:`grid functions <gridfunctions>`. For ordinary grid functions the procedure is the same as above, but with grid functions created using C++ code, there are a couple of extra things to consider. See the following example.
+Note that we can also use coefficients and constants with :ref:`grid functions <gridfunctions>`. For ordinary grid functions the procedure is the same as above, but with grid functions created using C++ code, there are a couple of extra things to consider. See the following example from the grid function section extended.
 
 .. code-block:: python
     

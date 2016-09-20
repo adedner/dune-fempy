@@ -17,7 +17,7 @@ value[ 1 ] = s*c;
 value[ 2 ] = c*c;
 """
 func2 = """
-double cx = cos(xGlobal[0]);
+double cx = cos(xGlobal[0])*@jac:test[0][0];
 double cy = cos(@const:fac*xGlobal[1]);
 double sx = sin(xGlobal[0]);
 double sy = sin(@const:fac*xGlobal[1]);

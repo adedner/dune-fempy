@@ -11,7 +11,7 @@ dune.initialize("/home/dedner/DUNE.cmake/dune-py/build-cmake")
 import dune.models.elliptic
 import dune.ufl
 import dune.common
-import dune.grid
+import dune.alugrid
 import dune.fem
 import dune.fem.space
 import dune.fem.scheme

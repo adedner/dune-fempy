@@ -1,17 +1,24 @@
 from __future__ import print_function
 from mpi4py import MPI
 import math
+
+import dune
+dune.initialize()
+
 from ufl import *
 from dune.ufl import Space as UFLSpace
-from dune.models.elliptic import importModel
+# from dune.models.elliptic import importModel
 import dune.fem as fem
 from dune.femmpi import parameter
+import dune.grid
+import dune.alugrid
+import dune.fem.space
+import dune.fem.scheme
 
 parameter.append("../data/parameter-navier")
 
 # initialise grid
-grid = fem.leafGrid( "../data/hole2.dgf", "ALUSimplexGrid", dimgrid=2, refinement="conforming" )
-# grid = fem.leafGrid( (fem.reader.gmsh,"../data/karmanvortexstreet.msh"), "ALUCubeGrid", dimgrid=2 )
+grid = dune.grid.create( "ALUSimplex", "../data/hole2.dgf", dimgrid=2, refinement="conforming" )
 grid.hierarchicalGrid.globalRefine(6)
 
 viscosity = 0.03
@@ -34,20 +41,20 @@ x           = SpatialCoordinate(uflSpace.cell())
 bnd_u       = Coefficient(uflSpace)
 
 a = inner(grad(u),grad(v)) * dx(0)
-model = importModel(grid, a == 0, dirichlet={1:bnd_u}, tempVars=False).get()
-model.setCoefficient(bnd_u, grid.globalGridFunction("bnd", inflow_u))
+model = dune.fem.create.ellipticModel(grid, a == 0, dirichlet={1:bnd_u})\
+        ( coefficients={ bnd_u: grid.globalGridFunction("bnd", 3, inflow_u) } )
 
 # spaces
-pressureSpace = fem.create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )
-velocitySpace = fem.create.space( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
+pressureSpace = fem.space.create( "Lagrange", grid, polorder = 1, dimrange = 1 )
+velocitySpace = fem.space.create( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
 # velocitySpace = fem.create.space( "P1Bubble", grid, # dimrange=grid.dimWorld )
 # problem with missing dirichlet points in bubble space - need to update
 # dirichletconstraints
 
 # schemes
-stokesScheme = fem.create.scheme( "StokesScheme", ( velocitySpace, pressureSpace ), model, "stokes",\
+stokesScheme = fem.scheme.create( "Stokes", ( velocitySpace, pressureSpace ), model, "stokes",\
                viscosity, timeStep, storage = "Istl" )
-burgersScheme = fem.create.scheme( "BurgersScheme", ( velocitySpace, pressureSpace ), model, "burgers",\
+burgersScheme = fem.scheme.create( "Burgers", ( velocitySpace, pressureSpace ), model, "burgers",\
                 viscosity, timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0
@@ -59,7 +66,7 @@ solution = velocity, pressure
 def vorticityLocal(element,x):
     jac = velocity.localFunction(element).jacobian(x)
     return [ jac[1][0] - jac[0][1] ]
-vorticity = grid.localGridFunction( "vorticity", vorticityLocal)
+vorticity = grid.localGridFunction( "vorticity", 2, vorticityLocal)
 vtk = grid.writeVTK( "ns_", pointdata=solution+(vorticity,), number=0 )
 
 # time loop

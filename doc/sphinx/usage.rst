@@ -48,16 +48,13 @@ Here the inital mesh will be globally refined twice.
 
 It is also possible to do adaptively refine the mesh (see e.g. afem.py in /demo).
 
-Grid functions
-""""""""""""""
+.. _gridfunctions:
 
-Functions can be defined globally on the grid using `globalGridFunction`. The principal use of this is so that one can pass functions into the model after it has already been created, as explained in :ref:`coefficients <coefficients>`. Grid functions are defined using
+################################
+Setting up functions on the grid
+################################
 
-.. code-block:: python
-
-  gridFunction = grid.globalGridFunction("name", function)
-
-Here ``"name"`` is what we want to call the python object created, and ``function`` is any function we can define on the python side.
+todo: explanation of gridfunctions (versions to consider: code, ufl, globalExpr, localExpr)
 
 ###############################################
 Setting up a space
@@ -123,32 +120,93 @@ Here ``1:[g1]`` tells us that the function ``g1`` is set on the boundary assigne
 
 .. _coefficients:
 
-Coefficients
-""""""""""""
+Coefficients and constants
+""""""""""""""""""""""""""
 
-Suppose we want to create a model with a function that can be set to different values without remaking the model each time. This has the advantage of saving time if we want to run the same model with slightly different parameters. Additionally this allows us to easily set a function to a solution from another scheme. We can do these things using the **Coefficient** variable. Consider the following example (found in demo/afem.py).
+Suppose we want to have a scalar or vector in our model that can be set using either the solution from another scheme, or a function that we define ourselves in python. Suppose also that we might want to set that variable to something else (provided that it is a constant). We can do these things using the **Coefficient** and **Constant** variable as shown below (taken from demo/heat.py).
+
+First we set up an initial function via python called `initial` and set up two interpolated solutions with it.
 
 .. code-block:: python
 
-  uflSpace = UFLSpace(2, 1)
-  u = TrialFunction(uflSpace)
-  v = TestFunction(uflSpace)
-  x = SpatialCoordinate(uflSpace.cell())
-  bnd_u = Coefficient(uflSpace)
+    initial = lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ]
+    solution = spc.interpolate(initial, name="u")
+    old_solution = spc.interpolate(initial, name="u_n")
 
-  def exact(x):
-      phi = math.atan2(x[1], x[0])
-      if x[1] < 0:
-          phi += 2*math.pi
-      return [(x.two_norm2**(90./cornerAngle)) * sin(180./cornerAngle*phi)]
+Next we set up a model using UFL in the usual way, only we also define a *Coefficient* `u_n` and a *Constant* `tau`. 
 
-  a = inner(grad(u), grad(v)) * dx
+.. code-block:: python
 
-  model = importModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False).get()
-  gridFunction = grid.globalGridFunction("bnd", exact)
-  model.setCoefficient(bnd_u.count(), gridFunction)
+    uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
+    u = TrialFunction(uflSpace)
+    v = TestFunction(uflSpace)
+    u_n = Coefficient(uflSpace)
+    tau = Constant(triangle)
+    a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
-Here we declare ``bnd_u`` to be a `Coefficient`, and then set it to be assigned as a Dirichlet boundary condition as shown previously. Then after creating the model, we use ``globalGridFunction`` defined previously to make a function defined by ``exact``. We then use the ``setCoefficient`` on the model to set ``bnd_u`` to this grid function.
+Now when we create the model object, we add in an additional keyword argument which sets up the coefficient to our initial data. 
+
+.. code-block:: python
+
+    model = dune.fem.create.ellipticModel(grid, a == 0)(coefficients={u_n: old_solution})
+
+Note that for each coefficient we defined in UFL, we must set its value using the dictionary format (coefficients={coef1: value, coef2: value2, coef3: value3}). We can also set any constants in the same format (constants={...}). 
+
+We also set up the scheme. 
+
+.. code-block:: python
+
+    scheme = dune.fem.create.scheme("FemScheme", spc, model, "scheme")
+
+Finally before we solve the model, we must set our constant. Here we can do this at each step in a for loop, using `setConstant`.
+
+.. code-block:: python
+
+    steps = int(1 / deltaT)
+    for n in range(1, steps+1):
+        model.setConstant(tau, [deltaT])
+        old_solution.assign(solution)
+        scheme.solve(target=solution)
+        grid.writeVTK("heat", pointdata=[solution], number=n)
+
+This allows us to change the model slightly without having to recompile it completely.
+
+Note that we can also use coefficients and constants with :ref:`grid functions <gridfunctions>`. For ordinary grid functions the procedure is the same as above, but with grid functions created using C++ code, there are a couple of extra things to consider. See the following example.
+
+.. code-block:: python
+    
+    func1 = """
+    double s = sin(xGlobal[0]);
+    double c = cos(@const:fac*xGlobal[1]);
+    value[ 0 ] = s*s;
+    value[ 1 ] = s*c;
+    value[ 2 ] = c*c;
+    """
+    func2 = """
+    double cx = cos(xGlobal[0]);
+    double cy = cos(@const:fac*xGlobal[1]);
+    double sx = sin(xGlobal[0]);
+    double sy = sin(@const:fac*xGlobal[1]);
+    value[ 0 ][ 0 ] = cx*sx*@gf:test[1];
+    value[ 0 ][ 1 ] = 0;
+    value[ 1 ][ 0 ] = cx*cy*@gf:test[0];
+    value[ 1 ][ 1 ] = -@const:fac*sx*sy;
+    value[ 2 ][ 0 ] = 0;
+    value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
+    """
+    code = { 'eval': func1, 'jac': func2 }
+
+    dimR = 2
+    coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
+    func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
+    func.setConstant("fac", [factor])
+
+Note that we have to add placeholders directly into the code that tell the compiler to replace them with coefficients/constants. Simply put,
+
+1. For a coefficient, write `@gf:name`.
+2. For a constant, write `@const:name`.
+
+Then any time they are used later on, use the string "name" instead of what would be the ufl expression.
 
 .. _dunemodel:
 

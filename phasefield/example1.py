@@ -184,16 +184,14 @@ def Sharp(x,y):
 # -----------
 grid       = dune.fem.leafGrid("../data/crystal-2d.dgf", "ALUSimplexGrid", dimgrid=dimDomain, refinement="conforming")
 spc        = dune.fem.create.space("Lagrange", grid, dimrange=dimRange, polorder=1)
-initial_gf = grid.globalGridFunction("initial", initial)
+initial_gf = grid.globalGridFunction("initial", 2, initial)
 solution   = spc.interpolate(initial_gf, name="solution")
 solution_n = spc.interpolate(initial_gf, name="solution_n")
 
 # setup scheme
 # ------------
-model  = dune.models.elliptic.importModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex)).get()
+model  = dune.fem.create.ellipticModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex))( coefficients={un:solution_n} )
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
-
-model.setCoefficient(un, solution_n)
 
 # marking strategy
 # ----------------

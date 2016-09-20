@@ -30,7 +30,7 @@ saveinterval = 0.1
 def inflow_u(x):
     ux = 0
     if x[0]<-1+1e-8:
-        ux = min(1.0,(((x[1]+1.)*(1.-x[1])*time)/(10.*timeStep)))
+        ux = (x[1]+1.)*(1.-x[1]) * min(time/(10.*timeStep),1)
     return [ux,0,0]
 
 # model
@@ -46,8 +46,8 @@ model = dune.fem.create.ellipticModel(grid, a == 0, dirichlet={1:bnd_u})\
 
 # spaces
 pressureSpace = fem.space.create( "Lagrange", grid, polorder = 1, dimrange = 1 )
-velocitySpace = fem.space.create( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
-# velocitySpace = fem.create.space( "P1Bubble", grid, # dimrange=grid.dimWorld )
+# velocitySpace = fem.space.create( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
+velocitySpace = fem.space.create( "P1Bubble", grid, dimrange=grid.dimWorld )
 # problem with missing dirichlet points in bubble space - need to update
 # dirichletconstraints
 

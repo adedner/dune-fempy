@@ -1,9 +1,6 @@
 from mpi4py import MPI
 import math
 
-import dune
-dune.initialize()
-
 import dune.alugrid
 import dune.fem
 import ufl

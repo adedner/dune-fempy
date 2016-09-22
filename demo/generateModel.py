@@ -65,7 +65,7 @@ def main(argv):
        m = Model.get()
        if hasattr(ModelDescription,"DGF"):
           print("using: ",ModelDescription.DGF)
-          g = dune.grid.create("ALUSimplex", fem.string2dgf(ModelDescription.DGF), dimgrid=2)
+          g = dune.grid.create("ALUSimplex", grid.string2dgf(ModelDescription.DGF), dimgrid=2)
        else:
           g = dune.grid.create("ALUSimplex", dgf, dimgrid=2)
        print('get space')

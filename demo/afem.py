@@ -68,7 +68,7 @@ PROJECTION
   segment  4 5  p
 #
 """
-grid = grid.create("ALUSimplex", fem.string2dgf(dgf), dimgrid=2, refinement="conforming")
+grid = grid.create("ALUSimplex", grid.string2dgf(dgf), dimgrid=2, refinement="conforming")
 grid.globalRefine(2)
 exact_gf = grid.function("exact", order+1, globalExpr=exact)
 

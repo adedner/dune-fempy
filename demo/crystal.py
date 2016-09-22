@@ -5,9 +5,6 @@ from mpi4py import MPI
 import math
 import ufl
 
-import dune
-dune.initialize("/home/dedner/DUNE.cmake/dune-py/build-cmake")
-
 import dune.models.elliptic
 import dune.ufl
 import dune.common

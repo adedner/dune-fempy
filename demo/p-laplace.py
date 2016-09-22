@@ -12,7 +12,7 @@ import dune.fem
 import dune.fem.space
 import dune.fem.scheme
 
-grid = dune.grid.create("ALUConform", dune.fem.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 spc = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)

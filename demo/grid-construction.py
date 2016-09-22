@@ -49,9 +49,9 @@ INTERVAL
 16 16
 #
 """
-alugrid = dune.grid.create("ALUConform", dune.fem.string2dgf(dgf), dimgrid=2)
+alugrid = dune.grid.create("ALUConform", dune.grid.string2dgf(dgf), dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction003")
 
 print("cartsesian domain")
-alugrid = dune.grid.create("ALUConform", dune.fem.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+alugrid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)

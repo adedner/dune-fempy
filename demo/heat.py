@@ -1,17 +1,14 @@
 from __future__ import print_function
 
-from mpi4py import MPI
+# from mpi4py import MPI
 
 import math
 from ufl import *
 
-import dune
-dune.initialize()
-
+import dune.fem
 import dune.ufl
 import dune.grid
 import dune.alugrid
-import dune.fem
 import dune.fem.space
 import dune.fem.scheme
 
@@ -21,7 +18,7 @@ deltaT = 0.01
 
 def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
-    grid = dune.grid.create("ALUConform", dune.fem.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+    grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
     spc = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
 

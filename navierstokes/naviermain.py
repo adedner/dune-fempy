@@ -2,9 +2,6 @@ from __future__ import print_function
 from mpi4py import MPI
 import math
 
-import dune
-dune.initialize()
-
 from ufl import *
 from dune.ufl import Space as UFLSpace
 # from dune.models.elliptic import importModel

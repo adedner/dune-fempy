@@ -42,6 +42,6 @@ while t < 2*math.pi:
     hgrid.adapt([phi])
     hgrid.loadBalance([phi])
     grid.writeVTK("adapt", pointdata=[phi], celldata=[grid.levelFunction(), grid.partitionFunction()], number=nr)
-    print(fem.comm.rank, "size: ", grid.size(0))
+    print(common.comm.rank, "size: ", grid.size(0))
     t = t+0.1
     nr = nr+1

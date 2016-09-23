@@ -62,7 +62,7 @@ def compute():
 
     # basic setup
     # -----------
-    grid       = dune.grid.create("ALUConform", "dune-fempy/data/crystal-2d.dgf", dimgrid=dimDomain)
+    grid       = dune.grid.create("ALUConform", "../data/crystal-2d.dgf", dimgrid=dimDomain)
     spc        = dune.fem.space.create("Lagrange", grid, dimrange=dimRange, order=order)
     initial_gf = grid.function("initial", order+1, globalExpr=initial)
     solution   = spc.interpolate(initial_gf, name="solution")

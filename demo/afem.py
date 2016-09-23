@@ -7,6 +7,7 @@ from dune.ufl import Space as UFLSpace
 from dune.models.elliptic import compileUFL, importModel
 
 import dune.grid as grid
+import dune.alugrid
 import dune.fem as fem
 import dune.fem.space as space
 import dune.fem.scheme as scheme

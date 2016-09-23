@@ -1,5 +1,5 @@
 from mpi4py import MPI
-from dune.femmpi import parameter
+from dune.fem.femmpi import parameter
 parameter.append( "../data/parameter" )
 parameter.append( {"hallo": 12, "wie": 20, "gehts": "gut?" } )
 # print( str(parameter) )

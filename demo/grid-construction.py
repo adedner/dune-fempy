@@ -2,6 +2,7 @@ import numpy
 from mpi4py import MPI
 import dune.common
 import dune.grid
+import dune.alugrid
 import dune.fem
 
 from scipy.spatial import Delaunay
@@ -37,7 +38,7 @@ output = alugrid.vtkWriter()
 output.write("grid_construction001")
 
 print("from file 2")
-alugrid = dune.grid.create("ALUConform", (dune.fem.reader.dgf,"../data/unitcube-2d.dgf"), dimgrid=2)
+alugrid = dune.grid.create("ALUConform", (dune.common.reader.dgf,"../data/unitcube-2d.dgf"), dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction002")
 

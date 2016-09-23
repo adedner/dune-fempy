@@ -8,6 +8,7 @@ import ufl
 import dune.ufl
 
 import dune.grid as grid
+import dune.alugrid
 import dune.fem.gridpart as gridpart
 import dune.fem.space as space
 import dune.fem.scheme as scheme

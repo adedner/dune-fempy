@@ -17,7 +17,7 @@ from functools import reduce
 
 # http://www.scholarpedia.org/article/Barkley_model
 dimRange   = 2
-endTime    = 30.
+endTime    = 3. # 30.
 dt         = 0.1
 if 1:
     spiral_a   = 0.75
@@ -77,7 +77,7 @@ else
 """
 repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
         ('spiral_eps', str(spiral_eps)), ('dt',str(dt)),\
-        ('UNCOUNT', str(un.number))
+        ('UNCOUNT', "0")
 
 modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
 modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))

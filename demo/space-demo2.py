@@ -3,6 +3,7 @@ import math
 from mpi4py import MPI
 
 import dune.grid as grid
+import dune.alugrid
 import dune.fem as fem
 
 def testSpace(gridtype):

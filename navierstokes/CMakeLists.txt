@@ -1,1 +1,3 @@
-add_python_target(naviermain)
+add_python_targets(navierstokes
+  naviermain
+)

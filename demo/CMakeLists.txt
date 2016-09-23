@@ -1,18 +1,20 @@
-add_python_target(ellipticmodel)
-add_python_target(adapt-demo)
-add_python_target(afem)
-add_python_target(grid-construction)
-add_python_target(grid-demo)
-add_python_target(gridpart-demo)
-add_python_target(space-demo)
-add_python_target(space-demo2)
-add_python_target(parameter-demo)
-# add_python_target(generateModel)
-add_python_target(heat)
-# add_python_target(testModel)
-add_python_target(laplace)
-add_python_target(p-laplace)
-add_python_target(mcf)
-add_python_target(spiral)
-add_python_target(crystal)
-add_python_target(gftest)
+add_python_targets(demo
+  ellipticmodel
+  adapt-demo
+  afem
+  grid-construction
+  grid-demo
+  gridpart-demo
+  space-demo
+  space-demo2
+  parameter-demo
+  heat
+  laplace
+  p-laplace
+  mcf
+  spiral
+  crystal
+  gftest
+)
+  # generateModel
+  # testModel

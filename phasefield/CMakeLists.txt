@@ -1,6 +1,8 @@
-add_python_target(example1)
-add_python_target(example2)
-add_python_target(example3)
-add_python_target(example4)
-add_python_target(exampleCrystal)
-add_python_target(phase_base)
+add_python_targets(phasefield
+  example1
+  example2
+  example3
+  example4
+  exampleCrystal
+  phase_base
+)

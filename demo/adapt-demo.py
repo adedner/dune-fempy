@@ -7,6 +7,7 @@ import math
 
 import dune.common as common
 import dune.grid as grid
+import dune.alugrid
 import dune.fem as fem
 
 grid = grid.create("ALUSimplex", "../data/unitcube-2d.dgf", dimgrid=2, refinement="conforming")

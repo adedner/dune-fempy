@@ -74,7 +74,7 @@ else
 """
 repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
         ('spiral_eps', str(spiral_eps)), ('dt',str(dt)),\
-        ('UNCOUNT', str(un.number))
+        ('UNCOUNT', str(modelCode.getNumber(un)))
 
 modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
 modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))

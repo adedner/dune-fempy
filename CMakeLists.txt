@@ -19,7 +19,6 @@ add_subdirectory("dune")
 add_subdirectory("python")
 add_subdirectory("doc")
 add_subdirectory("data")
-add_subdirectory("demo")
 add_subdirectory("navierstokes")
 add_subdirectory("phasefield")
 

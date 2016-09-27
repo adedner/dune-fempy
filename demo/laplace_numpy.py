@@ -77,6 +77,12 @@ def compute():
             # use the apply/assemble methods directly in a simple Newton loop
             # - exact copy of simple version in dune-fem
             sol.clear()
+            # Note: the following does not produce a copy of the dof
+            # vectors, but keep in mind that
+            # after grid adaptation the resulting numpy array
+            # will be invalid since the shared dof vector will have moved
+            # during its resizing - use copy=True to avoid this problem at
+            # the cose of a copy
             sol_coeff = numpy.array( sol, copy=False )
             res = spc.interpolate(lambda x:[0], name="res", storage="eigen")
             res_coeff = numpy.array( res, copy=False )
@@ -117,6 +123,11 @@ def compute():
                     self.jac = scheme.assemble(x)
                 def update(self,x_coeff,f):
                     x = spc.numpyfunction("tmp", x_coeff)
+                    # Note: the following does produce a copy of the matrix
+                    # and each call here will reproduce the full matrix
+                    # structure - no reuse possible in this version.
+                    # Also: the assemble method is only available on
+                    # schemes with storage="eigen"
                     self.jac = scheme.assemble(x)
                 def _matvec(self,x_coeff):
                     return scipy.sparse.linalg.spsolve(self.jac, x_coeff)

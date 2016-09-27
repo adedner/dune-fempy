@@ -1,12 +1,13 @@
 from __future__ import print_function
+
 import math
-from mpi4py import MPI
 
 import dune.common as common
-import dune.grid
 from dune.fem.gridpart import create as gridPart
 #from dune.fem.gridpart.geometry import create as geometryGridPart
 #from dune.fem.gridpart.filtered import create as filteredGridPart
+
+import dune.create as create
 
 def testGeometryGridPart(grid, prefix):
     t = 0
@@ -31,7 +32,7 @@ def testGeometryGridPart(grid, prefix):
         vtk.write(prefix + str(count));
 
 def testGridPart(gridtype):
-    grid = dune.grid.create(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
+    grid = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
     testGeometryGridPart(grid, "gridpart_demo")
 
     #subGrid = filteredGridPart(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)

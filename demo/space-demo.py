@@ -1,13 +1,11 @@
 from __future__ import print_function
 
-from mpi4py import MPI
+import math
 
-import dune.grid as grid
-import dune.alugrid
 import dune.fem.space as space
 # import dune.fem.discretefunction as discfunc
 
-import math
+import dune.create as create
 
 def testSpace(grid2d, spacetype, dimRange, order):
     lagrangespace = space.create(spacetype, grid2d, dimrange=dimRange, order=order)
@@ -32,7 +30,7 @@ def testSpace(grid2d, spacetype, dimRange, order):
     grid2d.writeVTK("space_demo", pointdata=[gf,df1,df2,df3,df4])
 
 def test(gridtype):
-    grid2d = grid.create(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
+    grid2d = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
     print("Lagrange(1,1)")
     testSpace(grid2d, "Lagrange",1,1)
     print("Lagrange(1,2)")

@@ -1,16 +1,12 @@
 from __future__ import print_function
 
-# needed on some machines
-from mpi4py import MPI
-
 import math
 
 import dune.common as common
-import dune.grid as grid
-import dune.alugrid
+from dune.alugrid import aluConformGrid
 import dune.fem as fem
 
-grid = grid.create("ALUSimplex", "../data/unitcube-2d.dgf", dimgrid=2, refinement="conforming")
+grid = aluConformGrid("../data/unitcube-2d.dgf", dimgrid=2)
 
 # interpolate some data onto macro grid
 phi = grid.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], space="Lagrange", name="phi", order=1)

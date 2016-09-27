@@ -1,16 +1,13 @@
 from __future__ import print_function
 
-# needed on some machines
-from mpi4py import MPI
-
 import math
 
-# dune.fem modules
-import dune.grid as grid
 import dune.fem.function as function
 
+import dune.create as create
+
 # just get the grid (only for testing - not used)
-onedgrid = grid.create("OneD", "../data/unitcube-1d.dgf")
+onedgrid = create.grid("OneD", "../data/unitcube-1d.dgf")
 
 for element in onedgrid.elements():
     print( "Center ", element.geometry.center )
@@ -18,7 +15,7 @@ for element in onedgrid.elements():
         print( "Corner ", corner )
 
 # get the full grid module and then the grid (module needed for grid # functions and output object)
-yaspgrid = grid.create("Yasp", "../data/unitcube-2d.dgf", dimgrid=2)
+yaspgrid = create.grid("Yasp", "../data/unitcube-2d.dgf", dimgrid=2)
 output = []
 
 def expr_global(x):

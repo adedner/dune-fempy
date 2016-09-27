@@ -14,8 +14,6 @@ import dune.fem.function as gf
 import dune.fem.space
 import dune.fem.scheme
 
-# dune.fem.create.spaceGenerator.force = True
-
 dune.fem.parameter.append("../data/parameter")
 
 grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[8,8]), dimgrid=2)
@@ -32,15 +30,16 @@ exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
-model = dune.fem.create.ellipticModel(grid, a==0, exact=exact)()
+model = dune.fem.create.ellipticModel( grid, a==0,
+        exact=exact, dirichlet={ 1:exact } ) ()
 
 # scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
 scheme = dune.fem.scheme.create("H1", spc, model, "scheme",\
        parameters=\
        {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
-        "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 1},\
+        "fem.solver.newton.verbose": 0,
+        "fem.solver.newton.linear.verbose": 0},\
         storage="istl")
 
 exact_gf = grid.function("exact", 5, ufl=exact)

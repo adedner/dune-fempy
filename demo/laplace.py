@@ -1,7 +1,6 @@
 """Solve the Laplace equation
 """
-
-from mpi4py import MPI
+from __future__ import print_function
 
 import math
 from ufl import *

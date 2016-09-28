@@ -7,16 +7,16 @@ import math
 from ufl import *
 
 import dune.ufl
-import dune.grid
-import dune.alugrid
 import dune.fem
 import dune.fem.function as gf
 import dune.fem.space
 import dune.fem.scheme
 
+import dune.create as create
+
 dune.fem.parameter.append("../data/parameter")
 
-grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[8,8]), dimgrid=2)
+grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[8,8]), dimgrid=2)
 # spc  = dune.fem.create.space("DGONB", grid, dimrange=1, order=2)
 spc  = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
 

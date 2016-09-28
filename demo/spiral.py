@@ -8,10 +8,11 @@ import ufl
 import dune.ufl
 import dune.models.elliptic
 
-import dune.grid
 import dune.fem
 import dune.fem.space
 import dune.fem.scheme
+
+import dune.create as create
 
 from functools import reduce
 
@@ -38,7 +39,7 @@ def initial(x):
 # Basic setup
 # -----------
 # set up reference domain
-grid = dune.grid.create("Yasp", "../data/spiral-2d.dgf", dimgrid=2, dimworld=2)
+grid = create.grid("Yasp", "../data/spiral-2d.dgf", dimgrid=2)
 spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, order=1 )
 
 # set up left and right hand side models

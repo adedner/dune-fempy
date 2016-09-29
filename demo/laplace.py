@@ -41,15 +41,15 @@ scheme = dune.fem.scheme.create("H1", spc, model, "scheme",\
         "fem.solver.newton.linear.verbose": 0},\
         storage="istl")
 
-exact_gf = grid.function("exact", 5, ufl=exact)
+#exact_gf = grid.function("exact", 5, ufl=exact)
 for i in range(2):
     print("solve on level",i)
     uh = scheme.solve()
     def l2error(en,x):
         val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
         return [ val[0]*val[0] ];
-    l2error_gf = grid.function( "error", 5, localExpr=l2error )
-    error = math.sqrt( grid.l2Norm(l2error_gf) )
-    print("size:",grid.size(0),"L2-error:",error)
-    grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
-    grid.hierarchicalGrid.globalRefine(2)
+    #l2error_gf = grid.function( "error", 5, localExpr=l2error )
+    #error = math.sqrt( grid.l2Norm(l2error_gf) )
+    #print("size:",grid.size(0),"L2-error:",error)
+    #grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
+    #grid.hierarchicalGrid.globalRefine(2)

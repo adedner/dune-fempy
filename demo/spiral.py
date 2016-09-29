@@ -38,6 +38,13 @@ def initial(x):
 grid = dune.fem.leafGrid("../data/spiral-2d.dgf", "YaspGrid", dimgrid=2, dimworld=2)
 spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, polorder=1 )
 
+# now set up schemes for left and right hand side
+# -----------------------------------------------
+# u^{n+1} and forcing
+solution    = spc.interpolate( initial, name="solution" )
+solution_n  = spc.interpolate( initial, name="solution_n" )
+forcing     = spc.interpolate( [0,0,0], name="forcing" )
+
 # set up left and right hand side models
 # --------------------------------------
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
@@ -55,38 +62,27 @@ modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
 # extra model source code
 # -----------------------
 sourceCode = """\
-RangeType un;
-coefficient< UNCOUNT >().evaluate( x, un );
-double uth = (un[ 1 ] + spiral_b) / spiral_a;
-if( un[ 0 ] <= uth )
-  result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
-else
-  result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (1.0 - u[ 0 ]) * (un[ 0 ] - uth);
+double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
+    if( @gf:un[ 0 ] <= uth )
+        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
+    else
+       result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - uth);
 """
 linSourceCode = """\
-RangeType un;
-coefficient< UNCOUNT >().evaluate( x, un );
-double uth = (un[ 1 ] + spiral_b) / spiral_a;
-if( un[ 0 ] <= uth )
-  result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
+double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
+if( @gf:un[ 0 ] <= uth )
+  result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
 else
-  result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (-u[ 0 ]) * (un[ 0 ] - uth);
+  result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - uth);
 """
-repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
-        ('spiral_eps', str(spiral_eps)), ('dt',str(dt)),\
-        ('UNCOUNT', str(modelCode.getNumber(un)))
+modelCode.appendCode('source', sourceCode, coefficients={"un": solution_n} )
+modelCode.appendCode('linSource', linSourceCode )
 
-modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
-modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))
-
-# now set up schemes for left and right hand side
-# -----------------------------------------------
-# u^{n+1} and forcing
-solution    = spc.interpolate( initial, name="solution" )
-solution_n  = spc.interpolate( initial, name="solution_n" )
-forcing     = spc.interpolate( [0,0,0], name="forcing" )
-
-model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={un:solution_n} )
+model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={un:solution_n, "un": solution_n} )
+model.setConstant("a", [spiral_a])
+model.setConstant("b", [spiral_b])
+model.setConstant("eps", [spiral_eps])
+model.setConstant("dt", [dt])
 
 scheme = dune.fem.create.scheme("FemScheme", solution, model, "scheme")
 

@@ -50,7 +50,7 @@ forcing     = spc.interpolate( [0,0,0], name="forcing" )
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
-un = ufl.Coefficient(uflSpace)
+un = dune.ufl.NamedCoefficient(uflSpace, "un")
 
 # right hand sie (time derivative part + explicit forcing in v)
 a_ex = (ufl.inner(un, v) + dt * ufl.inner(spiral_h(un[0], un[1]), v[1])) * ufl.dx
@@ -62,23 +62,23 @@ modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
 # extra model source code
 # -----------------------
 sourceCode = """\
-double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
-    if( @gf:un[ 0 ] <= uth )
+      double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
+      if( @gf:un[ 0 ] <= uth )
         result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
-    else
-       result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - uth);
+      else
+        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - uth);
 """
 linSourceCode = """\
-double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
-if( @gf:un[ 0 ] <= uth )
-  result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
-else
-  result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - uth);
+      double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
+      if( @gf:un[ 0 ] <= uth )
+        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
+      else
+        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - uth);
 """
 modelCode.appendCode('source', sourceCode, coefficients={"un": solution_n} )
 modelCode.appendCode('linSource', linSourceCode )
 
-model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={un:solution_n, "un": solution_n} )
+model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={"un": solution_n} )
 model.setConstant("a", [spiral_a])
 model.setConstant("b", [spiral_b])
 model.setConstant("eps", [spiral_eps])

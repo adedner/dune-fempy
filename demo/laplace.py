@@ -52,4 +52,5 @@ for i in range(2):
     #error = math.sqrt( grid.l2Norm(l2error_gf) )
     #print("size:",grid.size(0),"L2-error:",error)
     #grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
+    grid.writeVTK("laplace", pointdata=[uh])
     #grid.hierarchicalGrid.globalRefine(2)

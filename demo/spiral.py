@@ -5,10 +5,7 @@ import ufl
 
 import dune.ufl
 import dune.models.elliptic
-
 import dune.fem
-import dune.fem.space
-import dune.fem.scheme
 
 import dune.create as create
 
@@ -38,7 +35,7 @@ def initial(x):
 # -----------
 # set up reference domain
 grid = create.grid("Yasp", "../data/spiral-2d.dgf", dimgrid=2)
-spc  = dune.fem.space.create( "Lagrange", grid, dimrange=dimRange, order=1 )
+spc  = create.space( "Lagrange", grid, dimrange=dimRange, order=1 )
 
 # set up left and right hand side models
 # --------------------------------------
@@ -88,9 +85,9 @@ solution    = spc.interpolate( initial, name="solution" )
 solution_n  = spc.interpolate( initial, name="solution_n" )
 forcing     = spc.interpolate( [0,0,0], name="forcing" )
 
-model = dune.fem.create.ellipticModel(grid, modelCode)( coefficients={un:solution_n} )
+model = create.model("elliptic", grid, modelCode, coefficients={un:solution_n} )
 
-scheme = dune.fem.scheme.create("h1", solution, model, "scheme")
+scheme = create.scheme("h1", solution, model, "scheme")
 
 # time loop
 # ---------
@@ -106,4 +103,5 @@ while t < endTime:
     count += 1
     grid.writeVTK("spiral", pointdata=[solution], number=count)
 
+grid = None
 print("END")

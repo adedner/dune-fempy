@@ -8,7 +8,7 @@ import dune.fem.space as space
 import dune.create as create
 
 def testSpace(grid2d, spacetype, dimRange, order):
-    lagrangespace = space.create(spacetype, grid2d, dimrange=dimRange, order=order)
+    lagrangespace = create.space(spacetype, grid2d, dimrange=dimRange, order=order)
 
     # would work but perhaps not desired
     # df0 = discfunc.create("Adaptive",lagrangespace,name="test")
@@ -20,7 +20,7 @@ def testSpace(grid2d, spacetype, dimRange, order):
 
     expr_global = lambda x: [-(x[1] - 0.5)*math.sin(x[0]*12)]*dimRange
 
-    gf = grid2d.function("expr_global", order=1, globalExpr=expr_global)
+    gf = create.function("global", grid2d, "expr_global", 1, expr_global)
     df1 = lagrangespace.interpolate( gf, name="test" )
     df2 = lagrangespace.interpolate( [5]*dimRange )
     df3 = lagrangespace.interpolate( df1, name="copy", storage="istl" )

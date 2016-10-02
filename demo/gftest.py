@@ -1,14 +1,14 @@
 from mpi4py import MPI
 import math
 
-import dune.alugrid
 import dune.fem
 import ufl
 import dune.ufl
+import dune.create as create
 
 factor = 10.
 
-grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 
 func1 = """
 double s = sin(xGlobal[0]);
@@ -31,8 +31,8 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 """
 code = { 'eval': func1, 'jac': func2 }
 
-coeffFunc = grid.function("global_velocity", order=1, globalExpr=lambda x: [1,2])
-func = grid.function("code", 3, code=code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
+coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
+func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
 func.setConstant("fac", [factor])
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
@@ -42,20 +42,21 @@ const = ufl.Constant(ufl.triangle)
 c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
-coeffFunc = grid.function("global_velocity", order=0, globalExpr=lambda x: [1,2])
-funcUFL = grid.function("ufl", order=1, ufl=expr, coefficients={coeff: coeffFunc})
+coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [1,2])
+funcUFL = create.function("ufl", grid, "ufl", 1, expr, coefficients={coeff: coeffFunc})
 funcUFL.setConstant(const, [factor])
 
-solution = grid.interpolate(funcUFL, space="Lagrange", order=2, name="solution")
+space = create.space("Lagrange", grid, dimrange=3, order=2)
+solution = space.interpolate(funcUFL, name="solution")
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(factor*x[1]), math.cos(factor*x[1])**2]
-control = grid.function("expr_global", order=3, globalExpr=expr_global)
+control = create.function("global", grid, "expr_global", 3, expr_global)
 
 def expr_local(en,x):
     y = en.geometry.position(x)
     return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
-difference = grid.function( "difference", order=3, localExpr=expr_local )
+difference = create.function("local", grid, "difference", 3, expr_local )
 
 # method 1
 grid.writeVTK("gftest", pointdata=[control,func,funcUFL,solution,difference])

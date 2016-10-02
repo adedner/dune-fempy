@@ -28,8 +28,7 @@ exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
 a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
-model = dune.fem.create.ellipticModel( grid, a==0,
-        exact=exact, dirichlet={ 1:exact } ) ()
+model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } )
 
 # scheme = create.scheme("DGFemScheme", spc, model,\
 scheme = create.scheme("h1", spc, model, "scheme",\

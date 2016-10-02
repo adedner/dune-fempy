@@ -7,10 +7,7 @@ from ufl import *
 
 import dune.fem
 import dune.ufl
-import dune.grid
-import dune.alugrid
-import dune.fem.space
-import dune.fem.scheme
+import dune.create as create
 
 # Crank Nicholson
 theta = 0.5
@@ -18,9 +15,9 @@ deltaT = 0.01
 
 def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
-    grid = dune.grid.create("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+    grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
-    spc = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
+    spc = create.space("Lagrange", grid, dimrange=1, order=2)
 
     # set up initial conditions
     initial = lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ]
@@ -40,7 +37,7 @@ def compute():
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
     # now generate the model code and compile
-    model = dune.fem.create.ellipticModel(grid, a == 0)(coefficients={u_n:old_solution})
+    model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
 
     # setup structure for olver parameters
     solverParameter={"fem.solver.newton.linabstol": 1e-10,
@@ -48,7 +45,7 @@ def compute():
                      "fem.solver.newton.verbose": 1,
                      "fem.solver.newton.linear.verbose": 1}
     # create the solver using a standard fem scheme
-    scheme = dune.fem.scheme.create("h1", spc, model, "scheme", parameters=solverParameter)
+    scheme = create.scheme("h1", spc, model, "scheme", parameters=solverParameter)
 
     # now loop through time and output the solution after each time step
     steps = int(1 / deltaT)

@@ -12,12 +12,8 @@ import scipy.optimize
 import numpy
 
 import dune.ufl
-import dune.grid
-import dune.alugrid
+import dune.create as create
 import dune.fem
-import dune.fem.function as gf
-import dune.fem.space
-import dune.fem.scheme
 
 # bug fix:
 # sol.assign(bnd)  why does this not work - the below does
@@ -39,9 +35,8 @@ def compute():
             #
          """
 
-    grid = dune.grid.create("ALUConform", dune.grid.string2dgf(dgf), dimgrid=2)
-    # spc  = dune.fem.create.space("DGONB", grid, dimrange=1, order=2)
-    spc  = dune.fem.space.create("Lagrange", grid, dimrange=1, order=2)
+    grid = create.grid("ALUConform", dune.grid.string2dgf(dgf), dimgrid=2)
+    spc  = create.space("Lagrange", grid, dimrange=1, order=2)
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -57,7 +52,7 @@ def compute():
             exact=exact, dirichlet={ 1:exact } ) ()
 
     # scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
-    scheme = dune.fem.scheme.create("H1", spc, model, "scheme",\
+    scheme = create.scheme("h1", spc, model, "scheme",\
            parameters=\
            {"fem.solver.newton.tolerance": 1e-10,
             "fem.solver.newton.linabstol": 1e-12,
@@ -66,9 +61,10 @@ def compute():
             "fem.solver.newton.linear.verbose": 1},\
             storage="eigen")
 
-    exact_gf = grid.function("exact", 5, ufl=exact)
+    exact_gf = create.function("ufl", grid, "exact", 5, exact)
 
-    sol = spc.interpolate(lambda x:[0], name="solution", storage="eigen")
+    sol = create.discretefunction("eigen", spc, name="solution")
+    sol.interpolate( [0] )
     for i in range(2):
         print("solve on level",i)
         uh = scheme.solve()
@@ -84,9 +80,9 @@ def compute():
             # during its resizing - use copy=True to avoid this problem at
             # the cose of a copy
             sol_coeff = numpy.array( sol, copy=False )
-            res = spc.interpolate(lambda x:[0], name="res", storage="eigen")
+            res = spc.interpolate(lambda _,x:[0], name="res", storage="eigen")
             res_coeff = numpy.array( res, copy=False )
-            bnd = spc.interpolate(lambda x:[0], name="bnd", storage="eigen")
+            bnd = spc.interpolate(lambda _,x:[0], name="bnd", storage="eigen")
             bnd_coeff = numpy.array( bnd, copy=False )
             scheme.constraint(bnd)   # note: no rhs functional allowed
             n = 0
@@ -112,17 +108,18 @@ def compute():
             bnd_coeff = numpy.array( bnd, copy=False )
             scheme.constraint(bnd)
             def f(x_coeff):
-                x = spc.numpyfunction("tmp", x_coeff)
+                x = spc.numpyfunction(x_coeff, "tmp")
                 scheme(x,rhs)
                 return rhs_coeff - bnd_coeff
             class Df(scipy.sparse.linalg.LinearOperator):
                 def __init__(self,x_coeff):
                     self.shape = (sol_coeff.shape[0],sol_coeff.shape[0])
                     self.dtype = sol_coeff.dtype
-                    x = spc.numpyfunction("tmp", x_coeff)
+                    x = spc.numpyfunction(x_coeff, "tmp")
+                    # x = create.function("numpy", spc, x_coeff, "tmp")
                     self.jac = scheme.assemble(x)
                 def update(self,x_coeff,f):
-                    x = spc.numpyfunction("tmp", x_coeff)
+                    x = spc.numpyfunction(x_coeff, "tmp")
                     # Note: the following does produce a copy of the matrix
                     # and each call here will reproduce the full matrix
                     # structure - no reuse possible in this version.
@@ -142,8 +139,8 @@ def compute():
         def l2error(en,x):
             val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
             return [ val[0]*val[0] ];
-        l2error_gf = grid.function( "error", 5, localExpr=l2error )
-        error  = math.sqrt( grid.l2Norm(l2error_gf) )
+        l2error_gf = create.function("local", grid, "error", 5, l2error )
+        error = math.sqrt( l2error_gf.integrate()[0] )
         print("size:",grid.size(0),"L2-error:",error)
         grid.writeVTK("laplace", pointdata=[ uh,l2error_gf,sol ], number=i)
 
@@ -151,10 +148,10 @@ def compute():
         def l2error(en,x):
             val = sol.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
             return [ val[0]*val[0] ];
-        l2error_gf = grid.function( "error", 5, localExpr=l2error )
-        error  = math.sqrt( grid.l2Norm(l2error_gf) )
+        l2error_gf = create.function("local", grid, "error", 5, l2error )
+        error = math.sqrt( l2error_gf.integrate()[0] )
         print("size:",grid.size(0),"L2-error:",error)
 
-        grid.hierarchicalGrid.globalRefine(2)
+        # grid.hierarchicalGrid.globalRefine(2)
 
 compute()

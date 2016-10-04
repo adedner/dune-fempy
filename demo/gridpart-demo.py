@@ -6,39 +6,35 @@ import dune.common as common
 from dune.fem.gridpart import create as gridPart
 #from dune.fem.gridpart.geometry import create as geometryGridPart
 #from dune.fem.gridpart.filtered import create as filteredGridPart
+from dune.fem.view import geometryGridView, filteredGridView
 
 import dune.create as create
 
-def testGeometryGridPart(grid, prefix):
+def testGeometryGridView(grid, prefix):
     t = 0
     def expr_global(x):
         return [x[0]*(x[0]+1),(x[0]+1.)*x[1]*math.sin(0.1+2.*math.pi*t)] # ,math.sin(x[0]*x[1]*2*math.pi)] # problem in vtk with dimensionworld increase in geogp
 
-    gf = grid.function("expr_global", order=1, globalExpr=expr_global)
-    df = grid.interpolate(gf, space="Lagrange", name="test")
+    gf = create.function("global", grid, "coordinates", 1, expr_global)
+    spc = create.space("Lagrange", grid, dimrange=2, order=1)
+    df = spc.interpolate(gf, name="test")
 
-    geogp = gridPart("geometry", df)
-    #geogp = geometryGridPart(df)
-    vtk = geogp.vtkWriter()
-    gfnew = geogp.function("global", order=1, globalExpr=expr_global)
-    gfnew.addToVTKWriter(vtk, common.DataType.PointData)
+    geogrid = geometryGridView(df)
+    gfnew = create.function("global", geogrid, "expression", 1, expr_global)
 
     dt = 0.01
     count = 0
-    while t<1:
+    while t < 1:
         t += dt
         count += 1
         df.interpolate(gf)
-        vtk.write(prefix + str(count));
+        geogrid.writeVTK(prefix, pointdata=[gfnew], number=count)
 
-def testGridPart(gridtype):
+def testGridView(gridtype):
     grid = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
-    testGeometryGridPart(grid, "gridpart_demo")
+    testGeometryGridView(grid, "gridpart-demo")
 
-    #subGrid = filteredGridPart(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
-    # subGrid = gridPart("filtered", grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
-    # testGeometryGridPart(subGrid, "gridpart_demo_sub")
+    subGrid = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
+    testGeometryGridView(subGrid, "gridpart-demo-sub")
 
-print("YASPGRID B")
-testGridPart("Yasp")
-print("END")
+testGridView("Yasp")

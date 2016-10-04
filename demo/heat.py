@@ -1,12 +1,11 @@
 from __future__ import print_function
 
-# from mpi4py import MPI
-
 import math
 from ufl import *
 
-import dune.fem
-import dune.ufl
+from dune.grid import cartesianDomain
+from dune.ufl import GridCoefficient, Space
+
 import dune.create as create
 
 # Crank Nicholson
@@ -15,7 +14,7 @@ deltaT = 0.01
 
 def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
-    grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+    grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
     spc = create.space("Lagrange", grid, dimrange=1, order=2)
 
@@ -29,10 +28,10 @@ def compute():
 
     # now define the actual pde to solve:
     #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0
-    uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1)
+    uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
     u = TrialFunction(uflSpace)
     v = TestFunction(uflSpace)
-    u_n = dune.ufl.GridCoefficient(solution)
+    u_n = GridCoefficient(solution)
     tau = Constant(triangle)
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 

@@ -2,7 +2,8 @@ from __future__ import print_function
 
 import math
 
-import dune.common as common
+import dune.common
+import dune.fem
 
 from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid
@@ -22,7 +23,7 @@ grid.writeVTK("initial", pointdata=[phi])
 
 maxLevel = 8
 hgrid = grid.hierarchicalGrid
-marker = common.Marker
+marker = dune.common.Marker
 
 def mark(element, t):
     y = element.geometry.center - [0.5+0.2*math.cos(t), 0.5+0.2*math.sin(t)]
@@ -33,16 +34,16 @@ def mark(element, t):
 
 for i in range(0,maxLevel):
     hgrid.mark(lambda e: mark(e, 0))
-    #hgrid.adapt([phi])
-    #hgrid.loadBalance([phi])
+    dune.fem.adapt(hgrid, [phi])
+    dune.fem.loadBalance(hgrid, [phi])
 
 nr = 0
 while 0.1*nr < 2*math.pi:
-    if common.comm.rank == 0:
+    if grid.comm.rank == 0:
         print('time:', 0.1*nr)
     hgrid.mark(lambda e: mark(e, 0.1*nr))
-    #hgrid.adapt([phi])
-    #hgrid.loadBalance([phi])
+    dune.fem.adapt(hgrid, [phi])
+    dune.fem.loadBalance(hgrid, [phi])
     grid.writeVTK("adapt", pointdata=[phi], celldata=[levelFunction(grid), partitionFunction(grid)], number=nr)
-    print("[" + str(common.comm.rank), "] Size: " + str(grid.size(0)))
+    print("[" + str(grid.comm.rank), "] Size: " + str(grid.size(0)))
     nr += 1

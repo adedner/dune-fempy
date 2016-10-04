@@ -7,18 +7,16 @@ import ufl
 
 import dune.ufl
 
-import dune.grid as grid
-import dune.alugrid
-import dune.fem.gridpart as gridpart
-import dune.fem.space as space
-import dune.fem.scheme as scheme
+from dune.fem.view import geometryGridView
+
+import dune.create as create
 
 order=3
 
 # Basic setup
 # -----------
 # set up reference domain
-grid = grid.create("ALUSimplex", "../data/sphere.dgf", dimgrid=2, dimworld=3)
+grid = create.grid("ALUSimplex", "../data/sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
 # discrete function for Gamma(t) and setup surface grid
@@ -27,9 +25,9 @@ positions = grid.interpolate(\
 #               lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
             space="Lagrange", name="positions", order=order)
 
-surface   = gridpart.create("Geometry",positions)
+surface   = geometryGridView(positions)
 # space for discrete solution on Gamma(t)
-spc       = space.create("Lagrange", surface, dimrange=surface.dimWorld, order=order)
+spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, order=order)
 # final time and time step
 endTime   = 0.25
 dt        = 0.0025
@@ -44,8 +42,8 @@ u_n = ufl.Coefficient(uflSpace)
 
 a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
 a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
-lhsModel = dune.fem.create.ellipticModel(surface, a_im == 0)()
-rhsModel = dune.fem.create.ellipticModel(surface, a_ex == 0)()
+lhsModel = create.model("elliptic", surface, a_im == 0)()
+rhsModel = create.model("elliptic", surface, a_ex == 0)()
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
@@ -53,8 +51,8 @@ rhsModel = dune.fem.create.ellipticModel(surface, a_ex == 0)()
 solution  = spc.interpolate(lambda x: x, name="solution")
 forcing   = spc.interpolate([0,]*surface.dimWorld, name="solution")
 # left hand side scheme
-solver    = scheme.create("h1", solution, lhsModel, "lhs")
-rhs       = scheme.create("h1", solution, rhsModel, "rhs")
+solver    = create.scheme("h1", solution, lhsModel, "lhs")
+rhs       = create.scheme("h1", solution, rhsModel, "rhs")
 
 # time loop
 # ---------

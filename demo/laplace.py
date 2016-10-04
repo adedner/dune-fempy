@@ -9,6 +9,8 @@ import dune.ufl
 import dune.fem
 import dune.fem.function as gf
 
+from dune.fem.view import adaptiveLeafGridView
+
 import dune.create as create
 
 dune.fem.parameter.append("../data/parameter")
@@ -16,6 +18,8 @@ dune.fem.parameter.append("../data/parameter")
 def compute():
     # grid = create.grid("SPIsotropic", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
     grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
+    grid = adaptiveLeafGridView(grid)
+
     # spc  = dune.fem.create.space("DGONB", grid, dimrange=1, order=2)
     spc  = dune.create.space("Lagrange", grid, dimrange=1, order=2)
 
@@ -51,6 +55,6 @@ def compute():
         error = math.sqrt( l2error_gf.integrate()[0] )
         print("size:",grid.size(0),"L2-error:",error)
         grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
-        # grid.hierarchicalGrid.globalRefine(2)
+        grid.hierarchicalGrid.globalRefine(2)
 
 compute()

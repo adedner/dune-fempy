@@ -2,10 +2,6 @@ from __future__ import print_function
 
 import math
 
-import dune.common as common
-from dune.fem.gridpart import create as gridPart
-#from dune.fem.gridpart.geometry import create as geometryGridPart
-#from dune.fem.gridpart.filtered import create as filteredGridPart
 from dune.fem.view import geometryGridView, filteredGridView
 
 import dune.create as create

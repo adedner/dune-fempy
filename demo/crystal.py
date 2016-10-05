@@ -5,13 +5,11 @@ from mpi4py import MPI
 import math
 import ufl
 
-import dune.models.elliptic
 import dune.ufl
-import dune.common
-import dune.alugrid
-import dune.fem
-import dune.fem.space
-import dune.fem.scheme
+import dune.common as common
+import dune.fem as fem
+import dune.create as create
+from dune.fem.function import levelFunction, partitionFunction
 
 def compute():
     # problem parameters
@@ -62,16 +60,16 @@ def compute():
 
     # basic setup
     # -----------
-    grid       = dune.grid.create("ALUConform", "../data/crystal-2d.dgf", dimgrid=dimDomain)
-    spc        = dune.fem.space.create("Lagrange", grid, dimrange=dimRange, order=order)
-    initial_gf = grid.function("initial", order+1, globalExpr=initial)
+    grid       = create.view("adaptive", create.grid("ALUConform", "../data/crystal-2d.dgf", dimgrid=dimDomain))
+    spc        = create.space("Lagrange", grid, dimrange=dimRange, order=order)
+    initial_gf = create.function("global", grid, "initial", order+1, initial)
     solution   = spc.interpolate(initial_gf, name="solution")
     solution_n = spc.interpolate(initial_gf, name="solution_n")
 
     # setup scheme
     # ------------
-    model  = dune.fem.create.ellipticModel(grid, dune.models.elliptic.compileUFL(a_im == a_ex,tempVars=False))( coefficients={un:solution_n} )
-    scheme = dune.fem.scheme.create("h1", solution, model, "scheme",
+    model  = create.model("elliptic", grid, a_im == a_ex, coefficients={un:solution_n} )
+    scheme = create.scheme("h1", solution, model, "scheme",
             parameters={"fem.solver.newton.linabstol": 1e-10,
             "fem.solver.newton.linreduction": 1e-10,
             "fem.solver.newton.verbose": 1,
@@ -82,7 +80,7 @@ def compute():
     # marking strategy
     # ----------------
     def mark(element):
-        marker = dune.common.Marker
+        marker = common.Marker
         solutionLocal = solution.localFunction(element)
         grad = solutionLocal.jacobian(element.geometry.domain.center)
         if grad[0].infinity_norm > 1.0:
@@ -93,11 +91,11 @@ def compute():
     # initial grid refinement
     # -----------------------
     hgrid = grid.hierarchicalGrid
-    grid.globalRefine(2)
+    hgrid.globalRefine(2)
     for i in range(0,maxLevel):
         hgrid.mark(mark)
-        hgrid.adapt([solution])
-        hgrid.loadBalance([solution])
+        fem.adapt(hgrid, [solution])
+        fem.loadBalance(hgrid, [solution])
         solution.interpolate(initial_gf)
 
     # time loop
@@ -105,7 +103,10 @@ def compute():
     count    = 0
     t        = 0.0
     savestep = saveinterval
-    vtk = grid.writeVTK("crystal", pointdata=[solution], celldata=[grid.levelFunction(), grid.partitionFunction()], number=count)
+    vtk = grid.writeVTK("crystal",
+            pointdata=[solution],
+            celldata=[levelFunction(grid), partitionFunction(grid)],
+            number=count)
 
     while t < endTime:
         solution_n.assign(solution)
@@ -117,8 +118,8 @@ def compute():
             count += 1
             vtk.write("crystal", count)
         hgrid.mark(mark)
-        hgrid.adapt([solution])
-        hgrid.loadBalance([solution])
+        fem.adapt(hgrid, [solution])
+        fem.loadBalance(hgrid, [solution])
 
     print("END")
 

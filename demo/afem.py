@@ -68,8 +68,8 @@ PROJECTION
   segment  4 5  p
 #
 """
-grid = create.grid("ALUConform", grid.string2dgf(dgf), dimgrid=2)
-grid = adaptiveLeafGridView(grid)
+grid = create.view("adaptive", "ALUConform", grid.string2dgf(dgf), dimgrid=2)
+
 grid.hierarchicalGrid.globalRefine(2)
 exact_gf = create.function("global", grid, "exact", order+1, exact)
 

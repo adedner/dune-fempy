@@ -9,8 +9,6 @@ import dune.ufl
 import dune.fem
 import dune.fem.function as gf
 
-from dune.fem.view import adaptiveLeafGridView
-
 import dune.create as create
 
 dune.fem.parameter.append("../data/parameter")
@@ -18,10 +16,10 @@ dune.fem.parameter.append("../data/parameter")
 def compute():
     # grid = create.grid("SPIsotropic", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
     grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
-    grid = adaptiveLeafGridView(grid)
+    grid = create.view("adaptive",grid)
 
     # spc  = dune.fem.create.space("DGONB", grid, dimrange=1, order=2)
-    spc  = dune.create.space("Lagrange", grid, dimrange=1, order=2)
+    spc  = dune.create.space("Lagrange", grid, dimrange=1, order=1)
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -46,7 +44,7 @@ def compute():
 
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):
-        print("solve on level",i)
+        print("solve on level",i, "number of dofs=",grid.size(2))
         uh = scheme.solve()
         def l2error(en,x):
             val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)

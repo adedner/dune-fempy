@@ -1,7 +1,6 @@
 Further Schemes etc:
 - vem scheme (needs special grid part for polygon)
 - nvdg scheeme (needs A(u,grad u) term for hessian multiplication in model
-- add filtered grid part as further example in addtion to geometry grid part
 - complete ns scheme to evaluate full rhs model
 - add fv scheme (how to do numerical fluxes)?
 - chemical flow problem?
@@ -11,19 +10,11 @@ Further Schemes etc:
 Other stuff:
 2)  extract dimworld,dimgrid from dgf file
 3)  scheme.estimate -> FVFunction with estimates
-4)  hierarchicalGrid needed?
 5)  dune.fem new memory for dof vectors initialize with zero
 7)  functional <-> function
-8)  mpi4py in dune.fem.__init__? Doesn't work... Perhaps needs to be
-    included in comoon.cc directly
-11) shouldn't it be leafGrid("ALUGridSimplex,dgf,...) instead of other
-    way. In all other cases the first string is the database entry
 12) make hgrid.globalRefine(factor=0.3) always reduce h by 0.5, i.e., use refineStepsForHalf?
 14) change name of refinement for ALU - it is not about conforming/non
     conforming but about bisection and ...
-15) remove the extension keyword from database once extened generator is decided on
-16) have the model return the exact solution as a grid function so that one can write
-    fem.h1norm(solution, m.exact() ) (remove the error method from the scheme)
 17) Add a way to distiguish between local and global coordinates, i.e.,
     add a "LocalFieldVectorClass" derived from FieldVector but not adding
     that base in the pybind11 export statement. Then export all method
@@ -34,14 +25,10 @@ Other stuff:
 --------------------------------------------------------------------------------------
 
 Bugs:
-1)  Problem with load balancing
-2?  Problem with model.set*(gf) not keeping gf alive long enough
-5?  database can not contain parameters with numbers (at least space0 failed)
 6)  if a scheme has a fixed storage one has to make sure that the correct storage is
     really used and the correct discrete function types are registered. An easier approach
     to registration should be made available in the C++ bindings as well
     Solution: Have a const parameter in the scheme
-7?  grid._includes does not contain gridpart header
 
 ------------------------------------------------------------------------------------
 

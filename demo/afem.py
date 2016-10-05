@@ -4,13 +4,12 @@ from mpi4py import MPI
 
 from ufl import *
 from dune.ufl import Space as UFLSpace
-from dune.models.elliptic import compileUFL, importModel
 
+import dune.create as create
 import dune.grid as grid
-import dune.alugrid
 import dune.fem as fem
-import dune.fem.space as space
-import dune.fem.scheme as scheme
+from dune.fem.view import adaptiveLeafGridView
+
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 360.
@@ -69,12 +68,13 @@ PROJECTION
   segment  4 5  p
 #
 """
-grid = grid.create("ALUSimplex", grid.string2dgf(dgf), dimgrid=2, refinement="conforming")
-grid.globalRefine(2)
-exact_gf = grid.function("exact", order+1, globalExpr=exact)
+grid = create.grid("ALUConform", grid.string2dgf(dgf), dimgrid=2)
+grid = adaptiveLeafGridView(grid)
+grid.hierarchicalGrid.globalRefine(2)
+exact_gf = create.function("global", grid, "exact", order+1, exact)
 
 # use a piecewise quadratic Lagrange space
-spc  = space.create( "Lagrange", grid, dimrange=1, order=order)
+spc  = create.space( "Lagrange", grid, dimrange=1, order=order)
 
 # the model is -laplace u = 0 with Dirichlet boundary conditions
 uflSpace = UFLSpace(2, 1)
@@ -84,11 +84,12 @@ x = SpatialCoordinate(uflSpace.cell())
 bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
 
-model = fem.create.ellipticModel(grid, a == 0, dirichlet={1:[bnd_u]}, tempVars=False)( coefficients={bnd_u: exact_gf} )
+model = create.model("elliptic", grid, a == 0, dirichlet={1:[bnd_u]},
+        tempVars=False, coefficients={bnd_u: exact_gf})
 
 # set up the scheme
-laplace = scheme.create("h1", spc, model, "afem")
-uh = spc.interpolate(lambda x: [0])
+laplace = create.scheme("h1", spc, model, "afem")
+uh = spc.interpolate(lambda x: [0], name="solution")
 laplace.solve(target=uh)
 
 # function used for computing approximation error
@@ -97,15 +98,16 @@ def h1error(en,x):
     val = uh.localFunction(en).evaluate(x) - exact(y)
     jac = uh.localFunction(en).jacobian(x)[0] - exactJac(y)
     return [ sqrt( val[0]*val[0] + jac*jac) ];
-h1error_gf = grid.function( "error", order=order+1, localExpr=h1error )
+h1error_gf = create.function( "local", grid, "error", order+1, h1error )
 
 # adaptive loop (mark, estimate, solve)
 count = 0
 tol = 0.05 # use 0 for global refinement
 while count < 20:
-    error = grid.l2Norm(h1error_gf)
+    error = math.sqrt(h1error_gf.integrate()[0])
     [estimate, marked] = laplace.mark(uh, tol)
-    grid.writeVTK("afem", pointdata=[uh], celldata=[grid.levelFunction()], number=count )
+    grid.writeVTK("afem", pointdata=[uh],
+            celldata=[create.function("levels",grid)], number=count )
     print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
     if marked == False or estimate < tol:
         break
@@ -113,7 +115,7 @@ while count < 20:
         grid.hierarchicalGrid.globalRefine(2)
         uh.interpolate([0])  # initial guess needed
     else:
-        grid.hierarchicalGrid.adapt([uh])
-        grid.hierarchicalGrid.loadBalance([uh])
+        fem.adapt(grid.hierarchicalGrid, [uh])
+        fem.loadBalance(grid.hierarchicalGrid, [uh])
     laplace.solve( target=uh )
     count += 1

@@ -151,6 +151,6 @@ def compute():
         error = math.sqrt( l2error_gf.integrate()[0] )
         print("size:",grid.size(0),"L2-error:",error)
 
-        # grid.hierarchicalGrid.globalRefine(2)
+        grid.hierarchicalGrid.globalRefine(2)
 
 compute()

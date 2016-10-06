@@ -16,7 +16,6 @@ dune.fem.parameter.append("../data/parameter")
 def compute():
     # grid = create.grid("SPIsotropic", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
     grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
-    grid = create.view("adaptive",grid)
 
     # spc  = dune.fem.create.space("DGONB", grid, dimrange=1, order=2)
     spc  = dune.create.space("Lagrange", grid, dimrange=1, order=1)

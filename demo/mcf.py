@@ -8,7 +8,7 @@ import ufl
 import dune.ufl
 
 from dune.fem import create, leafGrid
-from dume.fem.gridpart.geometry import create as geometryGridPart
+from dune.fem.gridpart.geometry import create as geometryGridPart
 
 order=3
 

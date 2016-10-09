@@ -11,6 +11,29 @@ import dune.fem as fem
 import dune.create as create
 from dune.fem.function import levelFunction, partitionFunction
 
+def plot(solution,block=True):
+    try:
+        from matplotlib import pyplot
+        from numpy import amin, amax, linspace
+        pyplot.ion()
+
+        # wouldn't it be better to have a  method
+        # triagulation, data = solution.plot(0)
+        # otherwise there is a constistency problem with the level parameter
+        triangulation = solution.grid.triangulation(0)
+        data = solution.pointData(0)
+
+        levels = linspace(amin(data[:,0]), amax(data[:,0]), 256)
+
+        pyplot.gca().set_aspect('equal')
+        pyplot.triplot(solution.grid.triangulation(), antialiased=True, linewidth=0.2, color='black')
+        pyplot.tricontourf(triangulation, data[:,0], cmap=pyplot.cm.rainbow, levels=levels)
+        pyplot.pause(0.005)
+        if block:
+            pyplot.show(block=True)
+    except ImportError:
+        pass
+
 def compute():
     # problem parameters
     # ------------------
@@ -18,8 +41,8 @@ def compute():
     dimDomain    = 2
     maxLevel     = 10
     dt           = 5.e-4
-    endTime      = 0.02
-    saveinterval = 0.001
+    endTime      = 0.2
+    saveinterval = 0.01
     order        = 1
 
     ## model taken from www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html
@@ -70,8 +93,10 @@ def compute():
     # ------------
     model  = create.model("elliptic", grid, a_im == a_ex, coefficients={un:solution_n} )
     scheme = create.scheme("h1", solution, model, "scheme",
-            parameters={"fem.solver.newton.linabstol": 1e-10,
-            "fem.solver.newton.linreduction": 1e-10,
+            parameters={
+            "fem.solver.newton.tolerance": 1e-5,
+            "fem.solver.newton.linabstol": 1e-8,
+            "fem.solver.newton.linreduction": 1e-8,
             "fem.solver.newton.verbose": 1,
             "fem.solver.newton.linear.verbose": 1}\
             )
@@ -117,10 +142,12 @@ def compute():
             savestep += saveinterval
             count += 1
             vtk.write("crystal", count)
+            plot(solution, False)
         hgrid.mark(mark)
         fem.adapt(hgrid, [solution])
         fem.loadBalance(hgrid, [solution])
 
+    plot(solution, True)
     print("END")
 
 compute()

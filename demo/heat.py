@@ -19,12 +19,11 @@ def compute():
     spc = create.space("Lagrange", grid, dimrange=1, order=2)
 
     # set up initial conditions
-    initial = lambda x: [ math.atan( (10.*x[0]*(1-x[0])*x[1]*(1-x[1]))**2 ) ]
-    solution = spc.interpolate(initial, name="u")
+    solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
     grid.writeVTK("heat", pointdata=[solution], number=0)
 
     # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
-    old_solution = spc.interpolate(initial, name="u_n")
+    old_solution = solution.copy();
 
     # now define the actual pde to solve:
     #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0

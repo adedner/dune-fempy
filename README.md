@@ -54,10 +54,12 @@ packages are required:
 - a C++14 compatible C++ compiler (e.g., GCC 4.9+, clang 3.5+)
 - Python 2.7+
 
-We strongly recommend installing the following Pyhton packages:
+We strongly recommend installing the following Pyhton packages to make full
+use of dune-fempy:
 
 - numpy
 - mpi4py
+- ufl
 
 
 Buidling

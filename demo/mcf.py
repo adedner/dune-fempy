@@ -37,28 +37,26 @@ theta     = 0.5
 
 # now set up schemes for left and right hand side
 # -----------------------------------------------
-# u^{n+1} and forcing
+# u^{n+1} and u^n
 solution  = spc.interpolate(lambda x: x, name="solution")
-forcing   = spc.interpolate([0,]*surface.dimWorld, name="solution")
+old_solution = solution.copy()
 
-# set up left and right hand side models
-# --------------------------------------
+# set up model
+# ------------
 uflSpace = dune.ufl.Space((surface.dimGrid, surface.dimWorld), surface.dimWorld)
 u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
-u_n = dune.ufl.GridCoefficient(solution)
+u_n = dune.ufl.GridCoefficient(old_solution)
 
-a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
-a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
-lhsModel = create.model("elliptic", surface, a_im == 0)
-rhsModel = create.model("elliptic", surface, a_ex == 0)
+a = (ufl.inner(u - u_n, v) + dt * ufl.inner(ufl.grad(theta*u + (1-theta)*u_n), ufl.grad(v))) * ufl.dx
+model = create.model("elliptic", surface, a == 0)
 
 # left hand side scheme
-solver    = create.scheme("h1", solution, lhsModel, "lhs")
-rhs       = create.scheme("h1", solution, rhsModel, "rhs")
+scheme = create.scheme("h1", solution, model, "scheme")
 
 # time loop
 # ---------
+
 count   = 0
 t       = 0.
 surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
@@ -79,8 +77,8 @@ def calcRadius(surface):
 R0 = calcRadius(surface)
 
 while t < endTime:
-    rhs(solution, forcing)
-    solver.solve(forcing, solution )
+    old_solution.assign(solution)
+    scheme.solve(target=solution)
     t     += dt
     count += 1
     print("time: ", t)

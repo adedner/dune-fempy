@@ -19,37 +19,40 @@ order=3
 grid = create.grid("ALUSimplex", "../data/sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
-# discrete function for Gamma(t) and setup surface grid
-positions = grid.interpolate(\
-              lambda x: x*2.,
-#               lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
-            space="Lagrange", name="positions", order=order)
-
-surface   = geometryGridView(positions)
 # space for discrete solution on Gamma(t)
+spc       = create.space("Lagrange", grid, dimrange=grid.dimWorld, order=order)
+# define discrete function for Gamma(t) and setup surface grid
+positions = spc.interpolate(\
+#               lambda x: x*2.,
+              lambda x: x * (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*math.cos(math.pi*x[2])),
+              name="positions")
+
+# space for discrete solution on Gamma(t)
+surface   = geometryGridView(positions)
 spc       = create.space("Lagrange", surface, dimrange=surface.dimWorld, order=order)
 # final time and time step
 endTime   = 0.25
 dt        = 0.0025
 theta     = 0.5
 
-# set up left and right hand side models
-# --------------------------------------
-uflSpace = dune.ufl.Space((surface.dimGrid, surface.dimWorld), surface.dimWorld)
-u = ufl.TrialFunction(uflSpace)
-v = ufl.TestFunction(uflSpace)
-u_n = ufl.Coefficient(uflSpace)
-
-a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
-a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
-lhsModel = create.model("elliptic", surface, a_im == 0)()
-rhsModel = create.model("elliptic", surface, a_ex == 0)()
-
 # now set up schemes for left and right hand side
 # -----------------------------------------------
 # u^{n+1} and forcing
 solution  = spc.interpolate(lambda x: x, name="solution")
 forcing   = spc.interpolate([0,]*surface.dimWorld, name="solution")
+
+# set up left and right hand side models
+# --------------------------------------
+uflSpace = dune.ufl.Space((surface.dimGrid, surface.dimWorld), surface.dimWorld)
+u = ufl.TrialFunction(uflSpace)
+v = ufl.TestFunction(uflSpace)
+u_n = dune.ufl.GridCoefficient(solution)
+
+a_im = (dt * theta * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
+a_ex = (-dt * (1-theta) * ufl.inner(ufl.grad(u), ufl.grad(v)) + ufl.inner(u, v)) * ufl.dx
+lhsModel = create.model("elliptic", surface, a_im == 0)
+rhsModel = create.model("elliptic", surface, a_ex == 0)
+
 # left hand side scheme
 solver    = create.scheme("h1", solution, lhsModel, "lhs")
 rhs       = create.scheme("h1", solution, rhsModel, "rhs")

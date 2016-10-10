@@ -62,7 +62,7 @@ rhs       = create.scheme("h1", solution, rhsModel, "rhs")
 count   = 0
 t       = 0.
 surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
-surface.writeVTK("mcf"+str(order)+"-", pointdata=[solution], number=count, subsampling=3)
+surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
 
 def calcRadius(surface):
   # compute R = int_x |x| / int_x 1

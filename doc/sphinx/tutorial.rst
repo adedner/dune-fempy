@@ -110,3 +110,16 @@ This example and others are located in the demo folder in the main directory. In
   python laplace.pyc
 
 Note that the make command is only necessary if any changes are made to the files.
+
+Using Jupyter
+------------
+
+An alternative way to run the code is with Jupyter notebooks. Their advantage over the regular python files is that the documentation is more extensive. To install jupyter, one can run
+
+.. code-block:: bash
+
+   pip3 install --user jupyter 
+
+In the demo folder, files ending in .ipynb are notebook files. To start up Jupyter, run `jupyter-notebook`. The files can then be opened and run in an interactive session.
+
+Regular python files can also be loaded by running `%load file.py` in an empty cell.

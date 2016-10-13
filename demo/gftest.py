@@ -32,7 +32,7 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 code = { 'eval': func1, 'jac': func2 }
 
 coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
-func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc}, constants={"fac": 1} )
+func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
 func.setConstant("fac", [factor])
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")

@@ -11,7 +11,7 @@ import dune.fem as fem
 import dune.create as create
 from dune.fem.function import levelFunction, partitionFunction
 
-def plot(solution,block=True):
+def plot(solution, block=True):
     try:
         from matplotlib import pyplot
         from numpy import amin, amax, linspace

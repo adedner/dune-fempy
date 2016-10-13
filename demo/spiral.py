@@ -37,12 +37,19 @@ def initial(x):
 grid = create.grid("Yasp", "../data/spiral-2d.dgf", dimgrid=2)
 spc  = create.space( "Lagrange", grid, dimrange=dimRange, order=1 )
 
+# now set up schemes for left and right hand side
+# -----------------------------------------------
+# u^{n+1} and forcing
+solution    = spc.interpolate( initial, name="solution" )
+solution_n  = spc.interpolate( initial, name="solution_n" )
+forcing     = spc.interpolate( [0,0,0], name="forcing" )
+
 # set up left and right hand side models
 # --------------------------------------
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u = ufl.TrialFunction(uflSpace)
 v = ufl.TestFunction(uflSpace)
-un = ufl.Coefficient(uflSpace)
+un = dune.ufl.NamedCoefficient(uflSpace, "un")
 
 # right hand sie (time derivative part + explicit forcing in v)
 a_ex = (ufl.inner(un, v) + dt * ufl.inner(spiral_h(un[0], un[1]), v[1])) * ufl.dx
@@ -54,38 +61,27 @@ modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
 # extra model source code
 # -----------------------
 sourceCode = """\
-RangeType un;
-coefficient< UNCOUNT >().evaluate( x, un );
-double uth = (un[ 1 ] + spiral_b) / spiral_a;
-if( un[ 0 ] <= uth )
-  result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
-else
-  result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (1.0 - u[ 0 ]) * (un[ 0 ] - uth);
+      double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
+      if( @gf:un[ 0 ] <= uth )
+        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
+      else
+        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - uth);
 """
 linSourceCode = """\
-RangeType un;
-coefficient< UNCOUNT >().evaluate( x, un );
-double uth = (un[ 1 ] + spiral_b) / spiral_a;
-if( un[ 0 ] <= uth )
-  result[ 0 ] -= dt/spiral_eps * u[ 0 ] * (1.0 - un[ 0 ]) * (un[ 0 ] - uth);
-else
-  result[ 0 ] -= dt/spiral_eps * un[ 0 ] * (-u[ 0 ]) * (un[ 0 ] - uth);
+      double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
+      if( @gf:un[ 0 ] <= uth )
+        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
+      else
+        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - uth);
 """
-repls = ('spiral_a', str(spiral_a)), ('spiral_b', str(spiral_b)),\
-        ('spiral_eps', str(spiral_eps)), ('dt',str(dt)),\
-        ('UNCOUNT', "0")
+modelCode.appendCode('source', sourceCode, coefficients={"un": solution_n} )
+modelCode.appendCode('linSource', linSourceCode )
 
-modelCode.source.append(reduce(lambda a, kv: a.replace(*kv), repls, sourceCode))
-modelCode.linSource.append(reduce(lambda a, kv: a.replace(*kv), repls, linSourceCode))
-
-# now set up schemes for left and right hand side
-# -----------------------------------------------
-# u^{n+1} and forcing
-solution    = spc.interpolate( initial, name="solution" )
-solution_n  = spc.interpolate( initial, name="solution_n" )
-forcing     = spc.interpolate( [0,0,0], name="forcing" )
-
-model = create.model("elliptic", grid, modelCode, coefficients={un:solution_n} )
+model = create.model("elliptic", grid, modelCode, coefficients={"un": solution_n} )
+model.setConstant("a", [spiral_a])
+model.setConstant("b", [spiral_b])
+model.setConstant("eps", [spiral_eps])
+model.setConstant("dt", [dt])
 
 scheme = create.scheme("h1", solution, model, "scheme")
 

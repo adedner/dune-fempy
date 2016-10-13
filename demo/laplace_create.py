@@ -32,7 +32,7 @@ def compute():
                 "fem.solver.gmres.restart": 50,
                 "fem.solver.newton.linear.verbose": 1}
     # using both grid and view (AdaptivLeaf<ALU>)
-    scheme = create.scheme("h1", name="scheme",storage="istl",
+    scheme = create.scheme("h1", storage="istl",
                model="elliptic", equation=eqn, exact=exact, dirichlet={ 1:exact },
                space="Lagrange",order=2,
                grid="ALUCube", constructor=domain,dimgrid=2,

@@ -92,7 +92,7 @@ def compute():
     # setup scheme
     # ------------
     model  = create.model("elliptic", grid, a_im == a_ex, coefficients={un:solution_n} )
-    scheme = create.scheme("h1", solution, model, "scheme",
+    scheme = create.scheme("h1", solution, model,
             parameters={
             "fem.solver.newton.tolerance": 1e-5,
             "fem.solver.newton.linabstol": 1e-8,

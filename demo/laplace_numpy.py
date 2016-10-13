@@ -51,7 +51,7 @@ def compute():
     model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } )
 
     # scheme = dune.fem.create.scheme("DGFemScheme", spc, model,\
-    scheme = create.scheme("h1", spc, model, "scheme",\
+    scheme = create.scheme("h1", spc, model,\
            parameters=\
            {"fem.solver.newton.tolerance": 1e-10,
             "fem.solver.newton.linabstol": 1e-12,

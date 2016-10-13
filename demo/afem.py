@@ -88,7 +88,7 @@ model = create.model("elliptic", grid, a == 0, dirichlet={1:[bnd_u]},
         tempVars=False, coefficients={bnd_u: exact_gf})
 
 # set up the scheme
-laplace = create.scheme("h1", spc, model, "afem")
+laplace = create.scheme("h1", spc, model)
 uh = spc.interpolate(lambda x: [0], name="solution")
 laplace.solve(target=uh)
 

@@ -87,7 +87,7 @@ forcing     = spc.interpolate( [0,0,0], name="forcing" )
 
 model = create.model("elliptic", grid, modelCode, coefficients={un:solution_n} )
 
-scheme = create.scheme("h1", solution, model, "scheme")
+scheme = create.scheme("h1", solution, model)
 
 # time loop
 # ---------
@@ -98,7 +98,7 @@ grid.writeVTK("spiral", pointdata=[solution], number=count)
 while t < endTime:
     print(">>> Computing solution a t = " + str(t + dt))
     solution_n.assign(solution)
-    scheme.solve(target=solution, assemble=(count==0))
+    scheme.solve(target=solution) # , assemble=(count==0))
     t     += dt
     count += 1
     grid.writeVTK("spiral", pointdata=[solution], number=count)

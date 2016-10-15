@@ -25,5 +25,5 @@ b = rhs * dx + 10*rhs * ds
 
 model = create.model("elliptic", grid, a==b)
 
-scheme = create.scheme("h1", spc, model, "scheme")
-grid.writeVTK("p-laplace", pointdata=[scheme.solve()])
+scheme = create.scheme("h1", spc, model)
+grid.writeVTK("p-laplace", pointdata=[scheme.solve(name="solution")])

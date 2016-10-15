@@ -97,7 +97,7 @@ def galerkin(space, model, name="tmp", storage=None, parameters={}):
     return module(storage, includes, typeName).Scheme(space, model, name, parameters)
 
 
-def h1(space, model, name="tmp", storage=None, parameters={}):
+def h1(space, model, storage=None, parameters={}):
     """create a scheme for solving second order pdes with continuous finite element
 
     Args:
@@ -119,10 +119,10 @@ def h1(space, model, name="tmp", storage=None, parameters={}):
           "typename " + spaceType + "::RangeFieldType >, DifferentiableEllipticOperator, " +\
           storage + " >"
 
-    return module(storage, includes, typeName).Scheme(space,model,name,parameters)
+    return module(storage, includes, typeName).Scheme(space,model,parameters)
 
 
-def h1Galerkin(space, model, name="tmp", storage=None, parameters={}):
+def h1Galerkin(space, model, storage=None, parameters={}):
     from . import module, canonicalizeStorage, spaceAndStorage
     space, storage = spaceAndStorage(space, storage)
     storage = canonicalizeStorage(storage)
@@ -137,11 +137,11 @@ def h1Galerkin(space, model, name="tmp", storage=None, parameters={}):
     typeName = "Dune::Fem::GalerkinScheme< " + ", ".join([spaceType, integrandsType, storage]) + " >"
     includes = ["dune/fem/schemes/galerkin.hh", "dune/fem/schemes/diffusionmodel.hh", "dune/fempy/parameter.hh"] + space._module._includes
 
-    constructor = ['[] ( ' + typeName + ' &self, const ' + spaceType + ' &space, const ' + modelType + ' &model, std::string name, const pybind11::dict &parameters ) {',
-                   '    new (&self) ' + typeName + '( space, ' + integrandsType + '( model ), std::move( name ), Dune::FemPy::pyParameter( parameters, std::make_shared< std::string >() ) );',
-                   '  }, "space"_a, "model"_a, "name"_a, "parameters"_a, pybind11::keep_alive< 1, 3 >(), pybind11::keep_alive< 1, 2 >()']
+    constructor = ['[] ( ' + typeName + ' &self, const ' + spaceType + ' &space, const ' + modelType + ' &model, const pybind11::dict &parameters ) {',
+                   '    new (&self) ' + typeName + '( space, ' + integrandsType + '( model ), Dune::FemPy::pyParameter( parameters, std::make_shared< std::string >() ) );',
+                   '  }, "space"_a, "model"_a, "parameters"_a, pybind11::keep_alive< 1, 3 >(), pybind11::keep_alive< 1, 2 >()']
 
-    return module(storage, includes, typeName, [constructor]).Scheme(space, model, name, parameters)
+    return module(storage, includes, typeName, [constructor]).Scheme(space, model, parameters)
 
 
 def nvdg(space_or_df, model, name="tmp", **kwargs):

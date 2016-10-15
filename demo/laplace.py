@@ -32,11 +32,11 @@ def plot(grid, solution):
 
 def compute():
     # grid = create.grid("SPIsotropic", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
-    grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
+    grid = create.view("adaptive", grid="ALUConform", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
     # grid = create.grid("ALUCube", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
-    # spc  = dune.fem.create.space("DGONB", grid, dimrange=1, order=2)
-    spc  = dune.create.space("Lagrange", grid, dimrange=1, order=1)
+    # spc  = create.space("DGONB", grid, dimrange=1, order=2)
+    spc  = create.space("Lagrange", grid, dimrange=1, order=1)
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -51,14 +51,13 @@ def compute():
     model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } )
 
     # scheme = create.scheme("DGFemScheme", spc, model,\
-    scheme = create.scheme("h1", spc, model, "scheme",\
+    scheme = create.scheme("h1", spc, model,\
            parameters=\
            {"fem.solver.newton.linabstol": 1e-10,
             "fem.solver.newton.linreduction": 1e-10,
             "fem.solver.newton.verbose": 0,
             "fem.solver.newton.linear.verbose": 0},\
             storage="istl")
-
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):
         print("solve on level", i, "number of dofs=", grid.size(2))

@@ -28,24 +28,24 @@ def compute():
     domain = dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8])
     parameters = {"fem.solver.newton.linabstol": 1e-10,
                 "fem.solver.newton.linreduction": 1e-10,
-                "fem.solver.newton.verbose": 1,
+                "fem.solver.newton.verbose": 0,
                 "fem.solver.gmres.restart": 50,
-                "fem.solver.newton.linear.verbose": 1}
+                "fem.solver.newton.linear.verbose": 0}
     # using both grid and view (AdaptivLeaf<ALU>)
-    scheme = create.scheme("h1", name="scheme",storage="istl",
+    scheme = create.scheme("h1", storage="istl",
                model="elliptic", equation=eqn, exact=exact, dirichlet={ 1:exact },
                space="Lagrange",order=2,
                grid="ALUCube", constructor=domain,dimgrid=2,
                view="adaptive",
                parameters=parameters)
     # using only grid (LeafGrid<ALU>)
-    scheme = create.scheme("h1", name="scheme",storage="istl",
+    scheme = create.scheme("h1", storage="istl",
                model="elliptic", equation=eqn, exact=exact, dirichlet={ 1:exact },
                space="Lagrange",order=2,
                grid="ALUCube", constructor=domain,dimgrid=2,
                parameters=parameters)
     # using only view (LeafGrid<ALU>)
-    scheme = create.scheme("h1", name="scheme",storage="istl",
+    scheme = create.scheme("h1", storage="istl",
                model="elliptic", equation=eqn, exact=exact, dirichlet={ 1:exact },
                space="Lagrange",order=2,
                view="ALUCube", constructor=domain,dimgrid=2,
@@ -64,6 +64,6 @@ def compute():
         error = math.sqrt( l2error_gf.integrate()[0] )
         print("size:",grid.size(0),"L2-error:",error)
         grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
-        grid.hierarchicalGrid.globalRefine(2)
+        grid.hierarchicalGrid.globalRefine(1)
 
 compute()

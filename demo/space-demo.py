@@ -22,7 +22,7 @@ def testSpace(grid2d, spacetype, dimRange, order):
 
     gf = create.function("global", grid2d, "expr_global", 1, expr_global)
     df1 = lagrangespace.interpolate( gf, name="test" )
-    df2 = lagrangespace.interpolate( [5]*dimRange )
+    df2 = lagrangespace.interpolate( [5]*dimRange, name="zero" )
     df3 = lagrangespace.interpolate( df1, name="copy", storage="istl" )
     df4 = lagrangespace.interpolate( lambda x:
             [(x-[0.5,0.5]).infinity_norm,]*dimRange, name="radius") # , storage="Numpy"  )

@@ -2,12 +2,11 @@ from __future__ import print_function
 import math
 from mpi4py import MPI
 
-import dune.grid as grid
-import dune.alugrid
-import dune.fem as fem
+import dune.create as create
 
 def testSpace(gridtype):
-    grid2d = grid.create(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
+    grid2d = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
+    exit(1)
 
     def expr_global(x):
         return [-(x[1] - 0.5)*math.sin(x[0]*12),x[0]*x[1]]

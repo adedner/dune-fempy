@@ -44,8 +44,8 @@ def compute():
                      "fem.solver.newton.verbose": 1,
                      "fem.solver.newton.linear.verbose": 1}
     # create the solver using a standard fem scheme
-    # scheme = create.scheme("h1galerkin", spc, model, "scheme", parameters=solverParameter)
-    scheme = create.scheme("dggalerkin", spc, model, 10, "scheme", parameters=solverParameter)
+    # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
+    scheme = create.scheme("dggalerkin", spc, model, 10, parameters=solverParameter)
 
     # now loop through time and output the solution after each time step
     steps = int(1 / deltaT)

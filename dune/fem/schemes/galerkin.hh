@@ -536,7 +536,6 @@ namespace Dune
 
             w.addLocalDofs( inside, wInside.localDofVector() );
           }
-
           w.communicate();
         }
 
@@ -788,18 +787,14 @@ namespace Dune
       //typedef DifferentiableGalerkinOperator< LinearOperatorType, Integrands > GalerkinOperatorType;
       typedef AutomaticDifferenceGalerkinOperator< DiscreteFunctionType, Integrands > GalerkinOperatorType;
 
-      GalerkinScheme ( const DiscreteFunctionSpaceType &dfSpace, const Integrands &integrands, std::string name, Dune::Fem::ParameterReader parameter = Dune::Fem::Parameter::container() )
+      GalerkinScheme ( const DiscreteFunctionSpaceType &dfSpace, const Integrands &integrands, Dune::Fem::ParameterReader parameter = Dune::Fem::Parameter::container() )
         : galerkinOperator_( dfSpace, integrands ),
           linearOperator_( "assembled Galerkin operator", dfSpace, dfSpace ),
-          name_( std::move( name ) ),
           rhs_( "rhs", dfSpace ),
           parameter_( std::move( parameter ) )
       {}
 
       void constraint ( const DiscreteFunctionType &u ) {}
-
-      void prepare () { rhs_.clear(); }
-      void prepare ( const DiscreteFunctionType &add ) { rhs_.assign( add ); }
 
       template< class GridFunction >
       void operator() ( const GridFunction &u, DiscreteFunctionType &w )
@@ -807,7 +802,7 @@ namespace Dune
         galerkinOperator_.impl_.evaluate( galerkinOperator_.integrands_, u, w );
       }
 
-      void solve ( DiscreteFunctionType &solution, bool assemble )
+      void solve ( DiscreteFunctionType &solution )
       {
         typedef typename UsedSolverType::LinearInverseOperatorType LinearInverseOperatorType;
         NewtonInverseOperator< typename GalerkinOperatorType::JacobianOperatorType, LinearInverseOperatorType > invOp( galerkinOperator_, parameter_ );
@@ -821,13 +816,8 @@ namespace Dune
         return *linearOperator_;
       }
 
-      // nasty hack: We don't have an exact solution
-      DiscreteFunctionType &exactSolution () const { rhs_.clear(); return rhs_; }
-
       bool mark ( double tolerance ) { return false; }
       double estimate ( const DiscreteFunctionType &solution ) { return 0.0; }
-
-      const std::string &name () { return name_; }
 
       const GridPartType &gridPart () const { return space().gridPart(); }
       const DiscreteFunctionSpaceType &space() const { return galerkinOperator_.impl_.discreteFunctionSpace(); }
@@ -835,7 +825,6 @@ namespace Dune
     protected:
       GalerkinOperatorType galerkinOperator_;
       LinearOperatorType linearOperator_;
-      const std::string name_;
       mutable DiscreteFunctionType rhs_;
       Dune::Fem::ParameterReader parameter_;
     };

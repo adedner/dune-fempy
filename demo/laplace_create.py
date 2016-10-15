@@ -52,7 +52,6 @@ def compute():
                parameters=parameters)
 
     grid = scheme.space.grid
-    # uh = create.discretefunction("istl",scheme.space,"solution")
 
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):
@@ -66,6 +65,5 @@ def compute():
         print("size:",grid.size(0),"L2-error:",error)
         grid.writeVTK("laplace", pointdata=[ uh,l2error_gf ])
         grid.hierarchicalGrid.globalRefine(1)
-        print("  ***** REFINE GRID ***** ")
 
 compute()

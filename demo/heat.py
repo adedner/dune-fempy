@@ -22,8 +22,8 @@ def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
     grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
-    # spc = create.space("Lagrange", grid, dimrange=1, order=2)
-    spc = create.space("DGONB", grid, dimrange=1, order=2)
+    spc = create.space("Lagrange", grid, dimrange=1, order=2)
+    # spc = create.space("DGONB", grid, dimrange=1, order=2)
 
     # set up initial conditions
     solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u", storage="istl")
@@ -43,6 +43,7 @@ def compute():
 
     # now generate the model code and compile
     model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
+    model.setConstant(tau,[deltaT])
 
     # setup structure for olver parameters
     solverParameter={"fem.solver.newton.linabstol": 1e-8,
@@ -51,13 +52,16 @@ def compute():
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
+    # scheme = create.scheme("h1", spc, model, parameters=solverParameter, storage="istl")
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter, storage="istl")
     scheme = create.scheme("dggalerkin", spc, model, 5, parameters=solverParameter, storage="istl")
 
+    # scheme = create.scheme("linearized", scheme, parameters=solverParameter, storage="istl")
+    # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter, "storage=istl")
+
     # now loop through time and output the solution after each time step
-    steps = int(1 / deltaT)
+    steps = int(0.1 / deltaT)
     for n in range(1,steps+1):
-        model.setConstant(tau,[deltaT])
         old_solution.assign(solution)
         scheme.solve(target=solution)
         grid.writeVTK("heat", pointdata=[solution], number=n)

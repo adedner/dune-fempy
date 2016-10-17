@@ -94,7 +94,7 @@ grid.writeVTK("spiral", pointdata=[solution], number=count)
 while t < endTime:
     print(">>> Computing solution a t = " + str(t + dt))
     solution_n.assign(solution)
-    scheme.solve(target=solution) # , assemble=(count==0))
+    scheme.solve(target=solution)
     t     += dt
     count += 1
     grid.writeVTK("spiral", pointdata=[solution], number=count)

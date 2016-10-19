@@ -52,7 +52,7 @@ a = (ufl.inner(u - u_n, v) + dt * ufl.inner(ufl.grad(theta*u + (1-theta)*u_n), u
 model = create.model("elliptic", surface, a == 0)
 
 # left hand side scheme
-scheme = create.scheme("h1", solution, model)
+scheme = create.scheme("h1", spc, model)
 
 # time loop
 # ---------

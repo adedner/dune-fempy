@@ -22,11 +22,11 @@ def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
     grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
-    spc = create.space("Lagrange", grid, dimrange=1, order=2)
+    spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
     # spc = create.space("DGONB", grid, dimrange=1, order=2)
 
     # set up initial conditions
-    solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u", storage="istl")
+    solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
     grid.writeVTK("heat", pointdata=[solution], number=0)
 
     # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
@@ -52,12 +52,12 @@ def compute():
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
-    # scheme = create.scheme("h1", spc, model, parameters=solverParameter, storage="istl")
-    # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter, storage="istl")
-    scheme = create.scheme("dggalerkin", spc, model, 5, parameters=solverParameter, storage="istl")
+    # scheme = create.scheme("h1", spc, model, parameters=solverParameter)
+    scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
+    # scheme = create.scheme("dggalerkin", spc, model, 15, parameters=solverParameter)
 
-    # scheme = create.scheme("linearized", scheme, parameters=solverParameter, storage="istl")
-    # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter, "storage=istl")
+    # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
+    # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)
 
     # now loop through time and output the solution after each time step
     steps = int(0.1 / deltaT)

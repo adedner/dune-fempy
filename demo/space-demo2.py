@@ -13,8 +13,8 @@ def testSpace(gridtype):
 
     gf  = grid2d.function("expr_global", order=1, globalExpr=expr_global)
     df1 = grid2d.interpolate(gf, space="Lagrange",name="interpolate")
-    df2 = grid2d.interpolate([5,3], space="Lagrange") # , storage="Numpy" ) # , name="53" )
-    df3 = grid2d.interpolate(df1, space="Lagrange", name="copy", storage="istl" )
+    df2 = grid2d.interpolate([5,3], space="Lagrange")
+    df3 = grid2d.interpolate(df1, space="Lagrange", name="copy" )
     df4 = grid2d.interpolate(lambda x: [expr_global(x)[0]], space="Lagrange", name="test", order=1)
     df4 = grid2d.interpolate(gf, space="Lagrange", name="test2", order=2)
 

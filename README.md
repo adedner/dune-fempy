@@ -2,7 +2,7 @@ Python Bindings for the DUNE-FEM module
 =======================================
 
 dune-fempy aims to provide Python bindings for the dune-fem discretization
-module:
+module. Here an example for solving Poisson's equation:
 
 ```python
 import math
@@ -24,18 +24,17 @@ model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } 
 
 # set up a space and a conforming finite element scheme and solve the PDE
 space  = dune.create.space("Lagrange", grid, dimrange=1, order=1)
-scheme = create.scheme("h1", space, model, "scheme")
+scheme = create.scheme("h1", space, model)
 uh = scheme.solve()
 
-# make the UFL expression into a grid function for vtk output and make uh into an UFL coefficient
+# make 'exact' into a grid function for output and uh into an UFL coefficient for error computation
 exact_gf = create.function("ufl", grid, "exact", 5, exact)
 uh_coeff = dune.ufl.GridCoefficient(uh)
 # now define a grid function representing the pointwise error
-l2error_gf = create.function("ufl", grid, "error", 5,
-             as_vector([(exact[0]-uh_coeff[0])**2]) )
+l2error_gf = create.function("ufl", grid, "error", 5, as_vector([(exact[0]-uh_coeff[0])**2]) )
+
 error = math.sqrt( l2error_gf.integrate() )
 print("size:",grid.size(0),"L2-error:",error)
-# output as vtk
 grid.writeVTK("laplace", pointdata=[ uh, l2error_gf, exact_gf ])
 ```
 

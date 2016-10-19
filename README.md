@@ -59,7 +59,7 @@ use of dune-fempy:
 
 - numpy
 - mpi4py
-- ufl
+- ufl (2016.1.0+)
 
 
 Buidling

@@ -6,6 +6,19 @@ from dune.fem.view import geometryGridView, filteredGridView
 
 import dune.create as create
 
+def plot(grid):
+    try:
+        from matplotlib import pyplot
+        from numpy import amin, amax, linspace
+
+        triangulation = grid.triangulation(4)
+
+        pyplot.gca().set_aspect('equal')
+        pyplot.triplot(grid.triangulation(), antialiased=True, linewidth=0.2, color='black')
+        pyplot.show()
+    except ImportError:
+        pass
+
 def testGeometryGridView(grid, prefix):
     t = 0
     def expr_global(x):
@@ -25,6 +38,7 @@ def testGeometryGridView(grid, prefix):
         count += 1
         df.interpolate(gf)
         geogrid.writeVTK(prefix, pointdata=[gfnew], number=count)
+    plot(geogrid)
 
 def testGridView(gridtype):
     grid = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
@@ -32,5 +46,6 @@ def testGridView(gridtype):
 
     subGrid = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
     testGeometryGridView(subGrid, "gridpart-demo-sub")
+    plot(subGrid)
 
 testGridView("Yasp")

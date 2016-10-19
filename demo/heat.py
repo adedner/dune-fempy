@@ -46,15 +46,15 @@ def compute():
     model.setConstant(tau,[deltaT])
 
     # setup structure for olver parameters
-    solverParameter={"fem.solver.newton.linabstol": 1e-8,
-                     "fem.solver.newton.linreduction": 1e-8,
-                     "fem.solver.newton.tolerance": 1e-7,
+    solverParameter={"fem.solver.newton.linabstol": 1e-13,
+                     "fem.solver.newton.linreduction": 1e-13,
+                     "fem.solver.newton.tolerance": 1e-12,
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
     # scheme = create.scheme("h1", spc, model, parameters=solverParameter)
-    scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
-    # scheme = create.scheme("dggalerkin", spc, model, 15, parameters=solverParameter)
+    # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
+    scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
 
     # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
     # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)

@@ -61,8 +61,7 @@ def compute():
 
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
 
-    sol = create.discretefunction("eigen", spc, name="solution")
-    sol.interpolate( [0] )
+    sol = create.function("discrete", spc, name="solution")
     for i in range(2):
         print("solve on level",i)
         uh = scheme.solve()

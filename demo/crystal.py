@@ -86,13 +86,15 @@ def compute():
     grid       = create.view("adaptive", create.grid("ALUConform", "../data/crystal-2d.dgf", dimgrid=dimDomain))
     spc        = create.space("Lagrange", grid, dimrange=dimRange, order=order)
     initial_gf = create.function("global", grid, "initial", order+1, initial)
-    solution   = spc.interpolate(initial_gf, name="solution")
-    solution_n = spc.interpolate(initial_gf, name="solution_n")
+    # solution   = spc.interpolate(initial_gf, name="solution")
+    # solution_n = spc.interpolate(initial_gf, name="solution_n")
+    solution   = create.function("discrete",spc,"solution",initial_gf)
+    solution_n = solution.copy()
 
     # setup scheme
     # ------------
     model  = create.model("elliptic", grid, a_im == a_ex, coefficients={un:solution_n} )
-    scheme = create.scheme("h1", solution, model,
+    scheme = create.scheme("h1", spc, model,
             parameters={
             "fem.solver.newton.tolerance": 1e-5,
             "fem.solver.newton.linabstol": 1e-8,
@@ -100,7 +102,6 @@ def compute():
             "fem.solver.newton.verbose": 1,
             "fem.solver.newton.linear.verbose": 1}\
             )
-
 
     # marking strategy
     # ----------------

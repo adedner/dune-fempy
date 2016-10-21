@@ -83,7 +83,7 @@ model.setConstant("b", [spiral_b])
 model.setConstant("eps", [spiral_eps])
 model.setConstant("dt", [dt])
 
-scheme = create.scheme("h1", solution, model)
+scheme = create.scheme("h1", spc, model)
 
 # time loop
 # ---------

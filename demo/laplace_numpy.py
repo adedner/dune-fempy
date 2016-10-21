@@ -36,7 +36,7 @@ def compute():
          """
 
     grid = create.grid("ALUConform", dune.grid.string2dgf(dgf), dimgrid=2)
-    spc  = create.space("Lagrange", grid, dimrange=1, order=2)
+    spc  = create.space("Lagrange", grid, dimrange=1, order=2, storage="eigen")
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -57,13 +57,11 @@ def compute():
             "fem.solver.newton.linabstol": 1e-12,
             "fem.solver.newton.linreduction": 1e-12,
             "fem.solver.newton.verbose": 1,
-            "fem.solver.newton.linear.verbose": 1},\
-            storage="eigen")
+            "fem.solver.newton.linear.verbose": 1})
 
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
 
-    sol = create.discretefunction("eigen", spc, name="solution")
-    sol.interpolate( [0] )
+    sol = create.function("discrete", spc, name="solution")
     for i in range(2):
         print("solve on level",i)
         uh = scheme.solve()
@@ -79,9 +77,9 @@ def compute():
             # during its resizing - use copy=True to avoid this problem at
             # the cose of a copy
             sol_coeff = numpy.array( sol, copy=False )
-            res = spc.interpolate(lambda _,x:[0], name="res", storage="eigen")
+            res = spc.interpolate(lambda _,x:[0], name="res")
             res_coeff = numpy.array( res, copy=False )
-            bnd = spc.interpolate(lambda _,x:[0], name="bnd", storage="eigen")
+            bnd = spc.interpolate(lambda _,x:[0], name="bnd")
             bnd_coeff = numpy.array( bnd, copy=False )
             scheme.constraint(bnd)   # note: no rhs functional allowed
             n = 0
@@ -101,9 +99,9 @@ def compute():
             # use the numpy's newton_krylov method
             sol_coeff = numpy.array( sol, copy=False )
             sol.clear()
-            rhs = spc.interpolate(lambda x:[0], name="rhs", storage="eigen")
+            rhs = spc.interpolate(lambda x:[0], name="rhs")
             rhs_coeff = numpy.array( rhs, copy=False )
-            bnd = spc.interpolate(lambda x:[0], name="bnd", storage="eigen")
+            bnd = spc.interpolate(lambda x:[0], name="bnd")
             bnd_coeff = numpy.array( bnd, copy=False )
             scheme.constraint(bnd)
             def f(x_coeff):

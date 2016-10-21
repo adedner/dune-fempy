@@ -36,7 +36,7 @@ def compute():
     # grid = create.grid("ALUCube", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
     # spc  = create.space("DGONB", grid, dimrange=1, order=2)
-    spc  = create.space("Lagrange", grid, dimrange=1, order=1)
+    spc  = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -57,7 +57,7 @@ def compute():
             "fem.solver.newton.linreduction": 1e-10,
             "fem.solver.newton.verbose": 0,
             "fem.solver.newton.linear.verbose": 0},\
-            storage="istl")
+            )
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):
         print("solve on level", i, "number of dofs=", grid.size(2))

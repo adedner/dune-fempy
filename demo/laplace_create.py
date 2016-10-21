@@ -39,13 +39,13 @@ def compute():
                view="adaptive",
                parameters=parameters)
     # using only grid (LeafGrid<ALU>)
-    scheme = create.scheme("h1", storage="istl",
+    scheme = create.scheme("h1", storage="adaptive",
                model="elliptic", equation=eqn, exact=exact, dirichlet={ 1:exact },
                space="Lagrange",order=2,
                grid="ALUCube", constructor=domain,dimgrid=2,
                parameters=parameters)
     # using only view (LeafGrid<ALU>)
-    scheme = create.scheme("h1", storage="istl",
+    scheme = create.scheme("h1", storage="eigen",
                model="elliptic", equation=eqn, exact=exact, dirichlet={ 1:exact },
                space="Lagrange",order=2,
                view="ALUCube", constructor=domain,dimgrid=2,

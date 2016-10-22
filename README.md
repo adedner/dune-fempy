@@ -68,4 +68,4 @@ Have a look at the description in [dune-corepy][corepy].
 Follow the instructions there and also call `make python_install1` in the
 build directory of dune-fempy.
 
-[corepy]: https://gitlab.dune-project.org/michael.sghaier/dune-corepy
+[corepy]: https://gitlab.dune-project.org/staging/dune-corepy

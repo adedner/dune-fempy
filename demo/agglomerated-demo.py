@@ -38,7 +38,7 @@ def compute(grid,NX,NY):
     voronoi_points = np.random.rand(NX*NY, 2)
     voronoi_kdtree = cKDTree(voronoi_points)
     vor = Voronoi(voronoi_points)
-    voronoi_plot_2d(vor).savefig("voronoi"+str(NX*NY)+".pdf", bbox_inches='tight')
+    voronoi_plot_2d(vor).savefig("agglomerate_voronoi"+str(NX*NY)+".pdf", bbox_inches='tight')
     ind = set()
     def agglomerate(en):
         p = en.geometry.center
@@ -62,20 +62,22 @@ def compute(grid,NX,NY):
     x = SpatialCoordinate(uflSpace.cell())
     exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
     a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
-    a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
+    # a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
     model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } )
 
     scheme = create.scheme("dggalerkin", spc, model, 10)
-    df = scheme.solve()
+    df = scheme.solve(name="solution")
+    df_interpol = spc.interpolate( create.function("ufl",grid,"exact",4,exact), "exact" )
 
     df_coeff = dune.ufl.GridCoefficient(df)
     l2error_gf = create.function("ufl", grid, "error", 5,
             as_vector([(exact[0]-df_coeff[0])**2]) )
     error = math.sqrt( l2error_gf.integrate() )
     print("size:",spc.size,"L2-error:", error)
-    grid.writeVTK("test",
-        celldata=[ df, create.function("local",grid,"cells",1,lambda en,x: [agglomerate(en)]) ])
+    grid.writeVTK("agglomerate"+str(NX*NY),
+        celldata=[ df, df_interpol, create.function("local",grid,"cells",1,lambda en,x: [agglomerate(en)]) ])
 
-grid = create.view("adaptive", grid="ALUConform", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [100, 100]), dimgrid=2)
+grid = create.view("adaptive", grid="ALUCube", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [100, 100]), dimgrid=2)
+compute(grid,3,3)
 compute(grid,6,6)
 compute(grid,12,12)

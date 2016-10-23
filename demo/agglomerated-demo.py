@@ -74,6 +74,7 @@ def compute(grid,NX,NY):
             as_vector([(exact[0]-df_coeff[0])**2]) )
     error = math.sqrt( l2error_gf.integrate() )
     print("size:",spc.size,"L2-error:", error)
+    # grid.hierarchicalGrid.globalRefine(1) <- this leads to not responding program possibly due to disabled RP
     grid.writeVTK("agglomerate"+str(NX*NY),
         celldata=[ df, df_interpol, create.function("local",grid,"cells",1,lambda en,x: [agglomerate(en)]) ])
 

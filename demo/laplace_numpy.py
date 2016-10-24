@@ -137,7 +137,7 @@ def compute():
             val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
             return [ val[0]*val[0] ];
         l2error_gf = create.function("local", grid, "error", 5, l2error )
-        error = math.sqrt( l2error_gf.integrate()[0] )
+        error = math.sqrt( l2error_gf.integrate() )
         print("size:",grid.size(0),"L2-error:",error)
         grid.writeVTK("laplace", pointdata=[ uh,l2error_gf,sol ], number=i)
 
@@ -146,7 +146,7 @@ def compute():
             val = sol.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
             return [ val[0]*val[0] ];
         l2error_gf = create.function("local", grid, "error", 5, l2error )
-        error = math.sqrt( l2error_gf.integrate()[0] )
+        error = math.sqrt( l2error_gf.integrate() )
         print("size:",grid.size(0),"L2-error:",error)
 
         grid.hierarchicalGrid.globalRefine(2)

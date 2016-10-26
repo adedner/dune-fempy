@@ -25,5 +25,5 @@ integrands = compileUFL(a == b, tempVars=True)
 
 writer = SourceWriter("myintegrands.hh")
 writer.openNameSpace('demo')
-integrands.write(writer, "MyModel")
+integrands.write(writer, "MyIntegrands")
 writer.closeNameSpace('demo')

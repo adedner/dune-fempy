@@ -52,11 +52,13 @@ def compute():
     model = create.model("elliptic", grid, a==0, exact=exact ) # , dirichlet={ 1:exact } )
 
     scheme = create.scheme("h1galerkin", spc, model,\
+           # solver="cg", # use default solver for given storage
+           solver=("fem","cg"),
            parameters=\
            {"fem.solver.newton.linabstol": 1e-10,
             "fem.solver.newton.linreduction": 1e-10,
-            "fem.solver.newton.verbose": 0,
-            "fem.solver.newton.linear.verbose": 0},\
+            "fem.solver.newton.verbose": "true",
+            "fem.solver.newton.linear.verbose": "true"},\
             )
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):

@@ -32,11 +32,12 @@ def plot(grid, solution):
 
 def compute():
     # grid = create.grid("SPIsotropic", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
-    grid = create.view("adaptive", grid="ALUConform", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
-    # grid = create.grid("ALUCube", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
+    # grid = create.view("adaptive", grid="ALUConform", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
+    grid = create.grid("ALUCube", dune.grid.cartesianDomain([0, 0], [1, 1], [12, 12]), dimgrid=2)
 
-    # spc  = create.space("DGONB", grid, dimrange=1, order=2)
-    spc  = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+    storage = create.discretefunction("istl")
+    # spc  = create.space("DGONB", grid, dimrange=1, order=1, # storage="istl")
+    spc  = create.space("Lagrange", grid, 1, 1, "double", storage)
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -46,12 +47,11 @@ def compute():
     exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 
     a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
-    a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
+    # a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
 
-    model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } )
+    model = create.model("elliptic", grid, a==0, exact=exact ) # , dirichlet={ 1:exact } )
 
-    # scheme = create.scheme("DGFemScheme", spc, model,\
-    scheme = create.scheme("h1", spc, model,\
+    scheme = create.scheme("h1galerkin", spc, model,\
            parameters=\
            {"fem.solver.newton.linabstol": 1e-10,
             "fem.solver.newton.linreduction": 1e-10,

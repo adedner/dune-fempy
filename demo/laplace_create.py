@@ -56,7 +56,7 @@ def compute():
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):
         print("solve on level",i, "number of dofs=",grid.size(2))
-        uh = scheme.solve()
+        uh, = scheme.solve()
         def l2error(en,x):
             val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
             return [ val[0]*val[0] ];

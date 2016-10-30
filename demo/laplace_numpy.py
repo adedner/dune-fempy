@@ -64,7 +64,8 @@ def compute():
     sol = create.function("discrete", spc, name="solution")
     for i in range(2):
         print("solve on level",i)
-        uh = scheme.solve()
+        uh,_ = scheme.solve()
+        print(uh)
 
         def ver1():
             # use the apply/assemble methods directly in a simple Newton loop

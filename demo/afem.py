@@ -10,6 +10,7 @@ import dune.grid as grid
 import dune.fem as fem
 from dune.fem.view import adaptiveLeafGridView
 
+fem.parameter.append("../data/parameter")
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 360.
@@ -74,7 +75,7 @@ grid.hierarchicalGrid.globalRefine(2)
 exact_gf = create.function("global", grid, "exact", order+1, exact)
 
 # use a piecewise quadratic Lagrange space
-spc  = create.space( "Lagrange", grid, dimrange=1, order=order)
+spc  = create.space( "Lagrange", grid, dimrange=1, order=order )
 
 # the model is -laplace u = 0 with Dirichlet boundary conditions
 uflSpace = UFLSpace(2, 1)

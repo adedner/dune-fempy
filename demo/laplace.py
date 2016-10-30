@@ -57,20 +57,27 @@ def compute():
            parameters=\
            {"fem.solver.newton.linabstol": 1e-10,
             "fem.solver.newton.linreduction": 1e-10,
-            "fem.solver.newton.verbose": "true",
-            "fem.solver.newton.linear.verbose": "true"},\
+            "fem.solver.newton.verbose": "false",
+            "fem.solver.newton.linear.verbose": "false"},\
             )
     exact_gf = create.function("ufl", grid, "exact", 5, exact)
     for i in range(2):
-        print("solve on level", i, "number of dofs=", grid.size(2))
-        uh = scheme.solve()
+        print("solve on level:", i)
+        uh,info = scheme.solve()
         def l2error(en,x):
             val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
             return [ val[0]*val[0] ];
         l2error_gf = create.function("local", grid, "error", 5, l2error)
         error = math.sqrt( l2error_gf.integrate() )
 
-        print("size:",grid.size(0),"L2-error:", error)
+        if info["converged"] == "false":
+            print("solver did not converge")
+        else:
+            print("size:",grid.size(0),
+                  ", number of dofs=", grid.size(2),
+                  ", newton steps:",info["iterations"],
+                  ", linear iterations:",info["linear_iterations"],
+                  ", L2-error:", error)
         grid.writeVTK("laplace", pointdata=[ uh, l2error_gf ])
 
         plot(grid, uh)

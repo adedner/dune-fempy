@@ -7,7 +7,7 @@ from dune.ufl import Space
 import dune.create as create
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("Lagrange", grid, dimrange=1, order=2)
+spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="fem")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
@@ -25,5 +25,5 @@ b = rhs * dx + 10*rhs * ds
 
 model = create.model("elliptic", grid, a==b)
 
-scheme = create.scheme("h1", spc, model)
-grid.writeVTK("p-laplace", pointdata=[scheme.solve(name="solution")])
+scheme = create.scheme("h1", spc, model,("pardg","gmres"))
+grid.writeVTK("p-laplace", pointdata=[scheme.solve(name="solution")[0]])

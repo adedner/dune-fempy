@@ -85,10 +85,11 @@ def solve(grid,agglomerate,model,exact,name,space,scheme,penalty=None):
         spc = create.space(space, grid, dimrange=1, order=1, storage="istl")
     interpol = spc.interpolate( gf_exact, "exact_"+name )
     if penalty:
-        df = create.scheme(scheme, spc, model, penalty).solve(name=name)
+        df,info = create.scheme(scheme, spc, model, penalty).solve(name=name)
     else:
-        df = create.scheme(scheme, spc, model).solve(name=name)
-    print(name+" size:",spc.size,"L2-error:", error(grid,df,exact), error(grid,interpol,exact))
+        df,info = create.scheme(scheme, spc, model).solve(name=name)
+    print(name+" size:",spc.size,"L2-error:", error(grid,df,exact), error(grid,interpol,exact),\
+          info["linear_iterations"], info["iterations"])
     return interpol, df
 
 def compute(agglomerate):
@@ -113,13 +114,13 @@ def compute(agglomerate):
 
     # df_adg.grid <- caues error
 
-    # if agglomerate.cartesian:
-    #     interpol_lag, df_lag = solve(coarsegrid,None,       model,exact,"h1","Lagrange","h1")
-    #     interpol_dg,  df_dg  = solve(coarsegrid,None,       model,exact,"dgonb","DGONB","dg")
-    # else:
-    #     interpol_lag, df_lag = solve(grid,None,       model,exact,"h1","Lagrange","h1")
-    #     interpol_dg,  df_dg  = solve(grid,None,       model,exact,"dgonb","DGONB","dg")
-    # interpol_adg, df_adg = solve(grid,agglomerate,model,exact,"adg","AgglomeratedDG","dg")
+    if agglomerate.cartesian:
+        interpol_lag, df_lag = solve(coarsegrid,None,       model,exact,"h1","Lagrange","h1")
+        interpol_dg,  df_dg  = solve(coarsegrid,None,       model,exact,"dgonb","DGONB","dg")
+    else:
+        interpol_lag, df_lag = solve(grid,None,       model,exact,"h1","Lagrange","h1")
+        interpol_dg,  df_dg  = solve(grid,None,       model,exact,"dgonb","DGONB","dg")
+    interpol_adg, df_adg = solve(grid,agglomerate,model,exact,"adg","AgglomeratedDG","dg")
     interpol_vem, df_vem = solve(grid,agglomerate,model,exact,"vem","AgglomeratedVEM","vem")
 
     if agglomerate.cartesian:

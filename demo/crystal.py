@@ -88,7 +88,7 @@ def compute():
     initial_gf = create.function("global", grid, "initial", order+1, initial)
     # solution   = spc.interpolate(initial_gf, name="solution")
     # solution_n = spc.interpolate(initial_gf, name="solution_n")
-    solution   = create.function("discrete",spc,"solution",initial_gf)
+    solution   = create.function("discrete", spc, "solution", initial_gf)
     solution_n = solution.copy()
 
     # setup scheme
@@ -138,7 +138,7 @@ def compute():
         solution_n.assign(solution)
         scheme.solve(target=solution)
         t += dt
-        print('count: ',count,"t = ",t)
+        print('count: ', count, "t = ", t)
         if t > savestep:
             savestep += saveinterval
             count += 1

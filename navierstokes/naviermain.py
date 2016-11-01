@@ -4,18 +4,15 @@ import math
 
 from ufl import *
 from dune.ufl import Space as UFLSpace
-# from dune.models.elliptic import importModel
-import dune.fem as fem
-from dune.femmpi import parameter
-import dune.grid
-import dune.alugrid
-import dune.fem.space
-import dune.fem.scheme
 
-parameter.append("../data/parameter-navier")
+import dune.create as create
+import dune.fem
+
+dune.fem.parameter.append("../data/parameter-navier")
 
 # initialise grid
-grid = dune.grid.create( "ALUSimplex", "../data/hole2.dgf", dimgrid=2, refinement="conforming" )
+#grid = create.grid( "ALUSimplex", "../data/hole2.dgf", dimgrid=2, refinement="conforming" )
+grid = create.grid( "ALUSimplex", "../data/hole2.dgf", dimgrid=2 )
 grid.hierarchicalGrid.globalRefine(6)
 
 viscosity = 0.03
@@ -38,20 +35,20 @@ x           = SpatialCoordinate(uflSpace.cell())
 bnd_u       = Coefficient(uflSpace)
 
 a = inner(grad(u),grad(v)) * dx(0)
-model = dune.fem.create.ellipticModel(grid, a == 0, dirichlet={1:bnd_u})\
-        ( coefficients={ bnd_u: grid.globalGridFunction("bnd", 3, inflow_u) } )
+bnd = create.function("global", grid, "bnd", 3, inflow_u)
+model = create.model("elliptic", grid, a == 0, dirichlet={1:bnd_u}, coefficients={ bnd_u: bnd } )
 
 # spaces
-pressureSpace = fem.space.create( "Lagrange", grid, polorder = 1, dimrange = 1 )
+pressureSpace = create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )
 # velocitySpace = fem.space.create( "Lagrange", grid, polorder = 2, dimrange = grid.dimWorld )
-velocitySpace = fem.space.create( "P1Bubble", grid, dimrange=grid.dimWorld )
+velocitySpace = create.space( "P1Bubble", grid, dimrange=grid.dimWorld )
 # problem with missing dirichlet points in bubble space - need to update
 # dirichletconstraints
 
 # schemes
-stokesScheme = fem.scheme.create( "Stokes", ( velocitySpace, pressureSpace ), model, "stokes",\
+stokesScheme = create.scheme( "stokes", ( velocitySpace, pressureSpace ), model, "stokes",\
                viscosity, timeStep, storage = "Istl" )
-burgersScheme = fem.scheme.create( "Burgers", ( velocitySpace, pressureSpace ), model, "burgers",\
+burgersScheme = create.scheme( "burgers", ( velocitySpace, pressureSpace ), model, "burgers",\
                 viscosity, timeStep, storage = "Istl" )
 
 # set up solution initializating with data at t=0

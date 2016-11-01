@@ -11,6 +11,8 @@ import dune.create as create
 
 from functools import reduce
 
+dune.fem.parameter.append("../data/parameter")
+
 # http://www.scholarpedia.org/article/Barkley_model
 dimRange   = 2
 endTime    = 3. # 30.
@@ -83,7 +85,7 @@ model.setConstant("b", [spiral_b])
 model.setConstant("eps", [spiral_eps])
 model.setConstant("dt", [dt])
 
-scheme = create.scheme("h1", spc, model)
+scheme = create.scheme("h1", spc, model, ("pardg","cg"))
 
 # time loop
 # ---------
@@ -91,10 +93,12 @@ count   = 0
 t       = 0.
 grid.writeVTK("spiral", pointdata=[solution], number=count)
 
+iterations = 0
 while t < endTime:
-    print(">>> Computing solution a t = " + str(t + dt))
     solution_n.assign(solution)
-    scheme.solve(target=solution)
+    _,info = scheme.solve(target=solution)
+    print(">>> Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
+    iterations += int( info["linear_iterations"] )
     t     += dt
     count += 1
     grid.writeVTK("spiral", pointdata=[solution], number=count)

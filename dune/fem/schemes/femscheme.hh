@@ -48,9 +48,7 @@
 
 #include <dune/fem/operator/common/differentiableoperator.hh>
 
-#include <dune/fem/schemes/solver.hh>
-
-// estimator for residual
+// estimator for residual <- not adapted to new diffusion model yet
 #include "estimator.hh"
 
 #include <dune/fem/io/file/dataoutput.hh>
@@ -62,51 +60,35 @@
 // FemScheme
 //----------
 
-/*******************************************************************************
- * template arguments are:
- * - GridPart: the part of the grid used to tesselate the
- *             computational domain
- * - Model: description of the data functions and methods required for the
- *          elliptic operator (massFlux, diffusionFlux)
- *******************************************************************************/
-template< class Space, class Model,
-  template<class LinOp,class M,class Constraint = Dune::DirichletConstraints< M, typename LinOp::RangeFunctionType::DiscreteFunctionSpaceType> > class DifferentiableOperator,
-    SolverType s >
+template< class Operator, class InverseOperator >
 class FemScheme
 {
 public:
-  static const SolverType solver = s;
   //! type of the mathematical model
-  typedef Model ModelType;
-  typedef typename ModelType::ExactSolutionType ExactSolutionType;
+  typedef typename Operator::ModelType ModelType;
+  typedef typename Operator::RangeDiscreteFunctionType DiscreteFunctionType;
+  typedef Operator DifferentiableOperatorType;
+  typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
   //! grid view (e.g. leaf grid view) provided in the template argument list
   typedef typename ModelType::GridPartType GridPartType;
-  static_assert( std::is_same< typename Space::GridPartType, GridPartType >::value,
+  static_assert( std::is_same< typename DiscreteFunctionSpaceType::GridPartType, GridPartType >::value,
         "GridPart of Space has to be identical to GridPart of Model class" );
 
   //! type of underyling hierarchical grid needed for data output
   typedef typename GridPartType::GridType GridType;
 
   //! type of function space (scalar functions, \f$ f: \Omega -> R) \f$
-  typedef typename ModelType::FunctionSpaceType FunctionSpaceType;
+  typedef typename DiscreteFunctionSpaceType::FunctionSpaceType FunctionSpaceType;
 
-  //! choose type of discrete function space
-  typedef Space DiscreteFunctionSpaceType;
-
-  // choose type of discrete function, Matrix implementation and solver implementation
-  typedef Solvers<DiscreteFunctionSpaceType,solver,false> UsedSolverType;
-  static_assert( UsedSolverType::solverConfigured, "chosen solver is not configured" );
-
-  typedef typename UsedSolverType::DiscreteFunctionType DiscreteFunctionType;
-  typedef typename UsedSolverType::LinearOperatorType LinearOperatorType;
+  typedef typename Operator::JacobianOperatorType LinearOperatorType;
 
   //! type of restriction/prolongation projection for adaptive simulations
   //! (use default here, i.e. LagrangeInterpolation)
   typedef Dune::Fem::RestrictProlongDefault< DiscreteFunctionType >  RestrictionProlongationType;
 
   //! type of error estimator
-  typedef Estimator< DiscreteFunctionType, Model, GridPartType::dimension == GridPartType::dimensionworld > EstimatorType;
+  typedef Estimator< DiscreteFunctionType, ModelType, GridPartType::dimension == GridPartType::dimensionworld > EstimatorType;
 
   static const int dimRange = FunctionSpaceType::dimRange;
   typedef DiscreteFunctionType SolutionType;
@@ -116,55 +98,60 @@ public:
   : model_( model ),
     space_( space ),
     // the elliptic operator (implicit)
-    implicitOperator_( new DifferentiableOperator< LinearOperatorType, ModelType >( model_, space_ ) ),
+    implicitOperator_( model_, space_ ),
     // create linear operator (domainSpace,rangeSpace)
-    linearOperator_( new LinearOperatorType( "assembled elliptic operator", space_, space_ ) ), // , parameter ) ),
+    linearOperator_( "assembled elliptic operator", space_, space_ ), // , parameter ),
     estimator_( space_, model ),
-    exactSolution_( model_.exactSolution( gridPart() ) ),
     parameter_(parameter)
   {}
 
-  const ExactSolutionType &exactSolution() const { return exactSolution_; }
-
-  const DifferentiableOperator< LinearOperatorType, ModelType > &fullOperator() const
+  const DifferentiableOperatorType &fullOperator() const
   {
-    typedef DifferentiableOperator< LinearOperatorType, ModelType > OperatorType;
-    dynamic_cast< const OperatorType & >( *implicitOperator_ );
+    return implicitOperator_;
   }
 
   void constraint( DiscreteFunctionType &u ) const
   {
-    typedef DifferentiableOperator< LinearOperatorType, ModelType > OperatorType;
-    dynamic_cast< OperatorType & >( *implicitOperator_ ).prepare( u );
+    implicitOperator_.prepare( u );
   }
 
+  void operator() ( const DiscreteFunctionType &arg, DiscreteFunctionType &dest ) const
+  {
+    implicitOperator_( arg, dest );
+  }
   template <class GridFunction>
   void operator() ( const GridFunction &arg, DiscreteFunctionType &dest ) const
   {
-    typedef DifferentiableOperator< LinearOperatorType, ModelType > OperatorType;
-    dynamic_cast< OperatorType & >( *implicitOperator_ ).apply( arg, dest );
+    implicitOperator_.apply( arg, dest );
   }
 
-  void solve ( DiscreteFunctionType &solution ) const
+  struct SolverInfo
   {
-    typedef DifferentiableOperator< LinearOperatorType, ModelType > OperatorType;
-    typedef typename UsedSolverType::LinearInverseOperatorType LinearInverseOperatorType;
+    SolverInfo(bool pconverged,int plinearIterations,int pnonlinearIterations)
+      : converged(pconverged), linearIterations(plinearIterations), nonlinearIterations(pnonlinearIterations)
+    {}
+    bool converged;
+    int linearIterations;
+    int nonlinearIterations;
+  };
+  SolverInfo solve ( DiscreteFunctionType &solution ) const
+  {
+    typedef InverseOperator LinearInverseOperatorType;
     typedef Dune::Fem::NewtonInverseOperator< LinearOperatorType, LinearInverseOperatorType > InverseOperatorType;
-    InverseOperatorType invOp( dynamic_cast< OperatorType & >( *implicitOperator_ ), parameter_ );
+    InverseOperatorType invOp( implicitOperator_, parameter_ );
     DiscreteFunctionType bnd(solution);
     bnd.clear();
-    dynamic_cast< OperatorType & >( *implicitOperator_ ).prepare( bnd );
+    implicitOperator_.prepare( bnd );
+    implicitOperator_.prepare( bnd, solution );
     invOp( bnd, solution );
-    // std::cout << "Linear Iterations: " << invOp.linearIterations() << std::endl;
+    return SolverInfo(invOp.converged(),invOp.linearIterations(),invOp.iterations());
   }
 
   template <class GridFunction>
   const LinearOperatorType &assemble( const GridFunction &ubar )
   {
-    typedef DifferentiableOperator< LinearOperatorType, ModelType > OperatorType;
-    dynamic_cast< OperatorType & >(*implicitOperator_ ).apply(ubar,
-                  dynamic_cast<LinearOperatorType&>(*linearOperator_));
-    return dynamic_cast<LinearOperatorType&>(*linearOperator_);
+    implicitOperator_.apply(ubar, linearOperator_);
+    return linearOperator_;
   }
 
   //! mark elements for adaptation
@@ -179,10 +166,9 @@ public:
 protected:
   const ModelType &model_;   // the mathematical model
   const DiscreteFunctionSpaceType &space_; // discrete function space
-  std::unique_ptr< Dune::Fem::DifferentiableOperator< LinearOperatorType > > implicitOperator_;
-  std::unique_ptr< Dune::Fem::Operator< DiscreteFunctionType,DiscreteFunctionType > > linearOperator_;
+  DifferentiableOperatorType implicitOperator_;
+  LinearOperatorType linearOperator_;
   EstimatorType estimator_; // estimator for residual error
-  const ExactSolutionType exactSolution_;
   const Dune::Fem::ParameterReader parameter_;
 };
 

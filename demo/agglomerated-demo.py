@@ -14,6 +14,8 @@ import dune.fem.function as gf
 
 import dune.create as create
 
+from voronoi import triangulated_voronoi
+
 dune.fem.parameter.append("../data/parameter")
 
 def plot(grid, solution):
@@ -33,28 +35,73 @@ def plot(grid, solution):
     except ImportError:
         pass
 
+def error(grid,df, exact):
+    df_coeff = dune.ufl.GridCoefficient(df)
+    l2error_gf = create.function("ufl", grid, "error", 5,
+            as_vector([(exact[0]-df_coeff[0])**2]) )
+    return math.sqrt( l2error_gf.integrate() )
 
 # http://zderadicka.eu/voronoi-diagrams/
-def compute(grid,NX,NY):
-    numpy.random.seed(1234)
-    voronoi_points = numpy.random.rand(NX*NY, 2)
-    voronoi_kdtree = cKDTree(voronoi_points)
-    vor = Voronoi(voronoi_points)
-    voronoi_plot_2d(vor).savefig("agglomerate_voronoi"+str(NX*NY)+".pdf", bbox_inches='tight')
-    ind = set()
-    def agglomerate(en):
+class Agglomerate:
+    def __init__(self,NX,NY=None):
+        if NY:
+            self.NX = NX
+            self.NY = NY
+            self.N  = NX*NX
+            self.suffix = str(NX)+"_"+str(NX)
+            self.cartesian = True
+        else:
+            self.N = NX
+            self.suffix = str(self.N)
+            self.cartesian = False
+
+        numpy.random.seed(1234)
+        self.voronoi_points = numpy.random.rand(self.N, 2)
+        self.voronoi_kdtree = cKDTree(self.voronoi_points)
+        self.ind = set()
+
+        vor = Voronoi(self.voronoi_points)
+        voronoi_plot_2d(vor).savefig("agglomerate_voronoi"+self.suffix+".pdf", bbox_inches='tight')
+
+    def __call__(self,en):
         p = en.geometry.center
-        if 0: # Cartesian
-            index = int(p[0] * NX)*NY + int(p[1] * NY)
+        if self.cartesian:
+            index = int(p[0] * self.NX)*self.NY + int(p[1] * self.NY)
         else:  # Voronoi
-            test_point_dist, test_point_regions = voronoi_kdtree.query([p], k=1)
+            test_point_dist, test_point_regions = self.voronoi_kdtree.query([p], k=1)
             index = test_point_regions[0]
-        ind.add(index)
+        self.ind.add(index)
         return index
-    #spc  = create.space("AgglomeratedDG", grid, agglomerate, dimrange=1, order=3, storage="istl")
-    spc    = create.space("AgglomeratedDG", grid, agglomerate, dimrange=1, order=1, storage="istl")
-    spcVEM = create.space("AgglomeratedVEM", grid, agglomerate, dimrange=1, order=1, storage="istl")
-    assert len(ind)==NX*NY, "missing or too many indices provided by agglomoration object. Should be "+str(NX*NY)+" was "+str(len(ind))
+    def check(self):
+     return len(self.ind)==self.N
+
+def solve(grid,agglomerate,model,exact,name,space,scheme,penalty=None):
+    print("SOLVING: ",name)
+    gf_exact = create.function("ufl",grid,"exact",4,exact)
+    if agglomerate:
+        spc = create.space(space, grid, agglomerate, dimrange=1, order=1, storage="istl")
+        assert agglomerate.check(), "missing or too many indices provided by agglomoration object. Should be "+str(NX*NY)+" was "+str(len(ind))
+    else:
+        spc = create.space(space, grid, dimrange=1, order=1, storage="istl")
+    interpol = spc.interpolate( gf_exact, "exact_"+name )
+    if penalty:
+        df,info = create.scheme(scheme, spc, model, penalty).solve(name=name)
+    else:
+        df,info = create.scheme(scheme, spc, model).solve(name=name)
+    print(name+" size:",spc.size,"L2-error:", error(grid,df,exact), error(grid,interpol,exact),\
+          info["linear_iterations"], info["iterations"])
+    return interpol, df
+
+def compute(agglomerate):
+    NX = NY = 12*8
+    print(NX,NY,NX*NY)
+    if agglomerate.cartesian:
+        grid       = create.view("ALUSimplex", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [NX, NY]), dimgrid=2)
+        coarsegrid = create.view("ALUSimplex", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [agglomerate.NX, agglomerate.NY]), dimgrid=2)
+    else:
+        bounding_box = numpy.array([0., 1., 0., 1.]) # [x_min, x_max, y_min, y_max]
+        points, triangles = triangulated_voronoi(agglomerate.voronoi_points, bounding_box)
+        grid = create.grid("ALUSimplex", {'vertex':points, 'simplex':triangles}, dimgrid=2)
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -63,30 +110,26 @@ def compute(grid,NX,NY):
     exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
     a = (inner(grad(u), grad(v)) + inner(u,v)) * dx
     # a = a + 20./(u[0]*u[0]+1.) * v[0] * dx
-    model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } )
+    model = create.model("elliptic", grid, a==0, exact=exact ) # , dirichlet={ 1:exact } )
 
-    # scheme = create.scheme("dggalerkin", spc, model, 10)
-    # df = scheme.solve(name="solution")
-    df          = spcVEM.interpolate( create.function("ufl",grid,"exact",4,exact), "exactvem" )
-    df_interpol = spc.interpolate( create.function("ufl",grid,"exact",4,exact), "exactdg" )
+    # df_adg.grid <- caues error
 
-    df_coeff = dune.ufl.GridCoefficient(df)
-    l2error_gf = create.function("ufl", grid, "error", 5,
-            as_vector([(exact[0]-df_coeff[0])**2]) )
-    error = math.sqrt( l2error_gf.integrate() )
-    df_interpol_coeff = dune.ufl.GridCoefficient(df_interpol)
-    l2error_gf = create.function("ufl", grid, "error", 5,
-            as_vector([(exact[0]-df_interpol_coeff[0])**2]) )
-    error_dg = math.sqrt( l2error_gf.integrate() )
+    if agglomerate.cartesian:
+        interpol_lag, df_lag = solve(coarsegrid,None,       model,exact,"h1","Lagrange","h1")
+        interpol_dg,  df_dg  = solve(coarsegrid,None,       model,exact,"dgonb","DGONB","dg")
+    else:
+        interpol_lag, df_lag = solve(grid,None,       model,exact,"h1","Lagrange","h1")
+        interpol_dg,  df_dg  = solve(grid,None,       model,exact,"dgonb","DGONB","dg")
+    interpol_adg, df_adg = solve(grid,agglomerate,model,exact,"adg","AgglomeratedDG","dg")
+    interpol_vem, df_vem = solve(grid,agglomerate,model,exact,"vem","AgglomeratedVEM","vem")
 
-    print("dg  size:",spc.size,   "L2-error:", error_dg)
-    print("vem size:",spcVEM.size,"L2-error:", error)
-    # grid.hierarchicalGrid.globalRefine(1) # <- this leads to not responding program possibly due to disabled RP
-    grid.writeVTK("agglomerate"+str(NX*NY),
-        celldata=[ df, df_interpol, create.function("local",grid,"cells",1,lambda en,x: [agglomerate(en)]) ])
+    if agglomerate.cartesian:
+        grid.writeVTK("agglomerate"+agglomerate.suffix,
+            pointdata=[ df_vem, interpol_vem, df_adg, interpol_adg ],
+            celldata =[ create.function("local",grid,"cells",1,lambda en,x: [agglomerate(en)]) ])
 
-# grid = create.view("adaptive", grid="ALUCube", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [100, 100]), dimgrid=2)
-grid = create.view("ALUCube", constructor=dune.grid.cartesianDomain([0, 0], [1, 1], [100, 100]), dimgrid=2)
-compute(grid,3,3)
-compute(grid,6,6)
-compute(grid,12,12)
+compute(Agglomerate(3,3))
+# compute(Agglomerate(6,6))
+# compute(Agglomerate(12,12))
+# compute(Agglomerate(24,24))
+# compute(Agglomerate(48,48))

@@ -1,7 +1,7 @@
 Python Bindings for the DUNE-FEM module
 =======================================
 
-dune-fempy aims to provide Python bindings for the dune-fem discretization
+dune-fempy aims to provide Python bindings for the [dune-fem][femlink] discretization
 module. Here an example for solving Poisson's equation:
 
 ```python
@@ -24,8 +24,8 @@ model = create.model("elliptic", grid, a==0, exact=exact, dirichlet={ 1:exact } 
 
 # set up a space and a conforming finite element scheme and solve the PDE
 space  = dune.create.space("Lagrange", grid, dimrange=1, order=1)
-scheme = create.scheme("h1", space, model)
-uh = scheme.solve()
+scheme = create.scheme("h1", space, model, "cg")
+uh,info = scheme.solve()
 
 # make 'exact' into a grid function for output and uh into an UFL coefficient for error computation
 exact_gf = create.function("ufl", grid, "exact", 5, exact)
@@ -46,6 +46,7 @@ dune-fempy depends on the following DUNE modules:
 - dune-geometry 2.4+
 - dune-grid 2.4+
 - dune-corepy 2.4+
+- dune-fem 2.4+
 
 In addition to the dependencies of these DUNE modules, the following software
 packages are required:
@@ -61,11 +62,15 @@ use of dune-fempy:
 - ufl (2016.1.0+)
 
 
-Buidling
---------
+Installation
+------------
 
-Have a look at the description in [dune-corepy][corepy].
-Follow the instructions there and also call `make python_install1` in the
-build directory of dune-fempy.
+Follow the installation instructions in [dune-corepy][corepy].
+After building `dune-fempy` add the `python` folder in the build directory
+to your `PYTHON_PATH` or (having set the cmake `PYTHON_INSTALL_LOCATION` flag)
+use the `setup-dunepy.py` script or call `make python_install1` in the
+build directory of dune-fempy to install the `dune-fem` part of the Dune
+python package.
 
 [corepy]: https://gitlab.dune-project.org/staging/dune-corepy
+[femlink]: https://gitlab.dune-project.org/dune-fem/dune-fem

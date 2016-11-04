@@ -78,6 +78,16 @@ Advanced topics
 
    advanced
 
+#################################
+Jupyter Notebooks
+#################################
+
+.. toctree::
+   :maxdepth: 1
+
+   laplace-jupyter.ipynb
+   crystal-jupyter.ipynb
+
 Indices and tables
 ==================
 

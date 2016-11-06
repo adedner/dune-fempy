@@ -1,6 +1,6 @@
 include(DuneSphinxDoc)
-dune_sphinx_doc()
-
+configure_file(sphere.dgf sphere.dgf)
+configure_file(mcf.gif mcf.gif)
 add_sphinx_targets(sphinx
   advanced.rst
   installation.rst
@@ -10,6 +10,4 @@ add_sphinx_targets(sphinx
   crystal-jupyter.ipynb
   laplace-jupyter.ipynb
   mcf.ipynb
-  sphere.dgf
-  mcf.gif
 )

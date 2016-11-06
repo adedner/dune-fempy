@@ -134,7 +134,7 @@ import dune.fem as fem
 import dune.grid as grid
 import dune.create as create
 order = 1
-domain = grid.cartesianDomain([2,2],[10,10],[5,5])
+domain = grid.cartesianDomain([4,4],[8,8],[3,3])
 grid   = create.view("adaptive", grid="ALUConform",
                     constructor=domain, dimgrid=dimDomain)
 space = create.space("Lagrange", grid, dimrange=dimRange,
@@ -192,7 +192,7 @@ print()
 
 # We define a method for matplotlib output.
 
-# In[11]:
+# In[16]:
 
 from numpy import amin, amax, linspace
 from matplotlib import pyplot
@@ -200,13 +200,19 @@ from IPython import display
 
 def matplot(grid, solution, show=range(dimRange)):
     triangulation = grid.triangulation()
-    subfig = 100+len(show)*10
+    subfig = 101+(len(show)+1)*10
+    # plot the grid
+    pyplot.subplot(subfig)
+    pyplot.gca().set_aspect('equal')
+    pyplot.gca().locator_params(tight=True, nbins=3)
+    pyplot.triplot(triangulation, antialiased=True, linewidth=0.2, color='black')
+    # add the data
     for p in show:
         pyplot.subplot(subfig+p+1)
+        pyplot.gca().set_aspect('equal')
+        pyplot.gca().locator_params(tight=True, nbins=3)
         data = solution.pointData()
         levels = linspace(amin(data[:,p]), amax(data[:,p]), 256)
-        pyplot.gca().set_aspect('equal')
-        pyplot.triplot(triangulation, antialiased=True, linewidth=0.2, color='black')
         pyplot.tricontourf(triangulation, data[:,p], cmap=pyplot.cm.rainbow, levels=levels)
 
     # pyplot.show()
@@ -214,7 +220,7 @@ def matplot(grid, solution, show=range(dimRange)):
     display.display(pyplot.gcf())
 
 
-# In[12]:
+# In[17]:
 
 pyplot.figure()
 
@@ -251,7 +257,7 @@ while t < endTime:
 print()
 
 
-# In[15]:
+# In[18]:
 
 pyplot.figure()
 count += 1

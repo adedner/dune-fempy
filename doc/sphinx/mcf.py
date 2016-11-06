@@ -3,9 +3,9 @@
 # # Mean Curvature Flow
 
 # In this example we compute the mean curvature flow of a surface:
-# \begin{gather}
+# \begin{align}
 #    \frac{\partial}{\partial_t} x &= H(x)  && \text{for} x\in\Gamma(t)
-# \end{gather}
+# \end{align}
 # Assume we can define a reference surface $\Gamma_0$ such that
 # we can write the evolving surface $\Gamma(t)$ in the form
 # \begin{gather}
@@ -23,7 +23,7 @@
 #     \tau \int_{\Gamma^n} \big(
 #     \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
 #     \colon\nabla_{\Gamma^n}\varphi
-#   &=0~.
+#   =0~.
 # \end{gather}
 # Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
 # $\Gamma^n:=\Gamma(t^{n})$,
@@ -67,7 +67,6 @@ positions = spc.interpolate(lambda x: x *
 surface   = create.view("geometry",positions)
 spc = create.space("Lagrange", surface, dimrange=surface.dimWorld, order=order)
 solution  = spc.interpolate(lambda x: x, name="solution")
-grid.size(0)
 
 
 # In[3]:
@@ -88,7 +87,7 @@ a = (ufl.inner(u - x, v) + tau * ufl.inner(
     )) * ufl.dx
 model = create.model("elliptic", surface, a == 0)
 
-scheme = create.scheme("h1", spc, model)
+scheme = create.scheme("h1", spc, model, solver="cg")
 
 
 # In[4]:
@@ -137,6 +136,14 @@ while t < endTime:
 display.display(pyplot.gcf())
 
 
+# In case we start with a spherical initial surface, i.e., $\Gamma(0)=R_0\;S^2$, the solution
+# to the mean curvature flow equation is easy to compute:
+# \begin{align}
+#   \Gamma(t) &= R(t)\;S^2 \\
+#   R(t) &= \sqrt{R_0^2-4t}
+# \end{align}
+# We can use this to check that our implementation is correct:
+
 # In[6]:
 
 # compute an averaged radius of the surface
@@ -154,14 +161,6 @@ def calcRadius(surface):
     return R/vol
 
 
-# In case we start with a spherical initial surface, i.e., $\Gamma(0)=R_0\;S^2$, the solution
-# to the mean curvature flow equation is easy to compute:
-# \begin{gather}
-#   \Gamma(t) &= R(t)\;S^2 \\
-#   R(t) &= \sqrt{R_0^2-4t}
-# \end{gather}
-# We can use this to check that our implementation is correct:
-
 # In[7]:
 
 endTime = 0.1
@@ -173,8 +172,11 @@ pyplot.gca().set_xlim([0,endTime])
 pyplot.gca().set_ylabel("error")
 pyplot.gca().set_xlabel("time")
 
-numberOfLoops = 2
-for i in range(numberOfLoops+1):
+numberOfLoops = 3
+errors = np.zeros(numberOfLoops)
+totalIterations = np.zeros(numberOfLoops, np.dtype(np.uint32))
+gridSizes = np.zeros(numberOfLoops, np.dtype(np.uint32))
+for i in range(numberOfLoops):
     positions.interpolate(lambda x: x*  R0/x.two_norm)
     solution.interpolate(lambda x: x)
     t       = 0.
@@ -183,10 +185,14 @@ for i in range(numberOfLoops+1):
     x = np.array([t])
     y = np.array([R-Rexact])
     model.setConstant(tau,[dt])
+    iterations = 0
     while t < endTime:
-        scheme.solve(target=solution)
-        t     += dt
+        solution,info = scheme.solve(target=solution)
+        # move the surface
         positions.assign(solution.dofVector())
+        # store some information about the solution process
+        iterations += int( info["linear_iterations"] )
+        t          += dt
         R      = calcRadius( surface )
         Rexact = math.sqrt(R0*R0-4.*t)
         # print("R_h=",R, "Rexact=",Rexact, "difference=",R-Rexact)
@@ -195,18 +201,26 @@ for i in range(numberOfLoops+1):
         pyplot.plot(x,y)
         display.clear_output(wait=True)
         display.display(pyplot.gcf())
-    error = abs(R-Rexact)
-    if i<numberOfLoops:
+    errors[i] = abs(R-Rexact)
+    totalIterations[i] = iterations
+    gridSizes[i] = grid.size(2)
+    if i<numberOfLoops-1:
         grid.hierarchicalGrid.globalRefine(1)
         dt /= 2.
-    if i>0:
-        print("step:",i,"error:",error,"eoc:",math.log(oldError/error)/math.log(2.))
-    oldError = error
 
 
 # In[8]:
 
-math.log(oldError/error)/math.log(2.)
+eocs = np.log(errors[0:][:numberOfLoops-1] / errors[1:]) / math.log(2.)
+print(eocs)
+
+
+# In[9]:
+
+import pandas as pd
+keys = {'size': gridSizes, 'error': errors, "eoc": np.insert(eocs,0,None), 'iterations': totalIterations}
+table = pd.DataFrame(keys, index=[1,2,3],columns=['size','error','eoc','iterations'])
+print(table)
 
 
 # In[ ]:

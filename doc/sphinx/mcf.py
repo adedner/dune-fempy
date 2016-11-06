@@ -43,7 +43,7 @@ import dune.create as create
 import dune.fem as fem
 
 # polynomial order of approximation
-order = 3
+order = 2
 
 # initial radius
 R0 = 2.
@@ -172,7 +172,7 @@ pyplot.gca().set_xlim([0,endTime])
 pyplot.gca().set_ylabel("error")
 pyplot.gca().set_xlabel("time")
 
-numberOfLoops = 3
+numberOfLoops = 2
 errors = np.zeros(numberOfLoops)
 totalIterations = np.zeros(numberOfLoops, np.dtype(np.uint32))
 gridSizes = np.zeros(numberOfLoops, np.dtype(np.uint32))
@@ -219,7 +219,7 @@ print(eocs)
 
 import pandas as pd
 keys = {'size': gridSizes, 'error': errors, "eoc": np.insert(eocs,0,None), 'iterations': totalIterations}
-table = pd.DataFrame(keys, index=[1,2,3],columns=['size','error','eoc','iterations'])
+table = pd.DataFrame(keys, index=range(numberOfLoops),columns=['size','error','eoc','iterations'])
 print(table)
 
 

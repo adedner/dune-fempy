@@ -41,9 +41,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'nbsphinx',
+#    'nbsphinx',
 ]
-nbsphinx_timeout = -1
+# nbsphinx_timeout = -1
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

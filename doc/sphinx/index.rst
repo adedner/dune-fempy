@@ -85,8 +85,9 @@ Jupyter Notebooks
 .. toctree::
    :maxdepth: 1
 
-   laplace-jupyter.ipynb
-   crystal-jupyter.ipynb
+   laplace-jupyter
+   crystal-jupyter
+   mcf
 
 Indices and tables
 ==================

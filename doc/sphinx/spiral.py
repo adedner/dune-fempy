@@ -2,6 +2,62 @@
 
 # #  Spiral Wave
 
+# This demonstrates the simulation of spiral waves in an excitable media. It consists of system of reaction diffusion equations with two components. Both the model parameters and the approach for discretizing the system are taken from http://www.scholarpedia.org/article/Barkley_model.
+#
+# We use the _Barkley model_ in it's simplest form:
+# \begin{align*}
+#   \frac{\partial u}{\partial_t}
+#        &= \frac{1}{\varepsilon}f(u,v) + \Delta u \\
+#   \frac{\partial v}{\partial_t} &= h(u,v)
+# \end{align*}
+# where
+# \begin{gather}
+#   f(u,v(=u\Big(1-u\Big)\Big(u-\frac{v+b}{a}\Big)
+# \end{gather}
+# The function $h$ can take different forms, e.g., in it's simplest form
+# \begin{gather}
+#   h(u,v) = u - v~.
+# \end{gather}
+# Finally, $\varepsilon,a,b$ for more details on how to chose these parameters check the web page provided above.
+#
+# We employ a carefully constructed linear time stepping scheme for this model: let $u^n,v^n$ be given functions approximating the solution at a time $t^n$. To compute approximations $u^{m+1},v^{m+1}$ at a later time
+# $t^{n+1}=t^n+\tau$ we first split up the non linear function $f$ as follows:
+# \begin{align*}
+#   f(u,v) = f_I(u,u,v) + f_E(u,v)
+# \end{align*}
+# where using $u^*(V):=\frac{V+b}{a}$:
+# \begin{align*}
+#   f_I(u,U,V) &= \begin{cases}
+#     u\;(1-U)\;(\;U-U^*(V)\;) & U < U^*(V) \\
+#     -u\;U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+#   \end{cases} \\
+# \text{and} \\
+#     f_E(U,V) &= \begin{cases}
+#     0 & U < U^*(V) \\
+#     U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+#   \end{cases} \\
+# \end{align*}
+# Thus $f_I(u,U,V) = -m(U,V)u$ with
+# \begin{align*}
+#   m(U,V) &= \begin{cases}
+#     (U-1)\;(\;U-U^*(V)\;) & U < U^*(V) \\
+#     U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+#   \end{cases}
+# \end{align*}
+# Note that $u,v$ are assumed to take values only between zero and one so that therefore $m(u^n,v^n) > 0$. Therefore, the following time discrete version of the Barkley model has a linear, positive definite elliptic operator on it's left hand side:
+# \begin{align*}
+#   -\tau\Delta u^{n+1} +
+#    (1+\frac{\tau}{\varepsilon} m(u^n,v^n))\; u^{n+1}
+#        &= u^n + \frac{\tau}{\varepsilon} f_E(u^n,v^n) \\
+#   v^{n+1} &= v^n + \tau h(u^n,v^n)
+# \end{align*}
+# Since can now be solved using a finite element discretization for $u^n,v^n$.
+#
+# Note that by taking the slow reaction $h(u,v)$ explicitly, the equation for $v^{n+1}$ is purely algebraic. We will therefore construct a scalar model for computing $u^{n+1}$ only and compute $v^{{n+1}$ be using the interpolation method on the space applied to
+# $v^n + \tau h(u^n,v^n)$.
+
+# Let's get started by importing some standard python packages, ufl, and some part of the dune-fempy package:
+
 # In[1]:
 
 from __future__ import print_function
@@ -16,8 +72,12 @@ import dune.models.elliptic
 import dune.fem
 import dune.create as create
 
-# http://www.scholarpedia.org/article/Barkley_model
-dimRange   = 2
+
+# In our atempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to chose from):
+
+# In[2]:
+
+dimRange   = 1
 dt         = 0.25
 if 1:
     spiral_a   = 0.75
@@ -31,58 +91,80 @@ else:
     spiral_eps = 0.08
     def spiral_h(u,v): return u**3 - v
 
-def initial(x):
-    return [ 1   if x[1]>1.25 else 0,             0.5 if x[0]<1.25 else 0. ]
+initial_u = lambda x: [1   if x[1]>1.25 else 0]
+initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 
 
-# In[2]:
+# Now we set up the reference domain, the lagrange finite element space (second order), and discrete functions for $(u^n,v^n($, $(u^{n+1},v^{n+1})$:
 
-# set up reference domain
+# In[3]:
+
 domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
 domain = dune.grid.cartesianDomain([0,0],[2.5,2.5],[30,30])
 grid = create.grid("Yasp", domain, dimgrid=2)
 spc  = create.space( "Lagrange", grid, dimrange=dimRange, order=1 )
 
-solution    = spc.interpolate( initial, name="solution" )
-solution_n  = spc.interpolate( initial, name="solution_n" )
-forcing     = spc.interpolate( [0,0,0], name="forcing" )
+uh   = spc.interpolate( initial_u, name="u" )
+uh_n = uh.copy()
+vh   = spc.interpolate( initial_v, name="v" )
+vh_n = vh.copy()
 
 
-# In[3]:
-
-uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
-u = ufl.TrialFunction(uflSpace)
-v = ufl.TestFunction(uflSpace)
-un = dune.ufl.NamedCoefficient(uflSpace, "un")
-
-# right hand sie (time derivative part + explicit forcing in v)
-a_ex = (ufl.inner(un, v) + dt * ufl.inner(spiral_h(un[0], un[1]), v[1])) * ufl.dx
-# left hand side (heat equation in first variable + backward Euler in time)
-a_im = (dt * spiral_D * ufl.inner(ufl.grad(u[0]), ufl.grad(v[0])) + ufl.inner(u,v)) * ufl.dx
-
-modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
-
-# extra model source code
-# -----------------------
-sourceCode = """      double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
-      if( @gf:un[ 0 ] <= uth )
-        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
-      else
-        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - uth);
-"""
-linSourceCode = """      double uth = (@gf:un[ 1 ] + @const:b) / @const:a;
-      if( @gf:un[ 0 ] <= uth )
-        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - uth);
-      else
-        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - uth);
-"""
-modelCode.appendCode('source', sourceCode, coefficients={"un": solution_n} )
-modelCode.appendCode('linSource', linSourceCode )
-
+# We define the model in two steps:
+# - first we define the standard parts, not involving $f_E,f_I$:
+# - then we add the missing parts with the required _if_ statement directly using C++ code
 
 # In[4]:
 
-model = create.model("elliptic", grid, modelCode, coefficients={"un": solution_n} )
+uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
+u   = ufl.TrialFunction(uflSpace)
+phi = ufl.TestFunction(uflSpace)
+un  = dune.ufl.NamedCoefficient(uflSpace, "un")
+vn  = dune.ufl.NamedCoefficient(uflSpace, "vn")
+
+# right hand sie (time derivative part + explicit forcing in v)
+a_ex = ufl.inner(un, phi) * ufl.dx
+# left hand side (heat equation in first variable + backward Euler in time)
+a_im = (dt * spiral_D * ufl.inner(ufl.grad(u), ufl.grad(phi)) +
+        ufl.inner(u,phi)) * ufl.dx
+
+modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
+
+
+# In[5]:
+
+sourceCode = """      double ustar = (@gf:vn[ 0 ] + @const:b) / @const:a;
+      if( @gf:un[ 0 ] <= ustar )
+        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - ustar);
+      else
+        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - ustar);
+"""
+linSourceCode = """      double ustar = (@gf:vn[ 0 ] + @const:b) / @const:a;
+      if( @gf:un[ 0 ] <= ustar )
+        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - ustar);
+      else
+        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - ustar);
+"""
+modelCode.appendCode('source', sourceCode,
+                     coefficients={"un": uh_n, "vn": vh_n} )
+modelCode.appendCode('linSource', linSourceCode,
+                     coefficients={"un": uh_n, "vn": vh_n} )
+
+
+# In[6]:
+
+rhs_gf = create.function("ufl", grid, "rhs", order=2,
+                         ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
+                         coefficients={'un': uh_n, 'vn': vh_n} )
+
+
+# The model is now completely implemented and we can be created, together with the corresponding scheme:
+
+# In[7]:
+
+model = create.model("elliptic", grid,
+                     modelCode,
+                     coefficients={"un": uh_n, "vn": vh_n} )
 model.setConstant("a", [spiral_a])
 model.setConstant("b", [spiral_b])
 model.setConstant("eps", [spiral_eps])
@@ -97,7 +179,9 @@ solverParameters = {
 scheme = create.scheme("h1", spc, model, ("pardg","cg"),parameters=solverParameters)
 
 
-# In[5]:
+# To show the solution we make use of the _animate_ module of _matplotlib_:
+
+# In[8]:
 
 import matplotlib.pyplot as plt
 from numpy import linspace
@@ -115,20 +199,22 @@ nextstep = 0.
 iterations = 0
 
 def animate(count):
-    global t, stepsize, nextstep, iterations, dt, solution
+    global t, stepsize, nextstep, iterations, dt
     # print('frame',count,t)
     while t < nextstep:
-        solution_n.assign(solution)
-        _,info = scheme.solve(target=solution)
+        uh_n.assign(uh)
+        vh_n.assign(vh)
+        _,info = scheme.solve(target=uh)
+        vh.interpolate( rhs_gf )
         # print("Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
         iterations += int( info["linear_iterations"] )
         t     += dt
-    data = solution.pointData(1)
+    data = uh.pointData(1)
     plt.tricontourf(triangulation, data[:,0], cmap=plt.cm.rainbow, levels=levels)
     # grid.writeVTK("spiral", pointdata=[solution], number=count)
     nextstep += stepsize
 
-
-# In[6]:
-
 animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
+
+
+# In[ ]:

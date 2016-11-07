@@ -87,6 +87,7 @@ Jupyter Notebooks
 
    laplace-jupyter
    crystal-jupyter
+   spiral
    mcf
 
 Indices and tables

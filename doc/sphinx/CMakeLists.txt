@@ -10,4 +10,5 @@ add_sphinx_targets(sphinx
   crystal-jupyter.ipynb
   laplace-jupyter.ipynb
   mcf.ipynb
+  spiral.ipynb
 )

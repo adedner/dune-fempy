@@ -5,16 +5,16 @@
 #
 # This demo introduces basic usage of dune-fempy, using the poisson equation as an example. Namely,
 #
-# \begin{gather}
-# - \Delta u + u = f \quad \text{in } \Omega \\
-# \nabla u \cdot \textbf{n} = 0 \quad \text{on } \Gamma
-# \end{gather}
+# \begin{align*}
+#   - \Delta u + u &= f && \text{in } \Omega \\
+#   \nabla u \cdot \textbf{n} &= 0 && \text{on } \Gamma
+# \end{align*}
 #
 #
 # If you have compiled DUNE against MPI, we strongly advise you to first initialize MPI from Python.
 # At least OpenMPI is known to fail, if initialized only in the dune-fempy library.
 
-# In[20]:
+# In[1]:
 
 import dune.fem
 dune.fem.parameter.append("../data/parameter")
@@ -22,7 +22,7 @@ dune.fem.parameter.append("../data/parameter")
 
 # First, we create our computational grid. Our domain will be the unit square divided into 16x16 quadrilaterals. To actually create the grid, we choose an implementation of the DUNE grid interface: a 2-dimensional ALUGrid with simplices and conforming bisection refinement.
 
-# In[21]:
+# In[2]:
 
 import dune.create as create
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
@@ -30,7 +30,7 @@ grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8
 
 # We set up the base variables u, v and x in UFL.
 
-# In[22]:
+# In[3]:
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, SpatialCoordinate
@@ -45,14 +45,16 @@ x = SpatialCoordinate(uflSpace.cell())
 # \begin{equation}
 # \int_{\Omega} uv + \nabla u\cdot\nabla v \ dx =  \int_{\Omega} f v \ dx.
 # \end{equation}
+# We take $f = 9\pi^2\cos(2\pi x_0)\cos(2\pi x_1)$.
 #
-# Here, we also take $f = \cos(2\pi x_0)\cos(2\pi x_1)$
+# Note that then the exact solution is then
+# $u = \cos(2\pi x_0)\cos(2\pi x_1)$.
 
-# In[23]:
+# In[4]:
 
 from math import pi
 from ufl import cos, as_vector, dx, grad, inner
-f = cos(2*pi*x[0])*cos(2*pi*x[1])
+f = 9*pi*pi*cos(2*pi*x[0])*cos(2*pi*x[1])
 exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 equation = (inner(grad(u), grad(v)) + inner(u,v)) * dx == f * v[0] * dx
 equation
@@ -60,15 +62,15 @@ equation
 
 # We create the space and the model.
 
-# In[24]:
+# In[5]:
 
 spc = create.space("Lagrange", grid, dimrange=1, order=1)
-model = create.model("elliptic", grid, equation, exact=exact, dirichlet={ 1:exact })
+model = create.model("elliptic", grid, equation)
 
 
 # We create the scheme and set parameters for the solver.
 
-# In[25]:
+# In[6]:
 
 scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
@@ -78,14 +80,14 @@ scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.ne
 
 # We create a grid function for our exact solution.
 
-# In[26]:
+# In[7]:
 
 exact_gf = create.function("ufl", grid, "exact", 5, exact)
 
 
 # We set up a function for plotting the data using matplotlib.
 
-# In[27]:
+# In[8]:
 
 try:
     import matplotlib
@@ -112,7 +114,7 @@ except ImportError as e:
 
 # Now we solve the system. We assign the solution to `uh`, and define a function to calculate the $L^2$ error, i.e. $|u_h - u|_{L^2}$. We output the data to a vtk file with name `laplace`, and plot it using `plot`. Finally we refine the grid twice and repeat the process.
 
-# In[28]:
+# In[9]:
 
 from math import sqrt
 for i in range(2):
@@ -129,7 +131,143 @@ for i in range(2):
 
     plot(grid, uh)
 
-    grid.hierarchicalGrid.globalRefine(2)
+    if i < 1:
+        grid.hierarchicalGrid.globalRefine(2)
 
 
 # Congratulations! You have successfully solved and visualized your first PDE using dune-fempy.
+#
+# For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Chaning the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
+# ~~~
+# spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+# ~~~
+# in the above code will switch to the solvers from `dune-istl`, other options are for example `eigen` or `petsc`.
+#
+# It is also possible to store the degrees of freedom in such a way that they can be treated as `numpy` vectors and an assembled system matrix can be stored in a `sympy` sparse matrix.
+#
+# __Note__: at the moment we can only export `Eigen` matrices to python so to get the following example to run, the `Eigen` package must be available and `dune-py` must have been configured with `Eigen`.
+#
+# Since we will be implementing a Newton solver first, let's study a truely non linear problem - a version of the p-Laplace problem:
+# \begin{gather}
+#   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
+# \end{gather}
+
+# In[10]:
+
+import numpy as np
+import scipy.sparse.linalg
+import scipy.optimize
+from ufl import ds
+
+try:
+    spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
+except Exception as ex:
+    template = "An exception of type {0} occured. Arguments:\n{1!r}"
+    message = template.format(type(ex).__name__, ex.args)
+    print(message)
+    exit(1)
+except:
+    print('something...')
+    exit(1)
+
+d = 0.001
+p = 1.7
+
+rhs = (x[0] + x[1]) * v[0]
+a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
+b = rhs * dx + 10*rhs * ds
+model = create.model("elliptic", grid, a==b)
+
+scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
+        "fem.solver.newton.linreduction": 1e-10,
+        "fem.solver.newton.verbose": 1,
+        "fem.solver.newton.linear.verbose": 0})
+# create a discrete solution over this space - will be initialized with zero by default
+
+uh = create.function("discrete", spc, name="solution")
+
+
+# In the following we implement a simple Newton solver: given an intitial guess $u^0$ (here taken to be zero) solve for $n\geq 0$:
+# \begin{align*}
+#    u^{n+1} = u^n - DS(u^n)(S(u^n)-g)
+# \end{align*}
+# Where $g$ is a discrete function containing the boundary values in the Dirichlet nodes and zero otherwise.
+#
+# Let's first use the solve method on the scheme directly:
+
+# In[11]:
+
+_,info = scheme.solve(target = uh)
+print("size:", grid.size(0), "newton iterations:", int(info['iterations']))
+plot(grid, uh)
+
+
+# Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
+
+# In[12]:
+
+# Let's first clear the solution again
+uh.clear()
+# Need to auxiliary function
+res = uh.copy()
+
+# Note: the following does not produce a copy of the dof
+# vectors, but keep in mind that
+# after grid adaptation the resulting numpy array
+# will be invalid since the shared dof vector will have moved
+# during its resizing - use copy=True to avoid this problem at
+# the cost of a copy
+sol_coeff = np.array( uh, copy=False )
+res_coeff = np.array( res, copy=False )
+n = 0
+
+while True:
+    scheme(uh, res)
+    absF = sqrt( np.dot(res_coeff,res_coeff) )
+    print("iterations ("+str(n)+")",absF)
+    if absF < 1e-10:
+        break
+    matrix = scheme.assemble(uh)
+    sol_coeff -= scipy.sparse.linalg.spsolve(matrix, res_coeff)
+    n += 1
+
+plot(grid, uh)
+
+
+# We cam redo the above computation but now use the Newton solver available in sympy:
+
+# In[13]:
+
+# let's first set the solution back to zero - since it already contains the right values
+uh.clear()
+def f(x_coeff):
+    x = spc.numpyfunction(x_coeff, "tmp")
+    scheme(x,res)
+    return res_coeff
+# class for the derivative DS of S
+class Df(scipy.sparse.linalg.LinearOperator):
+    def __init__(self,x_coeff):
+        self.shape = (sol_coeff.shape[0],sol_coeff.shape[0])
+        self.dtype = sol_coeff.dtype
+        # the following converts a given numpy array
+        # into a discrete function over the given space
+        x = spc.numpyfunction(x_coeff, "tmp")
+        # store the assembled matrix
+        self.jac = scheme.assemble(x)
+    # reassemble the matrix DF(u) gmiven a dof vector for u
+    def update(self,x_coeff,f):
+        x = spc.numpyfunction(x_coeff, "tmp")
+        # Note: the following does produce a copy of the matrix
+        # and each call here will reproduce the full matrix
+        # structure - no reuse possible in this version
+        self.jac = scheme.assemble(x)
+    # compute DS(u)^{-1}x for a given dof vector x
+    def _matvec(self,x_coeff):
+        return scipy.sparse.linalg.spsolve(self.jac, x_coeff)
+
+# call the newton krylov solver from scipy
+sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
+            verbose=1, f_tol=1e-8,
+            inner_M=Df(sol_coeff))
+
+plot(grid, uh)

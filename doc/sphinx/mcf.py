@@ -42,7 +42,7 @@ import dune.ufl
 import dune.create as create
 import dune.fem as fem
 
-# polynomial order of approximation
+# polynomial order of surface approximation
 order = 2
 
 # initial radius
@@ -217,10 +217,14 @@ print(eocs)
 
 # In[9]:
 
-import pandas as pd
-keys = {'size': gridSizes, 'error': errors, "eoc": np.insert(eocs,0,None), 'iterations': totalIterations}
-table = pd.DataFrame(keys, index=range(numberOfLoops),columns=['size','error','eoc','iterations'])
-print(table)
+try:
+    import pandas as pd
+    keys = {'size': gridSizes, 'error': errors, "eoc": np.insert(eocs,0,None), 'iterations': totalIterations}
+    table = pd.DataFrame(keys, index=range(numberOfLoops),columns=['size','error','eoc','iterations'])
+    print(table)
+except ImportError:
+    print("pandas could not be used to show table with results")
+    pass
 
 
 # In[ ]:

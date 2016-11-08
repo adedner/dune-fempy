@@ -280,6 +280,11 @@ plot(grid, uh)
 # - set dirichlet={} in the model
 # - set boundary ids in the grid construction
 
-# ## DG Scheme
+# ## DG Schemes
 # show the
-# - DG
+# - dgscheme
+# - galerkin schemes
+
+# # AFEM
+
+# In[ ]:

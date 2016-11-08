@@ -1,9 +1,9 @@
 # coding: utf-8
 
-# Laplace Demo
-# ------------
+# # Solving an Elliptic PDE
+# ## Getting started
 #
-# This demo introduces basic usage of dune-fempy, using the poisson equation as an example. Namely,
+# This demo introduces basic usage of dune-fempy, using the Poisson equation as an example. Namely,
 #
 # \begin{align*}
 #   - \Delta u + u &= f && \text{in } \Omega \\
@@ -20,7 +20,7 @@ import dune.fem
 dune.fem.parameter.append("../data/parameter")
 
 
-# First, we create our computational grid. Our domain will be the unit square divided into 16x16 quadrilaterals. To actually create the grid, we choose an implementation of the DUNE grid interface: a 2-dimensional ALUGrid with simplices and conforming bisection refinement.
+# First, we create our computational grid. Our domain will be the unit square divided into 8x8 quadrilaterals. To actually create the grid, we choose an implementation of the DUNE grid interface: a 2-dimensional ALUGrid with simplices and conforming bisection refinement.
 
 # In[2]:
 
@@ -137,7 +137,9 @@ for i in range(2):
 
 # Congratulations! You have successfully solved and visualized your first PDE using dune-fempy.
 #
-# For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Chaning the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
+# ## Different storage backends - using numpy/scipy
+#
+# For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Changing the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
 # ~~~
 # spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
 # ~~~
@@ -147,7 +149,7 @@ for i in range(2):
 #
 # __Note__: at the moment we can only export `Eigen` matrices to python so to get the following example to run, the `Eigen` package must be available and `dune-py` must have been configured with `Eigen`.
 #
-# Since we will be implementing a Newton solver first, let's study a truely non linear problem - a version of the p-Laplace problem:
+# Since we will be implementing a Newton solver first, let's study a truelly non linear problem - a version of the p-Laplace problem:
 # \begin{gather}
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
@@ -187,7 +189,7 @@ scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.ne
 uh = create.function("discrete", spc, name="solution")
 
 
-# In the following we implement a simple Newton solver: given an intitial guess $u^0$ (here taken to be zero) solve for $n\geq 0$:
+# In the following we implement a simple Newton solver: given an initial guess $u^0$ (here taken to be zero) solve for $n\geq 0$:
 # \begin{align*}
 #    u^{n+1} = u^n - DS(u^n)(S(u^n)-g)
 # \end{align*}
@@ -271,3 +273,13 @@ sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
             inner_M=Df(sol_coeff))
 
 plot(grid, uh)
+
+
+# ## Dirichlet boundary conditions
+# demonstrate how to
+# - set dirichlet={} in the model
+# - set boundary ids in the grid construction
+
+# ## DG Scheme
+# show the
+# - DG

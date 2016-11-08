@@ -49,7 +49,7 @@ order = 2
 R0 = 2.
 
 
-# In[2]:
+# In[4]:
 
 # set up reference domain Gamma_0
 grid = create.grid("ALUSimplex", "sphere.dgf", dimgrid=2, dimworld=3)
@@ -69,7 +69,7 @@ spc = create.space("Lagrange", surface, dimrange=surface.dimWorld, order=order)
 solution  = spc.interpolate(lambda x: x, name="solution")
 
 
-# In[3]:
+# In[ ]:
 
 # set up model using theta scheme
 theta = 0.5   # Crank-Nicholson
@@ -90,7 +90,7 @@ model = create.model("elliptic", surface, a == 0)
 scheme = create.scheme("h1", spc, model, solver="cg")
 
 
-# In[4]:
+# In[ ]:
 
 from numpy import amin, amax, linspace
 import matplotlib
@@ -111,7 +111,7 @@ def matplot(grid, solution, count):
                        linewidth=0.2, color='black')
 
 
-# In[5]:
+# In[ ]:
 
 count   = 0
 t       = 0.
@@ -144,7 +144,7 @@ display.display(pyplot.gcf())
 # \end{align}
 # We can use this to check that our implementation is correct:
 
-# In[6]:
+# In[ ]:
 
 # compute an averaged radius of the surface
 def calcRadius(surface):
@@ -161,7 +161,7 @@ def calcRadius(surface):
     return R/vol
 
 
-# In[7]:
+# In[ ]:
 
 endTime = 0.1
 dt      = 0.02
@@ -209,13 +209,13 @@ for i in range(numberOfLoops):
         dt /= 2.
 
 
-# In[8]:
+# In[ ]:
 
 eocs = np.log(errors[0:][:numberOfLoops-1] / errors[1:]) / math.log(2.)
 print(eocs)
 
 
-# In[9]:
+# In[ ]:
 
 try:
     import pandas as pd

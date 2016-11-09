@@ -274,7 +274,23 @@ sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
 plot(grid, uh)
 
 
-# ## Dirichlet boundary conditions
+# ## Dirichlet Boundary Conditions
+# Consider a simple elliptic problem with Dirichlet and Neuman boundary conditions
+# \begin{align*}
+#   -\Delta u &= f && \text{in } \Omega \\
+#           u &= g && \text{on } \Gamma_D \\
+#   -\nabla u\cdot n + \alpha u &= r && \text{on } \Gamma_R
+# \end{align*}
+# Note that $\alpha$ can be zero so that this includes non zero Neuman boundary conditions.
+#
+# `dune-fempy` uses integer boundary identifies to distinguish between different parts of the boundary. These are set during grid construction on the coarse grid boundaries:
+
+# In[19]:
+
+# add some examle
+
+
+# ## Adaptive Finite Element
 # We study the classic _reentrand corner_ problem:
 # \begin{align*}
 #   -\Delta u &= f && \text{in } \Omega \\
@@ -421,8 +437,6 @@ plot(grid,uh, (-0.25,0.25),(-0.25,0.25))
 plot(grid,uh, (-0.125,0.125),(-0.125,0.125))
 plot(grid,uh, (-0.0625,0.0625),(-0.0625,0.0625))
 
-
-# # AFEM
 
 # ## DG Schemes
 # show the

@@ -1,10 +1,11 @@
+
 # coding: utf-8
 
 # #  Spiral Wave
 
 # This demonstrates the simulation of spiral waves in an excitable media. It consists of system of reaction diffusion equations with two components. Both the model parameters and the approach for discretizing the system are taken from http://www.scholarpedia.org/article/Barkley_model.
 #
-# We use the _Barkley model_ in it's simplest form:
+# We use the _Barkley model_ in its simplest form:
 # \begin{align*}
 #   \frac{\partial u}{\partial_t}
 #        &= \frac{1}{\varepsilon}f(u,v) + \Delta u \\
@@ -14,7 +15,7 @@
 # \begin{gather}
 #   f(u,v(=u\Big(1-u\Big)\Big(u-\frac{v+b}{a}\Big)
 # \end{gather}
-# The function $h$ can take different forms, e.g., in it's simplest form
+# The function $h$ can take different forms, e.g., in its simplest form
 # \begin{gather}
 #   h(u,v) = u - v~.
 # \end{gather}
@@ -44,21 +45,21 @@
 #     U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
 #   \end{cases}
 # \end{align*}
-# Note that $u,v$ are assumed to take values only between zero and one so that therefore $m(u^n,v^n) > 0$. Therefore, the following time discrete version of the Barkley model has a linear, positive definite elliptic operator on it's left hand side:
+# Note that $u,v$ are assumed to take values only between zero and one so that therefore $m(u^n,v^n) > 0$. Therefore, the following time discrete version of the Barkley model has a linear, positive definite elliptic operator on its left hand side:
 # \begin{align*}
 #   -\tau\Delta u^{n+1} +
 #    (1+\frac{\tau}{\varepsilon} m(u^n,v^n))\; u^{n+1}
 #        &= u^n + \frac{\tau}{\varepsilon} f_E(u^n,v^n) \\
 #   v^{n+1} &= v^n + \tau h(u^n,v^n)
 # \end{align*}
-# Since can now be solved using a finite element discretization for $u^n,v^n$.
+# Which can now be solved using a finite element discretization for $u^n,v^n$.
 #
-# Note that by taking the slow reaction $h(u,v)$ explicitly, the equation for $v^{n+1}$ is purely algebraic. We will therefore construct a scalar model for computing $u^{n+1}$ only and compute $v^{{n+1}$ be using the interpolation method on the space applied to
+# Note that by taking the slow reaction $h(u,v)$ explicitly, the equation for $v^{n+1}$ is purely algebraic. We will therefore construct a scalar model for computing $u^{n+1}$ only and compute $v^{{n+1}}$ be using the interpolation method on the space applied to
 # $v^n + \tau h(u^n,v^n)$.
 
 # Let's get started by importing some standard python packages, ufl, and some part of the dune-fempy package:
 
-# In[1]:
+# In[2]:
 
 from __future__ import print_function
 import math
@@ -73,9 +74,9 @@ import dune.fem
 import dune.create as create
 
 
-# In our atempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to chose from):
+# In our attempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to choose from):
 
-# In[2]:
+# In[ ]:
 
 dimRange   = 1
 dt         = 0.25
@@ -95,9 +96,9 @@ initial_u = lambda x: [1   if x[1]>1.25 else 0]
 initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 
 
-# Now we set up the reference domain, the lagrange finite element space (second order), and discrete functions for $(u^n,v^n($, $(u^{n+1},v^{n+1})$:
+# Now we set up the reference domain, the Lagrange finite element space (second order), and discrete functions for $(u^n,v^n($, $(u^{n+1},v^{n+1})$:
 
-# In[3]:
+# In[ ]:
 
 domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
 domain = dune.grid.cartesianDomain([0,0],[2.5,2.5],[30,30])
@@ -114,7 +115,7 @@ vh_n = vh.copy()
 # - first we define the standard parts, not involving $f_E,f_I$:
 # - then we add the missing parts with the required _if_ statement directly using C++ code
 
-# In[4]:
+# In[ ]:
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u   = ufl.TrialFunction(uflSpace)
@@ -131,7 +132,7 @@ a_im = (dt * spiral_D * ufl.inner(ufl.grad(u), ufl.grad(phi)) +
 modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
 
 
-# In[5]:
+# In[ ]:
 
 sourceCode = """      double ustar = (@gf:vn[ 0 ] + @const:b) / @const:a;
       if( @gf:un[ 0 ] <= ustar )
@@ -151,16 +152,16 @@ modelCode.appendCode('linSource', linSourceCode,
                      coefficients={"un": uh_n, "vn": vh_n} )
 
 
-# In[6]:
+# In[ ]:
 
 rhs_gf = create.function("ufl", grid, "rhs", order=2,
                          ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
                          coefficients={'un': uh_n, 'vn': vh_n} )
 
 
-# The model is now completely implemented and we can be created, together with the corresponding scheme:
+# The model is now completely implemented and can be created, together with the corresponding scheme:
 
-# In[7]:
+# In[ ]:
 
 model = create.model("elliptic", grid,
                      modelCode,
@@ -181,7 +182,7 @@ scheme = create.scheme("h1", spc, model, ("pardg","cg"),parameters=solverParamet
 
 # To show the solution we make use of the _animate_ module of _matplotlib_:
 
-# In[8]:
+# In[ ]:
 
 import matplotlib.pyplot as plt
 from numpy import linspace
@@ -215,6 +216,3 @@ def animate(count):
     nextstep += stepsize
 
 animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
-
-
-# In[ ]:

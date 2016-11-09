@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Mean Curvature Flow
@@ -49,7 +50,7 @@ order = 2
 R0 = 2.
 
 
-# In[4]:
+# In[2]:
 
 # set up reference domain Gamma_0
 grid = create.grid("ALUSimplex", "sphere.dgf", dimgrid=2, dimworld=3)
@@ -225,6 +226,3 @@ try:
 except ImportError:
     print("pandas could not be used to show table with results")
     pass
-
-
-# In[ ]:

@@ -160,6 +160,7 @@ for i in range(2):
 
 # In[10]:
 
+from dune.generator import builder
 import numpy as np
 import scipy.sparse.linalg
 import scipy.optimize
@@ -167,13 +168,7 @@ from ufl import ds
 
 try:
     spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
-except Exception as ex:
-    template = "An exception of type {0} occured. Arguments:\n{1!r}"
-    message = template.format(type(ex).__name__, ex.args)
-    print(message)
-    exit(1)
-except:
-    print('something...')
+except builder.ConfigurationError:
     exit(1)
 
 d = 0.001

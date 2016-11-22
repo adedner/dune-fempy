@@ -3,23 +3,29 @@ from __future__ import print_function
 import math
 from ufl import *
 
+from dune.grid import cartesianDomain
+from dune.alugrid import aluConformGrid
+
 from dune.ufl import Space as UFLSpace
 from dune.source import SourceWriter
 from dune.source.cplusplus import NameSpace
-from dune.models.integrands import compileUFL
+from dune.models.integrands import compileUFL, load
+
+import dune.create as create
+
+domain = cartesianDomain([0, 0], [1, 1], [8, 8])
+grid = aluConformGrid(domain, dimgrid=2)
+space = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
 
 uflSpace = UFLSpace(2, 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
-a = inner(grad(u), grad(v)) * dx
-a += u[0]*inner(u, v) * dx
-a += inner(avg(grad(u)), jump(grad(v))) * dS
+a = inner(u, v) * dx
+b = sin(math.pi*x[0]) * sin(math.pi * x[1]) * v[0] * dx
 
-b = v[0] * ds
-
-integrands = compileUFL(a == b, tempVars=True)
+integrands = compileUFL(a == b)
 
 
 # write model to file
@@ -34,12 +40,9 @@ SourceWriter("myintegrands.hh").emit(code)
 # load integrands
 # ---------------
 
-from dune.grid import cartesianDomain
-from dune.alugrid import aluConformGrid
-from dune.models.integrands import load
-
-domain = cartesianDomain([0, 0], [1, 1], [8, 8])
-grid = aluConformGrid(domain, dimgrid=2)
-
 module = load(grid, integrands)
 integrands = module.create()
+
+scheme = create.scheme("galerkin", space, integrands)
+solution, _ = scheme.solve()
+grid.writeVTK("l2projection", pointdata=[solution])

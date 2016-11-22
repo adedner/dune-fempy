@@ -41,3 +41,4 @@ domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = aluConformGrid(domain, dimgrid=2)
 
 module = load(grid, integrands)
+integrands = module.create()

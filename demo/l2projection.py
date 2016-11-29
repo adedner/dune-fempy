@@ -41,7 +41,7 @@ SourceWriter("myintegrands.hh").emit(code)
 # ---------------
 
 module = load(grid, integrands)
-integrands = module.create()
+integrands = module.Integrands()
 
 scheme = create.scheme("galerkin", space, integrands)
 solution, _ = scheme.solve()

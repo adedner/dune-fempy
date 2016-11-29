@@ -10,7 +10,7 @@ fi
 
 echo 'This script is for installing dune-fempy on Linux
 
-It will install the following python modules: 
+It will install the following python modules:
 pip setuptools mpi4py sympy ufl sphinx
 
 It will install Open MPI
@@ -19,7 +19,7 @@ It will also install DUNE with the following components:
 dune-common dune-geometry dune-grid dune-istl dune-localfunctions dune-alugrid dune-fem dune-fempy'
 
 read -p "Continue (y/n)? " choice
-case "$choice" in 
+case "$choice" in
   y|Y|yes|Yes )
         read -p "Do you want the default python version to be set to python3.5m in .bashrc (recommended) (y/n)? " choice2
         case "$choice2" in
@@ -27,7 +27,7 @@ case "$choice" in
             alias python=/usr/bin/python3.5m
             echo 'alias python=/usr/bin/python3.5m' >> $HOME/.bashrc ;;
           n|N|no|No ) ;;
-          * ) echo "Please choose y or n" 
+          * ) echo "Please choose y or n"
               exit 1 ;;
         esac
         read -p "Please enter a folder name (default is dune): " folder_name
@@ -70,7 +70,7 @@ case "$choice" in
             echo 'export PATH=$PATH:'$HOME/$folder_name'/openmpi/bin' >> $HOME/.bashrc
             echo 'export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:'$HOME/$folder_name'/openmpi/lib"' >> $HOME/.bashrc;;
           n|N|no|No ) ;;
-          * ) echo "Please choose y or n" 
+          * ) echo "Please choose y or n"
               exit 1 ;;
         esac
         read -p "Install DUNE (make sure cmake is installed first) (y/n)? " choice4
@@ -102,17 +102,17 @@ case "$choice" in
                   -DPYTHON_INCLUDE_DIR:PATH=/usr/include/python3.5m \
                   -DPYTHON_LIBRARY:FILEPATH=/usr/lib64/libpython3.5m.so \
                   " ' > config.opts
-            echo 'Installing DUNE' 
+            echo 'Installing DUNE'
             ./dune-common/bin/dunecontrol --opts=config.opts all
             export PYTHONPATH="'$HOME/$folder_name'/dune-fempy/build-cmake/python:$PYTHONPATH"
             echo 'export PYTHONPATH="'$HOME/$folder_name'/dune-fempy/build-cmake/python:$PYTHONPATH"' >> $HOME/.bashrc
             ;;
           n|N|no|No ) ;;
-          * ) echo "Please choose y or n" 
+          * ) echo "Please choose y or n"
               exit 1 ;;
         esac
         ;;
   n|N|no|No ) exit 1 ;;
-  * ) echo "Please choose y or n" 
+  * ) echo "Please choose y or n"
       exit 1 ;;
 esac

@@ -19,7 +19,7 @@ a += inner(avg(grad(u)), jump(grad(v))) * dS
 
 b = v[0] * ds
 
-integrands = compileUFL(a == b, tempVars=True)
+integrands, _ = compileUFL(a == b, tempVars=True)
 
 
 # write model to file

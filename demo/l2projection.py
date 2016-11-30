@@ -7,9 +7,6 @@ from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid
 
 from dune.ufl import Space as UFLSpace
-from dune.source import SourceWriter
-from dune.source.cplusplus import NameSpace
-from dune.models.integrands import compileUFL, load
 
 import dune.create as create
 
@@ -25,24 +22,8 @@ x = SpatialCoordinate(uflSpace.cell())
 a = inner(u, v) * dx
 b = sin(math.pi*x[0]) * sin(math.pi * x[1]) * v[0] * dx
 
-integrands = compileUFL(a == b)
+model = create.model("integrands", grid, a == b)
 
-
-# write model to file
-# -------------------
-
-code = NameSpace('demo')
-code.append(integrands.code("MyIntegrands"))
-
-SourceWriter("myintegrands.hh").emit(code)
-
-
-# load integrands
-# ---------------
-
-module = load(grid, integrands)
-integrands = module.Integrands()
-
-scheme = create.scheme("galerkin", space, integrands)
+scheme = create.scheme("galerkin", space, model)
 solution, _ = scheme.solve()
 grid.writeVTK("l2projection", pointdata=[solution])

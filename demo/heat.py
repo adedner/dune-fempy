@@ -46,7 +46,7 @@ def compute():
     #model.setConstant(tau,[deltaT])
 
     model = create.model("integrands", grid, a == 0)
-    model.setCoefficient(0, old_solution)
+    model.setCoefficient(u_n, old_solution)
     model.setConstant(0, [deltaT])
 
     # setup structure for olver parameters

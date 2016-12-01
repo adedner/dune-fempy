@@ -6,7 +6,7 @@ from ufl import *
 from dune.ufl import Space as UFLSpace
 from dune.source import SourceWriter
 from dune.source.cplusplus import NameSpace
-from dune.models.integrands import compileUFL, create
+from dune.models.integrands import compileUFL
 
 uflSpace = UFLSpace(2, 1)
 u = TrialFunction(uflSpace)
@@ -36,7 +36,7 @@ SourceWriter("myintegrands.hh").emit(code)
 
 from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid
-from dune.models.integrands import load
+from dune.models.integrands import create
 
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = aluConformGrid(domain, dimgrid=2)

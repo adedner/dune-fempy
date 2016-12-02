@@ -12,10 +12,13 @@ uflSpace = UFLSpace(2, 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
+n = FacetNormal(uflSpace.cell())
+
+print(outer(u, n))
 
 a = inner(grad(u), grad(v)) * dx
 a += u[0]*inner(u, v) * dx
-a += inner(avg(grad(u)), jump(grad(v))) * dS
+a -= inner(outer(u('+'), n('-')), grad(v)('-')) * dS
 
 b = v[0] * ds
 

@@ -28,6 +28,7 @@ namespace Dune
       typedef SimpleLocalFunction< GridPart, LocalEvaluator > This;
 
     public:
+      typedef GridPart GridPartType;
       typedef typename GridPart::template Codim< 0 >::EntityType EntityType;
 
       typedef typename EntityType::Geometry::LocalCoordinate LocalCoordinateType;
@@ -46,11 +47,11 @@ namespace Dune
 
       template< class GridFunction, std::enable_if_t< std::is_same< This, typename GridFunction::LocalFunctionType >::value, int > = 0 >
       SimpleLocalFunction ( const GridFunction &gridFunction )
-        : localEvaluator_( gridFunction.localEvaluator() ), order_( gridFunction.order() )
+        : gridPart_( gridFunction.gridPart() ), localEvaluator_( gridFunction.localEvaluator() ), order_( gridFunction.order() )
       {}
 
-      SimpleLocalFunction ( const EntityType &entity, LocalEvaluator localEvaluator, int order )
-        : entity_( &entity ), localEvaluator_( std::move( localEvaluator ) ), order_( order )
+      SimpleLocalFunction ( const EntityType &entity, const GridPartType &gridPart, LocalEvaluator localEvaluator, int order )
+        : entity_( &entity ), gridPart_( gridPart ), localEvaluator_( std::move( localEvaluator ) ), order_( order )
       {}
 
       void init ( const EntityType &entity ) { entity_ = &entity; }
@@ -91,9 +92,11 @@ namespace Dune
       int order () const { return order_; }
 
       const EntityType &entity () const { assert( entity_ ); return *entity_; }
+      const GridPartType &gridPart () const { assert( entity_ ); return gridPart_; }
 
     private:
       const EntityType *entity_ = nullptr;
+      const GridPartType &gridPart_;
       LocalEvaluator localEvaluator_;
       int order_;
     };
@@ -166,7 +169,7 @@ namespace Dune
           order_( order )
       {}
 
-      LocalFunctionType localFunction ( const EntityType &entity ) const { return LocalFunctionType( entity, localEvaluator_, order_ ); }
+      LocalFunctionType localFunction ( const EntityType &entity ) const { return LocalFunctionType( entity, gridPart(), localEvaluator_, order_ ); }
 
       const std::string &name () const { return name_; }
 

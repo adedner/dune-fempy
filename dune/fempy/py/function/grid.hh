@@ -38,6 +38,7 @@ namespace Dune
         typedef typename GridFunction::LocalFunctionType Impl;
 
       public:
+        typedef typename Impl::GridPartType GridPartType;
         typedef typename Impl::EntityType EntityType;
 
         typedef typename Impl::FunctionSpaceType FunctionSpaceType;
@@ -88,6 +89,8 @@ namespace Dune
         int order () const { return impl_.order(); }
 
         const EntityType &entity () const { return impl_.entity(); }
+
+        const GridPartType &gridPart () const { return impl_.gridPart(); }
 
       private:
         Impl impl_;

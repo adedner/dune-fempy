@@ -27,6 +27,7 @@ namespace Dune
       typedef VirtualizedLocalFunction< GridPart, Value > This;
 
     public:
+      typedef GridPart GridPartType;
       typedef typename GridPart::template Codim< 0 >::EntityType EntityType;
 
       typedef typename EntityType::Geometry::LocalCoordinate LocalCoordinateType;
@@ -86,6 +87,7 @@ namespace Dune
         virtual void hessian ( const LocalCoordinateType &x, HessianRangeType &hessian ) const = 0;
         virtual void hessian ( const QuadraturePoint &x, HessianRangeType &hessian ) const = 0;
         virtual int order () const = 0;
+        virtual const GridPartType &gridPart () const = 0;
         virtual const EntityType &entity () const = 0;
       };
 
@@ -105,6 +107,7 @@ namespace Dune
         virtual void hessian ( const LocalCoordinateType &x, HessianRangeType &hessian ) const override { impl().hessian( x, hessian ); }
         virtual void hessian ( const QuadraturePoint &x, HessianRangeType &hessian ) const override { impl().hessian( x, hessian ); }
         virtual int order () const override { return impl().order(); }
+        virtual const GridPartType &gridPart () const override { return impl().gridPart(); }
         virtual const EntityType &entity () const override { return impl().entity(); }
 
       private:
@@ -243,6 +246,7 @@ namespace Dune
       int order () const { return impl_->order(); }
 
       const EntityType &entity () const { assert( impl_ ); return impl_->entity(); }
+      const GridPartType &gridPart () const { assert( impl_ ); return impl_->gridPart(); }
 
     private:
       std::unique_ptr< Interface > impl_;

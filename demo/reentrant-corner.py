@@ -37,11 +37,16 @@ scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v
 solution, _ = scheme.solve()
 
 fvspc = create.space("FiniteVolume", grid, dimrange=1, storage="istl")
+estimate = fvspc.interpolate(solution, name="estimate")
+
 hT = MaxCellEdgeLength(uflSpace.cell())
 he = MaxFacetEdgeLength(uflSpace.cell())
 n = FacetNormal(uflSpace.cell())
-estimate = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
-estimator = create.operator("galerkin", create.model("integrands", grid, estimate == 0), spc, fvspc)
+estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
+estimator_model = create.model("integrands", grid, estimator_ufl == 0)
+estimator = create.operator("galerkin", estimator_model, spc, fvspc)
+
+estimator(solution, estimate)
 
 exact_grid = create.function("ufl", grid, "exact", 2, exact)
-grid.writeVTK("reentrant-corner", pointdata=[solution, exact_grid])
+grid.writeVTK("reentrant-corner", pointdata=[solution, exact_grid], celldata=[estimate])

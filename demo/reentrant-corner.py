@@ -37,8 +37,8 @@ scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v
 solution, _ = scheme.solve()
 
 fvspc = create.space("FiniteVolume", grid, dimrange=1, storage="istl")
-hT = CellVolume(uflSpace.cell())
-he = FacetArea(uflSpace.cell())
+hT = MaxCellEdgeLength(uflSpace.cell())
+he = MaxFacetEdgeLength(uflSpace.cell())
 n = FacetNormal(uflSpace.cell())
 estimate = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
 estimator = create.operator("galerkin", create.model("integrands", grid, estimate == 0), spc, fvspc)

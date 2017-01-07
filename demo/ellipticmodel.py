@@ -7,7 +7,10 @@ import ufl
 from ufl import *
 
 from dune.ufl import Space as UFLSpace
-from dune.models.elliptic import compileUFL, SourceWriter
+from dune.models.elliptic import compileUFL, SourceWriter, importModel, generateModel
+
+import dune.create as create
+from dune.grid import cartesianDomain
 
 uflSpace = UFLSpace(2, 1)
 u = TrialFunction(uflSpace)
@@ -30,3 +33,15 @@ writer = SourceWriter("mymodel.hh")
 writer.openNameSpace('demo')
 model.write(writer, "MyModel")
 writer.closeNameSpace('demo')
+
+# write model with python bindings to file
+# ----------------------------------------
+
+grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+
+# option 1: create a header file, then import it in place of the equation
+generateModel(grid, a == b, dirichlet={1:[x[0]], 2:[x[1]], 3:[zero(tuple())]}, tempVars = False, header = 'mymodel2.hh')
+# model = create.model("elliptic", grid, "mymodel2.hh", dirichlet={1:[x[0]], 2:[x[1]], 3:[zero(tuple())]}, tempVars = False)
+
+# option 2: do both in one line
+# model = create.model("elliptic", grid, a == b, dirichlet={1:[x[0]], 2:[x[1]], 3:[zero(tuple())]}, tempVars = False, header = 'mymodel2.hh')

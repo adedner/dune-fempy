@@ -376,10 +376,10 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
 
 
 
-# importModel
+# generateModel
 # -----------
 
-def importModel(grid, model, dirichlet = {}, exact = None, tempVars=True):
+def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
     start_time = timeit.default_timer()
 
     if isinstance(model, ufl.equation.Equation):
@@ -414,7 +414,7 @@ def importModel(grid, model, dirichlet = {}, exact = None, tempVars=True):
 
     if model.coefficients:
         writer.typedef(modelNameSpace + '::Model< GridPart' + ' '.join(\
-        [(',Dune::FemPy::VirtualizedLocalFunction< GridPart,'+\
+        [(', Dune::FemPy::VirtualizedLocalFunction< GridPart,'+\
             'Dune::FieldVector< ' +\
             SourceWriter.cpp_fields(coefficient['field']) + ', ' +\
             str(coefficient['dimRange']) + ' > >') \
@@ -444,7 +444,19 @@ def importModel(grid, model, dirichlet = {}, exact = None, tempVars=True):
     writer.emit('')
     writer.closePythonModule(name)
 
+    if header != False:
+        with open(header, 'w') as modelFile:
+            modelFile.write(writer.writer.getvalue())
+    return writer, name
+
+def importModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
+    if isinstance(model, str):
+        with open(model, 'r') as modelFile:
+            data = modelFile.read()
+        name = data.split('PYBIND11_PLUGIN( ')[1].split(' )')[0]
+        builder.load(name, data, "ellipticModel")
+        return importlib.import_module("dune.generated." + name)
+    writer, name = generateModel(grid, model, dirichlet, exact, tempVars, header)
     builder.load(name, writer.writer.getvalue(), "ellipticModel")
     writer.close()
-
     return importlib.import_module("dune.generated." + name)

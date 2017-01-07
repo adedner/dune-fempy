@@ -169,7 +169,7 @@ namespace Dune
           order_( order )
       {}
 
-      LocalFunctionType localFunction ( const EntityType &entity ) const { return LocalFunctionType( entity, gridPart(), localEvaluator_, order_ ); }
+      LocalFunctionType localFunction ( const EntityType &entity ) const { return LocalFunctionType( entity, gridPart_, localEvaluator_, order_ ); }
 
       const std::string &name () const { return name_; }
 

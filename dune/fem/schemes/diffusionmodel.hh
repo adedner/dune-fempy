@@ -88,7 +88,7 @@
   { impl().linAlpha(uBar,x,value,val); } \
   virtual void dirichlet( int bndId, const POINT &x,\
                 RangeType &value) const \
-  {impl().dirichlet(bndId,x,value);}
+  { impl().dirichlet(bndId,x,value); }
 
 
 template< class GridPart, int dimR, class RangeField = double >
@@ -144,6 +144,7 @@ public:
   virtual bool hasDirichletBoundary () const = 0;
   virtual bool hasNeumanBoundary () const = 0;
   virtual bool isDirichletIntersection( const IntersectionType& inter, Dune::FieldVector<int,dimRange> &dirichletComponent ) const = 0;
+  virtual void initIntersection( const IntersectionType& inter ) const = 0;
 
   class BoundaryWrapper
   {
@@ -214,6 +215,10 @@ struct DiffusionModelWrapper : public DiffusionModel<typename ModelImpl::GridPar
   virtual bool isDirichletIntersection( const IntersectionType& inter, Dune::FieldVector<int,dimRange> &dirichletComponent ) const
   {
     return impl().isDirichletIntersection(inter, dirichletComponent);
+  }
+  virtual void initIntersection( const IntersectionType& inter ) const
+  {
+    impl().initIntersection(inter);
   }
   virtual bool init( const EntityType &entity) const
   {

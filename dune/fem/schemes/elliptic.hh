@@ -277,6 +277,7 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model, Con
         Dune::FieldVector<int,RangeRangeType::dimension> components(0);
 
         const bool hasDirichletComponent = model().isDirichletIntersection( intersection, components );
+        model().initIntersection( intersection );
 
         const auto &intersectionGeometry = intersection.geometry();
         FaceQuadratureType quadInside( dfSpace.gridPart(), intersection, quadOrder, FaceQuadratureType::INSIDE );
@@ -395,6 +396,7 @@ void DifferentiableEllipticOperator< JacobianOperator, Model, Constraints >
 
         Dune::FieldVector<int,RangeRangeType::dimension> components(0);
         bool hasDirichletComponent = model().isDirichletIntersection( intersection, components );
+        model().initIntersection( intersection );
 
         const auto &intersectionGeometry = intersection.geometry();
         FaceQuadratureType quadInside( rangeSpace.gridPart(), intersection, domainSpace.order()+rangeSpace.order(), FaceQuadratureType::INSIDE );

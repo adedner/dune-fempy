@@ -275,7 +275,6 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model, Con
           continue;
 
         Dune::FieldVector<int,RangeRangeType::dimension> components(0);
-
         const bool hasDirichletComponent = model().isDirichletIntersection( intersection, components );
         model().initIntersection( intersection );
 

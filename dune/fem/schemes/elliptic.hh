@@ -52,6 +52,7 @@
 
 #include <dune/fem/schemes/dirichletconstraints.hh>
 
+#include <dune/fem/misc/boundaryidprovider.hh>
 // EllipticOperator
 // ----------------
 
@@ -271,6 +272,11 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model, Con
       for( IntersectionIteratorType iit = dfSpace.gridPart().ibegin( entity ); iit != iitend; ++iit )
       {
         const IntersectionType &intersection = *iit;
+        typedef Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType > BoundaryIdProviderType;
+        std::cout << intersection.geometry().center() << " -> "
+           << intersection.boundary() << " "
+           << intersection.neighbor() << " "
+           << BoundaryIdProviderType::boundaryId( intersection ) << std::endl;
         if( !intersection.boundary() )
           continue;
 

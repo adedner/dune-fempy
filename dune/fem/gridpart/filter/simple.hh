@@ -111,7 +111,7 @@ namespace Dune
       template< class Intersection >
       bool intersectionNeighbor ( const Intersection & ) const
       {
-        return false;
+        return true;
       }
 
     private:

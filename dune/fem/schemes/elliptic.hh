@@ -266,7 +266,7 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model, Con
       }
     }
 
-    if( model().hasNeumanBoundary() && entity.hasBoundaryIntersections() )
+    if( model().hasNeumanBoundary() ) //&& entity.hasBoundaryIntersections() )
     {
       const IntersectionIteratorType iitend = dfSpace.gridPart().iend( entity );
       for( IntersectionIteratorType iit = dfSpace.gridPart().ibegin( entity ); iit != iitend; ++iit )
@@ -385,7 +385,7 @@ void DifferentiableEllipticOperator< JacobianOperator, Model, Constraints >
       //! [Assembling the local matrix]
     }
 
-    if( model().hasNeumanBoundary() && entity.hasBoundaryIntersections() )
+    if( model().hasNeumanBoundary() ) //&& entity.hasBoundaryIntersections() )
     {
       const IntersectionIteratorType iitend = rangeSpace.gridPart().iend( entity );
       for( IntersectionIteratorType iit = rangeSpace.gridPart().ibegin( entity ); iit != iitend; ++iit ) // looping over intersections

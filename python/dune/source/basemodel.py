@@ -102,8 +102,9 @@ class BaseModel:
 
         sourceWriter.emit('')
         sourceWriter.emit(Variable('const EntityType *entity_', 'nullptr', mutable=True))
-        sourceWriter.emit(Variable('std::tuple< Coefficients... > coefficients_;', mutable=True))
-        sourceWriter.emit(Variable('ConstantsTupleType constants_;', mutable=True))
+        sourceWriter.emit(Variable('const IntersectionType *intersection_', 'nullptr', mutable=True))
+        sourceWriter.emit(Variable('std::tuple< Coefficients... > coefficients_', mutable=True))
+        sourceWriter.emit(Variable('ConstantsTupleType constants_', mutable=True))
         sourceWriter.emit(self.vars)
         sourceWriter.closeStruct(name)
 

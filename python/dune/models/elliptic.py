@@ -58,7 +58,7 @@ class EllipticModel(BaseModel):
 
         isDirichletIntersection = Method('bool isDirichletIntersection', args=['const IntersectionType &intersection', 'Dune::FieldVector< int, dimRange > &dirichletComponent'], code=self.isDirichletIntersection, const=True)
 
-        dirichlet = Method('void dirichlet', targs=['class Point'], args=['int id', self.arg_x, self.arg_r], code=self.dirichlet, const=True)
+        dirichlet = Method('void dirichlet', targs=['class Point'], args=[self.arg_x, self.arg_r], code=self.dirichlet, const=True)
 
         result = []
         result.append(TypeAlias("BoundaryIdProviderType", "Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType >"))
@@ -76,6 +76,8 @@ class EllipticModel(BaseModel):
         result.append(Method('void linAlpha', targs=['class Point'], args=[self.arg_ubar, self.arg_x, self.arg_u, self.arg_r], code=self.linAlpha, const=True))
 
         result += [hasDirichletBoundary, hasNeumanBoundary, isDirichletIntersection, dirichlet]
+
+        result.append(Method('void initIntersection', args=['const IntersectionType &intersection'], code='intersection_ = &intersection;', const=True))
 
         return result
 
@@ -209,7 +211,7 @@ def splitUFLForm(form, linear):
 
     source = ExprTensor(phi.ufl_shape)
     diffusiveFlux = ExprTensor(dphi.ufl_shape)
-    boundarySource = ExprTensor(phi.ufl_shape)
+    boundaryDict = {}
 
     form = expand_indices(expand_derivatives(expand_compounds(form)))
     for integral in form.integrals():
@@ -217,16 +219,23 @@ def splitUFLForm(form, linear):
             fluxExprs = splitMultiLinearExpr(integral.integrand(), [phi])
             for op in fluxExprs:
                 if op[0] == phi:
-                    source = source + fluxExprs[op]
+                    source += fluxExprs[op]
                 elif op[0] == dphi:
-                    diffusiveFlux = diffusiveFlux + fluxExprs[op]
+                    diffusiveFlux += fluxExprs[op]
                 else:
                     raise Exception('Invalid derivative encountered in bulk integral: ' + str(op[0]))
         elif integral.integral_type() == 'exterior_facet':
             fluxExprs = splitMultiLinearExpr(integral.integrand(), [phi])
             for op in fluxExprs:
                 if op[0] == phi:
-                    boundarySource = boundarySource + fluxExprs[op]
+                    try:
+                        bndId = integral.subdomain_id()
+                    except:
+                        bndId = 1
+                    if bndId in boundaryDict:
+                        boundaryDict[bndId] += fluxExprs[op]
+                    else:
+                        boundaryDict[bndId] = fluxExprs[op]
                 else:
                     raise Exception('Invalid derivative encountered in boundary integral: ' + str(op[0]))
         else:
@@ -236,12 +245,38 @@ def splitUFLForm(form, linear):
         u = form.arguments()[1]
         du = ufl.differentiation.Grad(u)
         d2u = ufl.differentiation.Grad(du)
-        source0,source1,source2 = splitUFL2(u,du,d2u,source)
+        source0,source1,source2 = splitUFL2(u, du, d2u, source)
         source = source0 + source1 # + source2
-        return source, source2, diffusiveFlux, boundarySource
+        return source, source2, diffusiveFlux, boundaryDict
 
-    return source, diffusiveFlux, boundarySource
+    return source, diffusiveFlux, boundaryDict
 
+
+
+# boundarySwitch
+# ------------
+
+def boundarySwitch(boundaryDict, u, du, coefficients, function, tempVars, dimRange=None):
+    output = []
+    output.append('const int bndId = BoundaryIdProviderType::boundaryId( *intersection_ );')
+    output.append('switch( bndId )')
+    output.append('{')
+    for bndId in boundaryDict:
+        output.append('case ' + str(bndId) + ':')
+        output.append('  {')
+        if function == 'alpha':
+            output += ['    ' + line for line in generateCode({ u : 'u' }, boundaryDict[bndId], coefficients, tempVars)]
+        elif function == 'linalpha':
+            output += ['    ' + line for line in generateCode({ u : 'u', du : 'du' }, boundaryDict[bndId], coefficients, tempVars)]
+        elif function == 'dirichlet':
+            output += ['    ' + line for line in generateCode({},
+                      ExprTensor((dimRange,), boundaryDict[bndId]), coefficients, tempVars)]
+        output.append('  }')
+        output.append('  break;')
+    output.append('default:')
+    output.append('  result = RangeType( 0 );')
+    output.append('}')
+    return output
 
 
 # generateCode
@@ -287,13 +322,13 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
 
     dform = ufl.algorithms.apply_derivatives.apply_derivatives(ufl.derivative(ufl.action(form, ubar), ubar, u))
 
-    source, diffusiveFlux, boundarySource = splitUFLForm( form, False )
-    linSource, linNVSource, linDiffusiveFlux, linBoundarySource = splitUFLForm( dform, True )
+    source, diffusiveFlux, boundaryDict = splitUFLForm( form, False )
+    linSource, linNVSource, linDiffusiveFlux, linBoundaryDict = splitUFLForm( dform, True )
     fluxDivergence, _, _ = splitUFLForm(ufl.inner(source.as_ufl() - ufl.div(diffusiveFlux.as_ufl()), phi) * ufl.dx(0),False)
 
     model = EllipticModel(dimRange, form.signature())
 
-    model.hasNeumanBoundary = not boundarySource.is_zero()
+    model.hasNeumanBoundary = not all(value.is_zero() for value in boundaryDict.values())
 
     expandform = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
     if expandform == ufl.adjoint(expandform):
@@ -333,11 +368,11 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
 
     model.source = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, source, model.coefficients, tempVars)
     model.diffusiveFlux = generateCode({ u : 'u', du : 'du' }, diffusiveFlux, model.coefficients, tempVars)
-    model.alpha = generateCode({ u : 'u' }, boundarySource, model.coefficients, tempVars)
+    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars)
     model.linSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linSource, model.coefficients, tempVars)
     model.linNVSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linNVSource, model.coefficients, tempVars)
     model.linDiffusiveFlux = generateCode({ u : 'u', du : 'du', ubar : 'ubar', dubar : 'dubar' }, linDiffusiveFlux, model.coefficients, tempVars)
-    model.linAlpha = generateCode({ u : 'u', ubar : 'ubar' }, linBoundarySource, model.coefficients, tempVars)
+    model.linAlpha = boundarySwitch(linBoundaryDict, u, du, model.coefficients, 'linalpha', tempVars)
     model.fluxDivergence = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, fluxDivergence, model.coefficients, tempVars)
 
     if dirichlet:
@@ -355,22 +390,7 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
         model.isDirichletIntersection.append('  return false;')
         model.isDirichletIntersection.append('}')
 
-        model.dirichlet = []
-        model.dirichlet.append('switch( id )')
-        model.dirichlet.append('{')
-        for bndId in dirichlet:
-            if len(dirichlet[bndId]) != dimRange:
-                raise Exception('Dirichtlet boundary condition has wrong dimension.')
-            model.dirichlet.append('case ' + str(bndId) + ':')
-            model.dirichlet.append('  {')
-            model.dirichlet += ['    ' + line for line in generateCode({},
-                ExprTensor((dimRange,), dirichlet[bndId]),
-                model.coefficients, tempVars)]
-            model.dirichlet.append('  }')
-            model.dirichlet.append('  break;')
-        model.dirichlet.append('default:')
-        model.dirichlet.append('  result = RangeType( 0 );')
-        model.dirichlet.append('}')
+        model.dirichlet = boundarySwitch(dirichlet, u, du, model.coefficients, 'dirichlet', tempVars, dimRange=dimRange)
 
     return model
 

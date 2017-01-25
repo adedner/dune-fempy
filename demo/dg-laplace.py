@@ -22,7 +22,7 @@ n = FacetNormal(uflSpace.cell())
 mu = 7.5 * 16
 
 a = inner(grad(u), grad(v)) * dx
-a -= (inner(outer(jump(u), n('-')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('-')))) * dS
+a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS
 a += mu * inner(jump(u), jump(v)) * dS
 a -= (inner(outer(u, n), grad(v)) + inner(grad(u), outer(v, n))) * ds
 a += mu * inner(u, v) * ds

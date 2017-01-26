@@ -38,6 +38,8 @@ class EllipticModel(BaseModel):
         self.hasNeumanBoundary = False
         self.isDirichletIntersection = "return false;"
         self.dirichlet = "result = RangeType( 0 );"
+        self.initIntersection = 'intersection_ = &intersection;'
+        self.extraMethods = ''
         self.arg_x = 'const Point &x'
         self.arg_u = 'const RangeType &u'
         self.arg_du = 'const JacobianRangeType &du'
@@ -77,7 +79,8 @@ class EllipticModel(BaseModel):
 
         result += [hasDirichletBoundary, hasNeumanBoundary, isDirichletIntersection, dirichlet]
 
-        result.append(Method('void initIntersection', args=['const IntersectionType &intersection'], code='intersection_ = &intersection;', const=True))
+        result.append(Method('void initIntersection', args=['const IntersectionType &intersection'], code=self.initIntersection, const=True))
+        result.append(self.extraMethods)
 
         return result
 
@@ -256,7 +259,7 @@ def splitUFLForm(form, linear):
 # boundarySwitch
 # ------------
 
-def boundarySwitch(boundaryDict, u, du, coefficients, function, tempVars, dimRange=None):
+def boundarySwitch(boundaryDict, u, du, coefficients, function, tempVars, dimRange = None, modelType = None):
     output = []
     output.append('const int bndId = BoundaryIdProviderType::boundaryId( *intersection_ );')
     output.append('switch( bndId )')
@@ -265,27 +268,26 @@ def boundarySwitch(boundaryDict, u, du, coefficients, function, tempVars, dimRan
         output.append('case ' + str(bndId) + ':')
         output.append('  {')
         if function == 'alpha':
-            output += ['    ' + line for line in generateCode({ u : 'u' }, boundaryDict[bndId], coefficients, tempVars)]
+            output += ['    ' + line for line in generateCode({ u : 'u' }, boundaryDict[bndId], coefficients, tempVars, modelType)]
         elif function == 'linalpha':
-            output += ['    ' + line for line in generateCode({ u : 'u', du : 'du' }, boundaryDict[bndId], coefficients, tempVars)]
+            output += ['    ' + line for line in generateCode({ u : 'u', du : 'du' }, boundaryDict[bndId], coefficients, tempVars, modelType)]
         elif function == 'dirichlet':
             output += ['    ' + line for line in generateCode({},
-                      ExprTensor((dimRange,), boundaryDict[bndId]), coefficients, tempVars)]
+                      ExprTensor((dimRange,), boundaryDict[bndId]), coefficients, tempVars, modelType)]
         output.append('  }')
         output.append('  break;')
     output.append('default:')
     output.append('  result = RangeType( 0 );')
-    output.append('}')
     return output
 
 
 # generateCode
 # ------------
 
-def generateCode(predefined, tensor, coefficients, tempVars = True):
+def generateCode(predefined, tensor, coefficients, tempVars = True, modelType = None):
     keys = tensor.keys()
     expressions = [tensor[i] for i in keys]
-    preamble, results = codegen.generateCode(predefined, expressions, coefficients, tempVars)
+    preamble, results = codegen.generateCode(predefined, expressions, coefficients, tempVars, modelType)
     return preamble + [('result' + codegen.translateIndex(i) + ' = ' + r + ';') for i, r in zip(keys, results)]
 
 
@@ -293,7 +295,7 @@ def generateCode(predefined, tensor, coefficients, tempVars = True):
 # compileUFL
 # ----------
 
-def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
+def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True, modelType = None):
     form = equation.lhs - equation.rhs
     if not isinstance(form, ufl.Form):
         raise Exception("ufl.Form expected.")
@@ -326,7 +328,11 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
     linSource, linNVSource, linDiffusiveFlux, linBoundaryDict = splitUFLForm( dform, True )
     fluxDivergence, _, _ = splitUFLForm(ufl.inner(source.as_ufl() - ufl.div(diffusiveFlux.as_ufl()), phi) * ufl.dx(0),False)
 
-    model = EllipticModel(dimRange, form.signature())
+    if modelType == None:
+        model = EllipticModel(dimRange, form.signature())
+    elif modelType == 'split':
+        from dune.models.splitdomain import SplitDomainModel
+        model = SplitDomainModel(dimRange, form.signature())
 
     model.hasNeumanBoundary = not all(value.is_zero() for value in boundaryDict.values())
 
@@ -368,12 +374,12 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
 
     model.source = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, source, model.coefficients, tempVars)
     model.diffusiveFlux = generateCode({ u : 'u', du : 'du' }, diffusiveFlux, model.coefficients, tempVars)
-    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars)
+    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars, modelType=modelType)
     model.linSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linSource, model.coefficients, tempVars)
     model.linNVSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linNVSource, model.coefficients, tempVars)
     model.linDiffusiveFlux = generateCode({ u : 'u', du : 'du', ubar : 'ubar', dubar : 'dubar' }, linDiffusiveFlux, model.coefficients, tempVars)
-    model.linAlpha = boundarySwitch(linBoundaryDict, u, du, model.coefficients, 'linalpha', tempVars)
-    model.fluxDivergence = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, fluxDivergence, model.coefficients, tempVars)
+    model.linAlpha = boundarySwitch(linBoundaryDict, u, du, model.coefficients, 'linalpha', tempVars, modelType)
+    model.fluxDivergence = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, fluxDivergence, model.coefficients, tempVars, modelType=modelType)
 
     if dirichlet:
         model.hasDirichletBoundary = True
@@ -390,7 +396,7 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
         model.isDirichletIntersection.append('  return false;')
         model.isDirichletIntersection.append('}')
 
-        model.dirichlet = boundarySwitch(dirichlet, u, du, model.coefficients, 'dirichlet', tempVars, dimRange=dimRange)
+        model.dirichlet = boundarySwitch(dirichlet, u, du, model.coefficients, 'dirichlet', tempVars, dimRange=dimRange, modelType=modelType)
 
     return model
 
@@ -399,11 +405,11 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
 # generateModel
 # -----------
 
-def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
+def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False, modelType = None):
     start_time = timeit.default_timer()
 
     if isinstance(model, ufl.equation.Equation):
-        model = compileUFL(model, dirichlet, exact, tempVars)
+        model = compileUFL(model, dirichlet, exact, tempVars, modelType)
 
     if not isinstance(grid, types.ModuleType):
         grid = grid._module

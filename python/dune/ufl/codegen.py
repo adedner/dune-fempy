@@ -166,7 +166,11 @@ class CodeGenerator(MultiFunction):
             return cexpr
 
 
-def generateCode(predefined, expressions, coefficients, tempVars = True):
-    generator = CodeGenerator(predefined, coefficients, tempVars)
+def generateCode(predefined, expressions, coefficients, tempVars = True, modelType = None):
+    if modelType == None:
+        generator = CodeGenerator(predefined, coefficients, tempVars)
+    elif modelType == 'split':
+        from dune.models.splitdomain import SplitDomainCodeGenerator
+        generator = SplitDomainCodeGenerator(predefined, coefficients, tempVars)
     results = map_expr_dags(generator, expressions)
     return list(generator.using) + generator.code, results

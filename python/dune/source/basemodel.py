@@ -7,9 +7,11 @@ class BaseModel:
         self.dimRange = dimRange
         self.coefficients = []
         self.init = None
-        self.vars = None
+        self.vars = ''
         self.signature = signature
         self.field = "double"
+        self.initCoefficients = 'std::ignore = std::make_tuple( (std::get< i >( coefficients_ ).init( entity() ), i)... );'
+        self.privateMethods = ''
 
     def getNumber(self, expr):
         e = [ ee for ee in self.coefficients if ee["name"] == str(expr) ]
@@ -93,12 +95,12 @@ class BaseModel:
         sourceWriter.section('private')
 
         initCoefficients = Method('void initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], const=True)
-        initCoefficients.append('std::ignore = std::make_tuple( (std::get< i >( coefficients_ ).init( entity() ), i)... );')
+        initCoefficients.append(self.initCoefficients)
 
         constructConstants = Method('void constructConstants', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
         constructConstants.append('std::ignore = std::make_tuple( (std::get< i >( constants_ ) = std::make_shared<ConstantsType< i >>(), i)... );')
 
-        sourceWriter.emit([initCoefficients, constructConstants])
+        sourceWriter.emit([initCoefficients, self.privateMethods, constructConstants])
 
         sourceWriter.emit('')
         sourceWriter.emit(Variable('const EntityType *entity_', 'nullptr', mutable=True))
@@ -163,7 +165,6 @@ class BaseModel:
 
     def export(self, sourceWriter, modelClass='Model', wrapperClass='ModelWrapper', constrArgs=(), constrKeepAlive=None):
         if self.coefficients:
-            # sourceWriter.emit('cls.def( "setCoefficient", defSetCoefficient( std::make_index_sequence< std::tuple_size<Coefficients>::value >() ) );')
             sourceWriter.emit('cls.def( "setConstant", defSetConstant( std::make_index_sequence< std::tuple_size <typename '+ modelClass + '::ConstantsTupleType>::value >() ) );')
         sourceWriter.emit('')
         sourceWriter.emit('cls.def( "__init__", [] (' + wrapperClass + ' &instance, '+\

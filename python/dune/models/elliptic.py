@@ -278,6 +278,7 @@ def boundarySwitch(boundaryDict, u, du, coefficients, function, tempVars, dimRan
         output.append('  break;')
     output.append('default:')
     output.append('  result = RangeType( 0 );')
+    output.append('}')
     return output
 
 
@@ -374,7 +375,7 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True, modelTyp
 
     model.source = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, source, model.coefficients, tempVars)
     model.diffusiveFlux = generateCode({ u : 'u', du : 'du' }, diffusiveFlux, model.coefficients, tempVars)
-    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars, modelType=modelType)
+    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars, modelType)
     model.linSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linSource, model.coefficients, tempVars)
     model.linNVSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linNVSource, model.coefficients, tempVars)
     model.linDiffusiveFlux = generateCode({ u : 'u', du : 'du', ubar : 'ubar', dubar : 'dubar' }, linDiffusiveFlux, model.coefficients, tempVars)
@@ -475,14 +476,14 @@ def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, he
             modelFile.write(writer.writer.getvalue())
     return writer, name
 
-def importModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
+def importModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False, modelType = None):
     if isinstance(model, str):
         with open(model, 'r') as modelFile:
             data = modelFile.read()
         name = data.split('PYBIND11_PLUGIN( ')[1].split(' )')[0]
         builder.load(name, data, "ellipticModel")
         return importlib.import_module("dune.generated." + name)
-    writer, name = generateModel(grid, model, dirichlet, exact, tempVars, header)
+    writer, name = generateModel(grid, model, dirichlet, exact, tempVars, header, modelType)
     builder.load(name, writer.writer.getvalue(), "ellipticModel")
     writer.close()
     return importlib.import_module("dune.generated." + name)

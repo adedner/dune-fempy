@@ -278,7 +278,7 @@ protected:
         if( dirichletBlocks_[ global ][l] )
         {
           space_.interpolation(entity)
-            (typename ModelType::BoundaryWrapper(model_,dirichletBlocks_[global][l]), values);
+            (typename ModelType::BoundaryWrapper(model_, dirichletBlocks_[global][l]), values);
           // store result
           assert( (unsigned int)localDof < wLocal.size() );
           wLocal[ localDof ] = values[ localDof ];
@@ -411,6 +411,7 @@ protected:
       // if intersection is with boundary, adjust data
       if( intersection.boundary() )
       {
+        model.initIntersection( intersection );
         // get dirichlet information from model
         ModelDirichletBlock block(0);
         const bool isDirichletIntersection = model.isDirichletIntersection( intersection, block );

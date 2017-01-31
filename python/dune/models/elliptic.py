@@ -60,7 +60,7 @@ class EllipticModel(BaseModel):
 
         isDirichletIntersection = Method('bool isDirichletIntersection', args=['const IntersectionType &intersection', 'Dune::FieldVector< int, dimRange > &dirichletComponent'], code=self.isDirichletIntersection, const=True)
 
-        dirichlet = Method('void dirichlet', targs=['class Point'], args=[self.arg_x, self.arg_r], code=self.dirichlet, const=True)
+        dirichlet = Method('void dirichlet', targs=['class Point'], args=['int bndId', self.arg_x, self.arg_r], code=self.dirichlet, const=True)
 
         result = []
         result.append(TypeAlias("BoundaryIdProviderType", "Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType >"))
@@ -261,7 +261,8 @@ def splitUFLForm(form, linear):
 
 def boundarySwitch(boundaryDict, u, du, coefficients, function, tempVars, dimRange = None, modelType = None):
     output = []
-    output.append('const int bndId = BoundaryIdProviderType::boundaryId( *intersection_ );')
+    if function != 'dirichlet':
+        output.append('const int bndId = BoundaryIdProviderType::boundaryId( *intersection_ );')
     output.append('switch( bndId )')
     output.append('{')
     for bndId in boundaryDict:
@@ -375,11 +376,11 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True, modelTyp
 
     model.source = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, source, model.coefficients, tempVars)
     model.diffusiveFlux = generateCode({ u : 'u', du : 'du' }, diffusiveFlux, model.coefficients, tempVars)
-    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars, modelType)
+    model.alpha = boundarySwitch(boundaryDict, u, du, model.coefficients, 'alpha', tempVars, modelType=modelType)
     model.linSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linSource, model.coefficients, tempVars)
     model.linNVSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linNVSource, model.coefficients, tempVars)
     model.linDiffusiveFlux = generateCode({ u : 'u', du : 'du', ubar : 'ubar', dubar : 'dubar' }, linDiffusiveFlux, model.coefficients, tempVars)
-    model.linAlpha = boundarySwitch(linBoundaryDict, u, du, model.coefficients, 'linalpha', tempVars, modelType)
+    model.linAlpha = boundarySwitch(linBoundaryDict, u, du, model.coefficients, 'linalpha', tempVars, modelType=modelType)
     model.fluxDivergence = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, fluxDivergence, model.coefficients, tempVars, modelType=modelType)
 
     if dirichlet:

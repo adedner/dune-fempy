@@ -43,7 +43,7 @@
                 const POINT &x,\
                 const RangeType &value,\
                 RangeType &val) const = 0;\
-  virtual void dirichlet( const POINT &x,\
+  virtual void dirichlet( int bndId, const POINT &x,\
                 RangeType &value) const = 0;
 
 #define WrapperDiffusionModelMethods(POINT) \
@@ -86,9 +86,9 @@
                 const RangeType &value,\
                 RangeType &val) const \
   { impl().linAlpha(uBar,x,value,val); } \
-  virtual void dirichlet( const POINT &x,\
+  virtual void dirichlet( int bndId, const POINT &x,\
                 RangeType &value) const \
-  { impl().dirichlet(x,value); }
+  { impl().dirichlet(bndId,x,value); }
 
 
 template< class GridPart, int dimR, class RangeField = double >
@@ -158,7 +158,7 @@ public:
     template <class Point>
     void evaluate( const Point& x, RangeType& ret ) const
     {
-      impl_.dirichlet(Dune::Fem::coordinate(x), ret);
+      impl_.dirichlet(bndId_,Dune::Fem::coordinate(x),ret);
     }
     //! jacobian function (only for exact)
     void jacobian( const DomainType& x, JacobianRangeType& ret ) const

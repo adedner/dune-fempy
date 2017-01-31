@@ -74,7 +74,7 @@ class SplitDomainCodeGenerator(CodeGenerator):
                 self.code.append('}')
                 self.code.append('else')
                 self.code.append('{')
-                self.code.append('  std::cout << "coefficient in alpha method not initialized!" << std::endl;')
+                self.code.append('  std::cout << "coefficient not initialized!" << std::endl;')
                 self.code.append('  abort();')
                 self.code.append('}')
             return 'c' + idx

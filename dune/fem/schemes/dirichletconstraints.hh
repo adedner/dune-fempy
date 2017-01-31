@@ -411,7 +411,6 @@ protected:
       // if intersection is with boundary, adjust data
       if( intersection.boundary() )
       {
-        model.initIntersection( intersection );
         // get dirichlet information from model
         ModelDirichletBlock block(0);
         const bool isDirichletIntersection = model.isDirichletIntersection( intersection, block );

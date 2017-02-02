@@ -163,6 +163,7 @@ class DerivativeExtracter(ufl.algorithms.transformer.Transformer):
     atan = nonlinear
     atan_2 = nonlinear
     cos = nonlinear
+    exp = nonlinear
     sin = nonlinear
     power = nonlinear
     tan = nonlinear

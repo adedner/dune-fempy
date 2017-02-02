@@ -35,6 +35,9 @@ class Expr2Latex(Transformer):
     def division(self, expr, left, right):
         return "\\frac{" + left + "}{" + right + "}"
 
+    def exp(self, expr, arg):
+        return "\\exp\\left(" + arg + "\\right)"
+
     def float_value(self, expr):
         value = expr.value();
         if value < 0:

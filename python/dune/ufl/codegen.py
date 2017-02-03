@@ -159,6 +159,8 @@ class CodeGenerator(MultiFunction):
         e = [ee for ee in self.coefficients if ee["name"] == name]
         if len(e) > 1:
             raise KeyError('two coefficients provided with same name')
+        if len(e) < 1:
+            raise KeyError('coefficient', name, 'has not been registered')
         return e[0]["number"]
 
     def _makeTmp(self, cexpr):

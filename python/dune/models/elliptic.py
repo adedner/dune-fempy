@@ -245,6 +245,7 @@ def splitUFLForm(form, linear):
         else:
             raise NotImplementedError('Integrals of type ' + integral.integral_type() + ' are not supported.')
 
+
     if linear:
         u = form.arguments()[1]
         du = ufl.differentiation.Grad(u)
@@ -339,9 +340,9 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True, modelTyp
 
     model.hasNeumanBoundary = not all(value.is_zero() for value in boundaryDict.values())
 
-    expandform = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
-    if expandform == ufl.adjoint(expandform):
-        model.symmetric = 'true'
+    #expandform = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
+    #if expandform == ufl.adjoint(expandform):
+    #    model.symmetric = 'true'
     model.field = field
 
     coefficients = set(form.coefficients())

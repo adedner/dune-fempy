@@ -3,7 +3,9 @@ __metaclass__ = type
 
 import hashlib
 import inspect
+import sys
 
+from dune.common.compatibility import isString
 from dune.generator.generator import SimpleGenerator
 from dune.fem import function
 
@@ -38,7 +40,7 @@ def addAttr(module, cls, field, storage):
 
     if not storage:
         storage = str("fem")
-    if isinstance(storage,str):
+    if isString(storage):
         import dune.create as create
         storage = create.discretefunction( storageToSolver(storage) )(cls)
     else:

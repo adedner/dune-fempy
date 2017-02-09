@@ -6,14 +6,19 @@ import ufl.equation
 # cell
 # ----
 
-def cell(dimDomain):
-    if isinstance(dimDomain, tuple):
-        if len(dimDomain) != 2:
-            raise Exception('dimDomain tuple must contain exactly two elements.')
-        dimWorld = int(dimDomain[1])
-        dimDomain = dimDomain[0]
-    else:
-        dimWorld = int(dimDomain)
+def cell(dimDomainOrGrid):
+    try:
+        dimWorld = int(dimDomainOrGrid.dimWorld)
+        dimDomain = int(dimDomainOrGrid.dimGrid)
+    except:
+        dimDomain = dimDomainOrGrid
+        if isinstance(dimDomain, tuple):
+            if len(dimDomain) != 2:
+                raise Exception('dimDomain tuple must contain exactly two elements.')
+            dimWorld = int(dimDomain[1])
+            dimDomain = dimDomain[0]
+        else:
+            dimWorld = int(dimDomain)
     if dimDomain == 1:
         return ufl.Cell("interval", dimWorld)
     elif dimDomain == 2:
@@ -29,8 +34,11 @@ def cell(dimDomain):
 # -----
 
 class Space(ufl.VectorElement):
-    def __init__(self, dimDomain, dimRange, field="double"):
-        ufl.VectorElement.__init__(self, "Lagrange", cell(dimDomain), 1, int(dimRange))
+    def __init__(self, dimDomainOrGridOrSpace, dimRange=None, field="double"):
+        if not dimRange:
+            dimRange = dimDomainOrGridOrSpace.dimRange
+            dimDomainOrGridOrSpace = dimDomainOrGridOrSpace.grid
+        ufl.VectorElement.__init__(self, "Lagrange", cell(dimDomainOrGridOrSpace), 1, int(dimRange))
         self._field = field
     def field(self):
         return self._field
@@ -59,6 +67,14 @@ class NamedConstant(ufl.Coefficient):
         self.name = name
     def str(self):
         return self.name
+
+
+class DirichletBC:
+    def __init__(self, functionSpace, value, subDomain):
+        self.functionSpace = functionSpace
+        self.value = value
+        self.subDomain = subDomain
+
 
 # register markdown formatter for integrands, forms and equations to IPython
 

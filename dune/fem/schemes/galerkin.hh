@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include <dune/common/hybridutilities.hh>
+
 #include <dune/grid/common/rangegenerators.hh>
 
 #include <dune/fem/function/localfunction/temporary.hh>
@@ -19,7 +21,9 @@
 #include <dune/fem/operator/common/temporarylocalmatrix.hh>
 #include <dune/fem/quadrature/cachingquadrature.hh>
 #include <dune/fem/quadrature/intersectionquadrature.hh>
+#include <dune/fem/solver/newtoninverseoperator.hh>
 
+#include <dune/fem/operator/common/localmatrixcolumn.hh>
 #include <dune/fem/schemes/integrands.hh>
 
 namespace Dune
@@ -34,441 +38,395 @@ namespace Dune
       // GalerkinOperator
       // ----------------
 
-      template< class DiscreteFunctionSpace >
+      template< class Integrands >
       struct GalerkinOperator
       {
-        typedef DiscreteFunctionSpace DiscreteFunctionSpaceType;
+        typedef std::conditional_t< Fem::IntegrandsTraits< Integrands >::isFull, Integrands, FullIntegrands< Integrands > > IntegrandsType;
 
-        typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+        typedef typename IntegrandsType::GridPartType GridPartType;
+
+        typedef typename GridPartType::ctype ctype;
         typedef typename GridPartType::template Codim< 0 >::EntityType EntityType;
-
-        typedef typename DiscreteFunctionSpaceType::RangeFieldType RangeFieldType;
-        typedef typename DiscreteFunctionSpaceType::RangeType RangeType;
-        typedef typename DiscreteFunctionSpaceType::JacobianRangeType JacobianRangeType;
-
-        typedef typename DiscreteFunctionSpaceType::DomainType DomainType;
 
       private:
         typedef CachingQuadrature< GridPartType, 0 > InteriorQuadratureType;
-        typedef QuadraturePointWrapper< InteriorQuadratureType > InteriorQuadraturePointType;
-
         typedef CachingQuadrature< GridPartType, 1 > SurfaceQuadratureType;
-        typedef QuadraturePointWrapper< SurfaceQuadratureType > SurfaceQuadraturePointType;
 
-        typedef std::tuple< RangeType, JacobianRangeType > ValueType;
-        typedef std::tuple< std::vector< RangeType >, std::vector< JacobianRangeType > > ValueVectorType;
+        typedef typename IntegrandsType::DomainValueType DomainValueType;
+        typedef typename IntegrandsType::RangeValueType RangeValueType;
+        typedef std::make_index_sequence< std::tuple_size< DomainValueType >::value > DomainValueIndices;
+        typedef std::make_index_sequence< std::tuple_size< RangeValueType >::value > RangeValueIndices;
+
+        template< std::size_t... i >
+        static auto makeDomainValueVector ( std::size_t maxNumLocalDofs, std::index_sequence< i... > )
+        {
+          return std::make_tuple( std::vector< std::tuple_element_t< i, DomainValueType > >( maxNumLocalDofs )... );
+        }
+
+        static auto makeDomainValueVector ( std::size_t maxNumLocalDofs )
+        {
+          return makeDomainValueVector( maxNumLocalDofs, DomainValueIndices() );
+        }
+
+        typedef decltype( makeDomainValueVector( 0u ) ) DomainValueVectorType;
 
         template< class LocalFunction, class Point >
-        static ValueType value ( const LocalFunction &u, const Point &x )
+        static void value ( const LocalFunction &u, const Point &x, typename LocalFunction::RangeType &phi )
         {
-          ValueType value;
-          u.evaluate( x, std::get< 0 >( value ) );
-          u.jacobian( x, std::get< 1 >( value ) );
-          return value;
+          u.evaluate( x, phi );
+        }
+
+        template< class LocalFunction, class Point >
+        static void value ( const LocalFunction &u, const Point &x, typename LocalFunction::JacobianRangeType &phi )
+        {
+          u.jacobian( x, phi );
+        }
+
+        template< class LocalFunction, class Point >
+        static void value ( const LocalFunction &u, const Point &x, typename LocalFunction::HessianRangeType &phi )
+        {
+          u.hessian( x, phi );
+        }
+
+        template< class LocalFunction, class Point, class... T >
+        static void value ( const LocalFunction &u, const Point &x, std::tuple< T... > &phi )
+        {
+          Hybrid::forEach( std::index_sequence_for< T... >(), [ &u, &x, &phi ] ( auto i ) { GalerkinOperator::value( u, x, std::get< i >( phi ) ); } );
         }
 
         template< class Basis, class Point >
-        static void values ( const Basis &basis, const Point &x, ValueVectorType &phi )
+        static void values ( const Basis &basis, const Point &x, std::vector< typename Basis::RangeType > &phi )
         {
-          basis.evaluateAll( x, std::get< 0 >( phi ) );
-          basis.jacobianAll( x, std::get< 1 >( phi ) );
+          basis.evaluateAll( x, phi );
         }
 
-        // interior integrand
+        template< class Basis, class Point >
+        static void values ( const Basis &basis, const Point &x, std::vector< typename Basis::JacobianRangeType > &phi )
+        {
+          basis.jacobianAll( x, phi );
+        }
 
-      private:
-        template< class Integrands >
-        static std::true_type chkHasInteriorIntegrand ( const Integrands &, decltype( std::declval< const Integrands & >().interior( std::declval< const InteriorQuadraturePointType & >(), std::declval< const ValueType & >() ) ) * = nullptr );
+        template< class Basis, class Point >
+        static void values ( const Basis &basis, const Point &x, std::vector< typename Basis::HessianRangeType > &phi )
+        {
+          basis.hessianAll( x, phi );
+        }
 
-        static std::false_type chkHasInteriorIntegrand ( ... );
+        template< class Basis, class Point, class... T >
+        static void values ( const Basis &basis, const Point &x, std::tuple< std::vector< T >... > &phi )
+        {
+          Hybrid::forEach( std::index_sequence_for< T... >(), [ &basis, &x, &phi ] ( auto i ) { GalerkinOperator::values( basis, x, std::get< i >( phi ) ); } );
+        }
 
-        template< class Integrands, std::enable_if_t< std::is_same< decltype( std::declval< const Integrands & >().hasInterior() ), bool >::value, int > = 0 >
-        static std::true_type chkHasInteriorIntegrandCheck ( const Integrands & );
+        template< class LocalFunction, class Point >
+        static DomainValueType domainValue ( const LocalFunction &u, const Point &x )
+        {
+          DomainValueType phi;
+          value( u, x, phi );
+          return phi;
+        }
 
-        static std::false_type chkHasInteriorIntegrandCheck ( ... );
+        template< class Phi, std::size_t... i >
+        static auto value ( const Phi &phi, std::size_t col, std::index_sequence< i... > )
+        {
+          return std::make_tuple( std::get< i >( phi )[ col ]... );
+        }
+
+        template< class... T >
+        static auto value ( const std::tuple< std::vector< T >... > &phi, std::size_t col )
+        {
+          return value( phi, col, std::index_sequence_for< T... >() );
+        }
 
       public:
-        template< class Integrands >
-        struct HasInteriorIntegrand
-          : public decltype( chkHasInteriorIntegrand( std::declval< const Integrands & >() ) )
-        {};
-
-        template< class Integrands >
-        struct HasInteriorIntegrandCheck
-          : public decltype( chkHasInteriorIntegrandCheck( std::declval< const Integrands & >() ) )
-        {};
-
-        template< class Integrands, std::enable_if_t< HasInteriorIntegrandCheck< Integrands >::value, int > = 0 >
-        static bool hasInteriorIntegrand ( const Integrands &integrands )
-        {
-          static_assert( HasInteriorIntegrand< Integrands >::value, "Integrands providing check for interior integrand must also provide the integrand." );
-          return integrands.hasInterior();
-        }
-
-        template< class Integrands, std::enable_if_t< !HasInteriorIntegrandCheck< Integrands >::value, int > = 0 >
-        static bool hasInteriorIntegrand ( const Integrands &integrands )
-        {
-          return HasInteriorIntegrand< Integrands >::value;
-        }
-
-        template< class Integrands, class W, std::enable_if_t< HasInteriorIntegrand< Integrands >::value, int > = 0 >
-        static void addInteriorIntegrand ( const Integrands &integrands, const InteriorQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, W &w )
-        {
-          ValueType integrand = integrands.interior( qp, u );
-          std::get< 0 >( integrand ) *= weight;
-          std::get< 1 >( integrand ) *= weight;
-          w.axpy( qp, std::get< 0 >( integrand ), std::get< 1 >( integrand ) );
-        }
-
-        template< class Integrands, class W, std::enable_if_t< !HasInteriorIntegrand< Integrands >::value, int > = 0 >
-        static void addInteriorIntegrand ( const Integrands &integrands, const InteriorQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, W &w )
-        {}
-
-        template< class Integrands, class J, std::enable_if_t< HasInteriorIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedInteriorIntegrand ( const Integrands &integrands, const InteriorQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, const ValueVectorType &phi, std::size_t cols, J &j )
-        {
-          auto integrand = integrands.linearizedInterior( qp, u );
-          for( std::size_t col = 0; col < cols; ++col )
-          {
-            ValueType intPhi = integrand( std::make_tuple( std::get< 0 >( phi )[ col ], std::get< 1 >( phi )[ col ] ) );
-            j.column( col ).axpy( std::get< 0 >( phi ), std::get< 1 >( phi ), std::get< 0 >( intPhi ), std::get< 1 >( intPhi ), weight );
-          }
-        }
-
-        template< class Integrands, class J, std::enable_if_t< !HasInteriorIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedInteriorIntegrand ( const Integrands &integrands, const InteriorQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, const ValueVectorType &phi, std::size_t cols, J &j )
-        {}
-
-        // boundary integrand
-
-      private:
-        template< class Integrands >
-        static std::true_type chkHasBoundaryIntegrand ( const Integrands &, decltype( std::declval< const Integrands & >().boundary( std::declval< const SurfaceQuadraturePointType & >(), std::declval< const ValueType & >() ) ) * = nullptr );
-
-        static std::false_type chkHasBoundaryIntegrand ( ... );
-
-        template< class Integrands, std::enable_if_t< std::is_same< decltype( std::declval< const Integrands & >().hasBoundary() ), bool >::value, int > = 0 >
-        static std::true_type chkHasBoundaryIntegrandCheck ( const Integrands & );
-
-        static std::false_type chkHasBoundaryIntegrandCheck ( ... );
-
-      public:
-        template< class Integrands >
-        struct HasBoundaryIntegrand
-          : public decltype( chkHasBoundaryIntegrand( std::declval< const Integrands & >() ) )
-        {};
-
-        template< class Integrands >
-        struct HasBoundaryIntegrandCheck
-          : public decltype( chkHasBoundaryIntegrandCheck( std::declval< const Integrands & >() ) )
-        {};
-
-        template< class Integrands, std::enable_if_t< HasBoundaryIntegrandCheck< Integrands >::value, int > = 0 >
-        static bool hasBoundaryIntegrand ( const Integrands &integrands )
-        {
-          static_assert( HasBoundaryIntegrand< Integrands >::value, "Integrands providing check for boundary integrand must also provide the integrand." );
-          return integrands.hasBoundary();
-        }
-
-        template< class Integrands, std::enable_if_t< !HasBoundaryIntegrandCheck< Integrands >::value, int > = 0 >
-        static bool hasBoundaryIntegrand ( const Integrands &integrands )
-        {
-          return HasBoundaryIntegrand< Integrands >::value;
-        }
-
-        template< class Integrands, class W, std::enable_if_t< HasBoundaryIntegrand< Integrands >::value, int > = 0 >
-        static void addBoundaryIntegrand ( const Integrands &integrands, const SurfaceQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, W &w )
-        {
-          ValueType integrand = integrands.boundary( qp, u );
-          std::get< 0 >( integrand ) *= weight;
-          std::get< 1 >( integrand ) *= weight;
-          w.axpy( qp, std::get< 0 >( integrand ), std::get< 1 >( integrand ) );
-        }
-
-        template< class Integrands, class W, std::enable_if_t< !HasBoundaryIntegrand< Integrands >::value, int > = 0 >
-        static void addBoundaryIntegrand ( const Integrands &integrands, const SurfaceQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, W &w )
-        {}
-
-        template< class Integrands, class J, std::enable_if_t< HasBoundaryIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedBoundaryIntegrand ( const Integrands &integrands, const SurfaceQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, const ValueVectorType &phi, std::size_t cols, J &j )
-        {
-          auto integrand = integrands.linearizedBoundary( qp, u );
-          for( std::size_t col = 0; col < cols; ++col )
-          {
-            ValueType intPhi = integrand( std::make_tuple( std::get< 0 >( phi )[ col ], std::get< 1 >( phi )[ col ] ) );
-            j.column( col ).axpy( std::get< 0 >( phi ), std::get< 1 >( phi ), std::get< 0 >( intPhi ), std::get< 1 >( intPhi ), weight );
-          }
-        }
-
-        template< class Integrands, class J, std::enable_if_t< !HasBoundaryIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedBoundaryIntegrand ( const Integrands &integrands, const SurfaceQuadraturePointType &qp, const RangeFieldType &weight, const ValueType &u, const ValueVectorType &phi, std::size_t cols, J &j )
-        {}
-
-        // skeleton integrand
-
-      private:
-        template< class Integrands >
-        static std::true_type chkHasSkeletonIntegrand ( const Integrands &, decltype( std::declval< const Integrands & >().skeleton( std::declval< const SurfaceQuadraturePointType & >(), std::declval< const ValueType & >(), std::declval< const SurfaceQuadraturePointType & >(), std::declval< const ValueType & >() ) ) * = nullptr );
-
-        static std::false_type chkHasSkeletonIntegrand ( ... );
-
-        template< class Integrands, std::enable_if_t< std::is_same< decltype( std::declval< const Integrands & >().hasSkeleton() ), bool >::value, int > = 0 >
-        static std::true_type chkHasSkeletonIntegrandCheck ( const Integrands & );
-
-        static std::false_type chkHasSkeletonIntegrandCheck ( ... );
-
-      public:
-        template< class Integrands >
-        struct HasSkeletonIntegrand
-          : public decltype( chkHasSkeletonIntegrand( std::declval< const Integrands & >() ) )
-        {};
-
-        template< class Integrands >
-        struct HasSkeletonIntegrandCheck
-          : public decltype( chkHasSkeletonIntegrandCheck( std::declval< const Integrands & >() ) )
-        {};
-
-        template< class Integrands, std::enable_if_t< HasSkeletonIntegrandCheck< Integrands >::value, int > = 0 >
-        static bool hasSkeletonIntegrand ( const Integrands &integrands )
-        {
-          static_assert( HasSkeletonIntegrand< Integrands >::value, "Integrands providing check for skeleton integrand must also provide the integrand." );
-          return integrands.hasSkeleton();
-        }
-
-        template< class Integrands, std::enable_if_t< !HasSkeletonIntegrandCheck< Integrands >::value, int > = 0 >
-        static bool hasSkeletonIntegrand ( const Integrands &integrands )
-        {
-          return HasSkeletonIntegrand< Integrands >::value;
-        }
-
-        template< class Integrands, class QP, class W, std::enable_if_t< HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, W &wIn )
-        {
-          std::pair< ValueType, ValueType > integrand = integrands.skeleton( qpIn, uIn, qpOut, uOut );
-          std::get< 0 >( integrand.first ) *= weight;
-          std::get< 1 >( integrand.first ) *= weight;
-          wIn.axpy( qpIn, std::get< 0 >( integrand.first ), std::get< 1 >( integrand.first ) );
-        }
-
-        template< class Integrands, class QP, class W, std::enable_if_t< HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, W &wIn, W &wOut )
-        {
-          std::pair< ValueType, ValueType > integrand = integrands.skeleton( qpIn, uIn, qpOut, uOut );
-          std::get< 0 >( integrand.first ) *= weight;
-          std::get< 1 >( integrand.first ) *= weight;
-          wIn.axpy( qpIn, std::get< 0 >( integrand.first ), std::get< 1 >( integrand.first ) );
-          std::get< 0 >( integrand.second ) *= weight;
-          std::get< 1 >( integrand.second ) *= weight;
-          wOut.axpy( qpOut, std::get< 0 >( integrand.second ), std::get< 1 >( integrand.second ) );
-        }
-
-        template< class Integrands, class QP, class W, std::enable_if_t< !HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, W &wIn )
-        {}
-
-        template< class Integrands, class QP, class W, std::enable_if_t< !HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, W &wIn, W &wOut )
-        {}
-
-        template< class Integrands, class QP, class J, std::enable_if_t< HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, const ValueVectorType &phiIn, std::size_t colsIn, const ValueVectorType &phiOut, std::size_t colsOut, J &jInIn, J &jOutIn )
-        {
-          auto integrand = integrands.linearizedSkeleton( qpIn, uIn, qpOut, uOut );
-          for( std::size_t col = 0; col < colsIn; ++col )
-          {
-            std::pair< ValueType, ValueType > intPhi = integrand.first( std::make_tuple( std::get< 0 >( phiIn )[ col ], std::get< 1 >( phiIn )[ col ] ) );
-            jInIn.column( col ).axpy( std::get< 0 >( phiIn ), std::get< 1 >( phiIn ), std::get< 0 >( intPhi.first ), std::get< 1 >( intPhi.first ), weight );
-          }
-          for( std::size_t col = 0; col < colsOut; ++col )
-          {
-            std::pair< ValueType, ValueType > intPhi = integrand.second( std::make_tuple( std::get< 0 >( phiOut )[ col ], std::get< 1 >( phiOut )[ col ] ) );
-            jOutIn.column( col ).axpy( std::get< 0 >( phiIn ), std::get< 1 >( phiIn ), std::get< 0 >( intPhi.first ), std::get< 1 >( intPhi.first ), weight );
-          }
-        }
-
-        template< class Integrands, class QP, class J, std::enable_if_t< HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, const ValueVectorType &phiIn, std::size_t colsIn, const ValueVectorType &phiOut, std::size_t colsOut, J &jInIn, J &jOutIn, J &jInOut, J &jOutOut )
-        {
-          auto integrand = integrands.linearizedSkeleton( qpIn, uIn, qpOut, uOut );
-          for( std::size_t col = 0; col < colsIn; ++col )
-          {
-            std::pair< ValueType, ValueType > intPhi = integrand.first( std::make_tuple( std::get< 0 >( phiIn )[ col ], std::get< 1 >( phiIn )[ col ] ) );
-            jInIn.column( col ).axpy( std::get< 0 >( phiIn ), std::get< 1 >( phiIn ), std::get< 0 >( intPhi.first ), std::get< 1 >( intPhi.first ), weight );
-            jInOut.column( col ).axpy( std::get< 0 >( phiOut ), std::get< 1 >( phiOut ), std::get< 0 >( intPhi.second ), std::get< 1 >( intPhi.second ), weight );
-          }
-          for( std::size_t col = 0; col < colsOut; ++col )
-          {
-            std::pair< ValueType, ValueType > intPhi = integrand.second( std::make_tuple( std::get< 0 >( phiOut )[ col ], std::get< 1 >( phiOut )[ col ] ) );
-            jOutIn.column( col ).axpy( std::get< 0 >( phiIn ), std::get< 1 >( phiIn ), std::get< 0 >( intPhi.first ), std::get< 1 >( intPhi.first ), weight );
-            jOutOut.column( col ).axpy( std::get< 0 >( phiOut ), std::get< 1 >( phiOut ), std::get< 0 >( intPhi.second ), std::get< 1 >( intPhi.second ), weight );
-          }
-        }
-
-        template< class Integrands, class QP, class J, std::enable_if_t< !HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, const ValueVectorType &phiIn, std::size_t colsIn, const ValueVectorType &phiOut, std::size_t colsOut, J &jInIn, J &jOutIn )
-        {}
-
-        template< class Integrands, class QP, class J, std::enable_if_t< !HasSkeletonIntegrand< Integrands >::value, int > = 0 >
-        static void addLinearizedSkeletonIntegrand ( const Integrands &integrands, const QP &qpIn, const QP &qpOut, const RangeFieldType &weight, const ValueType &uIn, const ValueType &uOut, const ValueVectorType &phiIn, std::size_t colsIn, const ValueVectorType &phiOut, std::size_t colsOut, J &jInIn, J &jOutIn, J &jInOut, J &jOutOut )
-        {}
-
         // interior integral
 
-        template< class Integrands, class U, class W >
-        void addInteriorIntegral ( Integrands &integrands, const U &u, W &w ) const
+        template< class U, class W >
+        void addInteriorIntegral ( const U &u, W &w ) const
         {
-          if( !integrands.init( u.entity() ) )
+          if( !integrands_.init( u.entity() ) )
             return;
 
           const auto geometry = u.entity().geometry();
-          for( const InteriorQuadraturePointType qp : InteriorQuadratureType( u.entity(), 2*w.order() ) )
+          for( const auto qp : InteriorQuadratureType( u.entity(), 2*w.order() ) )
           {
-            const RangeFieldType weight = qp.weight() * geometry.integrationElement( qp.position() );
-            addInteriorIntegrand( integrands, qp, weight, value( u, qp ), w );
+            const ctype weight = qp.weight() * geometry.integrationElement( qp.position() );
+
+            RangeValueType integrand = integrands_.interior( qp, domainValue( u, qp ) );
+
+            Hybrid::forEach( RangeValueIndices(), [ &qp, &w, &integrand, weight ] ( auto i ) {
+                std::get< i >( integrand ) *= weight;
+                w.axpy( qp, std::get< i >( integrand ) );
+              } );
           }
         }
 
-        template< class Integrands, class U, class J >
-        void addLinearizedInteriorIntegral ( Integrands &integrands, const U &u, ValueVectorType &phi, J &j ) const
+        template< class U, class J >
+        void addLinearizedInteriorIntegral ( const U &u, DomainValueVectorType &phi, J &j ) const
         {
-          if( !integrands.init( u.entity() ) )
+          if( !integrands_.init( u.entity() ) )
             return;
 
           const auto geometry = u.entity().geometry();
-          const auto &basis = discreteFunctionSpace().basisFunctionSet( u.entity() );
-          for( const auto qp : InteriorQuadratureType( u.entity(), 2*basis.order() ) )
+          const auto &domainBasis = j.domainBasisFunctionSet();
+          const auto &rangeBasis = j.rangeBasisFunctionSet();
+
+          for( const auto qp : InteriorQuadratureType( u.entity(), 2*rangeBasis.order() ) )
           {
             const auto weight = qp.weight() * geometry.integrationElement( qp.position() );
-            values( basis, qp, phi );
-            addLinearizedInteriorIntegrand( integrands, qp, weight, value( u, qp ), phi, basis.size(), j );
+
+            values( domainBasis, qp, phi );
+            auto integrand = integrands_.linearizedInterior( qp, domainValue( u, qp ) );
+
+            for( std::size_t col = 0, cols = domainBasis.size(); col < cols; ++col )
+            {
+              LocalMatrixColumn< J > jCol( j, col );
+              RangeValueType intPhi = integrand( value( phi, col ) );
+
+              Hybrid::forEach( RangeValueIndices(), [ &qp, &jCol, &intPhi, weight ] ( auto i ) {
+                  std::get< i >( intPhi ) *= weight;
+                  jCol.axpy( qp, std::get< i >( intPhi ) );
+                } );
+            }
           }
         }
 
         // boundary integral
 
-        template< class Integrands, class Intersection, class U, class W >
-        void addBoundaryIntegral ( Integrands &integrands, const Intersection &intersection, const U &u, W &w ) const
+        template< class Intersection, class U, class W >
+        void addBoundaryIntegral ( const Intersection &intersection, const U &u, W &w ) const
         {
-          if( !integrands.init( intersection ) )
+          if( !integrands_.init( intersection ) )
             return;
 
           const auto geometry = intersection.geometry();
-          for( const SurfaceQuadraturePointType qp : SurfaceQuadratureType( gridPart(), intersection, 2*w.order(), SurfaceQuadratureType::INSIDE ) )
+          for( const auto qp : SurfaceQuadratureType( gridPart(), intersection, 2*w.order(), SurfaceQuadratureType::INSIDE ) )
           {
-            const RangeFieldType weight = qp.weight() * geometry.integrationElement( qp.localPosition() );
-            addBoundaryIntegrand( integrands, qp, weight, value( u, qp ), w );
+            const ctype weight = qp.weight() * geometry.integrationElement( qp.localPosition() );
+
+            RangeValueType integrand = integrands_.boundary( qp, domainValue( u, qp ) );
+
+            Hybrid::forEach( RangeValueIndices(), [ &qp, &w, &integrand, weight ] ( auto i ) {
+                std::get< i >( integrand ) *= weight;
+                w.axpy( qp, std::get< i >( integrand ) );
+              } );
           }
         }
 
-        template< class Integrands, class Intersection, class U, class J >
-        void addLinearizedBoundaryIntegral ( Integrands &integrands, const Intersection &intersection, const U &u, ValueVectorType &phi, J &j ) const
+        template< class Intersection, class U, class J >
+        void addLinearizedBoundaryIntegral ( const Intersection &intersection, const U &u, DomainValueVectorType &phi, J &j ) const
         {
-          if( !integrands.init( intersection ) )
+          if( !integrands_.init( intersection ) )
             return;
 
           const auto geometry = intersection.geometry();
-          const auto &basis = discreteFunctionSpace().basisFunctionSet( u.entity() );
-          for( const SurfaceQuadraturePointType qp : SurfaceQuadratureType( gridPart(), intersection, 2*basis.order(), SurfaceQuadratureType::INSIDE ) )
+          const auto &domainBasis = j.domainBasisFunctionSet();
+          const auto &rangeBasis = j.rangeBasisFunctionSet();
+
+          for( const auto qp : SurfaceQuadratureType( gridPart(), intersection, 2*rangeBasis.order(), SurfaceQuadratureType::INSIDE ) )
           {
-            const RangeFieldType weight = qp.weight() * geometry.integrationElement( qp.localPosition() );
-            values( basis, qp, phi );
-            addLinearizedBoundaryIntegrand( integrands, qp, weight, value( u, qp ), phi, basis.size(), j );
+            const ctype weight = qp.weight() * geometry.integrationElement( qp.localPosition() );
+
+            values( domainBasis, qp, phi );
+            auto integrand = integrands_.linearizedBoundary( qp, domainValue( u, qp ) );
+
+            for( std::size_t col = 0, cols = domainBasis.size(); col < cols; ++col )
+            {
+              LocalMatrixColumn< J > jCol( j, col );
+              RangeValueType intPhi = integrand( value( phi, col ) );
+
+              Hybrid::forEach( RangeValueIndices(), [ &qp, &jCol, &intPhi, weight ] ( auto i ) {
+                  std::get< i >( intPhi ) *= weight;
+                  jCol.axpy( qp, std::get< i >( intPhi ) );
+                } );
+            }
           }
         }
 
         // addSkeletonIntegral
 
-        template< bool conforming, class Integrands, class Intersection, class U, class W >
-        void addSkeletonIntegral ( const Integrands &integrands, const Intersection &intersection, const U &uIn, const U &uOut, W &wIn ) const
+      private:
+        template< bool conforming, class Intersection, class U, class W >
+        void addSkeletonIntegral ( const Intersection &intersection, const U &uIn, const U &uOut, W &wIn ) const
         {
           const auto geometry = intersection.geometry();
           const IntersectionQuadrature< SurfaceQuadratureType, conforming > quadrature( gridPart(), intersection, 2*wIn.order(), false );
           for( std::size_t qp = 0, nop = quadrature.nop(); qp != nop; ++qp )
           {
-            const RangeFieldType weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
+            const ctype weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
 
             const auto qpIn = quadrature.inside()[ qp ];
             const auto qpOut = quadrature.outside()[ qp ];
+            std::pair< RangeValueType, RangeValueType > integrand = integrands_.skeleton( qpIn, domainValue( uIn, qpIn ), qpOut, domainValue( uOut, qpOut ) );
 
-            addSkeletonIntegrand( integrands, qpIn, qpOut, weight, value( uIn, qpIn ), value( uOut, qpOut ), wIn );
+            Hybrid::forEach( RangeValueIndices(), [ &qpIn, &wIn, &integrand, weight ] ( auto i ) {
+                std::get< i >( integrand.first ) *= weight;
+                wIn.axpy( qpIn, std::get< i >( integrand.first ) );
+              } );
           }
         }
 
-        template< bool conforming, class Integrands, class Intersection, class U, class W >
-        void addSkeletonIntegral ( const Integrands &integrands, const Intersection &intersection, const U &uIn, const U &uOut, W &wIn, W &wOut ) const
+        template< bool conforming, class Intersection, class U, class W >
+        void addSkeletonIntegral ( const Intersection &intersection, const U &uIn, const U &uOut, W &wIn, W &wOut ) const
         {
           const auto geometry = intersection.geometry();
           const IntersectionQuadrature< SurfaceQuadratureType, conforming > quadrature( gridPart(), intersection, 2*std::max( wIn.order(), wOut.order() ), false );
           for( std::size_t qp = 0, nop = quadrature.nop(); qp != nop; ++qp )
           {
-            const RangeFieldType weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
+            const ctype weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
 
             const auto qpIn = quadrature.inside()[ qp ];
             const auto qpOut = quadrature.outside()[ qp ];
+            std::pair< RangeValueType, RangeValueType > integrand = integrands_.skeleton( qpIn, domainValue( uIn, qpIn ), qpOut, domainValue( uOut, qpOut ) );
 
-            addSkeletonIntegrand( integrands, qpIn, qpOut, weight, value( uIn, qpIn ), value( uOut, qpOut ), wIn, wOut );
+            Hybrid::forEach( RangeValueIndices(), [ &qpIn, &wIn, &qpOut, &wOut, &integrand, weight ] ( auto i ) {
+                std::get< i >( integrand.first ) *= weight;
+                wIn.axpy( qpIn, std::get< i >( integrand.first ) );
+
+                std::get< i >( integrand.second ) *= weight;
+                wOut.axpy( qpOut, std::get< i >( integrand.second ) );
+              } );
           }
         }
 
-        template< class Integrands, class Intersection, class U, class... W >
-        void addSkeletonIntegral ( Integrands &integrands, const Intersection &intersection, const U &uIn, const U &uOut, W &... w ) const
+        template< bool conforming, class Intersection, class U, class J >
+        void addLinearizedSkeletonIntegral ( const Intersection &intersection, const U &uIn, const U &uOut, DomainValueVectorType &phiIn, DomainValueVectorType &phiOut, J &jInIn, J &jOutIn ) const
         {
-          if( !integrands.init( intersection ) )
-            return;
+          const auto &domainBasisIn = jInIn.domainBasisFunctionSet();
+          const auto &domainBasisOut = jOutIn.domainBasisFunctionSet();
 
-          if( intersection.conforming() )
-            addSkeletonIntegral< true >( integrands, intersection, uIn, uOut, w... );
-          else
-            addSkeletonIntegral< false >( integrands, intersection, uIn, uOut, w... );
-        }
-
-        template< bool conforming, class Integrands, class Intersection, class U, class... J >
-        void addLinearizedSkeletonIntegral ( const Integrands &integrands, const Intersection &intersection, const U &uIn, const U &uOut, ValueVectorType &phiIn, ValueVectorType &phiOut, J &... j ) const
-        {
-          const auto &basisIn = discreteFunctionSpace().basisFunctionSet( uIn.entity() );
-          const auto &basisOut = discreteFunctionSpace().basisFunctionSet( uOut.entity() );
+          const auto &rangeBasisIn = jInIn.rangeBasisFunctionSet();
 
           const auto geometry = intersection.geometry();
-          const IntersectionQuadrature< SurfaceQuadratureType, conforming > quadrature( gridPart(), intersection, 2*std::max( basisIn.order(), basisOut.order() ), false );
+          const IntersectionQuadrature< SurfaceQuadratureType, conforming > quadrature( gridPart(), intersection, 2*rangeBasisIn.order(), false );
           for( std::size_t qp = 0, nop = quadrature.nop(); qp != nop; ++qp )
           {
-            const RangeFieldType weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
+            const ctype weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
 
             const auto qpIn = quadrature.inside()[ qp ];
             const auto qpOut = quadrature.outside()[ qp ];
 
-            values( basisIn, qpIn, phiIn );
-            values( basisOut, qpOut, phiOut );
+            values( domainBasisIn, qpIn, phiIn );
+            values( domainBasisOut, qpOut, phiOut );
 
-            addLinearizedSkeletonIntegrand( integrands, qpIn, qpOut, weight, value( uIn, qpIn ), value( uOut, qpOut ), phiIn, basisIn.size(), phiOut, basisOut.size(), j... );
+            auto integrand = integrands_.linearizedSkeleton( qpIn, domainValue( uIn, qpIn ), qpOut, domainValue( uOut, qpOut ) );
+            for( std::size_t col = 0, cols = domainBasisIn.size(); col < cols; ++col )
+            {
+              LocalMatrixColumn< J > jInInCol( jInIn, col );
+              std::pair< RangeValueType, RangeValueType > intPhi = integrand.first( value( phiIn, col ) );
+
+              Hybrid::forEach( RangeValueIndices(), [ &qpIn, &jInInCol, &intPhi, weight ] ( auto i ) {
+                  std::get< i >( intPhi.first ) *= weight;
+                  jInInCol.axpy( qpIn, std::get< i >( intPhi.first ) );
+                } );
+            }
+            for( std::size_t col = 0, cols = domainBasisOut.size(); col < cols; ++col )
+            {
+              LocalMatrixColumn< J > jOutInCol( jOutIn, col );
+              std::pair< RangeValueType, RangeValueType > intPhi = integrand.second( value( phiOut, col ) );
+
+              Hybrid::forEach( RangeValueIndices(), [ &qpIn, &jOutInCol, &intPhi, weight ] ( auto i ) {
+                  std::get< i >( intPhi.first ) *= weight;
+                  jOutInCol.axpy( qpIn, std::get< i >( intPhi.first ) );
+                } );
+            }
           }
         }
 
-        template< class Integrands, class Intersection, class U, class... J >
-        void addLinearizedSkeletonIntegral ( Integrands &integrands, const Intersection &intersection, const U &uIn, const U &uOut, ValueVectorType &phiIn, ValueVectorType &phiOut, J &... j ) const
+        template< bool conforming, class Intersection, class U, class J >
+        void addLinearizedSkeletonIntegral ( const Intersection &intersection, const U &uIn, const U &uOut, DomainValueVectorType &phiIn, DomainValueVectorType &phiOut, J &jInIn, J &jOutIn, J &jInOut, J &jOutOut ) const
         {
-          if( !integrands.init( intersection ) )
+          const auto &domainBasisIn = jInIn.domainBasisFunctionSet();
+          const auto &domainBasisOut = jOutIn.domainBasisFunctionSet();
+
+          const auto &rangeBasisIn = jInIn.rangeBasisFunctionSet();
+          const auto &rangeBasisOut = jInOut.rangeBasisFunctionSet();
+
+          const auto geometry = intersection.geometry();
+          const IntersectionQuadrature< SurfaceQuadratureType, conforming > quadrature( gridPart(), intersection, 2*std::max( rangeBasisIn.order(), rangeBasisOut.order() ), false );
+          for( std::size_t qp = 0, nop = quadrature.nop(); qp != nop; ++qp )
+          {
+            const ctype weight = quadrature.weight( qp ) * geometry.integrationElement( quadrature.localPoint( qp ) );
+
+            const auto qpIn = quadrature.inside()[ qp ];
+            const auto qpOut = quadrature.outside()[ qp ];
+
+            values( domainBasisIn, qpIn, phiIn );
+            values( domainBasisOut, qpOut, phiOut );
+
+            auto integrand = integrands_.linearizedSkeleton( qpIn, domainValue( uIn, qpIn ), qpOut, domainValue( uOut, qpOut ) );
+            for( std::size_t col = 0, cols = domainBasisIn.size(); col < cols; ++col )
+            {
+              LocalMatrixColumn< J > jInInCol( jInIn, col );
+              LocalMatrixColumn< J > jInOutCol( jInOut, col );
+              std::pair< RangeValueType, RangeValueType > intPhi = integrand.first( value( phiIn, col ) );
+
+              Hybrid::forEach( RangeValueIndices(), [ &qpIn, &jInInCol, &qpOut, &jInOutCol, &intPhi, weight ] ( auto i ) {
+                  std::get< i >( intPhi.first ) *= weight;
+                  jInInCol.axpy( qpIn, std::get< i >( intPhi.first ) );
+
+                  std::get< i >( intPhi.second ) *= weight;
+                  jInOutCol.axpy( qpOut, std::get< i >( intPhi.second ) );
+                } );
+            }
+            for( std::size_t col = 0, cols = domainBasisOut.size(); col < cols; ++col )
+            {
+              LocalMatrixColumn< J > jOutInCol( jOutIn, col );
+              LocalMatrixColumn< J > jOutOutCol( jOutOut, col );
+              std::pair< RangeValueType, RangeValueType > intPhi = integrand.second( value( phiOut, col ) );
+
+              Hybrid::forEach( RangeValueIndices(), [ &qpIn, &jOutInCol, &qpOut, &jOutOutCol, &intPhi, weight ] ( auto i ) {
+                  std::get< i >( intPhi.first ) *= weight;
+                  jOutInCol.axpy( qpIn, std::get< i >( intPhi.first ) );
+
+                  std::get< i >( intPhi.second ) *= weight;
+                  jOutOutCol.axpy( qpOut, std::get< i >( intPhi.second ) );
+                } );
+            }
+          }
+        }
+
+      public:
+        template< class Intersection, class U, class... W >
+        void addSkeletonIntegral ( const Intersection &intersection, const U &uIn, const U &uOut, W &... w ) const
+        {
+          if( !integrands_.init( intersection ) )
             return;
 
           if( intersection.conforming() )
-            addLinearizedSkeletonIntegral< true >( integrands, intersection, uIn, uOut, phiIn, phiOut, j... );
+            addSkeletonIntegral< true >( intersection, uIn, uOut, w... );
           else
-            addLinearizedSkeletonIntegral< false >( integrands, intersection, uIn, uOut, phiIn, phiOut, j... );
+            addSkeletonIntegral< false >( intersection, uIn, uOut, w... );
+        }
+
+        template< class Intersection, class U, class... J >
+        void addLinearizedSkeletonIntegral ( const Intersection &intersection, const U &uIn, const U &uOut, DomainValueVectorType &phiIn, DomainValueVectorType &phiOut, J &... j ) const
+        {
+          if( !integrands_.init( intersection ) )
+            return;
+
+          if( intersection.conforming() )
+            addLinearizedSkeletonIntegral< true >( intersection, uIn, uOut, phiIn, phiOut, j... );
+          else
+            addLinearizedSkeletonIntegral< false >( intersection, uIn, uOut, phiIn, phiOut, j... );
         }
 
         // constructor
 
-        explicit GalerkinOperator ( const DiscreteFunctionSpaceType &dfSpace ) : dfSpace_( dfSpace ) {}
+        template< class... Args >
+        explicit GalerkinOperator ( const GridPartType &gridPart, Args &&... args )
+          : gridPart_( gridPart ), integrands_( std::forward< Args >( args )... )
+        {}
 
         // evaluate
 
       private:
-        template< class Integrands, class GridFunction, class DiscreteFunction >
-        void evaluate ( Integrands &integrands, const GridFunction &u, DiscreteFunction &w, std::false_type ) const
+        template< class GridFunction, class DiscreteFunction >
+        void evaluate ( const GridFunction &u, DiscreteFunction &w, std::false_type ) const
         {
           w.clear();
 
-          TemporaryLocalFunction< DiscreteFunctionSpaceType > wLocal( discreteFunctionSpace() );
+          TemporaryLocalFunction< typename DiscreteFunction::DiscreteFunctionSpaceType > wLocal( w.space() );
 
           for( const EntityType &entity : elements( gridPart(), Partitions::interiorBorder ) )
           {
@@ -477,15 +435,15 @@ namespace Dune
             wLocal.init( entity );
             wLocal.clear();
 
-            if( hasInteriorIntegrand( integrands ) )
-              addInteriorIntegral( integrands, uLocal, wLocal );
+            if( integrands_.hasInterior() )
+              addInteriorIntegral( uLocal, wLocal );
 
-            if( hasBoundaryIntegrand( integrands ) && entity.hasBoundaryIntersections() )
+            if( integrands_.hasBoundary() && entity.hasBoundaryIntersections() )
             {
               for( const auto &intersection : intersections( gridPart(), entity ) )
               {
                 if( intersection.boundary() )
-                  addBoundaryIntegral( integrands, intersection, uLocal, wLocal );
+                  addBoundaryIntegral( intersection, uLocal, wLocal );
               }
             }
 
@@ -495,12 +453,12 @@ namespace Dune
           w.communicate();
         }
 
-        template< class Integrands, class GridFunction, class DiscreteFunction >
-        void evaluate ( Integrands &integrands, const GridFunction &u, DiscreteFunction &w, std::true_type ) const
+        template< class GridFunction, class DiscreteFunction >
+        void evaluate ( const GridFunction &u, DiscreteFunction &w, std::true_type ) const
         {
           w.clear();
 
-          TemporaryLocalFunction< DiscreteFunctionSpaceType > wInside( discreteFunctionSpace() ), wOutside( discreteFunctionSpace() );
+          TemporaryLocalFunction< typename DiscreteFunction::DiscreteFunctionSpaceType > wInside( w.space() ), wOutside( w.space() );
 
           const auto &indexSet = gridPart().indexSet();
           for( const EntityType &inside : elements( gridPart(), Partitions::interiorBorder ) )
@@ -510,27 +468,27 @@ namespace Dune
             wInside.init( inside );
             wInside.clear();
 
-            if( hasInteriorIntegrand( integrands ) )
-              addInteriorIntegral( integrands, uInside, wInside );
+            if( integrands_.hasInterior() )
+              addInteriorIntegral( uInside, wInside );
 
             for( const auto &intersection : intersections( gridPart(), inside ) )
             {
               if( intersection.boundary() )
               {
-                if( hasBoundaryIntegrand( integrands ) )
-                  addBoundaryIntegral( integrands, intersection, uInside, wInside );
+                if( integrands_.hasBoundary() )
+                  addBoundaryIntegral( intersection, uInside, wInside );
               }
               else if( intersection.neighbor() )
               {
                 const EntityType &outside = intersection.outside();
 
                 if( outside.partitionType() != InteriorEntity )
-                  addSkeletonIntegral( integrands, intersection, uInside, u.localFunction( outside ), wInside );
+                  addSkeletonIntegral( intersection, uInside, u.localFunction( outside ), wInside );
                 else if( indexSet.index( inside ) < indexSet.index( outside ) )
                 {
                   wOutside.init( outside );
                   wOutside.clear();
-                  addSkeletonIntegral( integrands, intersection, uInside, u.localFunction( outside ), wInside, wOutside );
+                  addSkeletonIntegral( intersection, uInside, u.localFunction( outside ), wInside, wOutside );
                   w.addLocalDofs( outside, wOutside.localDofVector() );
                 }
               }
@@ -543,29 +501,34 @@ namespace Dune
         }
 
       public:
-        template< class Integrands, class GridFunction, class DiscreteFunction >
-        void evaluate ( Integrands &integrands, const GridFunction &u, DiscreteFunction &w ) const
+        template< class GridFunction, class DiscreteFunction >
+        void evaluate ( const GridFunction &u, DiscreteFunction &w ) const
         {
-          if( hasSkeletonIntegrand( integrands ) )
-            evaluate( integrands, u, w, std::true_type() );
+          static_assert( std::is_same< typename GridFunction::GridPartType, GridPartType >::value, "Argument 'u' and Integrands must be defined on the same grid part." );
+          static_assert( std::is_same< typename DiscreteFunction::GridPartType, GridPartType >::value, "Argument 'w' and Integrands must be defined on the same grid part." );
+
+          if( integrands_.hasSkeleton() )
+            evaluate( u, w, std::true_type() );
           else
-            evaluate( integrands, u, w, std::false_type() );
+            evaluate( u, w, std::false_type() );
         }
 
         // assemble
 
       private:
-        template< class Integrands, class GridFunction, class JacobianOperator >
-        void assemble ( Integrands &integrands, const GridFunction &u, JacobianOperator &jOp, std::false_type ) const
+        template< class GridFunction, class JacobianOperator >
+        void assemble ( const GridFunction &u, JacobianOperator &jOp, std::false_type ) const
         {
-          DiagonalStencil< DiscreteFunctionSpaceType, DiscreteFunctionSpaceType > stencil( discreteFunctionSpace(), discreteFunctionSpace() );
+          typedef TemporaryLocalMatrix< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > TemporaryLocalMatrixType;
+
+          DiagonalStencil< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > stencil( jOp.domainSpace(), jOp.rangeSpace() );
           jOp.reserve( stencil );
           jOp.clear();
 
-          const std::size_t maxNumLocalDofs = discreteFunctionSpace().blockMapper().maxNumDofs() * discreteFunctionSpace().localBlockSize;
-          ValueVectorType phi{ std::vector< RangeType >( maxNumLocalDofs ), std::vector< JacobianRangeType >( maxNumLocalDofs ) };
+          const std::size_t maxNumLocalDofs = jOp.domainSpace().blockMapper().maxNumDofs() * jOp.domainSpace().localBlockSize;
+          DomainValueVectorType phi = makeDomainValueVector( maxNumLocalDofs );
 
-          TemporaryLocalMatrix< DiscreteFunctionSpaceType, DiscreteFunctionSpaceType > jOpLocal( discreteFunctionSpace(), discreteFunctionSpace() );
+          TemporaryLocalMatrixType jOpLocal( jOp.domainSpace(), jOp.rangeSpace() );
 
           for( const EntityType &entity : elements( gridPart(), Partitions::interiorBorder ) )
           {
@@ -574,15 +537,15 @@ namespace Dune
             jOpLocal.init( entity, entity );
             jOpLocal.clear();
 
-            if( hasInteriorIntegrand( integrands ) )
-              addLinearizedInteriorIntegral( integrands, uLocal, phi, jOpLocal );
+            if( integrands_.hasInterior() )
+              addLinearizedInteriorIntegral( uLocal, phi, jOpLocal );
 
-            if( hasBoundaryIntegrand( integrands ) && entity.hasBoundaryIntersections() )
+            if( integrands_.hasBoundary() && entity.hasBoundaryIntersections() )
             {
               for( const auto &intersection : intersections( gridPart(), entity ) )
               {
                 if( intersection.boundary() )
-                  addLinearizedBoundaryIntegral( integrands, intersection, uLocal, phi, jOpLocal );
+                  addLinearizedBoundaryIntegral( intersection, uLocal, phi, jOpLocal );
               }
             }
 
@@ -592,21 +555,21 @@ namespace Dune
           jOp.communicate();
         }
 
-        template< class Integrands, class GridFunction, class JacobianOperator >
-        void assemble ( Integrands &integrands, const GridFunction &u, JacobianOperator &jOp, std::true_type ) const
+        template< class GridFunction, class JacobianOperator >
+        void assemble ( const GridFunction &u, JacobianOperator &jOp, std::true_type ) const
         {
-          typedef TemporaryLocalMatrix< DiscreteFunctionSpaceType, DiscreteFunctionSpaceType > TemporaryLocalMatrix;
+          typedef TemporaryLocalMatrix< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > TemporaryLocalMatrixType;
 
-          DiagonalAndNeighborStencil< DiscreteFunctionSpaceType, DiscreteFunctionSpaceType > stencil( discreteFunctionSpace(), discreteFunctionSpace() );
+          DiagonalAndNeighborStencil< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > stencil( jOp.domainSpace(), jOp.rangeSpace() );
           jOp.reserve( stencil );
           jOp.clear();
 
-          const std::size_t maxNumLocalDofs = discreteFunctionSpace().blockMapper().maxNumDofs() * discreteFunctionSpace().localBlockSize;
-          ValueVectorType phiIn{ std::vector< RangeType >( maxNumLocalDofs ), std::vector< JacobianRangeType >( maxNumLocalDofs ) };
-          ValueVectorType phiOut{ std::vector< RangeType >( maxNumLocalDofs ), std::vector< JacobianRangeType >( maxNumLocalDofs ) };
+          const std::size_t maxNumLocalDofs = jOp.domainSpace().blockMapper().maxNumDofs() * jOp.domainSpace().localBlockSize;
+          DomainValueVectorType phiIn = makeDomainValueVector( maxNumLocalDofs );
+          DomainValueVectorType phiOut = makeDomainValueVector( maxNumLocalDofs );
 
-          TemporaryLocalMatrix jOpInIn( discreteFunctionSpace(), discreteFunctionSpace() ), jOpOutIn( discreteFunctionSpace(), discreteFunctionSpace() );
-          TemporaryLocalMatrix jOpInOut( discreteFunctionSpace(), discreteFunctionSpace() ), jOpOutOut( discreteFunctionSpace(), discreteFunctionSpace() );
+          TemporaryLocalMatrixType jOpInIn( jOp.domainSpace(), jOp.rangeSpace() ), jOpOutIn( jOp.domainSpace(), jOp.rangeSpace() );
+          TemporaryLocalMatrixType jOpInOut( jOp.domainSpace(), jOp.rangeSpace() ), jOpOutOut( jOp.domainSpace(), jOp.rangeSpace() );
 
           const auto &indexSet = gridPart().indexSet();
           for( const EntityType &inside : elements( gridPart(), Partitions::interiorBorder ) )
@@ -616,15 +579,15 @@ namespace Dune
             jOpInIn.init( inside, inside );
             jOpInIn.clear();
 
-            if( hasInteriorIntegrand( integrands ) )
-              addLinearizedInteriorIntegral( integrands, uIn, phiIn, jOpInIn );
+            if( integrands_.hasInterior() )
+              addLinearizedInteriorIntegral( uIn, phiIn, jOpInIn );
 
             for( const auto &intersection : intersections( gridPart(), inside ) )
             {
               if( intersection.boundary() )
               {
-                if( hasBoundaryIntegrand( integrands ) )
-                  addLinearizedBoundaryIntegral( integrands, intersection, uIn, phiIn, jOpInIn );
+                if( integrands_.hasBoundary() )
+                  addLinearizedBoundaryIntegral( intersection, uIn, phiIn, jOpInIn );
               }
               else if( intersection.neighbor() )
               {
@@ -634,7 +597,7 @@ namespace Dune
                 jOpOutIn.clear();
 
                 if( outside.partitionType() != InteriorEntity )
-                  addLinearizedSkeletonIntegral( integrands, intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn );
+                  addLinearizedSkeletonIntegral( intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn );
                 else if( indexSet.index( inside ) < indexSet.index( outside ) )
                 {
                   jOpInOut.init( inside, outside );
@@ -642,7 +605,7 @@ namespace Dune
                   jOpOutOut.init( outside, outside );
                   jOpOutOut.clear();
 
-                  addLinearizedSkeletonIntegral( integrands, intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn, jOpInOut, jOpOutOut );
+                  addLinearizedSkeletonIntegral( intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn, jOpInOut, jOpOutOut );
 
                   jOp.addLocalMatrix( inside, outside, jOpInOut );
                   jOp.addLocalMatrix( outside, outside, jOpOutOut );
@@ -659,22 +622,26 @@ namespace Dune
         }
 
       public:
-        template< class Integrands, class GridFunction, class JacobianOperator >
-        void assemble ( Integrands &integrands, const GridFunction &u, JacobianOperator &jOp ) const
+        template< class GridFunction, class JacobianOperator >
+        void assemble ( const GridFunction &u, JacobianOperator &jOp ) const
         {
-          if( hasSkeletonIntegrand( integrands ) )
-            assemble( integrands, u, jOp, std::true_type() );
+          static_assert( std::is_same< typename GridFunction::GridPartType, GridPartType >::value, "Argument 'u' and Integrands must be defined on the same grid part." );
+          static_assert( std::is_same< typename JacobianOperator::DomainSpaceType::GridPartType, GridPartType >::value, "Argument 'jOp' and Integrands must be defined on the same grid part." );
+          static_assert( std::is_same< typename JacobianOperator::RangeSpaceType::GridPartType, GridPartType >::value, "Argument 'jOp' and Integrands must be defined on the same grid part." );
+
+          if( integrands_.hasSkeleton() )
+            assemble( u, jOp, std::true_type() );
           else
-            assemble( integrands, u, jOp, std::false_type() );
+            assemble( u, jOp, std::false_type() );
         }
 
         // accessors
 
-        const DiscreteFunctionSpaceType &discreteFunctionSpace () const { return dfSpace_; }
-        const GridPartType &gridPart () const { return discreteFunctionSpace().gridPart(); }
+        const GridPartType &gridPart () const { return gridPart_; }
 
       private:
-        const DiscreteFunctionSpaceType &dfSpace_;
+        const GridPartType &gridPart_;
+        mutable IntegrandsType integrands_;
       };
 
     } // namespace Impl
@@ -685,27 +652,37 @@ namespace Dune
     // GalerkinOperator
     // ----------------
 
-    template< class DiscreteFunction, class Integrands >
+    template< class Integrands, class DomainFunction, class RangeFunction = DomainFunction >
     struct GalerkinOperator
-      : public virtual Operator< DiscreteFunction >
+      : public virtual Operator< DomainFunction, RangeFunction >
     {
-      typedef DiscreteFunction DiscreteFunctionType;
+      typedef DomainFunction DomainFunctionType;
+      typedef RangeFunction RangeFunctionType;
 
-      typedef typename DiscreteFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+      static_assert( std::is_same< typename DomainFunctionType::GridPartType, typename RangeFunctionType::GridPartType >::value, "DomainFunction and RangeFunction must be defined on the same grid part." );
+
+      typedef typename RangeFunctionType::GridPartType GridPartType;
 
       template< class... Args >
-      GalerkinOperator ( const DiscreteFunctionSpaceType &dfSpace, Args &&... args )
-        : impl_( dfSpace ), integrands_( std::forward< Args >( args )... )
+      explicit GalerkinOperator ( const GridPartType &gridPart, Args &&... args )
+        : impl_( gridPart, std::forward< Args >( args )... )
       {}
 
-      void operator() ( const DiscreteFunctionType &u, DiscreteFunctionType &w ) const
+      virtual void operator() ( const DomainFunctionType &u, RangeFunctionType &w ) const final override
       {
-        impl_.evaluate( integrands_, u, w );
+        impl_.evaluate( u, w );
       }
 
+      template< class GridFunction >
+      void operator() ( const GridFunction &u, RangeFunctionType &w ) const
+      {
+        return impl_.evaluate( u, w );
+      }
+
+      const GridPartType &gridPart () const { return impl_.gridPart(); }
+
     protected:
-      Impl::GalerkinOperator< DiscreteFunctionSpaceType > impl_;
-      mutable Integrands integrands_;
+      Impl::GalerkinOperator< Integrands > impl_;
     };
 
 
@@ -713,32 +690,39 @@ namespace Dune
     // DifferentiableGalerkinOperator
     // ------------------------------
 
-    template< class JacobianOperator, class Integrands >
+    template< class Integrands, class JacobianOperator >
     class DifferentiableGalerkinOperator
-      : public GalerkinOperator< typename JacobianOperator::DomainFunctionType, Integrands >,
+      : public GalerkinOperator< Integrands, typename JacobianOperator::DomainFunctionType, typename JacobianOperator::RangeFunctionType >,
         public DifferentiableOperator< JacobianOperator >
     {
-      typedef GalerkinOperator< typename JacobianOperator::DomainFunctionType, Integrands > BaseType;
+      typedef GalerkinOperator< Integrands, typename JacobianOperator::DomainFunctionType, typename JacobianOperator::RangeFunctionType > BaseType;
 
     public:
       typedef JacobianOperator JacobianOperatorType;
 
-      typedef typename BaseType::DiscreteFunctionType DiscreteFunctionType;
-      typedef typename BaseType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+      typedef typename BaseType::DomainFunctionType DomainFunctionType;
+      typedef typename BaseType::RangeFunctionType RangeFunctionType;
+
+      typedef typename BaseType::GridPartType GridPartType;
 
       template< class... Args >
-      DifferentiableGalerkinOperator ( const DiscreteFunctionSpaceType &dfSpace, Args &&... args )
-        : BaseType( dfSpace, std::forward< Args >( args )... )
+      explicit DifferentiableGalerkinOperator ( const GridPartType &gridPart, Args &&... args )
+        : BaseType( gridPart, std::forward< Args >( args )... )
       {}
 
-      void jacobian ( const DiscreteFunctionType &u, JacobianOperatorType &jOp ) const
+      virtual void jacobian ( const DomainFunctionType &u, JacobianOperatorType &jOp ) const final override
       {
-        impl_.assemble( integrands_, u, jOp );
+        impl_.assemble( u, jOp );
+      }
+
+      template< class GridFunction >
+      void jacobian ( const GridFunction &u, JacobianOperatorType &jOp ) const
+      {
+        impl_.assemble( u, jOp );
       }
 
     protected:
       using BaseType::impl_;
-      using BaseType::integrands_;
     };
 
 
@@ -746,49 +730,138 @@ namespace Dune
     // AutomaticDifferenceGalerkinOperator
     // -----------------------------------
 
-    template< class DiscreteFunction, class Integrands >
+    template< class Integrands, class DomainFunction, class RangeFunction >
     class AutomaticDifferenceGalerkinOperator
-      : public GalerkinOperator< DiscreteFunction, Integrands >,
-        public AutomaticDifferenceOperator< DiscreteFunction >
+      : public GalerkinOperator< Integrands, DomainFunction, RangeFunction >,
+        public AutomaticDifferenceOperator< DomainFunction, RangeFunction >
     {
-      typedef GalerkinOperator< DiscreteFunction, Integrands > BaseType;
-      typedef AutomaticDifferenceOperator< DiscreteFunction > AutomaticDifferenceOperatorType;
+      typedef GalerkinOperator< Integrands, DomainFunction, RangeFunction > BaseType;
+      typedef AutomaticDifferenceOperator< DomainFunction, RangeFunction > AutomaticDifferenceOperatorType;
 
     public:
-      typedef typename BaseType::DiscreteFunctionType DiscreteFunctionType;
-      typedef typename BaseType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+      typedef typename BaseType::GridPartType GridPartType;
 
       template< class... Args >
-      AutomaticDifferenceGalerkinOperator ( const DiscreteFunctionSpaceType &dfSpace, Args &&... args )
-        : BaseType( dfSpace, std::forward< Args >( args )... ), AutomaticDifferenceOperatorType()
+      explicit AutomaticDifferenceGalerkinOperator ( const GridPartType &gridPart, Args &&... args )
+        : BaseType( gridPart, std::forward< Args >( args )... ), AutomaticDifferenceOperatorType()
       {}
     };
 
-    template < class LinearOperatorType, class ModelIntegrands >
+
+
+    // ModelDifferentiableGalerkinOperator
+    // -----------------------------------
+
+    template < class LinearOperator, class ModelIntegrands >
     struct ModelDifferentiableGalerkinOperator
-    : public DifferentiableGalerkinOperator< LinearOperatorType, ModelIntegrands >
+      : public DifferentiableGalerkinOperator< ModelIntegrands, LinearOperator >
     {
+      typedef DifferentiableGalerkinOperator< ModelIntegrands, LinearOperator > BaseType;
+
       typedef typename ModelIntegrands::ModelType ModelType;
-      typedef DifferentiableGalerkinOperator< LinearOperatorType, ModelIntegrands > BaseType;
-      typedef typename LinearOperatorType::DomainFunctionType RangeDiscreteFunctionType;
-      typedef typename LinearOperatorType::RangeSpaceType DiscreteFunctionSpaceType;
-      ModelDifferentiableGalerkinOperator( const ModelType &model, const DiscreteFunctionSpaceType &dfSpace )
-      : BaseType(dfSpace, ModelIntegrands(model)) {}
-      template <class GF>
-      void apply( const GF &u, RangeDiscreteFunctionType &w ) const
-      {
-        BaseType::impl_.evaluate( BaseType::integrands_, u, w );
-      }
-      template <class GridFunctionType>
-      void apply ( const GridFunctionType &u, LinearOperatorType &jOp ) const
-      {
-        BaseType::impl_.assemble( BaseType::integrands_, u, jOp );
-      }
-      void prepare( RangeDiscreteFunctionType &u ) const
+
+      typedef typename LinearOperator::DomainFunctionType RangeFunctionType;
+      typedef typename LinearOperator::RangeSpaceType DiscreteFunctionSpaceType;
+
+      ModelDifferentiableGalerkinOperator ( const ModelType &model, const DiscreteFunctionSpaceType &dfSpace )
+        : BaseType( dfSpace.gridPart(), model )
       {}
-      void prepare( const RangeDiscreteFunctionType &u, RangeDiscreteFunctionType &w ) const
-      {}
+
+      template< class GridFunction >
+      void apply ( const GridFunction &u, RangeFunctionType &w ) const
+      {
+        (*this)( u, w );
+      }
+
+      template< class GridFunction >
+      void apply ( const GridFunction &u, LinearOperator &jOp ) const
+      {
+        (*this).jacobian( u, jOp );
+      }
+
+      void prepare( RangeFunctionType &u ) const {}
+
+      void prepare( const RangeFunctionType &u, RangeFunctionType &w ) const {}
     };
+
+
+
+    // GalerkinScheme
+    // --------------
+
+    template< class Integrands, class LinearOperator, class InverseOperator >
+    struct GalerkinScheme
+    {
+      typedef DifferentiableGalerkinOperator< Integrands, LinearOperator > DifferentiableOperatorType;
+
+      typedef typename DifferentiableOperatorType::DomainFunctionType DomainFunctionType;
+      typedef typename DifferentiableOperatorType::RangeFunctionType RangeFunctionType;
+      typedef typename DifferentiableOperatorType::JacobianOperatorType LinearOperatorType;
+
+      typedef RangeFunctionType DiscreteFunctionType;
+      typedef typename RangeFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
+
+      typedef typename DiscreteFunctionSpaceType::FunctionSpaceType FunctionSpaceType;
+      typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
+
+      struct SolverInfo
+      {
+        SolverInfo ( bool converged, int linearIterations, int nonlinearIterations )
+          : converged( converged ), linearIterations( linearIterations ), nonlinearIterations( nonlinearIterations )
+        {}
+
+        bool converged;
+        int linearIterations, nonlinearIterations;
+      };
+
+      GalerkinScheme ( const DiscreteFunctionSpaceType &dfSpace, Integrands integrands, ParameterReader parameter = Parameter::container() )
+        : dfSpace_( dfSpace ),
+          fullOperator_( dfSpace.gridPart(), std::move( integrands ) ),
+          parameter_( std::move( parameter ) ),
+          linearOperator_( "assembled elliptic operator", dfSpace, dfSpace )
+      {}
+
+      const DifferentiableOperatorType &fullOperator() const { return fullOperator_; }
+
+      void constraint ( DiscreteFunctionType &u ) const {}
+
+      template< class GridFunction >
+      void operator() ( const GridFunction &u, DiscreteFunctionType &w ) const
+      {
+        fullOperator()( u, w );
+      }
+
+      SolverInfo solve ( DiscreteFunctionType &solution ) const
+      {
+        DiscreteFunctionType bnd( solution );
+        bnd.clear();
+
+        Dune::Fem::NewtonInverseOperator< LinearOperatorType, InverseOperator > invOp( fullOperator(), parameter_ );
+        invOp( bnd, solution );
+
+        return SolverInfo( invOp.converged(), invOp.linearIterations(), invOp.iterations() );
+      }
+
+      template< class GridFunction >
+      const LinearOperatorType &assemble ( const GridFunction &ubar )
+      {
+        fullOperator().jacobian( ubar, linearOperator_ );
+        return linearOperator_;
+      }
+
+      bool mark ( double tolerance ) { return false; }
+      double estimate ( const DiscreteFunctionType &solution ) { return 0.0; }
+
+      const DiscreteFunctionSpaceType &space () const { return dfSpace_; }
+      const GridPartType &gridPart () const { return space().gridPart(); }
+
+    protected:
+      const DiscreteFunctionSpaceType &dfSpace_;
+      DifferentiableOperatorType fullOperator_;
+      ParameterReader parameter_;
+      LinearOperatorType linearOperator_;
+    };
+
   } // namespace Fem
 
 } // namespace Dune

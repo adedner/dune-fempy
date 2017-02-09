@@ -7,8 +7,10 @@ import subprocess
 import sys
 import timeit
 import types
+
 from dune.generator import builder
-from dune.source import SourceWriter
+from dune.source.cplusplus import Method
+from dune.source.cplusplus import ListWriter, SourceWriter
 from dune.source import BaseModel
 
 # method to add to gridpart.function call
@@ -17,6 +19,7 @@ def generatedFunction(grid, name, order, code, **kwargs):
     const = kwargs.pop("constants", {})
     Gf = gridFunction(grid, code, coef, const).GFWrapper
     return Gf(name, order, grid, coef)
+
 
 def UFLFunction(grid, name, order, expr, **kwargs):
     import ufl
@@ -55,7 +58,9 @@ def UFLFunction(grid, name, order, expr, **kwargs):
                     'constant' : coefficient.is_cellwise_constant(),
                     'field': field } )
 
-    code = '\n'.join(c for c in generate.generateCode({}, generate.ExprTensor((R, ), expr), coefficients, False))
+    writer = SourceWriter(ListWriter())
+    writer.emit(generate.generateCode({}, generate.ExprTensor((R, ), expr), coefficients, False), context=Method('void', 'evaluate'))
+    code = '\n'.join(writer.writer.lines)
     evaluate = code.replace("result", "value")
     jac = []
     for r in range(R):
@@ -65,7 +70,9 @@ def UFLFunction(grid, name, order, expr, **kwargs):
             ))) for d in range(D)]
         jac.append( [jacForm[d].integrals()[0].integrand() if not jacForm[d].empty() else 0 for d in range(D)] )
     jac = ufl.as_matrix(jac)
-    code = '\n'.join(c for c in generate.generateCode({}, generate.ExprTensor((R, D), jac), coefficients, False))
+    writer = SourceWriter(ListWriter())
+    writer.emit(generate.generateCode({}, generate.ExprTensor((R, D), jac), coefficients, False), context=Method('void', 'jacobian'))
+    code = '\n'.join(writer.writer.lines)
     jacobian = code.replace("result", "value")
 
     code = {"evaluate" : evaluate, "jacobian" : jacobian}
@@ -81,7 +88,8 @@ def UFLFunction(grid, name, order, expr, **kwargs):
 def gridFunction(grid, code, coefficients, constants):
     startTime = timeit.default_timer()
 
-    if type(code) is not dict: code = { 'eval': code }
+    if type(code) is not dict:
+        code = {'eval': code}
     cppCode = ''
     eval = ''
     jac = ''
@@ -138,7 +146,7 @@ def gridFunction(grid, code, coefficients, constants):
     writer.emit('#include <dune/fempy/py/grid/function.hh>')
     writer.emit('')
 
-    base.pre(writer, name=locname, targs=(['class Range']), bases=(["Dune::Fem::LocalFunctionAdapterHasInitialize"]))
+    base.pre(writer, name=locname, targs=(['class Range']))
     writer.typedef('typename EntityType::Geometry::LocalCoordinate', 'LocalCoordinateType')
 
     writer.openConstMethod('void evaluate', args=['const PointType &x', 'RangeType &value'], targs=['class PointType'],implemented=eval)
@@ -190,9 +198,9 @@ def gridFunction(grid, code, coefficients, constants):
     writer.openStruct(wrappername, targs=(['class GridView'] + ['class Range']), bases=(['GridFunction']))
     writer.typedef('GridFunction', 'BaseType')
     writer.emit(wrappername + '( const std::string name, int order, pybind11::handle gridView ) :')
-    writer.emit('    BaseType(name, localFunctionImpl_, Dune::FemPy::gridPart<GridView>(gridView), order) {}')
-    writer.emit('LocalFunction& impl() { return localFunctionImpl_; }')
-    writer.emit('LocalFunction localFunctionImpl_;')
+    writer.emit('    BaseType(name, LocalFunction(), Dune::FemPy::gridPart<GridView>(gridView), order) {}')
+    writer.emit('LocalFunction& impl() { return this->localFunctionImpl(); }')
+
     writer.closeStruct()
     writer.typedef(wrappername + '< GridView, RangeType >', 'GFWrapper')
 

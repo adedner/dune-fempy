@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import division, print_function, unicode_literals
 
 import ufl
 import ufl.algorithms
@@ -17,193 +17,337 @@ from dune.ufl import codegen, GridCoefficient
 from dune.ufl.tensors import ExprTensor
 from dune.ufl.linear import splitMultiLinearExpr
 
-from dune.source import Method, TypeAlias, Variable
-from dune.source import SourceWriter
-from dune.source import BaseModel
+from dune.source.builtin import get, hybridForEach, make_index_sequence, make_shared
+from dune.source.cplusplus import UnformattedExpression
+from dune.source.cplusplus import AccessModifier, Constructor, Declaration, Function, Method, NameSpace, Struct, TypeAlias, UnformattedBlock, Variable
+from dune.source.cplusplus import assign, construct, dereference, lambda_, nullptr, return_
+from dune.source.cplusplus import ListWriter, SourceWriter
+from dune.source.fem import declareFunctionSpace
 from dune.generator import builder
 
 
-class EllipticModel(BaseModel):
+class EllipticModel:
     def __init__(self, dimRange, signature):
-        BaseModel.__init__(self, dimRange, signature)
-        self.source = "result = RangeType( 0 );"
-        self.linSource = "result = RangeType( 0 );"
-        self.linNVSource = "result = RangeType( 0 );"
-        self.diffusiveFlux = "result = JacobianRangeType( 0 );"
-        self.linDiffusiveFlux = "result = JacobianRangeType( 0 );"
-        self.fluxDivergence = "result = RangeType( 0 );"
-        self.alpha = "result = RangeType( 0 );"
-        self.linAlpha = "result = RangeType( 0 );"
+        self.dimRange = dimRange
+        self.coefficients = []
+        self.init = None
+        self.vars = None
+        self.signature = signature
+        self.field = "double"
+
+        self.arg_r = Variable("RangeType &", "result")
+        self.arg_dr = Variable("JacobianRangeType &", "result")
+
+        self.arg_x = Variable("const Point &", "x")
+        self.arg_u = Variable("const RangeType &", "u")
+        self.arg_du = Variable("const JacobianRangeType &", "du")
+        self.arg_d2u = Variable("const HessianRangeType &", "d2u")
+        self.arg_ubar = Variable("const RangeType &", "ubar")
+        self.arg_dubar = Variable("const JacobianRangeType &", "dubar")
+        self.arg_d2ubar = Variable("const HessianRangeType &", "d2ubar")
+
+        self.source = [assign(self.arg_r, construct("RangeType", 0))]
+        self.linSource = [assign(self.arg_r, construct("RangeType", 0))]
+        # self.linNVSource = [assign(self.arg_r, construct("RangeType", 0))]
+        self.diffusiveFlux = [assign(self.arg_dr, construct("JacobianRangeType", 0))]
+        self.linDiffusiveFlux = [assign(self.arg_dr, construct("JacobianRangeType", 0))]
+        self.fluxDivergence = [assign(self.arg_r, construct("RangeType", 0))]
+        self.alpha = [assign(self.arg_r, construct("RangeType", 0))]
+        self.linAlpha = [assign(self.arg_r, construct("RangeType", 0))]
+
         self.hasDirichletBoundary = False
         self.hasNeumanBoundary = False
-        self.isDirichletIntersection = "return false;"
-        self.dirichlet = "result = RangeType( 0 );"
-        self.arg_x = 'const Point &x'
-        self.arg_u = 'const RangeType &u'
-        self.arg_du = 'const JacobianRangeType &du'
-        self.arg_d2u = 'const HessianRangeType &d2u'
-        self.arg_ubar = 'const RangeType &ubar'
-        self.arg_dubar = 'const JacobianRangeType &dubar'
-        self.arg_d2ubar = 'const HessianRangeType &d2ubar'
-        self.arg_r = 'RangeType &result'
-        self.arg_dr = 'JacobianRangeType &result'
-        self.symmetric = 'false'
+        self.isDirichletIntersection = [return_(False)]
+        self.dirichlet = [assign(self.arg_r, construct("RangeType", 0))]
+        self.symmetric = False
 
-    def main(self, name='Model', targs=[]):
-        hasDirichletBoundary = Method('bool hasDirichletBoundary', const=True)
-        hasDirichletBoundary.append('return ' + ('true' if self.hasDirichletBoundary else 'false') + ';')
+    def code(self, name='Model', targs=[]):
+        code = Struct(name, targs=(['class GridPart'] + targs + ['class... Coefficients']))
 
-        hasNeumanBoundary = Method('bool hasNeumanBoundary', const=True)
-        hasNeumanBoundary.append('return ' + ('true' if self.hasNeumanBoundary else 'false') + ';')
+        code.append(TypeAlias("GridPartType", "GridPart"))
+        code.append(TypeAlias("EntityType", "typename GridPart::template Codim< 0 >::EntityType"))
+        code.append(TypeAlias("IntersectionType", "typename GridPart::IntersectionType"))
 
-        isDirichletIntersection = Method('bool isDirichletIntersection', args=['const IntersectionType &intersection', 'Dune::FieldVector< int, dimRange > &dirichletComponent'], code=self.isDirichletIntersection, const=True)
+        code.append(declareFunctionSpace("typename GridPartType::ctype", SourceWriter.cpp_fields(self.field), "GridPartType::dimensionworld", self.dimRange))
+        code.append(Declaration(Variable("const int", "dimLocal"), initializer="GridPartType::dimension", static=True))
 
-        dirichlet = Method('void dirichlet', targs=['class Point'], args=['int id', self.arg_x, self.arg_r], code=self.dirichlet, const=True)
+        constants = ["std::shared_ptr< Dune::FieldVector< " + SourceWriter.cpp_fields(c['field']) + ", " + str(c['dimRange']) + " > >" for c in self.coefficients if c['constant']]
+        code.append(TypeAlias("ConstantsTupleType", "std::tuple< " + ", ".join(constants) + " >"))
+        if constants:
+            code.append(TypeAlias("ConstantsRangeType", "typename std::tuple_element_t< i, ConstantsTupleType >::element_type", targs=["std::size_t i"]))
 
-        result = []
-        result.append(TypeAlias("BoundaryIdProviderType", "Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType >"))
-        result.append(Variable("const bool symmetric", value=self.symmetric, static=True))
+        coefficients = ["Dune::Fem::FunctionSpace< DomainFieldType, " + SourceWriter.cpp_fields(c['field']) + ", dimDomain, " + str(c['dimRange']) + " >" for c in self.coefficients if not c['constant']]
+        code.append(Declaration(Variable("const std::size_t", "numCoefficients"), initializer=len(coefficients), static=True))
+        if coefficients:
+            code.append(TypeAlias("CoefficientFunctionSpaceTupleType", "std::tuple< " + ", ".join(coefficients) + " >"))
+            code.append([TypeAlias("Coefficient"+t, "typename std::tuple_element_t< i, CoefficientFunctionSpaceTupleType >::" + t, targs=["std::size_t i"])
+                         for t in ["RangeType", "JacobianRangeType", "HessianRangeType"]])
 
-        result.append(Method('void source', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_r], code=self.source, const=True))
-        result.append(Method('void linSource', targs=['class Point'], args=[self.arg_ubar, self.arg_dubar, self.arg_x, self.arg_u, self.arg_du, self.arg_r], code=self.linSource, const=True))
+        code.append(TypeAlias('CoefficientType', 'typename std::tuple_element< i, std::tuple< Coefficients... > >::type', targs=['std::size_t i']))
+        code.append(TypeAlias('ConstantsType', 'typename std::tuple_element< i, ConstantsTupleType >::type::element_type', targs=['std::size_t i']))
 
-        result.append(Method('void diffusiveFlux', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_dr], code=self.diffusiveFlux, const=True))
-        result.append(Method('void linDiffusiveFlux', targs=['class Point'], args=[self.arg_ubar, self.arg_dubar, self.arg_x, self.arg_u, self.arg_du, self.arg_dr], code=self.linDiffusiveFlux, const=True))
+        entity_ = Variable('const EntityType *', 'entity_')
+        constants_ = Variable("ConstantsTupleType", "constants_")
+        coefficients_ = Variable("std::tuple< Coefficients... >", "coefficients_")
 
-        result.append(Method('void fluxDivergence', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_d2u, self.arg_r], code=self.fluxDivergence, const=True))
+        code.append(Constructor(code=hybridForEach(make_index_sequence("std::tuple_size< ConstantsTupleType >::value")(),
+                                                   lambda_(args=["auto i"], capture=[Variable('auto', 'this')], code=assign(get("i")(constants_), make_shared("ConstantsType< i >")())))))
 
-        result.append(Method('void alpha', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_r], code=self.alpha, const=True))
-        result.append(Method('void linAlpha', targs=['class Point'], args=[self.arg_ubar, self.arg_x, self.arg_u, self.arg_r], code=self.linAlpha, const=True))
+        init = Method('bool', 'init', args=['const EntityType &entity'], const=True)
+        init.append(UnformattedBlock("entity_ = &entity;", "initCoefficients( std::make_index_sequence< numCoefficients >() );"), self.init, return_(True))
+        code.append(init)
 
-        result += [hasDirichletBoundary, hasNeumanBoundary, isDirichletIntersection, dirichlet]
+        code.append(Method('const EntityType &', 'entity', code=return_(dereference(entity_)), const=True))
+        code.append(Method('std::string', 'name', const=True, code=return_('"' + name + '"')))
 
-        return result
+        code.append(TypeAlias("BoundaryIdProviderType", "Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType >"))
+        code.append(Declaration(Variable("const bool", "symmetric"), initializer=self.symmetric, static=True))
+
+        code.append(Method('void', 'source', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_r], code=self.source, const=True))
+        code.append(Method('void', 'linSource', targs=['class Point'], args=[self.arg_ubar, self.arg_dubar, self.arg_x, self.arg_u, self.arg_du, self.arg_r], code=self.linSource, const=True))
+
+        code.append(Method('void', 'diffusiveFlux', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_dr], code=self.diffusiveFlux, const=True))
+        code.append(Method('void', 'linDiffusiveFlux', targs=['class Point'], args=[self.arg_ubar, self.arg_dubar, self.arg_x, self.arg_u, self.arg_du, self.arg_dr], code=self.linDiffusiveFlux, const=True))
+
+        code.append(Method('void', 'fluxDivergence', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_d2u, self.arg_r], code=self.fluxDivergence, const=True))
+
+        code.append(Method('void', 'alpha', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_r], code=self.alpha, const=True))
+        code.append(Method('void', 'linAlpha', targs=['class Point'], args=[self.arg_ubar, self.arg_x, self.arg_u, self.arg_r], code=self.linAlpha, const=True))
+
+        code.append(Method('bool', 'hasDirichletBoundary', const=True, code=return_(self.hasDirichletBoundary)))
+        code.append(Method('bool', 'hasNeumanBoundary', const=True, code=return_(self.hasNeumanBoundary)))
+
+        code.append(Method('bool', 'isDirichletIntersection', args=['const IntersectionType &intersection', 'Dune::FieldVector< int, dimRange > &dirichletComponent'], code=self.isDirichletIntersection, const=True))
+        code.append(Method('void', 'dirichlet', targs=['class Point'], args=['int id', self.arg_x, self.arg_r], code=self.dirichlet, const=True))
+
+        code.append(Method("const ConstantsType< i > &", "constant", targs=["std::size_t i"], code=return_(dereference(get("i")(constants_))), const=True))
+        code.append(Method("ConstantsType< i > &", "constant", targs=["std::size_t i"], code=return_(dereference(get("i")(constants_)))))
+
+        code.append(Method("const CoefficientType< i > &", "coefficient", targs=["std::size_t i"], code=return_(get("i")(coefficients_)), const=True))
+        code.append(Method("CoefficientType< i > &", "coefficient", targs=["std::size_t i"], code=return_(get("i")(coefficients_))))
+
+        code.append(AccessModifier("private"))
+
+        initCoefficients = Method('void', 'initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], const=True)
+        initCoefficients.append(UnformattedBlock("std::ignore = std::make_tuple( (std::get< i >( coefficients_ ).init( entity() ), i)... );"))
+
+        code.append(initCoefficients)
+
+        code.append(Declaration(entity_, nullptr, mutable=True))
+        code.append(Declaration(coefficients_, mutable=True), Declaration(constants_, mutable=True))
+        return code
 
     def write(self, sourceWriter, name='Model', targs=[]):
-        self.pre(sourceWriter, name='Model', targs=[])
-        sourceWriter.emit(self.main(name='Model', targs=[]))
-        self.post(sourceWriter, name='Model', targs=[])
+        sourceWriter.emit(self.code(name=name, targs=targs))
+
+    def setCoef(self, sourceWriter, modelClass='Model', wrapperClass='ModelWrapper'):
+        sourceWriter.emit('')
+        sourceWriter.typedef('std::tuple< ' + ', '.join(\
+                [('Dune::FemPy::VirtualizedGridFunction< GridPart, Dune::FieldVector< ' +\
+                SourceWriter.cpp_fields(coefficient['field']) + ', ' +\
+                str(coefficient['dimRange']) + ' > >') \
+                for coefficient in self.coefficients if not coefficient["constant"]]) \
+              + ' >', 'Coefficients')
+
+        sourceWriter.openFunction('std::size_t renumberConstants', args=['pybind11::handle &obj'])
+        sourceWriter.emit('std::string id = obj.str();')
+        for coef in self.coefficients:
+            number = str(coef['number'])
+            name = coef['name']
+            sourceWriter.emit('if (id == "' + name + '") return ' + number + ';')
+        sourceWriter.emit('throw pybind11::value_error("coefficient \'" + id + "\' has not been registered");')
+        sourceWriter.closeFunction()
+
+        sourceWriter.openFunction('void setConstant', targs=['std::size_t i'], args=[modelClass + ' &model', 'pybind11::list l'])
+        sourceWriter.emit('model.template constant< i >() = l.template cast< typename ' + modelClass + '::ConstantsType<i> >();')
+        sourceWriter.closeFunction()
+
+        sourceWriter.openFunction('auto defSetConstant', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
+        sourceWriter.typedef('std::function< void( ' + modelClass + ' &model, pybind11::list ) >', 'Dispatch')
+        sourceWriter.emit('std::array< Dispatch, sizeof...( i ) > dispatch = {{ Dispatch( setConstant< i > )... }};')
+        sourceWriter.emit('')
+        sourceWriter.emit('return [ dispatch ] ( ' + wrapperClass + ' &model, pybind11::handle coeff, pybind11::list l ) {')
+        sourceWriter.emit('    std::size_t k = renumberConstants(coeff);')
+        sourceWriter.emit('    if( k >= dispatch.size() )')
+        sourceWriter.emit('      throw std::range_error( "No such coefficient: "+std::to_string(k)+" >= "+std::to_string(dispatch.size()) );' )
+        sourceWriter.emit('    dispatch[ k ]( model.impl(), l );')
+        sourceWriter.emit('    return k;')
+        sourceWriter.emit('  };')
+        sourceWriter.closeFunction()
+
+        setCoefficient = Function('void', 'setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &model', 'pybind11::handle o'])
+        setCoefficient.append('model.template coefficient< i >() = o.template cast< typename std::tuple_element< i, Coefficients >::type >().localFunction();')
+        sourceWriter.emit(setCoefficient)
+
+        defSetCoefficient = Function('auto', 'defSetCoefficient', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
+        defSetCoefficient.append(TypeAlias('Dispatch', 'std::function< void( ' + modelClass + ' &model, pybind11::handle ) >'),
+                                 Declaration(Variable('std::array< Dispatch, sizeof...( i ) >', 'dispatch'), '{{ Dispatch( setCoefficient< i > )... }}'),
+                                 '',
+                                 'return [ dispatch ] ( ' + wrapperClass + ' &model, pybind11::handle coeff, pybind11::handle o ) {',
+                                 '    std::size_t k = renumberConstants(coeff);',
+                                 'if( k >= dispatch.size() )',
+                                 '      throw std::range_error( "No such coefficient: "+std::to_string(k)+" >= "+std::to_string(dispatch.size()) );',
+                                 '    dispatch[ k ]( model.impl(), o );',
+                                 '    return k;'
+                                 '  };')
+
+        sourceWriter.emit(defSetCoefficient)
+
+    def export(self, sourceWriter, modelClass='Model', wrapperClass='ModelWrapper', constrArgs=(), constrKeepAlive=None):
+        if self.coefficients:
+            # sourceWriter.emit('cls.def( "setCoefficient", defSetCoefficient( std::make_index_sequence< std::tuple_size<Coefficients>::value >() ) );')
+            sourceWriter.emit('cls.def( "setConstant", defSetConstant( std::make_index_sequence< std::tuple_size <typename '+ modelClass + '::ConstantsTupleType>::value >() ) );')
+        sourceWriter.emit('')
+        sourceWriter.emit('cls.def( "__init__", [] (' + wrapperClass + ' &instance, '+\
+                ' '.join( i[1]+' '+i[0]+',' for i in constrArgs) +\
+                'const pybind11::dict &coeff) {')
+        sourceWriter.emit('  new (&instance) ' + wrapperClass + '('+\
+                ', '.join(i[0] for i in constrArgs) +\
+                ');')
+        if self.coefficients:
+            sourceWriter.emit('  const int size = std::tuple_size<Coefficients>::value;')
+            sourceWriter.emit('  auto dispatch = defSetCoefficient( std::make_index_sequence<size>() );' )
+            sourceWriter.emit('  std::vector<bool> coeffSet(size,false);')
+            sourceWriter.emit('  for (auto item : coeff) {')
+            sourceWriter.emit('    int k = dispatch(instance, item.first, item.second); ')
+            sourceWriter.emit('    coeffSet[k] = true;')
+            sourceWriter.emit('  }')
+            sourceWriter.emit('  if ( !std::all_of(coeffSet.begin(),coeffSet.end(),[](bool v){return v;}) )')
+            sourceWriter.emit('    throw pybind11::key_error("need to set all coefficients during construction");')
+        sourceWriter.emit('  },')
+        if constrKeepAlive:
+            sourceWriter.emit(constrKeepAlive + ',')
+        sourceWriter.emit(''.join('pybind11::arg("' + i[0] + '"), ' for i in constrArgs) +\
+                'pybind11::arg("coefficients")=pybind11::dict() );')
+
+    def codeCoefficient(self, code, coefficients, constants):
+        """find coefficients/constants in code string and do replacements
+        """
+        if coefficients:
+            number = 0
+            numCoeffs = [coef['number'] for coef in self.coefficients if coef['constant'] == False]
+            if numCoeffs:
+                number = max(numCoeffs) + 1
+            for key, val in coefficients.items():
+                check = 0
+                for coef in self.coefficients:
+                    if key == coef['name']:
+                        check = 1
+                if check == 0:
+                    self.coefficients.append({ \
+                              'name' : key, \
+                              'number' : number, \
+                              'dimRange' : val.dimRange, \
+                              'constant' : False, \
+                              'field': "double" } )
+                    number += 1
+        if constants:
+            number = 0
+            numConsts = [coef['number'] for coef in self.coefficients if coef['constant'] == True]
+            if numConsts:
+                number = max(numCoeffs) + 1
+            for key, val in constants.items():
+                check = 0
+                for coef in self.coefficients:
+                    if key == coef['name']:
+                        check = 1
+                if check == 0:
+                    self.coefficients.append({ \
+                              'name' : key, \
+                              'number' : number, \
+                              'dimRange' : val, \
+                              'constant' : True, \
+                              'field': None } )
+                    number += 1
+        if '@const:' in code:
+            codeCst = code.split('@const:')
+            import itertools
+            names = set(["".join(itertools.takewhile(str.isalpha, str(c))) for c in codeCst[1:]])
+            number = 0
+            numConsts = [coef['number'] for coef in self.coefficients if coef['constant'] == True]
+            if numConsts:
+                number = max(numConsts) + 1
+            for name in names:
+                check = 0
+                for coef in self.coefficients:
+                    if name == coef['name']:
+                        check = 1
+                if check == 0:
+                    cname = '@const:' + name
+                    afterName = code.split(cname)[1:]
+                    if afterName[0][0] == '[':
+                        beforeText = [an.split(']')[0].split('[')[1] for an in afterName]
+                        dimRange = max( [int(bt) for bt in beforeText] ) + 1
+                    else:
+                        dimRange = 1
+                    self.coefficients.append({
+                          'name' : name, \
+                          'number' : number, \
+                          'dimRange' : dimRange, \
+                          'constant' : True, \
+                          'field': None } )
+                    number += 1
+        for coef in self.coefficients:
+            num = str(coef['number'])
+            gfname = '@gf:' + coef['name']
+            constname = '@const:' + coef['name']
+            jacname = '@jac:' + coef['name']
+            if jacname in code:
+                code = code.replace(jacname, 'dc' + num)
+                if not 'CoefficientJacobianRangeType< ' + num + ' > dc' + num + ';' in code:
+                    code = 'CoefficientJacobianRangeType< ' + num + ' > dc' + num + ';\n' \
+                           + 'coefficient< ' + num + ' >().jacobian( x, dc' \
+                           + num + ' );' + code
+            if gfname in code:
+                code = code.replace(gfname, 'c' + num)
+                if not 'CoefficientRangeType< ' + num  + ' > c' + num + ';' in code:
+                    code = 'CoefficientRangeType< ' + num  + ' > c' + num + ';\n' \
+                           + 'coefficient< ' + num + ' >().evaluate( x, c' \
+                           + num + ' );' + code
+            elif constname in code:
+                code = code.replace(constname, 'cc' + num)
+                init = 'ConstantsRangeType< ' + num + ' > cc' + num + ' = constant< ' \
+                           + num + ' >();'
+                if not init in code:
+                    code = init + code
+        return code
+
+    @staticmethod
+    def codeDimRange(code):
+        """find dimRange from code string
+        """
+        codeOut = ''
+        lines = code.split("\n")
+        if '@dimrange' in code or '@range' in code:
+            for line in lines:
+                if '@dimrange' in line or '@range' in line:
+                    dimRange = int( line.split("=", 1)[1] )
+                else:
+                    codeOut += line + "\n"
+            codeOut = codeOut[:-2]
+        else:
+            lhs = [line.split("=") for line in lines]
+            values = [string[0] for string in lhs if "value" in string[0]]
+            try:
+                dimRange = max( [int(c.split("[")[1].split("]")[0]) for c in values] ) + 1
+            except:
+                dimRange = "n/a"
+            codeOut = code
+        return (codeOut, dimRange)
 
     def appendCode(self, key, code, **kwargs):
         function = getattr(self, key)
-        newCode = '\n      '.join(function) + '\n' + code
         coef = kwargs.pop("coefficients", {})
         const = kwargs.pop("constants", {})
-        newCode = self.codeCoefficient(newCode, coef, const)
-        setattr(self, key, newCode)
+        function.append(UnformattedBlock(self.codeCoefficient(code, coef, const)))
+        setattr(self, key, function)
 
 
-
-# DerivativeExtracter
-# -------------------
-
-class DerivativeExtracter(ufl.algorithms.transformer.Transformer):
-    def __init__(self):
-        ufl.algorithms.transformer.Transformer.__init__(self)
-
-    def argument(self, expr):
-        if expr.number() == 0:
-            raise Exception('Test function should occur at all.')
-        else:
-            return expr
-
-    grad = ufl.algorithms.transformer.Transformer.reuse_if_possible
-
-    def indexed(self, expr):
-        if len(expr.ufl_operands) != 2:
-            raise Exception('Indexed expressions must have exactly two children.')
-        operand = expr.ufl_operands[0]
-        index = expr.ufl_operands[1]
-        if self.isTrialFunction(operand):
-            tensor = ExprTensor(operand.ufl_shape)
-            tensor[index] = ufl.constantvalue.IntValue(1)
-            return {operand : tensor}
-        else:
-            return self.reuse_if_possible(expr, self.visit(operand), index)
-
-    def division(self, expr, left, right):
-        if isinstance(left, ufl.core.expr.Expr) and isinstance(right, ufl.core.expr.Expr):
-            return self.reuse_if_possible(expr, left, right)
-        elif isinstance(left, dict) and isinstance(right, ufl.core.expr.Expr):
-            return {op : left[op] / right for op in left}
-        else:
-            raise Exception('Only the left child of a division may access the test function.')
-
-    def product(self, expr, left, right):
-        if isinstance(left, ufl.core.expr.Expr) and isinstance(right, ufl.core.expr.Expr):
-            return self.reuse_if_possible(expr, left, right)
-        elif isinstance(left, dict) and isinstance(right, ufl.core.expr.Expr):
-            return {op : left[op] * right for op in left}
-        elif isinstance(left, ufl.core.expr.Expr) and isinstance(right, dict):
-            return {op : right[op] * left for op in right}
-        else:
-            raise Exception('Only one child of a product may access the test function.')
-
-    def sum(self, expr, left, right):
-        if isinstance(left, ufl.core.expr.Expr) and isinstance(right, ufl.core.expr.Expr):
-            return self.reuse_if_possible(expr, left, right)
-        elif isinstance(left, dict) and isinstance(right, dict):
-            for op in right:
-                left[op] = (left[op] + right[op]) if op in left else right[op]
-            return left
-        else:
-            raise Exception('Either both summands must contain test function or none')
-
-    def nonlinear(self, expr, *operands):
-        for operand in operands:
-            if isinstance(operand, dict):
-                raise Exception('Test function cannot appear in nonlinear expressions.')
-        return self.reuse_if_possible(expr, *operands)
-
-    atan = nonlinear
-    atan_2 = nonlinear
-    cos = nonlinear
-    sin = nonlinear
-    power = nonlinear
-    tan = nonlinear
-
-    def terminal(self, expr):
-        return expr
-
-    def isTrialFunction(self, expr):
-        while isinstance(expr, ufl.differentiation.Grad):
-            expr = expr.ufl_operands[0]
-        return isinstance(expr, ufl.argument.Argument) and expr.number() == 1
-
-
-# splitUFL2
-# ------------
-def splitUFL2(u,du,d2u,tree):
-    tree0 = ExprTensor(u.ufl_shape)
-    tree1 = ExprTensor(u.ufl_shape)
-    tree2 = ExprTensor(u.ufl_shape)
-
-    for index in tree.keys():
-        q = DerivativeExtracter().visit(tree[index])
-        if q==0: continue
-        for op in q:
-            if op == u:
-                tree0[index] = tree0[index] +\
-                   sum(i[0]*i[1] for i in zip(q[op].as_ufl(),u))
-            elif op == du:
-                for r in range(du.ufl_shape[0]):
-                    for d in range(du.ufl_shape[1]):
-                        tree1[index] = tree1[index] +\
-                            q[op].as_ufl()[r,d]*du[r,d]
-            elif op == d2u:
-                for r in range(d2u.ufl_shape[0]):
-                    for d1 in range(d2u.ufl_shape[1]):
-                        for d2 in range(d2u.ufl_shape[2]):
-                            tree2[index] = tree2[index] +\
-                                q[op].as_ufl()[r,d1,d2]*d2u[r,d1,d2]
-            else:
-                raise Exception('Invalid trial function derivative encountered in bulk integral: ' + op)
-    return tree0,tree1,tree2
 
 # splitUFLForm
 # ------------
 
-def splitUFLForm(form, linear):
+def splitUFLForm(form):
     phi = form.arguments()[0]
     dphi = ufl.differentiation.Grad(phi)
 
@@ -232,26 +376,50 @@ def splitUFLForm(form, linear):
         else:
             raise NotImplementedError('Integrals of type ' + integral.integral_type() + ' are not supported.')
 
-    if linear:
-        u = form.arguments()[1]
-        du = ufl.differentiation.Grad(u)
-        d2u = ufl.differentiation.Grad(du)
-        source0,source1,source2 = splitUFL2(u,du,d2u,source)
-        source = source0 + source1 # + source2
-        return source, source2, diffusiveFlux, boundarySource
-
     return source, diffusiveFlux, boundarySource
+
+
+
+# splitUFL2
+# ---------
+
+def splitUFL2(u,du,d2u,tree):
+    tree0 = ExprTensor(u.ufl_shape)
+    tree1 = ExprTensor(u.ufl_shape)
+    tree2 = ExprTensor(u.ufl_shape)
+
+    for index in tree.keys():
+        q = splitMultiLinearExpr(tree[index], [u])
+        if q==0: continue
+        for op in q:
+            if not isinstance(op, tuple) or (len(op) != 1):
+                raise Exception('Missing trial function in bulk integral')
+            if op[0] == u:
+                tree0[index] += sum(i[0]*i[1] for i in zip(q[op].as_ufl(),u))
+            elif op[0] == du:
+                for r in range(du.ufl_shape[0]):
+                    for d in range(du.ufl_shape[1]):
+                        tree1[index] += q[op].as_ufl()[r,d]*du[r,d]
+            elif op[0] == d2u:
+                for r in range(d2u.ufl_shape[0]):
+                    for d1 in range(d2u.ufl_shape[1]):
+                        for d2 in range(d2u.ufl_shape[2]):
+                            tree2[index] += q[op].as_ufl()[r,d1,d2]*d2u[r,d1,d2]
+            else:
+                raise Exception('Invalid trial function derivative encountered in bulk integral: ' + str(op[0]))
+    return tree0, tree1, tree2
 
 
 
 # generateCode
 # ------------
 
-def generateCode(predefined, tensor, coefficients, tempVars = True):
+def generateCode(predefined, tensor, coefficients, tempVars=True):
     keys = tensor.keys()
     expressions = [tensor[i] for i in keys]
-    preamble, results = codegen.generateCode(predefined, expressions, coefficients, tempVars)
-    return preamble + [('result' + codegen.translateIndex(i) + ' = ' + r + ';') for i, r in zip(keys, results)]
+    preamble, results = codegen.generateCode(predefined, expressions, coefficients, tempVars=tempVars)
+    result = Variable('auto', 'result')
+    return preamble + [assign(result[i], r) for i, r in zip(keys, results)]
 
 
 
@@ -287,9 +455,14 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
 
     dform = ufl.algorithms.apply_derivatives.apply_derivatives(ufl.derivative(ufl.action(form, ubar), ubar, u))
 
-    source, diffusiveFlux, boundarySource = splitUFLForm( form, False )
-    linSource, linNVSource, linDiffusiveFlux, linBoundarySource = splitUFLForm( dform, True )
-    fluxDivergence, _, _ = splitUFLForm(ufl.inner(source.as_ufl() - ufl.div(diffusiveFlux.as_ufl()), phi) * ufl.dx(0),False)
+    source, diffusiveFlux, boundarySource = splitUFLForm(form)
+    linSource, linDiffusiveFlux, linBoundarySource = splitUFLForm(dform)
+    fluxDivergence, _, _ = splitUFLForm(ufl.inner(source.as_ufl() - ufl.div(diffusiveFlux.as_ufl()), phi) * ufl.dx(0))
+
+    # split linNVSource off linSource
+    # linSources = splitUFL2(u, du, d2u, linSource)
+    # linNVSource = linSources[2]
+    # linSource = linSources[0] + linSources[1]
 
     model = EllipticModel(dimRange, form.signature())
 
@@ -331,46 +504,53 @@ def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
             'constant' : coefficient.is_cellwise_constant(),\
             'field': field } )
 
-    model.source = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, source, model.coefficients, tempVars)
-    model.diffusiveFlux = generateCode({ u : 'u', du : 'du' }, diffusiveFlux, model.coefficients, tempVars)
-    model.alpha = generateCode({ u : 'u' }, boundarySource, model.coefficients, tempVars)
-    model.linSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linSource, model.coefficients, tempVars)
-    model.linNVSource = generateCode({ u : 'u', du : 'du', d2u : 'd2u', ubar : 'ubar', dubar : 'dubar', d2ubar : 'd2ubar'}, linNVSource, model.coefficients, tempVars)
-    model.linDiffusiveFlux = generateCode({ u : 'u', du : 'du', ubar : 'ubar', dubar : 'dubar' }, linDiffusiveFlux, model.coefficients, tempVars)
-    model.linAlpha = generateCode({ u : 'u', ubar : 'ubar' }, linBoundarySource, model.coefficients, tempVars)
-    model.fluxDivergence = generateCode({ u : 'u', du : 'du', d2u : 'd2u' }, fluxDivergence, model.coefficients, tempVars)
+
+    arg = Variable('const RangeType &', 'u')
+    darg = Variable('const JacobianRangeType &', 'du')
+    d2arg = Variable('const HessianRangeType &', 'd2u')
+    argbar = Variable('const RangeType &', 'ubar')
+    dargbar = Variable('const JacobianRangeType &', 'dubar')
+    d2argbar = Variable('const HessianRangeType &', 'd2ubar')
+    model.source = generateCode({u: arg, du: darg, d2u: d2arg}, source, model.coefficients, tempVars)
+    model.diffusiveFlux = generateCode({u: arg, du: darg}, diffusiveFlux, model.coefficients, tempVars)
+    model.alpha = generateCode({u: arg}, boundarySource, model.coefficients, tempVars)
+    model.linSource = generateCode({u: arg, du: darg, d2u: d2arg, ubar: argbar, dubar: dargbar, d2ubar: d2argbar}, linSource, model.coefficients, tempVars)
+    # model.linNVSource = generateCode({u: arg, du: darg, d2u: d2arg, ubar: argbar, dubar: dargbar, d2ubar: d2argbar}, linNVSource, model.coefficients, tempVars)
+    model.linDiffusiveFlux = generateCode({u: arg, du: darg, ubar: argbar, dubar: dargbar}, linDiffusiveFlux, model.coefficients, tempVars)
+    model.linAlpha = generateCode({u: arg, ubar: argbar}, linBoundarySource, model.coefficients, tempVars)
+    model.fluxDivergence = generateCode({u: arg, du: darg, d2u: d2arg}, fluxDivergence, model.coefficients, tempVars)
 
     if dirichlet:
         model.hasDirichletBoundary = True
 
-        model.isDirichletIntersection = []
-        model.isDirichletIntersection.append('const int bndId = BoundaryIdProviderType::boundaryId( intersection );')
-        model.isDirichletIntersection.append('std::fill( dirichletComponent.begin(), dirichletComponent.end(), bndId );')
-        model.isDirichletIntersection.append('switch( bndId )')
-        model.isDirichletIntersection.append('{')
+        writer = SourceWriter(ListWriter())
+        writer.emit('const int bndId = BoundaryIdProviderType::boundaryId( intersection );')
+        writer.emit('std::fill( dirichletComponent.begin(), dirichletComponent.end(), bndId );')
+        writer.emit('switch( bndId )')
+        writer.emit('{')
         for bndId in dirichlet:
-            model.isDirichletIntersection.append('case ' + str(bndId) + ':')
-        model.isDirichletIntersection.append('  return true;')
-        model.isDirichletIntersection.append('default:')
-        model.isDirichletIntersection.append('  return false;')
-        model.isDirichletIntersection.append('}')
+            writer.emit('case ' + str(bndId) + ':')
+        writer.emit('return true;', indent=1)
+        writer.emit('default:')
+        writer.emit('return false;', indent=1)
+        writer.emit('}')
+        model.isDirichletIntersection = writer.writer.lines
 
-        model.dirichlet = []
-        model.dirichlet.append('switch( id )')
-        model.dirichlet.append('{')
+        writer = SourceWriter(ListWriter())
+        writer.emit('switch( id )')
+        writer.emit('{')
         for bndId in dirichlet:
             if len(dirichlet[bndId]) != dimRange:
                 raise Exception('Dirichtlet boundary condition has wrong dimension.')
-            model.dirichlet.append('case ' + str(bndId) + ':')
-            model.dirichlet.append('  {')
-            model.dirichlet += ['    ' + line for line in generateCode({},
-                ExprTensor((dimRange,), dirichlet[bndId]),
-                model.coefficients, tempVars)]
-            model.dirichlet.append('  }')
-            model.dirichlet.append('  break;')
-        model.dirichlet.append('default:')
-        model.dirichlet.append('  result = RangeType( 0 );')
-        model.dirichlet.append('}')
+            writer.emit('case ' + str(bndId) + ':')
+            writer.emit('{', indent=1)
+            writer.emit(generateCode({}, ExprTensor((dimRange,), dirichlet[bndId]), model.coefficients, tempVars), indent=2, context=Method('void', 'dirichlet'))
+            writer.emit('}', indent=1)
+            writer.emit('break;', indent=1)
+        writer.emit('default:')
+        writer.emit('result = RangeType( 0 );', indent=1)
+        writer.emit('}')
+        model.dirichlet = writer.writer.lines
 
     return model
 
@@ -391,7 +571,7 @@ def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, he
 
     writer = SourceWriter()
 
-    writer.emit("".join(["#include <" + i + ">\n" for i in grid._includes]))
+    writer.emit(["#include <" + i + ">" for i in grid._includes])
     writer.emit('')
     writer.emit('#include <dune/fem/misc/boundaryidprovider.hh>')
     writer.emit('')
@@ -404,34 +584,27 @@ def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, he
         writer.emit('')
     writer.emit('#include <dune/fem/schemes/diffusionmodel.hh>')
 
-    modelNameSpace = 'ModelImpl_' + model.signature
+    code = []
 
-    writer.openNameSpace(modelNameSpace)
-    model.write(writer)
-    writer.closeNameSpace(modelNameSpace)
+    nameSpace = NameSpace("ModelImpl_" + model.signature)
+    nameSpace.append(model.code())
+    code.append(nameSpace)
 
-    writer.typedef('typename Dune::FemPy::GridPart< ' + grid._typeName + ' >', 'GridPart')
+    code += [TypeAlias("GridPart", "typename Dune::FemPy::GridPart< " + grid._typeName + " >")]
 
-    if model.coefficients:
-        writer.typedef(modelNameSpace + '::Model< GridPart' + ' '.join(\
-        [(', Dune::FemPy::VirtualizedLocalFunction< GridPart,'+\
-            'Dune::FieldVector< ' +\
-            SourceWriter.cpp_fields(coefficient['field']) + ', ' +\
-            str(coefficient['dimRange']) + ' > >') \
-            for coefficient in model.coefficients if not coefficient["constant"]])\
-          + ' >', 'Model')
-    else:
-        writer.typedef(modelNameSpace + '::Model< GridPart >', 'Model')
+    rangeTypes = ["Dune::FieldVector< " + SourceWriter.cpp_fields(c['field']) + ", " + str(c['dimRange']) + " >" for c in model.coefficients if not c['constant']]
+    coefficients = ["Dune::FemPy::VirtualizedLocalFunction< GridPart, " + r + " >" for r in rangeTypes]
+    code += [TypeAlias("Model", nameSpace.name + "::Model< " + ", ".join(["GridPart"] + coefficients) + " >")]
 
-    writer.typedef('DiffusionModelWrapper< Model >', 'ModelWrapper')
-    writer.typedef('typename ModelWrapper::Base', 'ModelBase')
+    code += [TypeAlias("ModelWrapper", "DiffusionModelWrapper< Model >"),
+             TypeAlias("ModelBase", "typename ModelWrapper::Base")]
+
+    writer.emit(code)
 
     if model.coefficients:
         model.setCoef(writer)
 
     writer.openPythonModule(name)
-    writer.emit('')
-    writer.emit('')
     writer.emit('// export abstract base class')
     writer.emit('if( !pybind11::already_registered< ModelBase >() )')
     writer.emit('  pybind11::class_< ModelBase >( module, "ModelBase" );')
@@ -441,7 +614,6 @@ def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, he
     writer.emit('cls.def_property_readonly( "dimRange", [] ( ModelWrapper & ) { return ' + str(model.dimRange) + '; } );')
     writer.emit('')
     model.export(writer, 'Model', 'ModelWrapper')
-    writer.emit('')
     writer.closePythonModule(name)
 
     if header != False:

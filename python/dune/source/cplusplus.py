@@ -1,6 +1,13 @@
-from __future__ import print_function, unicode_literals
+from __future__ import division, print_function, unicode_literals
 
 import copy, io, sys
+
+from ..common.compatibility import isString
+
+from .builtin import *
+from .common import *
+from .expression import *
+from .operator import *
 
 
 # FileWriter
@@ -16,6 +23,11 @@ class FileWriter:
     def close(self):
         self.file.close()
 
+
+
+# StringWriter
+# ------------
+
 class StringWriter:
     def __init__(self):
         self.file = io.StringIO()
@@ -28,6 +40,7 @@ class StringWriter:
 
     def close(self):
         self.file.close()
+
 
 
 # ListWriter
@@ -46,22 +59,6 @@ class ListWriter:
 
 
 
-# Block
-# -----
-
-class Block:
-    def __init__(self):
-        self.content = []
-
-    def append(self, *objs):
-        for obj in objs:
-            if isinstance(obj, (list, set, tuple)):
-                self.content += [o for o in obj]
-            else:
-                self.content.append(obj)
-
-
-
 # NameSpace
 # ---------
 
@@ -76,15 +73,12 @@ class NameSpace(Block):
 # --------
 
 class Function(Block):
-    def __init__(self, typedName, targs=None, args=None, code=None):
+    def __init__(self, cppType, name, targs=None, args=None, code=None):
         Block.__init__(self)
-        self.typedName = typedName
-        self.targs = None
-        if targs is not None:
-            self.targs = [arg.strip() for arg in targs]
-        self.args = None
-        if args is not None:
-            self.args= [arg.strip() for arg in args]
+        self.cppType = cppType
+        self.name = name
+        self.targs = None if targs is None else [a.strip() for a in targs]
+        self.args = None if args is None else [a.strip() if isString(a) else a for a in args]
         if code is not None:
             self.append(code)
 
@@ -94,19 +88,16 @@ class Function(Block):
 # ------
 
 class Method(Block):
-    def __init__(self, typedName, targs=None, args=None, code=None, static=False, const=False, volatile=False):
+    def __init__(self, cppType, name, targs=None, args=None, code=None, static=False, const=False, volatile=False):
         Block.__init__(self)
-        self.typedName = typedName
+        self.cppType = cppType
+        self.name = name
         self.static = static
         self.resetQualifiers(const=const, volatile=volatile)
         if static and (const or volatile):
             raise Exception('Cannot cv-qualify static method.')
-        self.targs = None
-        if targs is not None:
-            self.targs = [arg.strip() for arg in targs]
-        self.args = None
-        if args is not None:
-            self.args= [arg.strip() for arg in args]
+        self.targs = None if targs is None else [a.strip() for a in targs]
+        self.args = None if args is None else [a.strip() if isString(a) else a for a in args]
         if code is not None:
             self.append(code)
 
@@ -125,6 +116,20 @@ class Method(Block):
 
 
 
+# Constructor
+# -----------
+
+class Constructor(Block):
+    def __init__(self, targs=None, args=None, init=None, code=None):
+        Block.__init__(self)
+        self.targs = None if targs is None else [a.strip() for a in targs]
+        self.args = None if args is None else [a.strip() if isString(a) else a for a in args]
+        self.init = None if init is None else [a.strip() for a in init]
+        if code is not None:
+            self.append(code)
+
+
+
 # TypeAlias
 # ---------
 
@@ -132,21 +137,50 @@ class TypeAlias:
     def __init__(self, name, typeName, targs=None):
         self.name = name
         self.typeName = typeName
-        self.targs = None
-        if targs is not None:
-            self.targs = [arg.strip() for arg in targs]
+        self.targs = None if targs is None else [a.strip() for a in targs]
 
 
 
-# Variable
-# --------
+# Declaration
+# -----------
 
-class Variable:
-    def __init__(self, typedName, value=None, static=False, mutable=False):
-        self.typedName = typedName
-        self.value = value
+class Declaration:
+    def __init__(self, obj, initializer=None, static=False, mutable=False):
+        if not isinstance(obj, Variable):
+            raise Exception('Only variables can be declared for now.')
+        self.obj = obj
+        self.initializer = None if initializer is None else makeExpression(initializer)
         self.static = static
         self.mutable = mutable
+
+    def __repr__(self):
+        s = "declare " + self.obj.name + " : " + self.obj.cppType
+        if self.initializer is not None:
+            s += " = " + repr(self.initializer)
+        return s
+
+
+
+# Using
+# -----
+
+class Using:
+    def __init__(self, obj):
+        if not isinstance(obj, BuiltInFunction):
+            raise Exception('Only built-in functions can be used for now')
+        self.obj = obj
+
+    def __eq__(self, other):
+        return self.obj == other.obj
+
+    def __hash__(self):
+        return hash((Using, self.obj))
+
+    def __str__(self):
+        return "using " + str(self.obj) + ";"
+
+    def __repr__(self):
+        return "using " + repr(self.obj)
 
 
 
@@ -158,11 +192,8 @@ class Class(Block):
         Block.__init__(self)
         self.name = name
         self.targs = None
-        if targs is not None:
-            self.targs = [arg.strip() for arg in targs]
-        self.bases = None
-        if bases is not None:
-            self.bases = [base.strip() for base in bases]
+        self.targs = None if targs is None else [a.strip() for a in targs]
+        self.bases = None if bases is None else [a.strip() for a in bases]
         self.final = final
         self.type = 'class'
 
@@ -180,8 +211,48 @@ class Class(Block):
 
 class Struct(Class):
     def __init__(self, name, targs=None, bases=None, final=False):
-        Block.__init__(self, name, targs=targs, bases=bases, final=final)
+        Class.__init__(self, name, targs=targs, bases=bases, final=final)
         self.type = 'struct'
+
+
+
+# AccessModifier
+# --------------
+
+class AccessModifier:
+    def __init__(self, modifier):
+        if modifier not in ['private', 'protected', 'public']:
+            raise Exception(modifier + ' is not a valid access modifier.')
+        self.modifier = modifier
+
+
+
+# EnumClass
+# ---------
+
+class EnumClass:
+    def __init__(self, name, values, base=None):
+        self.name = name
+        self.base = None if base is None else base.strip()
+        self.values = [v.strip() for v in values]
+
+
+
+# ReturnStatement
+# ---------------
+
+class ReturnStatement(Statement):
+    def __init__(self, expr=None):
+        Statement.__init__(self)
+        self.expression = None if expr is None else makeExpression(expr)
+
+
+
+# short hand notation
+# -------------------
+
+def return_(expr=None):
+    return ReturnStatement(expr)
 
 
 
@@ -192,7 +263,7 @@ class SourceWriter:
     def __init__(self, writer=None):
         if not writer:
             self.writer = StringWriter()
-        elif self._isstring(writer):
+        elif isString(writer):
             self.writer = FileWriter(writer)
         else:
             self.writer = writer
@@ -204,12 +275,12 @@ class SourceWriter:
             raise Exception("Open blocks left in source file.")
         self.writer.close()
 
-    def emit(self, src, indent=0):
+    def emit(self, src, indent=0, context=None):
         if src is None:
             return
         elif isinstance(src, (list, set, tuple)):
-            for srcline in src:
-                self.emit(srcline, indent)
+            for s in src:
+                self.emit(s, indent, context)
         elif isinstance(src, NameSpace):
             self.emit(None if self.begin else '')
             if src.name is not None:
@@ -218,64 +289,155 @@ class SourceWriter:
                 self.emit('namespace', indent)
             self.emit('{', indent)
             self.emit('', indent)
-            self.emit(src.content, intent+1)
+            self.emit(src.content, indent+1, src)
             self.emit('', indent)
             if src.name is not None:
-                self.emit('} // namespace ' + name, indent)
+                self.emit('} // namespace ' + src.name, indent)
             else:
                 self.emit('} // anonymous namespace', indent)
         elif isinstance(src, Class):
             self.emit(None if self.begin else ['','',''], indent)
-            self.emit(['// ' + name, '// ' + '-' * len(name), ''], indent)
+            self.emit(['// ' + src.name, '// ' + '-' * len(src.name), ''], indent)
             if src.targs:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
-            self.emit(src.type + ' ' + name + (' final' if src.final else ''))
+            self.emit(src.type + ' ' + src.name + (' final' if src.final else ''), indent)
             if src.bases:
-                for i in range(0,len(src.bases)):
+                for i in range(0, len(src.bases)):
                     prefix = ': ' if i == 0 else '  '
                     postfix = ',' if i+1 < len(src.bases) else ''
-                    self.emit(prefix + base + postfix, indent+1)
+                    self.emit(prefix + src.bases[i] + postfix, indent+1)
             self.emit('{', indent)
-            self.emit(src.content, indent+1)
+            self.emit(src.content, indent+1, src)
             self.emit('};', indent)
+        elif isinstance(src, EnumClass):
+            code = 'enum class ' + src.name
+            if src.base is not None:
+                code += ' : ' + src.base
+            code += ' { ' + ', '.join(src.values) + ' };'
+            self.emit(code, indent)
         elif isinstance(src, Function):
             self.emit(None if self.begin else '', indent)
             if src.targs:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
-            signature = src.typedName + ' ('
+            signature = self.typedName(src) + ' ('
             if src.args:
-                signature += ' ' + ', '.join(src.args) + ' '
+                args = [self.typedName(arg) if isinstance(arg, Variable) else arg for arg in src.args]
+                signature += ' ' + ', '.join(args) + ' '
             signature += ')'
             self.emit(signature, indent)
-            self.emit('{', indent)
-            self.emit(src.content, indent+1)
-            self.emit('}', indent)
+            if src.content:
+              self.emit('{', indent)
+              self.emit(src.content, indent+1, src)
+              self.emit('}', indent)
+            else:
+              self.emit('{}', indent)
         elif isinstance(src, Method):
             self.emit(None if self.begin else '', indent)
             if src.targs:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
-            signature = ('static ' if src.static else '') + src.typedName + ' ('
+            signature = ('static ' if src.static else '') + self.typedName(src) + ' ('
             if src.args:
-                signature += ' ' + ', '.join(src.args) + ' '
+                args = [self.typedName(arg) if isinstance(arg, Variable) else arg for arg in src.args]
+                signature += ' ' + ', '.join(args) + ' '
             signature += ')'
             if src.qualifiers:
                 signature += ' ' + ' '.join(src.qualifiers)
             self.emit(signature, indent)
-            self.emit('{', indent)
-            self.emit(src.content, indent+1)
-            self.emit('}', indent)
+            if src.content:
+              self.emit('{', indent)
+              self.emit(src.content, indent+1, src)
+              self.emit('}', indent)
+            else:
+              self.emit('{}', indent)
+        elif isinstance(src, Constructor):
+            if not isinstance(context, Class):
+                raise Exception('Constructors can only occur in classes or structs')
+            self.emit(None if self.begin else '', indent)
+            if src.targs:
+                self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
+            signature = context.name + ' ('
+            if src.args:
+                args = [self.typedName(arg) if isinstance(arg, Variable) else arg for arg in src.args]
+                signature += ' ' + ', '.join(args) + ' '
+            signature += ')'
+            self.emit(signature, indent)
+            if src.init:
+                for i in range(0,len(src.init)):
+                    prefix = ': ' if i == 0 else '  '
+                    postfix = ',' if i+1 < len(src.init) else ''
+                    self.emit(prefix + src.init[i] + postfix, indent+1)
+            if src.content:
+              self.emit('{', indent)
+              self.emit(src.content, indent+1, src)
+              self.emit('}', indent)
+            else:
+              self.emit('{}', indent)
+        elif isinstance(src, AccessModifier):
+            if not isinstance(context, Class):
+                raise Exception('Access modifiers can only occur in classes or structs')
+            self.emit(None if self.begin else '')
+            self.emit(src.modifier + ':', indent-1)
+            self.begin = True
         elif isinstance(src, TypeAlias):
             if src.targs:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
                 self.emit('using ' + src.name + ' = ' + src.typeName + ';', indent)
             else:
                 self.emit('typedef ' + src.typeName + ' ' + src.name + ';', indent)
-        elif isinstance(src, Variable):
-            declaration = ('static ' if src.static else '') + ('mutable ' if src.mutable else '') + src.typedName
-            if src.value is not None:
-                declaration += ' = ' + src.value
-            self.emit(declaration + ';', indent)
-        elif self._isstring(src):
+        elif isinstance(src, Declaration):
+            if not isinstance(src.obj, Variable):
+                raise Exception('Only variables can be declared for now.')
+            declaration = ('static ' if src.static else '') + ('mutable ' if src.mutable else '') + self.typedName(src.obj)
+            if src.initializer is not None:
+                expr = self.translateExpr(src.initializer)
+                expr[len(expr)-1] += ';'
+                self.emit(declaration + ' = ' + expr[0], indent)
+                for e in expr[1:]:
+                    if isinstance(e, tuple):
+                        self.emit(e, indent+2, Function('auto', '<lambda>'))
+                    else:
+                        self.emit(e, indent+1)
+            else:
+                self.emit(declaration + ';', indent)
+        elif isinstance(src, Using):
+            self.emit(str(src), indent)
+        elif isinstance(src, Statement):
+            if not isinstance(context, (Constructor, Function, Method)):
+                raise Exception('Statements can only occur in constructors, functions and methods')
+            if isinstance(src, Expression):
+                expr = self.translateExpr(src)
+                expr[len(expr)-1] += ';'
+                self.emit(expr[0], indent)
+                for e in expr[1:]:
+                    if isinstance(e, tuple):
+                        self.emit(e, indent+2, Function('auto', '<lambda>'))
+                    else:
+                        self.emit(e, indent+1)
+            elif isinstance(src, ReturnStatement):
+                if src.expression is not None:
+                    expr = self.translateExpr(src.expression)
+                    expr[len(expr)-1] += ';'
+                    self.emit('return ' + expr[0], indent)
+                    for e in expr[1:]:
+                        if isinstance(e, tuple):
+                            self.emit(e, indent+2, Function('auto', '<lambda>'))
+                        else:
+                            self.emit(e, indent+1)
+                else:
+                    self.emit('return;', indent)
+            else:
+                raise Exception('Unknown statement type.')
+        elif isinstance(src, UnformattedBlock):
+            if not isinstance(context, (Constructor, Function, Method)):
+                raise Exception('UnformattedBlocks can only occur in constructors, functions and methods')
+            if src.lines:
+                self.emit('{', indent)
+                for line in src.lines:
+                    self.emit(line, indent+1, src)
+                self.emit('}', indent)
+            else:
+                self.emit('{}', indent)
+        elif isString(src):
             src = src.rstrip()
             if src:
                 self.writer.emit('  ' * (len(self.blocks) + indent) + src)
@@ -284,6 +446,80 @@ class SourceWriter:
             self.begin = False
         else:
             raise Exception("Unable to print " + repr(src) + ".")
+
+    def translateExpr(self, expr):
+        def join(lists, delimiter=''):
+            left = lists[0]
+            if len(lists) > 1:
+                right = lists[1]
+                n = len(left)
+                return join([left[:n-1] + [left[n-1] + delimiter + right[0]] + right[1:]] + lists[2:], delimiter)
+            else:
+                return left
+
+        if isinstance(expr, Application):
+            args = [self.translateExpr(arg) for arg in expr.args]
+            if isinstance(expr.function, Operator):
+                if len(args) != expr.function.numArgs:
+                    raise Exception('The operator' + expr.function.name + ' takes ' + expr.function.numArgs + ' arguments (' + str(len(args)) + ' given).')
+                if isinstance(expr.function, PrefixUnaryOperator):
+                    return join([[expr.function.name + '('], args[0], [')']])
+                elif isinstance(expr.function, PostfixUnaryOperator):
+                    return join([['('], args[0], [')' + expr.function.name]])
+                elif isinstance(expr.function, BinaryOperator):
+                    return join([['('], args[0], [') ' + expr.function.name + ' ('], args[1], [')']])
+                elif isinstance(expr.function, BracketOperator):
+                    return join([['('], args[0], [')[ '], args[1], [' ]']])
+                else:
+                    raise Exception('Unknown operator: ' + repr(expr.function))
+            if isinstance(expr.function, BuiltInFunction):
+                if expr.function.namespace is None:
+                    function = expr.function.name
+                else:
+                    function = expr.function.namespace + '::' + expr.function.name
+            elif isinstance(expr.function, (Function, Method)):
+                function = expr.function.name
+            else:
+                function = expr.function
+            if expr.args:
+                return join([[function + '( '], join(args, ', '), [' )']])
+            else:
+                return [function + '()']
+        elif isinstance(expr, ConditionalExpression):
+            return join([['('], self.translateExpr(expr.cond), [' ? '], self.translateExpr(expr.true), [' : '], self.translateExpr(expr.false), [')']])
+        elif isinstance(expr, ConstantExpression):
+            return [expr.value]
+        elif isinstance(expr, ConstructExpression):
+            if expr.args is not None:
+                return join([[expr.cppType + '( '], join([self.translateExpr(arg) for arg in expr.args], ', '), [' )']])
+            else:
+                return [expr.cppType + '()']
+        elif isinstance(expr, DereferenceExpression):
+            return join([['*'], self.translateExpr(expr.expr)])
+        elif isinstance(expr, InitializerList):
+            return join([['{ '], join([self.translateExpr(arg) for arg in expr.args], ', '), [' }']])
+        elif isinstance(expr, LambdaExpression):
+            capture = '' if not expr.capture else ' ' + ', '.join([c.name for c in expr.capture]) + ' '
+            args = '' if expr.args is None else ' ' + ', '.join(expr.args) + ' '
+            return ['[' + capture + '] (' + args + ') {', expr.code, '}']
+        elif isinstance(expr, NullPtr):
+            return ['nullptr']
+        elif isinstance(expr, Variable):
+            return [expr.name]
+        elif isinstance(expr, UnformattedExpression):
+            return [expr.value]
+        elif isString(expr):
+            return [expr.strip()]
+        else:
+            raise Exception('Invalid type of expression: ' + str(type(expr)))
+
+    def typedName(self, obj):
+        if obj.cppType is None:
+            raise Exception('object ' + obj.name + '  does not have a type.')
+        if obj.cppType.endswith('&') or obj.cppType.endswith('*'):
+            return obj.cppType + obj.name
+        else:
+            return obj.cppType + ' ' + obj.name
 
     def pushBlock(self, block, name):
         self.blocks.append((block, name))
@@ -435,12 +671,6 @@ class SourceWriter:
 
     def typedef(self, typeName, typeAlias, targs=None):
         self.emit(TypeAlias(typeAlias, typeName, targs=targs))
-
-    def _isstring(self, obj):
-        if sys.version_info.major == 2:
-            return isinstance(obj, basestring)
-        else:
-            return isinstance(obj, str)
 
     @staticmethod
     def cpp_fields(field):

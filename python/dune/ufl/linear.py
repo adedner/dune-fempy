@@ -1,11 +1,24 @@
 from __future__ import absolute_import, division, print_function
 
+from ufl.algorithms import expand_indices
 from ufl.algorithms.analysis import extract_arguments
+from ufl.algorithms.apply_derivatives import apply_derivatives
+from ufl.algorithms.apply_algebra_lowering import apply_algebra_lowering
+from ufl.algorithms.apply_restrictions import apply_restrictions
 from ufl.algorithms.transformer import Transformer
-from ufl.constantvalue import IntValue
+from ufl.constantvalue import IntValue, Zero
 from ufl.differentiation import Grad
+from ufl.restriction import Restricted
 
-from .tensors import ExprTensor, keys
+from .tensors import conditionalExprTensor, ExprTensor, keys
+
+def sumTensorMaps(left, right):
+    result = {key: l.copy() for key, l in left.items()}
+    for key, r in right.items():
+        l = left.get(key)
+        result[key] = r.copy() if l is None else l + r
+    return result
+
 
 class MultiLinearExprSplitter(Transformer):
     def __init__(self, arguments):
@@ -18,9 +31,7 @@ class MultiLinearExprSplitter(Transformer):
             raise Exception('Arguments should only occur in fully indexed expressions.')
         key = self._key(expr)
         if key != self.empty:
-            tensor = ExprTensor(self._shape(key))
-            tensor[tuple()] = IntValue(1)
-            return {key: tensor}
+            return self._tensor(key, tuple())
         else:
             return self.terminal(expr)
 
@@ -33,9 +44,7 @@ class MultiLinearExprSplitter(Transformer):
         index = expr.ufl_operands[1]
         key = self._key(operand)
         if key != self.empty:
-            tensor = ExprTensor(operand.ufl_shape)
-            tensor[index.indices()] = IntValue(1)
-            return {key: tensor}
+            return self._tensor(key, index.indices())
         else:
             return self.terminal(expr)
 
@@ -44,6 +53,12 @@ class MultiLinearExprSplitter(Transformer):
             raise Exception('Only the left child of a division may access the linear arguments.')
         r = right[self.empty]
         return {key: l / r for key, l in left.items()}
+
+    def negative_restricted(self, expr, arg):
+        return {key: value.negative_restricted() for key, value in arg.items()}
+
+    def positive_restricted(self, expr, arg):
+        return {key: value.negative_restricted() for key, value in arg.items()}
 
     def product(self, expr, left, right):
         def oneOf(l, r):
@@ -64,10 +79,17 @@ class MultiLinearExprSplitter(Transformer):
         return result
 
     def sum(self, expr, left, right):
-        for key, r in right.items():
-            l = left.get(key)
-            left[key] = r if l is None else l + r
-        return left
+        return sumTensorMaps(left, right)
+
+    def conditional(self, expr):
+        condition = expr.ufl_operands[0]
+        trueCase = self.visit(expr.ufl_operands[1])
+        falseCase = self.visit(expr.ufl_operands[2])
+
+        result = dict()
+        for key in set(trueCase.keys()) | set(falseCase.keys()):
+            result[key] = conditionalExprTensor(condition, trueCase.get(key, Zero()), falseCase.get(key, Zero()))
+        return result
 
     def terminal(self, expr):
         if len(expr.ufl_shape) > 0:
@@ -87,6 +109,8 @@ class MultiLinearExprSplitter(Transformer):
         return self.visit(expr.expression())
 
     def _getLeaf(self, expr):
+        if isinstance(expr, Restricted):
+            expr = expr.ufl_operands[0]
         while isinstance(expr, Grad):
             expr = expr.ufl_operands[0]
         return expr
@@ -101,6 +125,11 @@ class MultiLinearExprSplitter(Transformer):
             if arg is not None:
                 shape += arg.ufl_shape
         return shape
+
+    def _tensor(self, key, indices):
+        tensor = ExprTensor(self._shape(key))
+        tensor[indices] = IntValue(1)
+        return {key: tensor}
 
     def _productIndices(self, keyl, keyr):
         if len(keyl) > 0:
@@ -120,3 +149,23 @@ def splitMultiLinearExpr(expr, arguments=None):
     if arguments is None:
         arguments = extract_arguments(expr)
     return MultiLinearExprSplitter(arguments).visit(expr)
+
+
+
+def splitForm(form, arguments=None):
+    if arguments is None:
+        arguments = form.arguments()
+
+    form = apply_restrictions(form)
+    form = expand_indices(apply_derivatives(apply_algebra_lowering(form)))
+    form = apply_restrictions(form)
+
+    integrals = {}
+    for integral in form.integrals():
+        right = splitMultiLinearExpr(integral.integrand(), arguments)
+        left = integrals.get(integral.integral_type())
+        if left is not None:
+            right = sumTensorMaps(left, right)
+        integrals[integral.integral_type()] = right
+
+    return integrals

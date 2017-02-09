@@ -1,6 +1,6 @@
 from __future__ import print_function, unicode_literals
 
-from .cplusplus import Method, SourceWriter, TypeAlias, Variable, Function
+from .cplusplus import Declaration, Function, Method, SourceWriter, TypeAlias, Variable
 
 class BaseModel:
     def __init__(self, dimRange, signature):
@@ -70,40 +70,40 @@ class BaseModel:
         sourceWriter.emit('constructConstants( std::make_index_sequence< std::tuple_size<ConstantsTupleType>::value >() );' )
         sourceWriter.closeMethod()
 
-        init = Method('bool init', args=['const EntityType &entity'], const=True)
+        init = Method('bool', 'init', args=['const EntityType &entity'], const=True)
         init.append('entity_ = &entity;',
                     'initCoefficients( std::make_index_sequence< numCoefficients >() );',
                     self.init,
                     'return true;')
 
-        entity = Method('const EntityType &entity', const=True)
+        entity = Method('const EntityType &', 'entity', const=True)
         entity.append('return *entity_;')
 
-        sourceWriter.emit([init, entity, Method('std::string name', const=True, code=['return "' + name + '";'])])
+        sourceWriter.emit([init, entity, Method('std::string', 'name', const=True, code=['return "' + name + '";'])])
 
     def post(self, sourceWriter, name='Model', targs=[]):
-        constant = Method('ConstantsType< i > &constant', targs=['std::size_t i'])
+        constant = Method('ConstantsType< i > &', 'constant', targs=['std::size_t i'])
         constant.append('return *( std::get< i >( constants_ ) );')
         sourceWriter.emit([constant.variant('const ConstantsType< i > &constant', const=True), constant])
 
-        coefficient = Method('CoefficientType< i > &coefficient', targs=['std::size_t i'])
+        coefficient = Method('CoefficientType< i > &', 'coefficient', targs=['std::size_t i'])
         coefficient.append('return std::get< i >( coefficients_ );')
         sourceWriter.emit([coefficient.variant('const CoefficientType< i > &coefficient', const=True), coefficient])
 
         sourceWriter.section('private')
 
-        initCoefficients = Method('void initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], const=True)
+        initCoefficients = Method('void', 'initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], const=True)
         initCoefficients.append('std::ignore = std::make_tuple( (std::get< i >( coefficients_ ).init( entity() ), i)... );')
 
-        constructConstants = Method('void constructConstants', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
+        constructConstants = Method('void', 'constructConstants', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
         constructConstants.append('std::ignore = std::make_tuple( (std::get< i >( constants_ ) = std::make_shared<ConstantsType< i >>(), i)... );')
 
         sourceWriter.emit([initCoefficients, constructConstants])
 
         sourceWriter.emit('')
-        sourceWriter.emit(Variable('const EntityType *entity_', 'nullptr', mutable=True))
-        sourceWriter.emit(Variable('std::tuple< Coefficients... > coefficients_;', mutable=True))
-        sourceWriter.emit(Variable('ConstantsTupleType constants_;', mutable=True))
+        sourceWriter.emit(Declaration(Variable('const EntityType *', 'entity_'), 'nullptr', mutable=True))
+        sourceWriter.emit(Declaration(Variable('std::tuple< Coefficients... >', 'coefficients_;'), mutable=True))
+        sourceWriter.emit(Declaration(Variable('ConstantsTupleType', 'constants_;'), mutable=True))
         sourceWriter.emit(self.vars)
         sourceWriter.closeStruct(name)
 
@@ -142,13 +142,13 @@ class BaseModel:
         sourceWriter.emit('  };')
         sourceWriter.closeFunction()
 
-        setCoefficient = Function('void setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &model', 'pybind11::handle o'])
+        setCoefficient = Function('void', 'setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &model', 'pybind11::handle o'])
         setCoefficient.append('model.template coefficient< i >() = o.template cast< typename std::tuple_element< i, Coefficients >::type >().localFunction();')
         sourceWriter.emit(setCoefficient)
 
-        defSetCoefficient = Function('auto defSetCoefficient', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
+        defSetCoefficient = Function('auto', 'defSetCoefficient', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
         defSetCoefficient.append(TypeAlias('Dispatch', 'std::function< void( ' + modelClass + ' &model, pybind11::handle ) >'),
-                                 Variable('std::array< Dispatch, sizeof...( i ) > dispatch', '{{ Dispatch( setCoefficient< i > )... }}'),
+                                 Declaration(Variable('std::array< Dispatch, sizeof...( i ) >', 'dispatch'), '{{ Dispatch( setCoefficient< i > )... }}'),
                                  '',
                                  'return [ dispatch ] ( ' + wrapperClass + ' &model, pybind11::handle coeff, pybind11::handle o ) {',
                                  '    std::size_t k = renumberConstants(coeff);',

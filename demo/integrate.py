@@ -11,12 +11,23 @@ import dune.create as create
 
 dune.fem.parameter.append("../data/parameter")
 
+def getUflSpace(grid,spc):
+    # test different versions of constructing a uflSpace
+    uflSpace = dune.ufl.Space(grid.dimGrid, 1, field="double")
+    x = ufl.SpatialCoordinate(uflSpace.cell())
+    uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
+    x = ufl.SpatialCoordinate(uflSpace.cell())
+    uflSpace = dune.ufl.Space(grid, 1, field="double")
+    x = ufl.SpatialCoordinate(uflSpace.cell())
+    uflSpace = dune.ufl.Space(spc)
+    x = ufl.SpatialCoordinate(uflSpace.cell())
+    return uflSpace, x
+
 def compute():
     grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
     spc  = dune.create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
 
-    uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
-    x = ufl.SpatialCoordinate(uflSpace.cell())
+    uflSpace, x = getUflSpace(grid,spc)
 
     exact = ufl.as_vector( [ufl.cos(2.*ufl.pi*x[0])*ufl.cos(2.*ufl.pi*x[1])] )
     exact_gf = create.function("ufl", grid, "exact", 5, exact)

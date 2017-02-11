@@ -7,6 +7,7 @@ add_sphinx_targets(sphinx
   usage.rst
   index.rst
   laplace.rst
+  demos.rst
   tutorial.rst
   laplace-intro.ipynb
   laplace-dirichlet.ipynb

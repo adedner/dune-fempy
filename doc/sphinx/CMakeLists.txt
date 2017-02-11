@@ -8,6 +8,7 @@ add_sphinx_targets(sphinx
   index.rst
   laplace.rst
   demos.rst
+  details.rst
   tutorial.rst
   laplace-intro.ipynb
   laplace-dirichlet.ipynb
@@ -18,4 +19,8 @@ add_sphinx_targets(sphinx
   crystal-jupyter.ipynb
   mcf.ipynb
   spiral.ipynb
+  grid-construction.ipynb
+  gridfunctions.ipynb
+  parameters.ipynb
+  unitcube-2d.dgf
 )

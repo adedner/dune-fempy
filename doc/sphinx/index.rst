@@ -51,42 +51,24 @@ Installation notes
 
    installation
 
-#################################
-Tutorial
-#################################
-
-.. toctree::
-   :maxdepth: 1
-
-   tutorial
-
-#################################
-Usage guide
-#################################
-
-.. toctree::
-   :maxdepth: 1
-
-   usage
-
-#################################
-Advanced topics
-#################################
-
-.. toctree::
-   :maxdepth: 1
-
-   advanced
-
-#################################
-Jupyter Notebooks
-#################################
+##########################################
+A few examples (Jupyter notebooks)
+##########################################
 
 .. toctree::
    :maxdepth: 2
 
    laplace
    demos
+
+#######################################
+A Some mode details (Jupyter notebooks)
+#######################################
+
+.. toctree::
+   :maxdepth: 2
+
+   details
 
 Indices and tables
 ==================

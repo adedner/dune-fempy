@@ -83,12 +83,10 @@ Jupyter Notebooks
 #################################
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   laplace-jupyter
-   crystal-jupyter
-   spiral
-   mcf
+   laplace
+   demos
 
 Indices and tables
 ==================

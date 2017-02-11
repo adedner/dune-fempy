@@ -6,9 +6,15 @@ add_sphinx_targets(sphinx
   installation.rst
   usage.rst
   index.rst
+  laplace.rst
   tutorial.rst
+  laplace-intro.ipynb
+  laplace-dirichlet.ipynb
+  laplace-coefficients.ipynb
+  laplace-la.ipynb
+  laplace-adaptive.ipynb
+  laplace-dg.ipynb
   crystal-jupyter.ipynb
-  laplace-jupyter.ipynb
   mcf.ipynb
   spiral.ipynb
 )

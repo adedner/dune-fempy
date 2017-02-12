@@ -104,6 +104,7 @@ plot(grid)
 
 grid = create.grid("ALUCube", (dune.common.reader.dgf,"unitcube-2d.dgf"), dimgrid=2)
 plot(grid)
+pyplot.close('all')
 
 
 # We have just described how to *input* a grid, shown some inline visualization, but we also provide *output* methods for grid (and data) into *vtk* files. For simply writting the grid structure for viewing in e.g. *paraview*:
@@ -169,7 +170,6 @@ plot(grid)
 
 # In[14]:
 
-pyplot.close()
 import math
 marker = dune.common.Marker
 
@@ -205,6 +205,7 @@ for nr in range(101):
     dune.fem.adapt(hgrid, [phi])
     if nr % 10 == 0:
         plot(grid,phi)
+pyplot.close('all')
 
 
 # Note the plotting method available in the `dune.fem.ipython` module used in the last example.
@@ -212,10 +213,64 @@ for nr in range(101):
 # ### Special Grid Views
 #
 # The above required using an `AdaptiveLeafGridView` which allows to efficiently prolong/restrict discrete functions during grid refinement. In this module we provide some other specialized `GridView` which we will now briefly decribe:
+# - `FilteredGridView`: a function returning `True` or `False` for each element of grid is passed to the constructor to choose a subset of the elements of the *host grid view* to be part of the new view. The index set associated with this grid view is either (as expected) zero starting and consecutive on the  the new view, or identical to the index set of the original view.
+# - `GeometryGridView`: in this case the geometric representation of each element of a *host grid view* can be replaced by providing a [grid function][1] to the constructor.
+# [1]: gridfunctions.rst
+#
+# Lets start with the `FilteredGridView`:
 
-# In[16]:
+# In[21]:
 
-# todo
+from dune.fem.view import filteredGridView
+from dune.fem.space import dgonb
+
+# first using a new index set
+subGrid = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25, True)
+# interpolate some data onto the subgrid
+spc = lagrange(subGrid, dimrange=1, order=1)
+phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
+plot(subGrid,phi)
+
+subGrid1 = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25, True)
+subGrid2 = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm >= 0.25, True)
+# interpolate some data onto the subgrid
+spc1 = lagrange(subGrid1, dimrange=1, order=1)
+spc2 = lagrange(subGrid2, dimrange=1, order=1)
+phi1 = spc1.interpolate(lambda x: [-1], name="phi1")
+phi2 = spc2.interpolate(lambda x: [(x-(0.5,0.5)).two_norm], name="phi2")
+spc = dgonb(grid, dimrange=1, order=1)
+phi = spc.interpolate(lambda en,x: [phi1.localFunction(en).evaluate(x) if subGrid1.contains(en) else phi2.localFunction(en).evaluate(x)], name="phi")
+plot(grid,phi)
+
+
+# Note the use of the `contains` method on the view to determin if an element is part of the view or not.
+#
+# Now a simple example demonstrating hwo to use the `GeometryGridView` to produce  a moving domeain.
+
+# In[22]:
+
+from dune.fem.view import geometryGridView
+
+t = 0
+def expr_global(x):
+    return [x[0],(x[0]+1.)*x[1]*math.sin(0.1+2.*math.pi*t)]
+
+gf = create.function("global", grid, "coordinates", 1, expr_global)
+spc = create.space("Lagrange", grid, dimrange=2, order=1)
+df = spc.interpolate(gf, name="test")
+
+geogrid = geometryGridView(df)
+gfnew = create.function("global", geogrid, "expression", 1, expr_global)
+
+dt = 0.01
+count = 0
+while t < 1:
+    t += dt
+    count += 1
+    df.interpolate(gf)
+    if count%10 == 0:
+        plot(geogrid, gfnew)
+pyplot.close('all')
 
 
 # In[ ]:

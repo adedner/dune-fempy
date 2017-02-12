@@ -15,7 +15,7 @@
 #
 # First, we need to set up a computational grid and a discontinuous ansatz space on it. Here, we use the orthonormal discontinuous space:
 
-# In[5]:
+# In[1]:
 
 from dune.grid import cartesianDomain
 from dune.fem import parameter
@@ -39,7 +39,7 @@ spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
 #
 # The following code implements this equation in UFL notation:
 
-# In[6]:
+# In[2]:
 
 import math
 from ufl import *
@@ -67,7 +67,7 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 # Next, we compile this into the *integrands*, plug them into the *galerkin* scheme and solve the problem:
 
-# In[7]:
+# In[3]:
 
 model = create.model("integrands", grid, a == b)
 
@@ -79,6 +79,6 @@ uh, _ = scheme.solve()
 
 # The result looks as follows:
 
-# In[8]:
+# In[5]:
 
 plot(grid, uh)

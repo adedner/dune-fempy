@@ -2,25 +2,25 @@ include(DuneSphinxDoc)
 configure_file(sphere.dgf sphere.dgf)
 configure_file(mcf.gif mcf.gif)
 add_sphinx_targets(sphinx
-  advanced.rst
-  installation.rst
-  usage.rst
-  index.rst
-  laplace.rst
+  create.ipynb
+  crystal-jupyter.ipynb
   demos.rst
   details.rst
-  tutorial.rst
+  extending.ipynb
+  grid-construction.ipynb
+  gridfunctions.ipynb
+  index.rst
+  installation.rst
+  laplace.rst
   laplace-intro.ipynb
   laplace-dirichlet.ipynb
   laplace-coefficients.ipynb
   laplace-la.ipynb
   laplace-adaptive.ipynb
   laplace-dg.ipynb
-  crystal-jupyter.ipynb
   mcf.ipynb
-  spiral.ipynb
-  grid-construction.ipynb
-  gridfunctions.ipynb
+  parameter
   parameters.ipynb
+  spiral.ipynb
   unitcube-2d.dgf
 )

@@ -1,8 +1,7 @@
 # coding: utf-8
 
 #
-# Crystal Demo
-# ------------
+# # Crystal Demo
 #
 # This is a demo that demonstrates crystallisation on the surface of a liquid due to cooling. See
 # http://www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html for more details.
@@ -192,7 +191,7 @@ print()
 
 # We define a method for matplotlib output.
 
-# In[16]:
+# In[11]:
 
 from numpy import amin, amax, linspace
 from matplotlib import pyplot
@@ -220,7 +219,7 @@ def matplot(grid, solution, show=range(dimRange)):
     display.display(pyplot.gcf())
 
 
-# In[17]:
+# In[12]:
 
 pyplot.figure()
 
@@ -233,7 +232,7 @@ matplot(grid,solution, [0])
 
 # Some constants needed for the time loop:
 
-# In[13]:
+# In[ ]:
 
 timeStep     = 0.0002
 model.setConstant(dt,[timeStep])
@@ -243,7 +242,7 @@ t        = 0.0
 
 # Finally we set up the time loop and solve the problem - each time this cell is run the simulation will progress to the given ```endTime``` and then the result is shown. Just rerun it multiple times while increasing the ```endTime``` to progress the simulation further - this might take a bit...
 
-# In[14]:
+# In[ ]:
 
 endTime = 0.05
 while t < endTime:
@@ -257,7 +256,7 @@ while t < endTime:
 print()
 
 
-# In[18]:
+# In[ ]:
 
 pyplot.figure()
 count += 1

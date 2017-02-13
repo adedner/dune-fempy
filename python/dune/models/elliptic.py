@@ -233,7 +233,7 @@ def splitUFLForm(form, linear):
             for op in fluxExprs:
                 if op[0] == phi:
                     try:
-                        bndId = integral.subdomain_id()
+                        bndId = int(integral.subdomain_id())
                     except:
                         bndId = 1
                     if bndId in boundaryDict:

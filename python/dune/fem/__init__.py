@@ -60,5 +60,6 @@ registry["function"] = {
          "discrete"   : function.discreteFunction
      }
 registry["model"] = {
-         "elliptic"   : model.elliptic
+         "elliptic"   : model.elliptic,
+         "split"      : model.splitdomain
      }

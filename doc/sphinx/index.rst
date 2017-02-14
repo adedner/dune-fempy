@@ -86,7 +86,7 @@ Files
 :download:`parameter file example <./parameter>`
 :download:`<create <./create.ipynb>`
 :download:`laplace-dg <./laplace-dg.ipynb>`
-:download:`crystal <crystal-jupyter.ipynb>`
+:download:`crystal <crystal.ipynb>`
 :download:`laplace-dirichlet <laplace-dirichlet.ipynb>`
 :download:`extending <extending.ipynb>`
 :download:`laplace-intro <laplace-intro.ipynb>`

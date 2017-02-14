@@ -1,12 +1,13 @@
 # coding: utf-8
 
-# ## Grid construction and basic usage
+# # Grid construction and basic usage [(Notebook)][3]
+#
 # There are a number of ways to construct the macro triangulation of the computational domain. One can either use some avaialble readers using either gmsh files [gmsh][1] or *dune grid format* ([dgf][2]) files. Alternatively, it is possible to directly provide the vertices and grid elements using *numy* arrays.
 # Later on we will show some of the most basic method available on the grid ckass.
 #
-#
 # [1]: http://gmsh.info/doc/texinfo/gmsh.html
-# [2]: https://www.dune-project.org/doxygen/2.5.0/group__DuneGridFormatParser.html#details.
+# [2]: https://www.dune-project.org/doxygen/2.5.0/group__DuneGridFormatParser.html#details
+# [3]: _downloads/grid-construction.ipynb
 
 # In[1]:
 
@@ -25,7 +26,7 @@ from matplotlib import pyplot
 from numpy import amin, amax, linspace
 from IPython.core.display import display
 
-def plot(grid):
+def plotGrid(grid):
     if not grid.dimension == 2:
         print("inline plotting so far only available for 2d grids")
         return
@@ -41,9 +42,9 @@ def plot(grid):
 # In[3]:
 
 grid = create.grid("Yasp", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-plot(grid)
+plotGrid(grid)
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0,0],[1,1,1],[16,16,16]), dimgrid=3)
-plot(grid)
+plotGrid(grid)
 
 
 # We now show how describe a simple grid using *numpy* arrays. This approach can then be used to write more complex readers in python to construct grids.
@@ -54,7 +55,7 @@ import numpy
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
 grid = create.grid("ALUConform", {"vertex": vertices, "simplex": triangles}, dimgrid=2)
-plot(grid)
+plotGrid(grid)
 
 
 # The next example uses the [Delauny][1] triangulation method availble in *scipy*.
@@ -78,7 +79,7 @@ points = numpy.stack((x,y), axis=-1)
 triangles = Delaunay(points).simplices
 
 grid = create.grid("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
-plot(grid)
+plotGrid(grid)
 
 
 # Dune provides options for reading grid descriptions from files. First we show how to use the *dune grid format*:
@@ -94,7 +95,7 @@ INTERVAL
 #
 """
 grid = create.grid("ALUSimplex", dune.grid.string2dgf(dgf), dimgrid=2)
-plot(grid)
+plotGrid(grid)
 
 
 # or providing a [dgf file][1]
@@ -103,7 +104,7 @@ plot(grid)
 # In[7]:
 
 grid = create.grid("ALUCube", (dune.common.reader.dgf,"unitcube-2d.dgf"), dimgrid=2)
-plot(grid)
+plotGrid(grid)
 pyplot.close('all')
 
 
@@ -160,10 +161,10 @@ hgrid = grid.hierarchicalGrid
 # In[13]:
 
 hgrid.globalRefine(3)
-plot(grid)
+plotGrid(grid)
 # is there a global coarsening available?
 hgrid.globalRefine(-2)
-plot(grid)
+plotGrid(grid)
 
 
 # or single elements can be marked for local refinement or coarsening
@@ -183,7 +184,7 @@ def mark(element, t):
 for i in range(0,3):
     hgrid.mark(lambda e: mark(e, 0))
     dune.fem.adapt(hgrid)
-plot(grid)
+plotGrid(grid)
 
 
 # Note that if data is stored on any entity of the grid then it will be valid anymore after calling `globalRefine` or `adapt` on the hierarchical grid as described above. To make it possible to keep for example discrete functions valid during grid modification, these can be passed into the `adapt` method. Note that this requires a special version of the *leaf grid view*:
@@ -231,13 +232,13 @@ spc = lagrange(subGrid, dimrange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
 plot(subGrid,phi)
 
-subGrid1 = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25, True)
-subGrid2 = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm >= 0.25, True)
+subGrid1 = filteredGridView(grid, lambda e: ( e.geometry.center - [0.5, 0.5] ).two_norm < 0.25, True)
+subGrid2 = filteredGridView(grid, lambda e: ( e.geometry.center - [0.5, 0.5] ).two_norm >= 0.25, True)
 # interpolate some data onto the subgrid
 spc1 = lagrange(subGrid1, dimrange=1, order=1)
 spc2 = lagrange(subGrid2, dimrange=1, order=1)
 phi1 = spc1.interpolate(lambda x: [-1], name="phi1")
-phi2 = spc2.interpolate(lambda x: [(x-(0.5,0.5)).two_norm], name="phi2")
+phi2 = spc2.interpolate(lambda x: [ (x-[0.5,0.5] ).two_norm], name="phi2")
 spc = dgonb(grid, dimrange=1, order=1)
 phi = spc.interpolate(lambda en,x: [phi1.localFunction(en).evaluate(x) if subGrid1.contains(en) else phi2.localFunction(en).evaluate(x)], name="phi")
 plot(grid,phi)

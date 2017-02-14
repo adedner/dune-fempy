@@ -3,7 +3,7 @@ configure_file(sphere.dgf sphere.dgf)
 configure_file(mcf.gif mcf.gif)
 add_sphinx_targets(sphinx
   create.ipynb
-  crystal-jupyter.ipynb
+  crystal.ipynb
   demos.rst
   details.rst
   extending.ipynb

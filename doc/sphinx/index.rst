@@ -79,3 +79,22 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+
+Files
+=====
+
+:download:`parameter file example <./parameter>`
+:download:`<create <./create.ipynb>`
+:download:`laplace-dg <./laplace-dg.ipynb>`
+:download:`crystal <crystal-jupyter.ipynb>`
+:download:`laplace-dirichlet <laplace-dirichlet.ipynb>`
+:download:`extending <extending.ipynb>`
+:download:`laplace-intro <laplace-intro.ipynb>`
+:download:`grid-construction <grid-construction.ipynb>`
+:download:`laplace-la <laplace-la.ipynb>`
+:download:`gridfunctions <gridfunctions.ipynb>`
+:download:`mcf  <mcf.ipynb>`
+:download:`laplace-adaptive <laplace-adaptive.ipynb>`
+:download:`parameters <parameters.ipynb>`
+:download:`laplace-coefficients <laplace-coefficients.ipynb>`
+:download:`spiral <spiral.ipynb>`

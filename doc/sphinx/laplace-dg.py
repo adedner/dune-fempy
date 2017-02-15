@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # DG Schemes
+# # DG Schemes [(Notebook)][1]
+#
+# [1]: _downloads/laplace-dg.ipynb
 # show the
 # - dgscheme
 # - galerkin schemes
@@ -15,11 +17,15 @@
 #
 # First, we need to set up a computational grid and a discontinuous ansatz space on it. Here, we use the orthonormal discontinuous space:
 
-# In[1]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from dune.grid import cartesianDomain
 from dune.fem import parameter
-from dune.fem.ipython import plotPointData as plot
+from dune.fem.plotting import plotPointData as plot
 
 import dune.create as create
 
@@ -39,7 +45,7 @@ spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
 #
 # The following code implements this equation in UFL notation:
 
-# In[2]:
+# In[ ]:
 
 import math
 from ufl import *
@@ -67,7 +73,7 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 # Next, we compile this into the *integrands*, plug them into the *galerkin* scheme and solve the problem:
 
-# In[3]:
+# In[ ]:
 
 model = create.model("integrands", grid, a == b)
 
@@ -79,6 +85,9 @@ uh, _ = scheme.solve()
 
 # The result looks as follows:
 
-# In[5]:
+# In[ ]:
 
-plot(grid, uh)
+plot(uh)
+
+
+# In[ ]:

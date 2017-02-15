@@ -1,9 +1,16 @@
 # coding: utf-8
 
-# # Heat Equation - adding coefficient and constants to the model
+# # Heat Equation - adding coefficient and constants to the model [(Notebook)][1]
+#
+# [1]: _downloads/laplace-coefficients.ipynb
+#
 
-# In[1]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from __future__ import print_function
 
 import math
@@ -14,7 +21,7 @@ from dune.ufl import GridCoefficient, Space
 
 import dune.create as create
 import dune.fem
-from dune.fem.ipython import plotPointData as plot
+from dune.fem.plotting import plotPointData as plot
 
 dune.fem.parameter.append({"fem.verboserank": 0,
                            "istl.preconditioning.method": "ilu-0",
@@ -22,7 +29,7 @@ dune.fem.parameter.append({"fem.verboserank": 0,
                            "istl.preconditioning.relaxation": 1.2})
 
 
-# In[2]:
+# In[ ]:
 
 # Crank Nicholson
 theta = 0.5
@@ -34,10 +41,10 @@ spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
 
 # set up initial conditions
 solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
-plot(grid, solution)
+plot(solution)
 
 
-# In[3]:
+# In[ ]:
 
 # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
 old_solution = solution.copy();
@@ -64,7 +71,7 @@ solverParameter={"fem.solver.newton.linabstol": 1e-13,
 scheme = create.scheme("h1", spc, model, parameters=solverParameter)
 
 
-# In[4]:
+# In[ ]:
 
 endTime = 0.4
 deltaT = 0.01
@@ -76,8 +83,5 @@ for n in range(1,steps+1):
     old_solution.assign(solution)
     scheme.solve(target=solution)
     if n % 4 == 3:
-        plot(grid, solution)
+        plot(solution)
     # grid.writeVTK("heat", pointdata=[solution], number=n)
-
-
-# In[ ]:

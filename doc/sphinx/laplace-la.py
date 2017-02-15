@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # Different storage backends - using numpy/scipy
+# # Different storage backends - using numpy/scipy [(Notebook)][1]
+#
+# [1]: _downloads/laplace-la.ipynb
 #
 # For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Changing the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
 # ~~~
@@ -17,8 +19,12 @@
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
 
-# In[11]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from dune.generator import builder
 import math
 import numpy as np
@@ -26,6 +32,7 @@ import scipy.sparse.linalg
 import scipy.optimize
 import dune.grid
 import dune.fem
+from dune.fem.plotting import plotPointData as plot
 import dune.create as create
 
 from dune.ufl import Space
@@ -68,45 +75,16 @@ uh = create.function("discrete", spc, name="solution")
 #
 # Let's first use the solve method on the scheme directly:
 
-# In[12]:
-
-try:
-    import matplotlib
-    from matplotlib import pyplot
-    from numpy import amin, amax, linspace
-    from IPython.core.display import display
-
-    def plot(grid, solution, xlim = None, ylim = None):
-        triangulation = grid.triangulation(4)
-        data = solution.pointData(4)
-
-        levels = linspace(amin(data[:,0]), amax(data[:,0]), 256)
-
-        fig = pyplot.figure()
-        fig.gca().set_aspect('equal')
-        if xlim:
-            fig.gca().set_xlim(xlim)
-        if ylim:
-            fig.gca().set_ylim(ylim)
-        pyplot.triplot(grid.triangulation(), antialiased=True, linewidth=0.2, color='black')
-        pyplot.tricontourf(triangulation, data[:,0], cmap=pyplot.cm.rainbow, levels=levels)
-        display(pyplot.gcf())
-except ImportError as e:
-    print(e)
-    def plot(grid, solution):
-        pass
-
-
-# In[13]:
+# In[ ]:
 
 uh,info = scheme.solve(target = uh)
 print("size:", grid.size(0), "newton iterations:", int(info['iterations']))
-plot(grid, uh)
+plot(uh)
 
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
 
-# In[14]:
+# In[ ]:
 
 # Let's first clear the solution again
 uh.clear()
@@ -133,12 +111,12 @@ while True:
     sol_coeff -= scipy.sparse.linalg.spsolve(matrix, res_coeff)
     n += 1
 
-plot(grid, uh)
+plot(uh)
 
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
-# In[15]:
+# In[ ]:
 
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()
@@ -172,4 +150,4 @@ sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
             verbose=1, f_tol=1e-8,
             inner_M=Df(sol_coeff))
 
-plot(grid, uh)
+plot(uh)

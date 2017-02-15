@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # Dirichlet Boundary Conditions
+# # Dirichlet Boundary Conditions [(Notebook)][1]
+#
+# [1]: _downloads/laplace-dirichlet.ipynb
 #
 # __Still need to be able to set individual boundary ids....__
 #
@@ -14,8 +16,12 @@
 #
 # `dune-fempy` uses integer boundary identifies to distinguish between different parts of the boundary. These are set during grid construction on the coarse grid boundaries:
 
-# In[1]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from __future__ import print_function, division
 
 import math
@@ -25,7 +31,7 @@ from ufl import *
 
 from dune.grid import cartesianDomain
 from dune.fem import parameter
-from dune.fem.ipython import plotPointData as plot
+from dune.fem.plotting import plotPointData as plot
 from dune.ufl import Space
 
 import dune.create as create
@@ -33,7 +39,7 @@ import dune.create as create
 parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
 
-# In[2]:
+# In[ ]:
 
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
@@ -42,7 +48,7 @@ grid = create.grid("ALUConform", {"vertex": vertices, "simplex": triangles}, dim
 grid.hierarchicalGrid.globalRefine(4)
 
 
-# In[3]:
+# In[ ]:
 
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
 
@@ -58,13 +64,10 @@ a = inner(grad(u), grad(v))*dx
 model = create.model("elliptic", grid, a == 0, dirichlet={1: exact})
 
 
-# In[4]:
+# In[ ]:
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
 scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 solution, _ = scheme.solve()
-plot(grid, solution)
-
-
-# In[ ]:
+plot(solution)

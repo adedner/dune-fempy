@@ -1,42 +1,59 @@
 # coding: utf-8
 
-# ## Grid functions (and some plotting)
+# # Grid functions (and some plotting) [(Notebook)][1]
 #
+# [1]: _downloads/gridfunctions.ipynb
 # *Grid function* are perhaps the most fundamental concept of (after the grid itself). These are *localizable* function, i.e., functions that can be evaluated given an element `e` of the grid and a coordinate in the reference element of `e`. To this end they provide a method `lf = localfunction(e)` returning an object with an `evaluate(x),jacobian(x),hessian(x)` method. The coordinate `x` should be in the reference element of `e` but note that the derivates returned are with respect to the coordinate system of `e` itself. All numerical algorithm provided in the dune modules do not use globally defined functions but rely on *grid function*.
 #
 # In addition we also show some simple inline plotting functionality.
 
-# In[1]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or inline # can also use notebook or nbagg')
+except:
+    pass
 import math
 import dune.fem
 import ufl
 import dune.ufl
 import dune.create as create
-from dune.fem.ipython import plotPointData as plot
-from dune.fem.ipython import plotComponents as plotc
+from dune.fem.plotting import plotPointData as plot
+from dune.fem.plotting import plotComponents as plotComponents
 
-grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[4,4]), dimgrid=2)
 
 
 # There are a number of different ways *grid function* can be constructed. We start with the simplest approach using callback to python function:
 
-# In[2]:
+# In[ ]:
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(10*x[1]), math.cos(10*x[1])**2]
 gf_gl = create.function("global", grid, "expr_global", 3, expr_global)
 # plot all components + the grid
-plotc(grid, gf_gl)
+plotComponents(gf_gl, gridLines="black")
 # plot the absolute value of the compnents without the grid
-plot(grid,gf_gl,component=-1,showGrid=False)
+plot(gf_gl,gridLines="")
 
 def expr_local(en,x):
     y = en.geometry.position(x)
     return [gf_gl.localFunction(en).evaluate(x)[1] - y.two_norm,10]
 gf_loc = create.function("local", grid, "expr_local", 3, expr_local)
-# here we show the solution (first component is default) overlayed with the grid
-plot(grid,gf_loc)
+# here we show the solution (first component) overlayed with the grid (default)
+plot(gf_loc[0])
+
+
+# Note how we can access the one component of a grid function by writing `gf_loc[0]`.
+#
+# This is quite a coarse grid. By changing the `level` argument in the plotting functions one can get a better representation of the functions without changing the grid. Since the data was never interpolate onto a grid the full information of the original function is still available:
+
+# In[ ]:
+
+plot(gf_loc[0],level=3)
+# of coarse we could refine the grid and plot with the original level
+grid.hierarchicalGrid.globalRefine(4)
+plot(gf_loc[0],level=3)
 
 
 # A few remarks: note that all grid functions return a vector - even scalar functions as the ones in the example. The dimension of the range of these functions is automatically deduced from its return value.
@@ -45,46 +62,51 @@ plot(grid,gf_loc)
 #
 # Finaly, since evaluating these functions requires a callback from C++ to python and no *just in time* compilation is used, this approach can be quite slow compared to some of the others described in the following.
 
-# In[3]:
+# In[ ]:
 
 uflSpace = dune.ufl.Space(grid, 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
-coeff = ufl.Coefficient(uflSpace)
 const = ufl.Constant(ufl.triangle)
 c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
-expr = ufl.as_vector([ s*c])
+expr = ufl.as_vector([ s*c ])
 funcUFL = create.function("ufl", grid, "ufl", 1, expr)
 funcUFL.setConstant(const, [10])
-plot(grid, funcUFL)
+# in the case of a scalar function the actual values are plotted
+# and not the absolute values are for dimRange > 1
+plot(funcUFL)
 
-coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [1,2])
+scalarUFLSpace = dune.ufl.Space(grid,1)
+coeff = ufl.Coefficient(scalarUFLSpace)
+coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [2])
 expr = ufl.as_vector([ s*s*coeff[0] ])
-funcUFL1 = create.function("ufl", grid, "ufl1", 1, expr,
-                           #coefficients={coeff: funcUFL})
+funcUFL1 = create.function("ufl", grid, "ufl1", 4, expr,
+#                           coefficients={coeff: funcUFL})
                            coefficients={coeff: coeffFunc})
-plot(grid, funcUFL1)
+plot(funcUFL1)
+# for e in grid.elements():
+#     print( funcUFL1.localFunction(e) )
 
 
 # The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:
 
-# In[4]:
+# In[ ]:
 
 # first a constant function
 vector_space = create.space("Lagrange", grid, dimrange=grid.dimension, order=2)
 constant = vector_space.interpolate([1,1], name="constant")
 uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
-plot(grid,uh,component=-2,showGrid=False)
+plot(uh,vectors=[0,1],gridLines="")
 scalar_space = create.space("Lagrange", grid, dimrange=1, order=2)
 vorticity = create.function("local", grid, "global_velocity", 3,
                        lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
 vorticity_h = scalar_space.interpolate(vorticity, name="fh")
-plot(grid,vorticity_h)
+plot(vorticity_h)
 
 
 # Finally the grid function can be described proving strings with valid C++ code
 
-# In[5]:
+# In[ ]:
 
 func1 = """
 double s = sin(xGlobal[0]);
@@ -110,7 +132,32 @@ code = { 'eval': func1, 'jac': func2 }
 coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
 func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
 func.setConstant("fac", [10])
-plot(grid,func)
+# show all components but not the grid
+plotComponents(func,gridLines="")
+
+
+# Most of the methods available on the grid functions have been used above - mainly the `localfunction` method. There are a few more of interst are:
+
+# In[ ]:
+
+print("dimension of range: ",func.dimRange)
+print("underlying grid instance: ",func.grid)
+print("name: ",func.name)
+
+
+# The following two methods can be used together with the `grid.triangulation( level )` method to obtain a simple numpy vector representation of the solution:
+
+# In[ ]:
+
+print("return array with values at cell centers: ", func.cellData(0))
+print("return array with values at nodes: ", func.pointData(0))
+
+
+# The following method computes the integral of the function over the domain - a possible usage is to compute the approximation error of a function:
+
+# In[ ]:
+
+print("value of integral over whole domain: ", func.integrate())
 
 
 # In[ ]:

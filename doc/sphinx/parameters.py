@@ -6,19 +6,30 @@
 # [1]: _downloads/parameter
 # [2]: _downloads/parameters.ipymn
 
-# In[ ]:
+# In[1]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from dune.fem import parameter
 parameter.append( "parameter" )
-parameter.append( {"hi": 12, "how are": 20, "you": "getting the hang of it?" } )
+parameter.append( {"hi": "how", "are": 20, "you": "getting the hang of it?" } )
 parameter.append( "hi", 11. )
 parameter["okay"] = 12
 parameter.append( "I", "am fine" )
-print(parameter["really"])
+print(parameter["hi"])
+try:
+    print(parameter["really"])   # <- this gives an error
+except RuntimeError, Argument:
+    print(Argument)
 
 
 # All parameters can be easily printed. They are sorted first by the local from which they were read (files or program code). Parameters proceeded by a `#` have not yet been read.
 
-# In[ ]:
+# In[2]:
 
 print(parameter)
+
+
+# In[ ]:

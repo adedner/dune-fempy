@@ -58,7 +58,7 @@ R0 = 2.
 # In[ ]:
 
 # set up reference domain Gamma_0
-grid = create.grid("ALUSimplex", "sphere.dgf", dimgrid=2, dimworld=3)
+grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
 # space on Gamma_0 to describe position of Gamma(t)
@@ -121,7 +121,7 @@ def matplot(grid, solution, count):
 
 count   = 0
 t       = 0.
-endTime = 0.1
+endTime = 0.05
 dt      = 0.005
 fig     = 0
 model.setConstant(tau,[dt])

@@ -49,11 +49,9 @@ def plotGrid(grid):
 
 # In[ ]:
 
-grid = create.grid("Yasp", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+grid = create.grid("ALUCube", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 plotGrid(grid)
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([-1,-1],[1,1],[16,16,16]), dimgrid=2)
-plotGrid(grid)
-grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0,0],[1,1,1],[16,16,16]), dimgrid=3)
 plotGrid(grid)
 
 
@@ -104,7 +102,7 @@ INTERVAL
 16 16
 #
 """
-grid = create.grid("ALUSimplex", dune.grid.string2dgf(dgf), dimgrid=2)
+grid = create.grid("ALUConform", dune.grid.string2dgf(dgf), dimgrid=2)
 plotGrid(grid)
 
 
@@ -295,6 +293,3 @@ while t < 1:
 # now one plot without the grid
 plot(gfnew,gridLines="")
 pyplot.close('all')
-
-
-# In[ ]:

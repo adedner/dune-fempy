@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# #  Spiral Wave
+# # Spiral Wave [(Notebook)][1]
+#
+# [1]: _downloads/spiral.ipynb
 
 # This demonstrates the simulation of spiral waves in an excitable media. It consists of system of reaction diffusion equations with two components. Both the model parameters and the approach for discretizing the system are taken from http://www.scholarpedia.org/article/Barkley_model.
 #
@@ -58,8 +60,12 @@
 
 # Let's get started by importing some standard python packages, ufl, and some part of the dune-fempy package:
 
-# In[2]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from __future__ import print_function
 import math
 from functools import reduce
@@ -101,7 +107,7 @@ initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 
 domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
 domain = dune.grid.cartesianDomain([0,0],[2.5,2.5],[30,30])
-grid = create.grid("Yasp", domain, dimgrid=2)
+grid = create.grid("ALUCube", domain, dimgrid=2)
 spc  = create.space( "Lagrange", grid, dimrange=dimRange, order=1 )
 
 uh   = spc.interpolate( initial_u, name="u" )

@@ -132,7 +132,7 @@ h1error_gf = create.function( "local", grid, "error", order+1, h1error )
 # adaptive loop (mark, estimate, solve)
 count = 0
 tol = 0.1 # use 0 for global refinement
-while count < 10:
+while count < 8:
     error = math.sqrt(h1error_gf.integrate()[0])
     [estimate, marked] = laplace.mark(uh, tol)
     plot(uh)
@@ -156,7 +156,6 @@ while count < 10:
 plot(uh, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
 plot(uh, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
 plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
-plot(uh, xlim=(-0.0625,0.0625), ylim=(-0.0625,0.0625))
 
 
 # Finally, let us have a look at the grid levels:

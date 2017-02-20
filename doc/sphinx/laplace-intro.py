@@ -105,7 +105,7 @@ for i in range(levels):
 
     print("size:", grid.size(0), "L2-error:", error)
     grid.writeVTK("laplace", pointdata=[uh, l2error_gf])
-    plot(uh,gridLines="")
+    plot(uh,gridLines="black")
 
     if i < levels-1:
         grid.hierarchicalGrid.globalRefine(2)

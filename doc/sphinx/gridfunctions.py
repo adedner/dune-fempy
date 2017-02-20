@@ -88,22 +88,6 @@ plot(funcUFL1)
 #     print( funcUFL1.localFunction(e) )
 
 
-# The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:
-
-# In[ ]:
-
-# first a constant function
-vector_space = create.space("Lagrange", grid, dimrange=grid.dimension, order=2)
-constant = vector_space.interpolate([1,1], name="constant")
-uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
-plot(uh,vectors=[0,1],gridLines="")
-scalar_space = create.space("Lagrange", grid, dimrange=1, order=2)
-vorticity = create.function("local", grid, "global_velocity", 3,
-                       lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
-vorticity_h = scalar_space.interpolate(vorticity, name="fh")
-plot(vorticity_h)
-
-
 # Finally the grid function can be described proving strings with valid C++ code
 
 # In[ ]:
@@ -160,4 +144,91 @@ print("return array with values at nodes: ", func.pointData(0))
 print("value of integral over whole domain: ", func.integrate())
 
 
+# The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:
+
 # In[ ]:
+
+# first a constant function
+vector_space = create.space("Lagrange", grid, dimrange=grid.dimension, order=2)
+constant = vector_space.interpolate([1,1], name="constant")
+uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
+plot(uh,vectors=[0,1],gridLines="")
+scalar_space = create.space("Lagrange", grid, dimrange=1, order=2)
+vorticity = create.function("local", grid, "global_velocity", 3,
+                       lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
+vorticity_h = scalar_space.interpolate(vorticity, name="fh")
+plot(vorticity_h)
+
+
+# Note the difference between the grid function `vorticity` and `vorticity_h` - the second being an interpolation of the former into the discrete function space.
+#
+# While discrete functions are grid functions and have the same attributes, they have a few additional methods
+
+# In[ ]:
+
+print("number of dofs: ", vorticity_h.size)
+print("the underlying space: ", vorticity_h.space)
+# we can construct a new discrete function of the same type and the same values
+copy = vorticity_h.copy()
+# set all value to zero
+copy.clear()
+# assign all dofs to be identical to another discrete function over the same space
+copy.assign(vorticity_h)
+# store the interpolation of some (grid) function
+copy.interpolate(vorticity_h)  # the oritignal discrete vorticity
+copy.interpolate(vorticity)    # does the same by interpolating the original grid function
+copy.interpolate([1])          # copy(x) = 1
+copy.interpolate(lambda x: [x[0]*x[1]] )     # interpolation of a global function
+copy.interpolate(lambda en,x: [en.geometry.center.two_norm] ) # interpolation of a elementwise function
+plot(copy)
+
+
+# Note that in the last case a piecewise constant function is interpolated onto the continuous first order lagrange space.
+#
+# Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` method on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
+#
+# Accessing the dof vector becomes useful when the `eigen` backend is used for storing the dofs. In this case the
+# python buffer protocol is used to convert the dof vector into an `numpy` array without requiring any copy.
+# This requires having the [Eigen package][1].
+#
+# [1]: http://eigen.tuxfamily.org/index.php?title=Main_Page
+
+# In[ ]:
+
+import numpy as np
+spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
+uh = spc.interpolate(vorticity_h)
+plot(uh)
+uh_dofs = np.array( uh, copy=False )
+uh_dofs *= -2
+plot(uh)
+
+
+# We can also use an existing `numpy` array as basis of a discrete function (over space with `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
+
+# In[ ]:
+
+# a simple function to check the address of the memory block of a numpy array
+def id(x):
+    return x.__array_interface__['data'][0]
+
+# set up a numpy vector with random entries
+dofs = np.random.random(spc.size)
+print("id of numpy array: ", id(dofs))
+# reinterpret the numpy vector as a discrete function
+xh = spc.numpyfunction(dofs,"name")
+# get the dof vector as numpy array
+xh_dofs = np.array( xh, copy=False )
+print("id of dof vector: ", id(xh_dofs))
+
+# plot the random values
+plot(xh)
+# set the dof ventries unsing the discrete vorticity
+xh.interpolate(vorticity_h)
+plot(xh)
+# reset all entries in the dof vector to random values
+dofs[:] = np.random.random(spc.size)
+plot(xh) # constructor of numpy array called here, why?
+# now do the same using the extracted numpy array
+xh_dofs[:] = np.random.random(spc.size)
+plot(xh)

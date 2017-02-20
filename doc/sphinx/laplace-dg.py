@@ -17,7 +17,7 @@
 #
 # First, we need to set up a computational grid and a discontinuous ansatz space on it. Here, we use the orthonormal discontinuous space:
 
-# In[ ]:
+# In[1]:
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
@@ -45,22 +45,19 @@ spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
 #
 # The following code implements this equation in UFL notation:
 
-# In[ ]:
+# In[2]:
 
 import math
 from ufl import *
 
 from dune.ufl import Space
 
-grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
-
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 n, h = FacetNormal(uflSpace.cell()), MinFacetEdgeLength(uflSpace.cell())
-mu = 7.5 / h
+mu = 7.5 / avg(h)
 
 a = inner(grad(u), grad(v)) * dx
 a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS
@@ -73,7 +70,7 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 # Next, we compile this into the *integrands*, plug them into the *galerkin* scheme and solve the problem:
 
-# In[ ]:
+# In[3]:
 
 model = create.model("integrands", grid, a == b)
 

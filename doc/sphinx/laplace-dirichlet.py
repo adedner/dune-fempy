@@ -18,11 +18,12 @@
 
 # In[ ]:
 
+from __future__ import print_function, division
+
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function, division
 
 import math
 import numpy

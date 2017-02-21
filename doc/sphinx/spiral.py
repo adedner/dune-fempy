@@ -119,8 +119,8 @@ vh_n = vh.copy()
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u   = ufl.TrialFunction(uflSpace)
 phi = ufl.TestFunction(uflSpace)
-un  = dune.ufl.NamedCoefficient(uflSpace, "un")
-vn  = dune.ufl.NamedCoefficient(uflSpace, "vn")
+un  = dune.ufl.Coefficient(uflSpace, name="un")
+vn  = dune.ufl.Coefficient(uflSpace, name="vn")
 
 # right hand sie (time derivative part + explicit forcing in v)
 a_ex = ufl.inner(un, phi) * ufl.dx

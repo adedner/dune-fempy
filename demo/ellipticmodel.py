@@ -18,8 +18,7 @@ v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
 a = inner(grad(u),grad(v)) * dx
-H = grad(grad(u[0]))
-a = a + det(H) * v[0] * dx
+a = a + 2 * v[0] * dx
 a = a + u[0]*inner(u,v) * dx
 
 b = v[0] * ds

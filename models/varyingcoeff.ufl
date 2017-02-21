@@ -1,0 +1,13 @@
+space = Space(2, 1)
+u, v = TrialFunction(space), TestFunction(space)
+x = SpatialCoordinate(space.cell())
+
+D = Coefficient(space, "diffusion")
+m = Coefficient(space, "mass")
+
+a = (m[0] * inner(u,v) + D[0] * inner(grad(u), grad(v))) * dx
+
+exact = as_vector([cos(2*pi*x[0]) * cos(2*pi*x[1])])
+L = replace(a, {u: exact})
+
+F = a - L

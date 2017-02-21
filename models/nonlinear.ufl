@@ -1,0 +1,10 @@
+space = Space(2,1)
+u, v = TrialFunction(space), TestFunction(space)
+x = SpatialCoordinate(space.cell())
+
+a = ((inner(u, u)/3) * inner(u, v) + (u[0]*u[0] + 2)*inner(grad(u), grad(v))) * dx
+
+exact = as_vector([cos(2*pi*x[0]) * cos(2*pi*x[1])])
+L = replace(a, {u: exact})
+
+F = a - L

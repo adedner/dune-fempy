@@ -6,7 +6,7 @@
 # [1]: _downloads/parameter
 # [2]: _downloads/parameters.ipymn
 
-# In[1]:
+# In[ ]:
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
@@ -27,7 +27,7 @@ except RuntimeError, Argument:
 
 # All parameters can be easily printed. They are sorted first by the local from which they were read (files or program code). Parameters proceeded by a `#` have not yet been read.
 
-# In[2]:
+# In[ ]:
 
 print(parameter)
 

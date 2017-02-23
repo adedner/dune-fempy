@@ -19,7 +19,7 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[ ]:
+# In[1]:
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
@@ -70,10 +70,10 @@ spc  = create.space( "Lagrange", grid, dimrange=1, order=order )
 
 # Next define the model together with the exact solution
 
-# In[ ]:
+# In[5]:
 
 from ufl import *
-from dune.ufl import Space
+from dune.ufl import Space, DirichletBC
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
@@ -111,10 +111,10 @@ def exactJac(x):
 exact_gf = create.function("global", grid, "exact", order+1, exact)
 bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
-model = create.model("elliptic", grid, a == 0, dirichlet={1: bnd_u}, tempVars=False, coefficients={bnd_u: exact_gf})
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf})
 
 
-# In[ ]:
+# In[6]:
 
 # set up the scheme
 laplace = create.scheme("h1", spc, model)
@@ -151,7 +151,7 @@ while count < 8:
 
 # Let's have a look at the center of the domain:
 
-# In[ ]:
+# In[7]:
 
 plot(uh, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
 plot(uh, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
@@ -160,7 +160,7 @@ plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
 
 # Finally, let us have a look at the grid levels:
 
-# In[ ]:
+# In[8]:
 
 from dune.fem.function import levelFunction
 plot(levelFunction(grid),xlim=(0,1),ylim=(0,1))

@@ -21,7 +21,7 @@ except:
 
 # In[ ]:
 
-from dune.generator import hashIt
+from dune.common.hashit import hashIt
 from dune.generator.generator import SimpleGenerator
 from dune.fem.space import addAttr
 def p1Bubble(gridview, dimrange, storage=None):
@@ -82,6 +82,8 @@ print("should be one per vertex and one per element: ", grid.size(0)+grid.size(2
 #         }
 # ~~~
 # After installing `dune.myspace` e.g. using `pip` the new space can be constructed like any of the other spaces contained in the `dune.fem` package.
+
+# ### Using hand written model files
 
 # ### Importing C++ code
 # Now we discuss how to add stand alone C++ code using the `dune.generator` module.

@@ -1,0 +1,14 @@
+print('Warning: this model does not lead a converging scheme')
+
+space = Space(2, 3)
+u, v = TrialFunction(space), TestFunction(space)
+x = SpatialCoordinate(space.cell())
+
+a = (inner(u, u)/3 * inner(u[0], v[0]) + (inner(u, u) + 2) * inner(grad(u[0]), grad(v[0]))) * dx
+a += inner(grad(u[1]), grad(v[1])) * dx
+a += inner(u[2], v[2]) * dx
+
+exact = as_vector([cos(2*pi*x[0])*cos(2*pi*x[1]), x[0]*x[1], (1+x[0]*x[0])])
+L = replace(a, {u: exact})
+
+F = a - L

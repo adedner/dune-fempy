@@ -1,15 +1,20 @@
 # coding: utf-8
 
-# ## Grid construction and basic usage
+# # Grid construction and basic usage [(Notebook)][3]
+#
 # There are a number of ways to construct the macro triangulation of the computational domain. One can either use some avaialble readers using either gmsh files [gmsh][1] or *dune grid format* ([dgf][2]) files. Alternatively, it is possible to directly provide the vertices and grid elements using *numy* arrays.
 # Later on we will show some of the most basic method available on the grid ckass.
 #
-#
 # [1]: http://gmsh.info/doc/texinfo/gmsh.html
-# [2]: https://www.dune-project.org/doxygen/2.5.0/group__DuneGridFormatParser.html#details.
+# [2]: https://www.dune-project.org/doxygen/2.5.0/group__DuneGridFormatParser.html#details
+# [3]: _downloads/grid-construction.ipynb
 
-# In[1]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from __future__ import print_function
 
 import dune.common
@@ -19,48 +24,52 @@ import dune.create as create
 # ### Constructers
 # The following shows a simple routing to visualize a dune grid
 
-# In[2]:
+# In[ ]:
 
 from matplotlib import pyplot
+from matplotlib.collections import PolyCollection
 from numpy import amin, amax, linspace
-from IPython.core.display import display
 
-def plot(grid):
+def plotGrid(grid):
     if not grid.dimension == 2:
         print("inline plotting so far only available for 2d grids")
         return
-    triangulation = grid.triangulation(1)
     fig = pyplot.figure()
+    polys = grid.polygons()
+
+    for p in polys:   # iterables for different geometry types
+        coll = PolyCollection(p,facecolor='none',edgecolor="black",zorder=2)
+        pyplot.gca().add_collection(coll)
     fig.gca().set_aspect('equal')
-    pyplot.triplot(grid.triangulation(), antialiased=True, linewidth=0.2, color='black')
-    display(fig)
+    fig.gca().autoscale()
+    pyplot.show()
 
 
 # First the simplest approach - this simply results in a cube tesselated with a nicely structured grid:
 
-# In[3]:
+# In[ ]:
 
-grid = create.grid("Yasp", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-plot(grid)
-grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0,0],[1,1,1],[16,16,16]), dimgrid=3)
-plot(grid)
+grid = create.grid("ALUCube", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
+plotGrid(grid)
+grid = create.grid("ALUConform", dune.grid.cartesianDomain([-1,-1],[1,1],[16,16,16]), dimgrid=2)
+plotGrid(grid)
 
 
 # We now show how describe a simple grid using *numpy* arrays. This approach can then be used to write more complex readers in python to construct grids.
 
-# In[4]:
+# In[ ]:
 
 import numpy
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
 grid = create.grid("ALUConform", {"vertex": vertices, "simplex": triangles}, dimgrid=2)
-plot(grid)
+plotGrid(grid)
 
 
 # The next example uses the [Delauny][1] triangulation method availble in *scipy*.
 # [1]: https://docs.scipy.org/doc/scipy-0.18.1/reference/tutorial/spatial.html
 
-# In[5]:
+# In[ ]:
 
 from scipy.spatial import Delaunay
 
@@ -78,13 +87,13 @@ points = numpy.stack((x,y), axis=-1)
 triangles = Delaunay(points).simplices
 
 grid = create.grid("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
-plot(grid)
+plotGrid(grid)
 
 
 # Dune provides options for reading grid descriptions from files. First we show how to use the *dune grid format*:
 # The grid can be directly described using a python string:
 
-# In[6]:
+# In[ ]:
 
 dgf = """
 INTERVAL
@@ -93,23 +102,23 @@ INTERVAL
 16 16
 #
 """
-grid = create.grid("ALUSimplex", dune.grid.string2dgf(dgf), dimgrid=2)
-plot(grid)
+grid = create.grid("ALUConform", dune.grid.string2dgf(dgf), dimgrid=2)
+plotGrid(grid)
 
 
 # or providing a [dgf file][1]
 # [1]: unitcube-2d.dgf
 
-# In[7]:
+# In[ ]:
 
 grid = create.grid("ALUCube", (dune.common.reader.dgf,"unitcube-2d.dgf"), dimgrid=2)
-plot(grid)
+plotGrid(grid)
 pyplot.close('all')
 
 
 # We have just described how to *input* a grid, shown some inline visualization, but we also provide *output* methods for grid (and data) into *vtk* files. For simply writting the grid structure for viewing in e.g. *paraview*:
 
-# In[8]:
+# In[ ]:
 
 grid.vtkWriter().write("griddemo")
 
@@ -120,7 +129,7 @@ grid.vtkWriter().write("griddemo")
 # ### Basic methods
 # Probably the most fundamental information one wants from any grid is the number of entities of different codimension, e,g,, the number of vertices and elements.
 
-# In[9]:
+# In[ ]:
 
 print("Number of elements:",grid.size(0))
 print("Number of vertices:",grid.size(grid.dimension))
@@ -128,14 +137,14 @@ print("Number of vertices:",grid.size(grid.dimension))
 
 # Note that `grid.dimension` give the dimension of the reference elements of the grid while `grid.dimensionworld` returns the dimension of the coordinate space the grid is embedded in.
 
-# In[10]:
+# In[ ]:
 
 print(grid.dimension,grid.dimensionworld)
 
 
 # Here is not the place to describe the whole *Dune Grid* interface made available to python. Here is a simple example showing how to iterate over the grid and ascess some simple geometric information for each element:
 
-# In[11]:
+# In[ ]:
 
 totalArea = 0
 for element in grid.elements():
@@ -150,25 +159,25 @@ print(totalArea)
 
 # Speaking within the Dune context it is important to note that the grid instance `grid` constructor with the methods above is a *leaf grid view*. So even after refinment the grid instance will always provide a view to the finest level of refinement of the hierarchical grid. The full hierarchy grid can be accessed with
 
-# In[12]:
+# In[ ]:
 
 hgrid = grid.hierarchicalGrid
 
 
 # The hierarchical grid can be globally refined
 
-# In[13]:
+# In[ ]:
 
 hgrid.globalRefine(3)
-plot(grid)
+plotGrid(grid)
 # is there a global coarsening available?
 hgrid.globalRefine(-2)
-plot(grid)
+plotGrid(grid)
 
 
 # or single elements can be marked for local refinement or coarsening
 
-# In[14]:
+# In[ ]:
 
 import math
 marker = dune.common.Marker
@@ -183,19 +192,30 @@ def mark(element, t):
 for i in range(0,3):
     hgrid.mark(lambda e: mark(e, 0))
     dune.fem.adapt(hgrid)
-plot(grid)
+plotGrid(grid)
 
 
 # Note that if data is stored on any entity of the grid then it will be valid anymore after calling `globalRefine` or `adapt` on the hierarchical grid as described above. To make it possible to keep for example discrete functions valid during grid modification, these can be passed into the `adapt` method. Note that this requires a special version of the *leaf grid view*:
 
-# In[15]:
+# In[ ]:
 
 import dune.fem
 from dune.fem.space import lagrange
 from dune.fem.view import adaptiveLeafGridView
-from dune.fem.ipython import plotPointData as plot
+from dune.fem.plotting import plotPointData as plot
 
 adaptiveGV = adaptiveLeafGridView(grid)
+
+
+# First note that the `plotGrid` function defined above is available in the `dune.fem.plotting` module - with some extra arguments...
+
+# In[ ]:
+
+plot(adaptiveGV)
+
+
+# In[ ]:
+
 # interpolate some data onto grid
 spc = lagrange(adaptiveGV, dimrange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
@@ -204,11 +224,11 @@ for nr in range(101):
     hgrid.mark(lambda e: mark(e, nr/100.*2.*math.pi))
     dune.fem.adapt(hgrid, [phi])
     if nr % 10 == 0:
-        plot(grid,phi)
+        plot(phi)
 pyplot.close('all')
 
 
-# Note the plotting method available in the `dune.fem.ipython` module used in the last example.
+# Note the plotting method available in the `dune.fem.plotting` module used in the last example.
 #
 # ### Special Grid Views
 #
@@ -219,7 +239,7 @@ pyplot.close('all')
 #
 # Lets start with the `FilteredGridView`:
 
-# In[21]:
+# In[ ]:
 
 from dune.fem.view import filteredGridView
 from dune.fem.space import dgonb
@@ -229,25 +249,25 @@ subGrid = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_
 # interpolate some data onto the subgrid
 spc = lagrange(subGrid, dimrange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
-plot(subGrid,phi)
+plot(phi)
 
-subGrid1 = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25, True)
-subGrid2 = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm >= 0.25, True)
+subGrid1 = filteredGridView(grid, lambda e: ( e.geometry.center - [0.5, 0.5] ).two_norm < 0.25, True)
+subGrid2 = filteredGridView(grid, lambda e: ( e.geometry.center - [0.5, 0.5] ).two_norm >= 0.25, True)
 # interpolate some data onto the subgrid
 spc1 = lagrange(subGrid1, dimrange=1, order=1)
 spc2 = lagrange(subGrid2, dimrange=1, order=1)
 phi1 = spc1.interpolate(lambda x: [-1], name="phi1")
-phi2 = spc2.interpolate(lambda x: [(x-(0.5,0.5)).two_norm], name="phi2")
+phi2 = spc2.interpolate(lambda x: [ (x-[0.5,0.5] ).two_norm], name="phi2")
 spc = dgonb(grid, dimrange=1, order=1)
 phi = spc.interpolate(lambda en,x: [phi1.localFunction(en).evaluate(x) if subGrid1.contains(en) else phi2.localFunction(en).evaluate(x)], name="phi")
-plot(grid,phi)
+plot(phi,gridLines="white")
 
 
 # Note the use of the `contains` method on the view to determin if an element is part of the view or not.
 #
 # Now a simple example demonstrating hwo to use the `GeometryGridView` to produce  a moving domeain.
 
-# In[22]:
+# In[ ]:
 
 from dune.fem.view import geometryGridView
 
@@ -269,8 +289,7 @@ while t < 1:
     count += 1
     df.interpolate(gf)
     if count%10 == 0:
-        plot(geogrid, gfnew)
+        plot(gfnew)
+# now one plot without the grid
+plot(gfnew,gridLines="")
 pyplot.close('all')
-
-
-# In[ ]:

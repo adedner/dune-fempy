@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # DG Schemes
+# # DG Schemes [(Notebook)][1]
+#
+# [1]: _downloads/laplace-dg.ipynb
 # show the
 # - dgscheme
 # - galerkin schemes
@@ -17,9 +19,13 @@
 
 # In[1]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from dune.grid import cartesianDomain
 from dune.fem import parameter
-from dune.fem.ipython import plotPointData as plot
+from dune.fem.plotting import plotPointData as plot
 
 import dune.create as create
 
@@ -46,15 +52,12 @@ from ufl import *
 
 from dune.ufl import Space
 
-grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
-
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 n, h = FacetNormal(uflSpace.cell()), MinFacetEdgeLength(uflSpace.cell())
-mu = 7.5 / h
+mu = 7.5 / avg(h)
 
 a = inner(grad(u), grad(v)) * dx
 a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS
@@ -79,6 +82,9 @@ uh, _ = scheme.solve()
 
 # The result looks as follows:
 
-# In[5]:
+# In[ ]:
 
-plot(grid, uh)
+plot(uh)
+
+
+# In[ ]:

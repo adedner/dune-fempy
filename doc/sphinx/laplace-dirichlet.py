@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # Dirichlet Boundary Conditions
+# # Dirichlet Boundary Conditions [(Notebook)][1]
+#
+# [1]: _downloads/laplace-dirichlet.ipynb
 #
 # __Still need to be able to set individual boundary ids....__
 #
@@ -18,6 +20,11 @@
 
 from __future__ import print_function, division
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
+
 import math
 import numpy
 
@@ -25,8 +32,8 @@ from ufl import *
 
 from dune.grid import cartesianDomain
 from dune.fem import parameter
-from dune.fem.ipython import plotPointData as plot
-from dune.ufl import Space
+from dune.fem.plotting import plotPointData as plot
+from dune.ufl import Space, DirichletBC
 
 import dune.create as create
 
@@ -42,7 +49,7 @@ grid = create.grid("ALUConform", {"vertex": vertices, "simplex": triangles}, dim
 grid.hierarchicalGrid.globalRefine(4)
 
 
-# In[3]:
+# In[5]:
 
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
 
@@ -55,16 +62,16 @@ phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*math.pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 a = inner(grad(u), grad(v))*dx
 
-model = create.model("elliptic", grid, a == 0, dirichlet={1: exact})
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact,1))
 
 
-# In[4]:
+# In[6]:
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
 scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 solution, _ = scheme.solve()
-plot(grid, solution)
+plot(solution)
 
 
 # In[ ]:

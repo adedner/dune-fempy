@@ -1,15 +1,20 @@
 # coding: utf-8
 
 #
-# # Crystal Demo
+# # Crystal Demo [(Notebook)][1]
+#
+# [1]: _downloads/crystal.ipynb
 #
 # This is a demo that demonstrates crystallisation on the surface of a liquid due to cooling. See
 # http://www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html for more details.
 
-# In[1]:
+# In[ ]:
 
 from __future__ import print_function
-from mpi4py import MPI
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 
 
 # We want to solve the following system of equations of variables $\phi$ (phase field) and $T$ (temperature field)
@@ -38,7 +43,7 @@ from mpi4py import MPI
 #
 # Let us first set up the parameters for the problem.
 
-# In[2]:
+# In[ ]:
 
 alpha        = 0.015
 tau          = 3.e-4
@@ -50,7 +55,7 @@ N            = 6.
 
 # We define the initial data.
 
-# In[3]:
+# In[ ]:
 
 def initial(x):
     r  = (x-[6,6]).two_norm
@@ -59,7 +64,7 @@ def initial(x):
 
 # As we will be discretising in time, we define the unknown data as $u = (\phi_1, \Delta T_1)$, while given data (from the previous time step) is $u_n = (\phi_0, \Delta T_0)$ and test function $v = (v_0, v_1)$.
 
-# In[4]:
+# In[ ]:
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, Coefficient, Constant, triangle
@@ -94,7 +99,7 @@ dt = Constant(triangle)      # set to time step size later on
 #
 # First we put in the right hand side which only contains explicit data.
 
-# In[5]:
+# In[ ]:
 
 from ufl import inner, dx
 a_ex = (inner(un, v) - inner(un[0], v[1])) * dx
@@ -102,7 +107,7 @@ a_ex = (inner(un, v) - inner(un[0], v[1])) * dx
 
 # For the left hand side we have the spatial derivatives and the implicit parts.
 
-# In[6]:
+# In[ ]:
 
 from ufl import pi, atan, atan_2, tan, grad, as_vector, inner, dot
 psi        = pi/8.0 + atan_2(grad(un[0])[1], (grad(un[0])[0]))
@@ -126,7 +131,7 @@ equation = a_im == a_ex
 
 # We set up the grid, the space, and we set the solution to the initial function. We use the default dof storage available in ```dune-fem``` - this can be changed for example to ```istl,eigen``` or ```petsc```.
 
-# In[7]:
+# In[ ]:
 
 import dune.common as common
 import dune.fem as fem
@@ -145,7 +150,7 @@ solution_n = solution.copy()
 
 # We set up the model and the scheme with some parameters:
 
-# In[8]:
+# In[ ]:
 
 model  = create.model("elliptic", grid, equation, coefficients={un:solution_n} )
 solverParameters = {
@@ -161,7 +166,7 @@ scheme = create.scheme("h1", space, model, solver="gmres",
 
 # We set up the adaptive method. We start with a marking strategy based on the value of the gradient of the phase field variable:
 
-# In[9]:
+# In[ ]:
 
 def mark(element):
     marker = common.Marker
@@ -175,7 +180,7 @@ def mark(element):
 
 # We do the initial refinement of the grid.
 
-# In[10]:
+# In[ ]:
 
 maxLevel = 11
 hgrid    = grid.hierarchicalGrid
@@ -191,7 +196,7 @@ print()
 
 # We define a method for matplotlib output.
 
-# In[11]:
+# In[ ]:
 
 from numpy import amin, amax, linspace
 from matplotlib import pyplot
@@ -219,7 +224,7 @@ def matplot(grid, solution, show=range(dimRange)):
     display.display(pyplot.gcf())
 
 
-# In[12]:
+# In[ ]:
 
 pyplot.figure()
 

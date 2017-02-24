@@ -1,11 +1,14 @@
 include(DuneSphinxDoc)
 configure_file(sphere.dgf sphere.dgf)
+configure_file(unitcube-2d.dgf unitcube-2d.dgf)
+configure_file(parameter parameter)
 configure_file(mcf.gif mcf.gif)
 add_sphinx_targets(sphinx
   create.ipynb
-  crystal-jupyter.ipynb
+  crystal.ipynb
   demos.rst
   details.rst
+  #duneufl.rst
   extending.ipynb
   grid-construction.ipynb
   gridfunctions.ipynb
@@ -22,5 +25,6 @@ add_sphinx_targets(sphinx
   parameter
   parameters.ipynb
   spiral.ipynb
+  #uflbindings.ipynb
   unitcube-2d.dgf
 )

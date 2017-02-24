@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # Adaptive Finite Element
+# # Adaptive Finite Element [(Notebook)][1]
+#
+# [1]: _downloads/laplace-adaptive.ipynb
 # We study the classic _reentrand corner_ problem:
 # \begin{align*}
 #   -\Delta u &= f && \text{in } \Omega \\
@@ -19,9 +21,14 @@
 
 # In[1]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 import math
 import dune.create as create
 from dune.fem.view import adaptiveLeafGridView
+from dune.fem.plotting import plotPointData as plot
 import dune.grid as grid
 import dune.fem as fem
 
@@ -63,10 +70,10 @@ spc  = create.space( "Lagrange", grid, dimrange=1, order=order )
 
 # Next define the model together with the exact solution
 
-# In[3]:
+# In[5]:
 
 from ufl import *
-from dune.ufl import Space
+from dune.ufl import Space, DirichletBC
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
@@ -104,41 +111,11 @@ def exactJac(x):
 exact_gf = create.function("global", grid, "exact", order+1, exact)
 bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
-model = create.model("elliptic", grid, a == 0, dirichlet={1: bnd_u}, tempVars=False, coefficients={bnd_u: exact_gf})
-
-
-# In[5]:
-
-try:
-    import matplotlib
-    from matplotlib import pyplot
-    from numpy import amin, amax, linspace
-    from IPython.core.display import display
-
-    def plot(grid, solution, xlim = None, ylim = None):
-        triangulation = grid.triangulation(4)
-        data = solution.pointData(4)
-
-        levels = linspace(amin(data[:,0]), amax(data[:,0]), 256)
-
-        fig = pyplot.figure()
-        fig.gca().set_aspect('equal')
-        if xlim:
-            fig.gca().set_xlim(xlim)
-        if ylim:
-            fig.gca().set_ylim(ylim)
-        pyplot.triplot(grid.triangulation(), antialiased=True, linewidth=0.2, color='black')
-        pyplot.tricontourf(triangulation, data[:,0], cmap=pyplot.cm.rainbow, levels=levels)
-        display(pyplot.gcf())
-except ImportError as e:
-    print(e)
-    def plot(grid, solution):
-        pass
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf})
 
 
 # In[6]:
 
-pyplot.close("all")
 # set up the scheme
 laplace = create.scheme("h1", spc, model)
 uh = spc.interpolate(lambda x: [0], name="solution")
@@ -154,11 +131,11 @@ h1error_gf = create.function( "local", grid, "error", order+1, h1error )
 
 # adaptive loop (mark, estimate, solve)
 count = 0
-tol = 0.05 # use 0 for global refinement
+tol = 0.1 # use 0 for global refinement
 while count < 8:
     error = math.sqrt(h1error_gf.integrate()[0])
     [estimate, marked] = laplace.mark(uh, tol)
-    plot(grid, uh)
+    plot(uh)
     print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
     if marked == False or estimate < tol:
         break
@@ -176,10 +153,17 @@ while count < 8:
 
 # In[7]:
 
-plot(grid,uh, (-0.5,0.5),(-0.5,0.5))
-plot(grid,uh, (-0.25,0.25),(-0.25,0.25))
-plot(grid,uh, (-0.125,0.125),(-0.125,0.125))
-plot(grid,uh, (-0.0625,0.0625),(-0.0625,0.0625))
+plot(uh, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
+plot(uh, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
+plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
+
+
+# Finally, let us have a look at the grid levels:
+
+# In[8]:
+
+from dune.fem.function import levelFunction
+plot(levelFunction(grid),xlim=(0,1),ylim=(0,1))
 
 
 # In[ ]:

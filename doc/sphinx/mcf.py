@@ -1,6 +1,8 @@
 # coding: utf-8
 
-# # Mean Curvature Flow
+# # Mean Curvature Flow [(Notebook)][1]
+#
+# [1]: _downloads/mcf.ipynb
 
 # In this example we compute the mean curvature flow of a surface:
 # \begin{align}
@@ -31,8 +33,12 @@
 # $\theta\in[0,1]$ is a discretization parameter.
 # <img src="mcf.gif" style="height:228px;">
 
-# In[1]:
+# In[ ]:
 
+try:
+    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+except:
+    pass
 from __future__ import print_function
 from mpi4py import MPI
 import math
@@ -49,10 +55,10 @@ order = 2
 R0 = 2.
 
 
-# In[2]:
+# In[ ]:
 
 # set up reference domain Gamma_0
-grid = create.grid("ALUSimplex", "sphere.dgf", dimgrid=2, dimworld=3)
+grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
 # space on Gamma_0 to describe position of Gamma(t)
@@ -115,7 +121,7 @@ def matplot(grid, solution, count):
 
 count   = 0
 t       = 0.
-endTime = 0.1
+endTime = 0.05
 dt      = 0.005
 fig     = 0
 model.setConstant(tau,[dt])
@@ -177,7 +183,7 @@ errors = np.zeros(numberOfLoops)
 totalIterations = np.zeros(numberOfLoops, np.dtype(np.uint32))
 gridSizes = np.zeros(numberOfLoops, np.dtype(np.uint32))
 for i in range(numberOfLoops):
-    positions.interpolate(lambda x: x*  R0/x.two_norm)
+    positions.interpolate(lambda x: x *  (R0/x.two_norm))
     solution.interpolate(lambda x: x)
     t       = 0.
     R      = calcRadius( surface )

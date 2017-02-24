@@ -8,7 +8,7 @@ add_sphinx_targets(sphinx
   crystal.ipynb
   demos.rst
   details.rst
-  duneufl.rst
+  #duneufl.rst
   extending.ipynb
   grid-construction.ipynb
   gridfunctions.ipynb
@@ -25,6 +25,6 @@ add_sphinx_targets(sphinx
   parameter
   parameters.ipynb
   spiral.ipynb
-  uflbindings.ipynb
+  #uflbindings.ipynb
   unitcube-2d.dgf
 )

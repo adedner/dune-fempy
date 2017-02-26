@@ -1,0 +1,22 @@
+include(DuneSphinxDoc)
+add_sphinx_files(notebooks
+  create.ipynb
+  crystal.ipynb
+  extending.ipynb
+  grid-construction.ipynb
+  gridfunctions.ipynb
+  laplace-intro.ipynb
+  laplace-dirichlet.ipynb
+  laplace-coefficients.ipynb
+  laplace-la.ipynb
+  laplace-adaptive.ipynb
+  laplace-dg.ipynb
+  mcf.ipynb
+  parameters.ipynb
+  spiral.ipynb
+  uflbindings.ipynb
+  sphere.dgf
+  unitcube-2d.dgf
+  parameter
+  mcf.gif
+)

@@ -1,4 +1,10 @@
 include(DuneSphinxDoc)
+set(SPHINXDIR ${CMAKE_BINARY_DIR}/doc/sphinx)
+file(COPY unitcube-2d.dgf DESTINATION ${SPHINXDIR})
+file(COPY sphere.dgf DESTINATION ${SPHINXDIR})
+file(COPY parameter DESTINATION ${SPHINXDIR})
+file(COPY mcf.gif DESTINATION ${SPHINXDIR})
+
 add_sphinx_files(notebooks
   create.ipynb
   crystal.ipynb
@@ -15,8 +21,4 @@ add_sphinx_files(notebooks
   parameters.ipynb
   spiral.ipynb
   uflbindings.ipynb
-  sphere.dgf
-  unitcube-2d.dgf
-  parameter
-  mcf.gif
 )

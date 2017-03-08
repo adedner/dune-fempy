@@ -36,7 +36,7 @@ bnd_u       = Coefficient(uflSpace)
 
 a = inner(grad(u),grad(v)) * dx(0)
 bnd = create.function("global", grid, "bnd", 3, inflow_u)
-model = create.model("elliptic", grid, a == 0, dirichlet={1:bnd_u}, coefficients={ bnd_u: bnd } )
+model = create.model("elliptic", grid, a == 0, dirichlet={1: bnd_u}, coefficients={bnd_u: bnd})
 
 # spaces
 pressureSpace = create.space( "Lagrange", grid, polorder = 1, dimrange = 1 )

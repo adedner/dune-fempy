@@ -57,12 +57,13 @@ def adaptiveLeafGridView(grid, *args, **kwargs):
     return module(includes, typeName, [constructor]).GridView(grid)
 
 
-def filteredGridView(hostGridView, contains, useFilteredIndexSet=False):
+def filteredGridView(hostGridView, contains, domainId, useFilteredIndexSet=False):
     """create a filtered grid view
 
     Args:
         hostGridView:        grid view to filter
-        contains:            function (Element -> bool) returning whether an element is contained in the resulting grid view
+        contains:            function (Element -> int) returning which grid filter an element is contained
+        domainId:            Id used to identify the grid filter
         useFilteredIndexSet: build index set containing only filtered entites? (defaults to false)
 
     Returns:
@@ -75,15 +76,15 @@ def filteredGridView(hostGridView, contains, useFilteredIndexSet=False):
     filterType = "Dune::Fem::SimpleFilter< " + hostGridPartType + " >"
     typeName = "Dune::Fem::FilteredGridPart< " + hostGridPartType + ", " + filterType + ", " + cppBool(useFilteredIndexSet) + " >::GridViewType"
 
-    constructor = ["[] ( " + typeName + " &self" + ", pybind11::handle hostGridView, pybind11::function contains ) {",
+    constructor = ["[] ( " + typeName + " &self" + ", pybind11::handle hostGridView, pybind11::function contains, int domainId ) {",
                    "    auto containsCpp = [ contains ] ( const " + hostGridPartType + "::Codim< 0 >::EntityType &e ) {",
-                   "        return contains( e ).template cast< bool >();",
+                   "        return contains( e ).template cast< int >();",
                    "      };",
                    "    " + hostGridPartType + " &hostGridPart = Dune::FemPy::gridPart< " + hostGridViewType + " >( hostGridView );",
-                   "    Dune::FemPy::constructGridPart( self, hostGridPart, " + filterType + "( hostGridPart, containsCpp ) );",
+                   "    Dune::FemPy::constructGridPart( self, hostGridPart, " + filterType + "( hostGridPart, containsCpp, domainId ) );",
                    "  }, pybind11::keep_alive< 1, 2 >()"]
 
-    return module(includes, typeName, [constructor]).GridView(hostGridView, contains)
+    return module(includes, typeName, [constructor]).GridView(hostGridView, contains, domainId)
 
 
 def geometryGridView(coordFunction):

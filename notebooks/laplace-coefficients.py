@@ -75,7 +75,7 @@ scheme = create.scheme("h1", spc, model, parameters=solverParameter)
 
 endTime = 0.4
 deltaT = 0.01
-model.setConstant(tau,[deltaT])
+model.setConstant(tau, deltaT)
 
 # now loop through time and output the solution after each time step
 steps = int(endTime / deltaT)

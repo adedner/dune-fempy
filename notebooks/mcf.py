@@ -35,11 +35,11 @@
 
 # In[ ]:
 
+from __future__ import print_function
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 from mpi4py import MPI
 import math
 
@@ -124,7 +124,7 @@ t       = 0.
 endTime = 0.05
 dt      = 0.005
 fig     = 0
-model.setConstant(tau,[dt])
+model.setConstant(tau,dt)
 
 matplot(surface,solution,fig)
 fig += 1
@@ -190,7 +190,7 @@ for i in range(numberOfLoops):
     Rexact = math.sqrt(R0*R0-4.*t)
     x = np.array([t])
     y = np.array([R-Rexact])
-    model.setConstant(tau,[dt])
+    model.setConstant(tau,dt)
     iterations = 0
     while t < endTime:
         solution,info = scheme.solve(target=solution)

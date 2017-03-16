@@ -68,9 +68,14 @@ a += mu * inner(u, v) * ds
 b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 
+# In[3]:
+
+a==b
+
+
 # Next, we compile this into the *integrands*, plug them into the *galerkin* scheme and solve the problem:
 
-# In[3]:
+# In[4]:
 
 model = create.model("integrands", grid, a == b)
 
@@ -82,7 +87,7 @@ uh, _ = scheme.solve()
 
 # The result looks as follows:
 
-# In[ ]:
+# In[5]:
 
 plot(uh)
 

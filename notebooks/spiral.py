@@ -62,11 +62,11 @@
 
 # In[ ]:
 
+from __future__ import print_function
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 import math
 from functools import reduce
 
@@ -151,9 +151,9 @@ linSourceCode = """      double ustar = (@gf:vn[ 0 ] + @const:b) / @const:a;
       else
         result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - ustar);
 """
-modelCode.appendCode('source', sourceCode,
+modelCode[0].appendCode('source', sourceCode,
                      coefficients={"un": uh_n, "vn": vh_n} )
-modelCode.appendCode('linSource', linSourceCode,
+modelCode[0].appendCode('linSource', linSourceCode,
                      coefficients={"un": uh_n, "vn": vh_n} )
 
 

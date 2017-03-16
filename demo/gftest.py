@@ -58,15 +58,4 @@ def expr_local(en,x):
     return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
 difference = create.function("local", grid, "difference", 3, expr_local )
 
-# method 1
 grid.writeVTK("gftest", pointdata=[control,func,funcUFL,solution,difference])
-
-# method 2
-vtk = grid.vtkWriter()
-grid = None   # is not needed anymore on python side
-control.addToVTKWriter(vtk, dune.common.DataType.CellData)
-func.addToVTKWriter(vtk, dune.common.DataType.CellData)
-funcUFL.addToVTKWriter(vtk, dune.common.DataType.CellData)
-solution.addToVTKWriter(vtk, dune.common.DataType.CellData)
-difference.addToVTKWriter(vtk, dune.common.DataType.CellData)
-vtk.write( "gftest" )

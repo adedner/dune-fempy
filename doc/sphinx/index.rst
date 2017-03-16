@@ -71,6 +71,7 @@ Some more details (Jupyter notebooks)
    :maxdepth: 3
 
    details
+   duneufl
 
 Indices and tables
 ==================
@@ -80,21 +81,43 @@ Indices and tables
 * :ref:`search`
 
 
-Files
-=====
+Notebooks and other files
+=========================
 
-:download:`parameter file example <./parameter>`
-:download:`<create <./create.ipynb>`
-:download:`laplace-dg <./laplace-dg.ipynb>`
-:download:`crystal <crystal-jupyter.ipynb>`
+
+:download:`create <create.ipynb>`
+
+:download:`laplace-dg <laplace-dg.ipynb>`
+
+:download:`crystal <crystal.ipynb>`
+
 :download:`laplace-dirichlet <laplace-dirichlet.ipynb>`
+
 :download:`extending <extending.ipynb>`
+
 :download:`laplace-intro <laplace-intro.ipynb>`
+
 :download:`grid-construction <grid-construction.ipynb>`
+
 :download:`laplace-la <laplace-la.ipynb>`
+
 :download:`gridfunctions <gridfunctions.ipynb>`
-:download:`mcf  <mcf.ipynb>`
+
+:download:`mcf <mcf.ipynb>`
+
 :download:`laplace-adaptive <laplace-adaptive.ipynb>`
+
 :download:`parameters <parameters.ipynb>`
+
 :download:`laplace-coefficients <laplace-coefficients.ipynb>`
+
 :download:`spiral <spiral.ipynb>`
+
+:download:`ufl-bindings <uflbindings.ipynb>`
+
+:download:`parameter file example <parameter>`
+
+:download:`unit cube grid file <unitcube-2d.dgf>`
+
+:download:`sphere grid file <sphere.dgf>`
+

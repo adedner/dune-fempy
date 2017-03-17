@@ -42,7 +42,7 @@ fvspc = create.space("FiniteVolume", grid, dimrange=1, storage="istl")
 estimate = fvspc.interpolate(solution, name="estimate")
 
 hT = MaxCellEdgeLength(uflSpace.cell())
-he = MaxFacetEdgeLength(uflSpace.cell())
+he = MaxFacetEdgeLength(uflSpace.cell())('+')
 n = FacetNormal(uflSpace.cell())
 estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
 estimator_model = create.model("integrands", grid, estimator_ufl == 0)

@@ -11,12 +11,7 @@ fi
 
 echo 'This script is for installing dune-fempy on Linux
 
-It will install the following python modules:
-pip setuptools mpi4py sympy ufl sphinx
-
-It will install Open MPI
-
-It will also install DUNE with the following components:
+It will install DUNE with the following components:
 dune-common dune-geometry dune-grid dune-istl dune-localfunctions dune-alugrid dune-fem dune-corepy dune-fempy'
 
 read -p "Continue (y/n)? " choice

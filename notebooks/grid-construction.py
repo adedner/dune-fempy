@@ -11,11 +11,11 @@
 
 # In[ ]:
 
+from __future__ import print_function
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 
 import dune.common
 import dune.create as create
@@ -62,7 +62,7 @@ plotGrid(grid)
 import numpy
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
-grid = create.grid("ALUConform", {"vertex": vertices, "simplex": triangles}, dimgrid=2)
+grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles}, dimgrid=2)
 plotGrid(grid)
 
 

@@ -582,7 +582,7 @@ def load(grid, integrands, renumbering=None, tempVars=True):
     #code.append(Include("dune/fem/misc/boundaryidprovider.hh"))
 
     code += integrands.includes()
-    code.append(Include("dune/corepy/pybind11/pybind11.h"))
+    code.append(Include("pybind11/pybind11.h"))
     code.append(Include("dune/corepy/pybind11/extensions.h"))
     code.append(Include("dune/fempy/py/grid/gridpart.hh"))
 

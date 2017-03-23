@@ -5,9 +5,9 @@
 
 #include <dune/fem/misc/l2norm.hh>
 
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 #if HAVE_EIGEN
-#include <dune/corepy/pybind11/eigen.h>
+#include <pybind11/eigen.h>
 #endif
 
 #include <dune/fempy/function/virtualizedgridfunction.hh>

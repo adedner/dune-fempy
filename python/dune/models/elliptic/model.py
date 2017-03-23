@@ -518,7 +518,7 @@ def generateModel(grid, model, *args, **kwargs):
     code += [Include(i) for i in grid._includes]
     code.append(Include("dune/fem/misc/boundaryidprovider.hh>"))
 
-    code.append(Include("dune/corepy/pybind11/pybind11.h"))
+    code.append(Include("pybind11/pybind11.h"))
     code.append(Include("dune/corepy/pybind11/extensions.h"))
     code.append(Include("dune/fempy/py/grid/gridpart.hh"))
     if model.coefficients:

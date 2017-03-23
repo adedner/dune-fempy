@@ -15,8 +15,8 @@
 #include <dune/grid/common/rangegenerators.hh>
 
 #include <dune/corepy/grid/numpy.hh>
-#include <dune/corepy/pybind11/numpy.h>
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 
 namespace Dune
 {

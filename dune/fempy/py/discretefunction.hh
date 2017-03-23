@@ -4,10 +4,10 @@
 #include <dune/fem/function/vectorfunction/vectorfunction.hh>
 #include <dune/fem/space/common/interpolate.hh>
 
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 #include <dune/corepy/pybind11/extensions.h>
 //#if HAVE_EIGEN
-//#include <dune/corepy/pybind11/eigen.h>
+//#include <pybind11/eigen.h>
 //#endif // #if HAVE_EIGEN
 
 #include <dune/fempy/py/common/numpyvector.hh>

@@ -6,7 +6,7 @@
 
 #include <dune/common/typeutilities.hh>
 
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 
 #include <dune/fem/operator/common/differentiableoperator.hh>
 

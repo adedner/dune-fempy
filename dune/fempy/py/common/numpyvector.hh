@@ -4,8 +4,8 @@
 #include <dune/common/densevector.hh>
 #include <dune/common/ftraits.hh>
 
-#include <dune/corepy/pybind11/numpy.h>
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 
 namespace Dune
 {

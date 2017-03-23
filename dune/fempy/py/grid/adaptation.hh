@@ -10,8 +10,8 @@
 #include <dune/fempy/grid/adaptation.hh>
 #include <dune/fempy/py/grid/restrictprolong.hh>
 
-#include <dune/corepy/pybind11/pybind11.h>
-#include <dune/corepy/pybind11/stl.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace Dune
 {

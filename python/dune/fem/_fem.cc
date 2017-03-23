@@ -6,7 +6,7 @@
 #include <dune/fem/io/parameter.hh>
 
 #include <dune/corepy/pybind11/extensions.h>
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 
 PYBIND11_PLUGIN( _fem )
 {

@@ -18,7 +18,7 @@
 
 #include <dune/fempy/grid/gridpartadapter.hh>
 
-#include <dune/corepy/pybind11/pybind11.h>
+#include <pybind11/pybind11.h>
 
 namespace Dune
 {

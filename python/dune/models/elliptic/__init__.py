@@ -85,7 +85,7 @@ def load(grid, model, *args, **kwargs):
     writer.emit('')
     writer.emit('#include <dune/fem/misc/boundaryidprovider.hh>')
     writer.emit('')
-    writer.emit('#include <dune/corepy/pybind11/pybind11.h>')
+    writer.emit('#include <pybind11/pybind11.h>')
     writer.emit('#include <dune/corepy/pybind11/extensions.h>')
     writer.emit('')
     writer.emit('#include <dune/fempy/py/grid/gridpart.hh>')

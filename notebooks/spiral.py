@@ -60,13 +60,13 @@
 
 # Let's get started by importing some standard python packages, ufl, and some part of the dune-fempy package:
 
-# In[ ]:
+# In[1]:
 
-from __future__ import print_function
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
+from __future__ import print_function
 import math
 from functools import reduce
 
@@ -81,7 +81,7 @@ import dune.create as create
 
 # In our attempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to choose from):
 
-# In[ ]:
+# In[2]:
 
 dimRange   = 1
 dt         = 0.25
@@ -103,9 +103,9 @@ initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 
 # Now we set up the reference domain, the Lagrange finite element space (second order), and discrete functions for $(u^n,v^n($, $(u^{n+1},v^{n+1})$:
 
-# In[ ]:
+# In[3]:
 
-domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
+# domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
 domain = dune.grid.cartesianDomain([0,0],[2.5,2.5],[30,30])
 grid = create.grid("ALUCube", domain, dimgrid=2)
 spc  = create.space( "Lagrange", grid, dimrange=dimRange, order=1 )
@@ -120,13 +120,13 @@ vh_n = vh.copy()
 # - first we define the standard parts, not involving $f_E,f_I$:
 # - then we add the missing parts with the required _if_ statement directly using C++ code
 
-# In[ ]:
+# In[4]:
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u   = ufl.TrialFunction(uflSpace)
 phi = ufl.TestFunction(uflSpace)
-un  = dune.ufl.Coefficient(uflSpace, name="un")
-vn  = dune.ufl.Coefficient(uflSpace, name="vn")
+un  = dune.ufl.Coefficient(uflSpace) # , name="un")
+vn  = dune.ufl.Coefficient(uflSpace) # , name="vn")
 
 # right hand sie (time derivative part + explicit forcing in v)
 a_ex = ufl.inner(un, phi) * ufl.dx
@@ -134,47 +134,29 @@ a_ex = ufl.inner(un, phi) * ufl.dx
 a_im = (dt * spiral_D * ufl.inner(ufl.grad(u), ufl.grad(phi)) +
         ufl.inner(u,phi)) * ufl.dx
 
-modelCode = dune.models.elliptic.compileUFL(a_im == a_ex)
+ustar = (vn[0]+spiral_b)/spiral_a
+a_ex += ufl.conditional(un[0]<ustar, dt/spiral_eps* u[0]*(1-un[0])*(un[0]-ustar),
+                                     dt/spiral_eps*un[0]*(1-u[0]) *(un[0]-ustar) ) * phi[0] * ufl.dx
+
+equation = a_im == a_ex
 
 
-# In[ ]:
-
-sourceCode = """      double ustar = (@gf:vn[ 0 ] + @const:b) / @const:a;
-      if( @gf:un[ 0 ] <= ustar )
-        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - ustar);
-      else
-        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (1.0 - u[ 0 ]) * (@gf:un[ 0 ] - ustar);
-"""
-linSourceCode = """      double ustar = (@gf:vn[ 0 ] + @const:b) / @const:a;
-      if( @gf:un[ 0 ] <= ustar )
-        result[ 0 ] -= @const:dt/@const:eps * u[ 0 ] * (1.0 - @gf:un[ 0 ]) * (@gf:un[ 0 ] - ustar);
-      else
-        result[ 0 ] -= @const:dt/@const:eps * @gf:un[ 0 ] * (-u[ 0 ]) * (@gf:un[ 0 ] - ustar);
-"""
-modelCode[0].appendCode('source', sourceCode,
-                     coefficients={"un": uh_n, "vn": vh_n} )
-modelCode[0].appendCode('linSource', linSourceCode,
-                     coefficients={"un": uh_n, "vn": vh_n} )
-
-
-# In[ ]:
+# In[5]:
 
 rhs_gf = create.function("ufl", grid, "rhs", order=2,
                          ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
-                         coefficients={'un': uh_n, 'vn': vh_n} )
+                         coefficients={un: uh_n, vn: vh_n} )
 
 
 # The model is now completely implemented and can be created, together with the corresponding scheme:
 
+# In[6]:
+
+model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
+
+
 # In[ ]:
 
-model = create.model("elliptic", grid,
-                     modelCode,
-                     coefficients={"un": uh_n, "vn": vh_n} )
-model.setConstant("a", [spiral_a])
-model.setConstant("b", [spiral_b])
-model.setConstant("eps", [spiral_eps])
-model.setConstant("dt", [dt])
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-3,
         "fem.solver.newton.linabstol": 1e-5,
@@ -217,7 +199,15 @@ def animate(count):
         t     += dt
     data = uh.pointData(1)
     plt.tricontourf(triangulation, data[:,0], cmap=plt.cm.rainbow, levels=levels)
-    # grid.writeVTK("spiral", pointdata=[solution], number=count)
+    grid.writeVTK("spiral", pointdata=[uh], number=count)
     nextstep += stepsize
 
 animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
+
+
+# In[ ]:
+
+dir(model)
+
+
+# In[ ]:

@@ -155,7 +155,7 @@ rhs_gf = create.function("ufl", grid, "rhs", order=2,
 model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
 
 
-# In[ ]:
+# In[7]:
 
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-3,
@@ -169,7 +169,7 @@ scheme = create.scheme("h1", spc, model, ("pardg","cg"),parameters=solverParamet
 
 # To show the solution we make use of the _animate_ module of _matplotlib_:
 
-# In[ ]:
+# In[8]:
 
 import matplotlib.pyplot as plt
 from numpy import linspace
@@ -203,11 +203,3 @@ def animate(count):
     nextstep += stepsize
 
 animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
-
-
-# In[ ]:
-
-dir(model)
-
-
-# In[ ]:

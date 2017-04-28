@@ -31,3 +31,5 @@ model = create.model("integrands", grid, a == b)
 scheme = create.scheme("galerkin", space, model)
 solution, _ = scheme.solve()
 grid.writeVTK("l2projection", pointdata=[solution])
+
+scheme.assemble(solution).store("l2projection.mm", "matrixmarket")

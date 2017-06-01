@@ -6,8 +6,14 @@
 #include <type_traits>
 #include <utility>
 
-#include <dune/grid/common/entitypointer.hh>
+#include <dune/common/version.hh>
+
 #include <dune/grid/common/gridenums.hh>
+
+#if ! DUNE_VERSION_NEWER(DUNE_GRID, 2, 6 )
+#include <dune/grid/common/entitypointer.hh>
+#endif
+
 
 namespace Dune
 {
@@ -60,6 +66,7 @@ namespace Dune
         return hostIterator_.level();
       }
 
+#if ! DUNE_VERSION_NEWER(DUNE_GRID, 2, 6 )
       operator Dune::DefaultEntityPointer< Entity > () const
       {
         return Dune::DefaultEntityPointer< Entity >( dereference() );
@@ -69,6 +76,7 @@ namespace Dune
       {
         return dereference() == rhs.dereference();
       }
+#endif
 
     private:
       const GridFunctionType &gridFunction () const

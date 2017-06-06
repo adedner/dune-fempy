@@ -1,6 +1,8 @@
 #ifndef DUNE_FEM_GRIDPART_GEOMETRYGRIDPART_HH
 #define DUNE_FEM_GRIDPART_GEOMETRYGRIDPART_HH
 
+#include <cassert>
+
 #include <dune/common/version.hh>
 
 #if ! DUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS
@@ -13,6 +15,7 @@
 #include <dune/fem/gridpart/common/gridpart2gridview.hh>
 #include <dune/fem/gridpart/common/metatwistutility.hh>
 #include <dune/fem/gridpart/idgridpart/indexset.hh>
+#include <dune/fem/gridpart/idgridpart/iterator.hh>
 
 #include <dune/fem/gridpart/common/compositegeometry.hh>
 #include <dune/fem/gridpart/common/localfunctiongeometry.hh>
@@ -22,7 +25,6 @@
 #include <dune/fem/gridpart/geometrygridpart/entity.hh>
 #include <dune/fem/gridpart/geometrygridpart/intersection.hh>
 #include <dune/fem/gridpart/geometrygridpart/intersectioniterator.hh>
-#include <dune/fem/gridpart/geometrygridpart/iterator.hh>
 
 namespace Dune
 {
@@ -35,6 +37,25 @@ namespace Dune
 
     template< class GridFunctionType >
     class GeometryGridPart;
+
+
+
+    // GeometryGridPartData
+    // --------------------
+
+    template< class GridFunction >
+    struct GeometryGridPartData
+    {
+      typedef GridFunction GridFunctionType;
+
+      GeometryGridPartData () noexcept = default;
+      GeometryGridPartData ( const GridFunctionType &gridFunction ) noexcept : gridFunction_( &gridFunction ) {}
+
+      operator const GridFunctionType & () const { assert( gridFunction_ ); return *gridFunction_; }
+
+    private:
+      const GridFunctionType *gridFunction_ = nullptr;
+    };
 
 
 
@@ -54,6 +75,7 @@ namespace Dune
 
       struct Traits
       {
+        typedef GeometryGridPartData< GridFunction > ExtraData;
         typedef GridFunction GridFunctionType;
         typedef typename GridFunctionType::GridPartType HostGridPartType;
 
@@ -71,9 +93,9 @@ namespace Dune
 
           typedef Dune::Entity< codim, dimension, const GridPartFamily, GeometryGridPartEntity > Entity;
           typedef typename HostGridPartType::GridType::template Codim< codim >::EntitySeed EntitySeed;
-#if ! DUNE_VERSION_NEWER( DUNE_GRID, 3, 0 )
+#if ! DUNE_VERSION_NEWER( DUNE_GRID, 2, 6 )
           typedef Dune::EntityPointer< const GridPartFamily, DefaultEntityPointer< Entity > > EntityPointer;
-#endif // #if ! DUNE_VERSION_NEWER( DUNE_GRID, 3, 0 )
+#endif // #if ! DUNE_VERSION_NEWER( DUNE_GRID, 2, 6 )
         };
 
         typedef DeadIntersection< const GridPartFamily > IntersectionImplType;
@@ -139,13 +161,15 @@ namespace Dune
         typedef typename GridFamily::Traits::template Codim< codim >::LocalGeometry LocalGeometryType;
 
         typedef typename GridFamily::Traits::template Codim< codim >::Entity EntityType;
+#if ! DUNE_VERSION_NEWER( DUNE_GRID, 2, 6 )
         typedef Dune::EntityPointer< const GridPartFamily, DefaultEntityPointer< EntityType > > EntityPointerType;
+#endif // #if ! DUNE_VERSION_NEWER( DUNE_GRID, 2, 6 )
         typedef typename GridFamily::Traits::template Codim< codim >::EntitySeed EntitySeedType;
 
         template< PartitionIteratorType pitype >
         struct Partition
         {
-          typedef EntityIterator< codim, const GridFamily, GeometryGridPartIterator< codim, pitype, const GridFamily > > IteratorType;
+          typedef EntityIterator< codim, const GridFamily, IdIterator< codim, pitype, const GridFamily > > IteratorType;
         };
       };
 
@@ -216,7 +240,7 @@ namespace Dune
       typename Codim< codim >::template Partition< pitype >::IteratorType
       begin () const
       {
-        return GeometryGridPartIterator< codim, pitype, const GridFamily >( gridFunction_, hostGridPart().template begin< codim, pitype >() );
+        return IdIterator< codim, pitype, const GridFamily >( gridFunction_, hostGridPart().template begin< codim, pitype >() );
       }
 
       template< int codim >
@@ -230,7 +254,7 @@ namespace Dune
       typename Codim< codim >::template Partition< pitype >::IteratorType
       end () const
       {
-        return GeometryGridPartIterator< codim, pitype, const GridFamily >( gridFunction_, hostGridPart().template end< codim, pitype >() );
+        return IdIterator< codim, pitype, const GridFamily >( gridFunction_, hostGridPart().template end< codim, pitype >() );
       }
 
       int level () const

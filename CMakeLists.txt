@@ -24,4 +24,8 @@ add_subdirectory("navierstokes")
 add_subdirectory("phasefield")
 add_subdirectory("models")
 
+if(NOT (${DUNE_COMMON_VERSION} VERSION_LESS 2.6))
+  dune_python_install_package(PATH "python")
+endif()
+
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)

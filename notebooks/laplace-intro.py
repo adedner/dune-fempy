@@ -88,7 +88,6 @@ scheme = create.scheme("h1", spc, model)
 
 exact_gf = create.function("ufl", grid, "exact", 5, exact)
 
-
 # Now we solve the system. We assign the solution to `uh`, and define a function to calculate the $L^2$ error, i.e. $|u_h - u|_{L^2}$. We output the data to a vtk file with name `laplace`, and plot it using `plot`. Finally we refine the grid twice and repeat the process.
 
 # In[ ]:
@@ -104,12 +103,12 @@ for i in range(levels):
     l2error_gf = create.function("local", grid, "error", 5, l2error)
     error = sqrt(l2error_gf.integrate()[0])
 
-    testUFL = as_vector([ ufl.sqrt(uh[0]-exact_gf[0]) ])
-    print(testUFL)
+    testUFL = as_vector([ (uh[0]-exact_gf[0])**2 ])
     # this needs to work
     test_gf = create.function("ufl", grid, "test", 5, testUFL)
+    errorUFL = sqrt(test_gf.integrate()[0])
 
-    print("size:", grid.size(0), "L2-error:", error)
+    print("size:", grid.size(0), "L2-error:", error, errorUFL)
     grid.writeVTK("laplace", pointdata=[uh, l2error_gf])
     plot(uh,gridLines="black")
 

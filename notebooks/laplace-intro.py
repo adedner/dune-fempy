@@ -60,6 +60,7 @@ x = SpatialCoordinate(uflSpace.cell())
 
 from math import pi,log10
 from ufl import cos, as_vector, dx, grad, inner
+import ufl
 f = (8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])
 exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 equation = (inner(grad(u), grad(v)) + inner(u,v)) * dx == f * v[0] * dx
@@ -102,6 +103,11 @@ for i in range(levels):
         return [ val[0]*val[0] ];
     l2error_gf = create.function("local", grid, "error", 5, l2error)
     error = sqrt(l2error_gf.integrate()[0])
+
+    testUFL = l2error_gf - exact_gf
+    testUFL = as_vector([ ufl.sqrt(l2error_gf[0]) ])
+    # this needs to work
+    # test_gf = create.function("ufl", grid, "test", 5, testUFL)
 
     print("size:", grid.size(0), "L2-error:", error)
     grid.writeVTK("laplace", pointdata=[uh, l2error_gf])

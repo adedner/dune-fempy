@@ -104,10 +104,10 @@ for i in range(levels):
     l2error_gf = create.function("local", grid, "error", 5, l2error)
     error = sqrt(l2error_gf.integrate()[0])
 
-    testUFL = l2error_gf - exact_gf
-    testUFL = as_vector([ ufl.sqrt(l2error_gf[0]) ])
+    testUFL = as_vector([ ufl.sqrt(uh[0]-exact_gf[0]) ])
+    print(testUFL)
     # this needs to work
-    # test_gf = create.function("ufl", grid, "test", 5, testUFL)
+    test_gf = create.function("ufl", grid, "test", 5, testUFL)
 
     print("size:", grid.size(0), "L2-error:", error)
     grid.writeVTK("laplace", pointdata=[uh, l2error_gf])

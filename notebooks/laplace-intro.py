@@ -103,7 +103,9 @@ for i in range(levels):
     l2error_gf = create.function("local", grid, "error", 5, l2error)
     error = sqrt(l2error_gf.integrate()[0])
 
-    testUFL = as_vector([ (uh[0]-exact_gf[0])**2 ])
+    print(uh.ufl_shape,uh)
+    testUFL = as_vector([ (uh-exact_gf)[0]**2 ])
+    # testUFL = as_vector([ (uh[0]-exact_gf[0])**2 ])
     # this needs to work
     test_gf = create.function("ufl", grid, "test", 5, testUFL)
     errorUFL = sqrt(test_gf.integrate()[0])

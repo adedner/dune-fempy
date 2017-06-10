@@ -121,7 +121,7 @@ plot(uh)
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()
 def f(x_coeff):
-    x = spc.numpyfunction(x_coeff, "tmp")
+    x = spc.numpyFunction(x_coeff, "tmp")
     scheme(x,res)
     return res_coeff
 # class for the derivative DS of S
@@ -131,12 +131,12 @@ class Df(scipy.sparse.linalg.LinearOperator):
         self.dtype = sol_coeff.dtype
         # the following converts a given numpy array
         # into a discrete function over the given space
-        x = spc.numpyfunction(x_coeff, "tmp")
+        x = spc.numpyFunction(x_coeff, "tmp")
         # store the assembled matrix
         self.jac = scheme.assemble(x)
     # reassemble the matrix DF(u) gmiven a dof vector for u
     def update(self,x_coeff,f):
-        x = spc.numpyfunction(x_coeff, "tmp")
+        x = spc.numpyFunction(x_coeff, "tmp")
         # Note: the following does produce a copy of the matrix
         # and each call here will reproduce the full matrix
         # structure - no reuse possible in this version

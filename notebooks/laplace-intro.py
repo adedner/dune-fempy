@@ -104,10 +104,10 @@ for i in range(levels):
     old_error = sqrt(l2error_gf.integrate()[0])
 
     error = uh-exact
-    error_gf = create.function("ufl", grid, "test", 5, error**2 )
-    l2error = sqrt(error_gf.integrate()[0])
-    error_gf = create.function("ufl", grid, "test", 5, ufl.inner(grad(error),grad(error)) )
-    h1error = sqrt(error_gf.integrate()[0])
+    l2error_gf = create.function("ufl", grid, "test", 5, error**2 )
+    l2error = sqrt(l2error_gf.integrate()[0])
+    h1error_gf = create.function("ufl", grid, "test", 5, ufl.inner(grad(error),grad(error)) )
+    h1error = sqrt(h1error_gf.integrate()[0])
 
     # this doesn't work (exact_gf is the problem)
     # error_gf = create.function("ufl", grid, "test", 5, (uh-exact_gf)**2 )
@@ -117,6 +117,23 @@ for i in range(levels):
 
     grid.writeVTK("laplace", pointdata=[uh.gf, l2error_gf.gf])
     plot(uh,gridLines="black")
+
+    # experiment with evaluating ufl expressions
+    # here we compare the difference between the evaluation of 'error' and
+    # the generated grid function 'l2error_gf' which should be the same
+    maxDiff = 0.
+    for e in grid.elements():
+        class Coordinate:
+            def __init__(self,e,xlocal):
+                self.entity = e
+                self.xlocal = xlocal
+                self.xglobal = e.geometry.position(xlocal)
+            def __getitem__(self,i):
+                return self.xglobal[i]
+        diff = (error**2)( Coordinate(e,[1./3.,1./3.]) ) -\
+               l2error_gf.localFunction(e).evaluate([1./3.,1./3.])[0]
+        maxDiff = max(maxDiff,abs(diff))
+    print(maxDiff)
 
     if i < levels-1:
         grid.hierarchicalGrid.globalRefine(2)

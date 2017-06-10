@@ -104,14 +104,18 @@ for i in range(levels):
     error = sqrt(l2error_gf.integrate()[0])
 
     print(uh.ufl_shape,uh)
-    testUFL = as_vector([ (uh-exact_gf)[0]**2 ])
+    # this works
+    testUFL = as_vector([ (uh-exact)[0]**2 ])
+    # this doesn't (exact_gf is the problem)
     # testUFL = as_vector([ (uh[0]-exact_gf[0])**2 ])
-    # this needs to work
+    tmp1 = uh.gf
+    tmp2 = exact_gf.gf
     test_gf = create.function("ufl", grid, "test", 5, testUFL)
     errorUFL = sqrt(test_gf.integrate()[0])
 
     print("size:", grid.size(0), "L2-error:", error, errorUFL)
-    grid.writeVTK("laplace", pointdata=[uh, l2error_gf])
+    grid.writeVTK("laplace", pointdata=[tmp1,tmp2])
+    grid.writeVTK("laplace", pointdata=[uh.gf, l2error_gf.gf])
     plot(uh,gridLines="black")
 
     if i < levels-1:

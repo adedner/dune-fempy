@@ -101,20 +101,20 @@ for i in range(levels):
         val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
         return [ val[0]*val[0] ];
     l2error_gf = create.function("local", grid, "error", 5, l2error)
-    error = sqrt(l2error_gf.integrate()[0])
+    old_error = sqrt(l2error_gf.integrate()[0])
 
-    print(uh.ufl_shape,uh)
-    # this works
-    testUFL = as_vector([ (uh-exact)[0]**2 ])
-    # this doesn't (exact_gf is the problem)
-    # testUFL = as_vector([ (uh[0]-exact_gf[0])**2 ])
-    tmp1 = uh.gf
-    tmp2 = exact_gf.gf
-    test_gf = create.function("ufl", grid, "test", 5, testUFL)
-    errorUFL = sqrt(test_gf.integrate()[0])
+    error = uh-exact
+    error_gf = create.function("ufl", grid, "test", 5, error**2 )
+    l2error = sqrt(error_gf.integrate()[0])
+    error_gf = create.function("ufl", grid, "test", 5, ufl.inner(grad(error),grad(error)) )
+    h1error = sqrt(error_gf.integrate()[0])
 
-    print("size:", grid.size(0), "L2-error:", error, errorUFL)
-    grid.writeVTK("laplace", pointdata=[tmp1,tmp2])
+    # this doesn't work (exact_gf is the problem)
+    # error_gf = create.function("ufl", grid, "test", 5, (uh-exact_gf)**2 )
+    # print( sqrt(error_gf.integrate()[0]) )
+
+    print("size:", grid.size(0), "L2-error:", old_error, l2error, h1error)
+
     grid.writeVTK("laplace", pointdata=[uh.gf, l2error_gf.gf])
     plot(uh,gridLines="black")
 

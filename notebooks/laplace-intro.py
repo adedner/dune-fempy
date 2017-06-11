@@ -32,18 +32,15 @@ dune.fem.parameter.append("parameter")
 
 import dune.create as create
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]), dimgrid=2)
-
+spc = create.space("Lagrange", grid, dimrange=1, order=1)
 
 # We set up the base variables u, v and x in UFL.
 
 # In[ ]:
 
-from dune.ufl import Space
-from ufl import TestFunction, TrialFunction, SpatialCoordinate
-uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
+u = spc.uflTrialFunction
+v = spc.uflTestFunction
+x = spc.uflSpatialCoordinate
 
 
 # Next we define the equation for the weak form, given by
@@ -71,7 +68,6 @@ equation
 
 # In[ ]:
 
-spc = create.space("Lagrange", grid, dimrange=1, order=1)
 model = create.model("elliptic", grid, equation)
 
 

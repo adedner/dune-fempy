@@ -119,15 +119,13 @@ for i in range(levels):
     # the generated grid function 'l2error_gf' which should be the same
     maxDiff = 0.
     for e in grid.elements():
-        class Coordinate:
-            def __init__(self,e,xlocal):
-                self.entity = e
-                self.xlocal = xlocal
-                self.xglobal = e.geometry.position(xlocal)
-            def __getitem__(self,i):
-                return self.xglobal[i]
-        diff = (error**2)( Coordinate(e,[1./3.,1./3.]) ) -\
-               l2error_gf.localFunction(e).evaluate([1./3.,1./3.])[0]
+        diff = (error**2)( e([1./3.,1./3.]) ) - l2error_gf[0]( e([1./3.,1./3.]) )
+        diff = (as_vector([error**2])-l2error_gf)[0]( e([1./3.,1./3.]) )
+        diff = (error**2-l2error_gf[0])( e([1./3.,1./3.]) )
+        maxDiff = max(maxDiff,abs(diff))
+        diff = inner( grad(l2error_gf),grad(l2error_gf)) ( e([1./3.,1./3.]) ) -\
+               l2error_gf.localFunction(e).jacobian([1./3.,1./3.])[0]*\
+               l2error_gf.localFunction(e).jacobian([1./3.,1./3.])[0]
         maxDiff = max(maxDiff,abs(diff))
     print(maxDiff)
 

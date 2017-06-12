@@ -24,6 +24,7 @@ except:
 import dune.fem
 import dune.fem.function
 from dune.fem.plotting import plotPointData as plot
+from dune.fem.plotting import plotComponents
 dune.fem.parameter.append("parameter")
 
 
@@ -32,7 +33,7 @@ dune.fem.parameter.append("parameter")
 # In[ ]:
 
 import dune.create as create
-grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]), dimgrid=2)
+grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [10, 10]), dimgrid=2)
 spc = create.space("Lagrange", grid, dimrange=1, order=1)
 
 # We set up the base variables u, v and x in UFL.
@@ -105,15 +106,24 @@ for i in range(levels):
     old_error = sqrt(l2error_gf.integrate()[0])
 
     plot(uh,gridLines="black")
-    plot(exact_gf.component(0),gridLines="black")
+    plot(exact_gf[0],gridLines="black")
+    plot(exact,gridLines="black",grid=grid)
     plot(uh[0],gridLines="black")
     # the below can't yet work but would be nice?
-    # plot((uh-exact),gridLines="black")
-    # plot((uh-exact)[0],gridLines="black")
+    plot((uh-exact),gridLines="black",grid=grid)
+    plot((uh-exact)[0],gridLines="black",grid=grid)
+    plotComponents(grad(exact[0]),gridLines="black",grid=grid)
+    plotComponents(grad(uh[0]-exact[0]),gridLines="black",grid=grid)
 
     error = uh-exact
     l2error_gf = create.function("ufl", grid, "test", 5, error**2 )
-    assert sqrt( l2error_gf.integrate()[0] ) == sqrt( dune.fem.function.integrate(grid, l2error_gf, order=5)[0])
+    # a test
+    if abs(l2error_gf.integrate()[0]-
+            dune.fem.function.integrate(grid, l2error_gf, order=5)[0])\
+        > 1e-12:
+        print("error in integration:")
+        print(l2error_gf.integrate()[0],
+              dune.fem.function.integrate(grid, l2error_gf, order=5)[0])
     l2error = sqrt( dune.fem.function.integrate(grid, l2error_gf[0], order=5) )
     h1error = sqrt( dune.fem.function.integrate(grid, inner(grad(error),grad(error)), order=5 ) )
 

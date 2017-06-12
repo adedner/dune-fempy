@@ -22,6 +22,7 @@ try:
 except:
     pass
 import dune.fem
+import dune.fem.function
 from dune.fem.plotting import plotPointData as plot
 dune.fem.parameter.append("parameter")
 
@@ -93,17 +94,28 @@ levels=2
 for i in range(levels):
     print("solve on level", i, "number of dofs=", spc.size)
     uh,_ = scheme.solve()
+
+    # problem: when removing that the local function is not exported and
+    # then uh[0] doesn't work because the PyLocalFunction is not registered
+    # with pybind11
     def l2error(en,x):
         val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
         return [ val[0]*val[0] ];
     l2error_gf = create.function("local", grid, "error", 5, l2error)
     old_error = sqrt(l2error_gf.integrate()[0])
 
+    plot(uh,gridLines="black")
+    plot(exact_gf.component(0),gridLines="black")
+    plot(uh[0],gridLines="black")
+    # the below can't yet work but would be nice?
+    # plot((uh-exact),gridLines="black")
+    # plot((uh-exact)[0],gridLines="black")
+
     error = uh-exact
     l2error_gf = create.function("ufl", grid, "test", 5, error**2 )
-    l2error = sqrt(l2error_gf.integrate()[0])
-    h1error_gf = create.function("ufl", grid, "test", 5, ufl.inner(grad(error),grad(error)) )
-    h1error = sqrt(h1error_gf.integrate()[0])
+    assert sqrt( l2error_gf.integrate()[0] ) == sqrt( dune.fem.function.integrate(grid, l2error_gf, order=5)[0])
+    l2error = sqrt( dune.fem.function.integrate(grid, l2error_gf[0], order=5) )
+    h1error = sqrt( dune.fem.function.integrate(grid, inner(grad(error),grad(error)), order=5 ) )
 
     # this doesn't work (exact_gf is the problem)
     # error_gf = create.function("ufl", grid, "test", 5, (uh-exact_gf)**2 )

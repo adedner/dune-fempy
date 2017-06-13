@@ -80,9 +80,10 @@ scalarUFLSpace = dune.ufl.Space(grid,1)
 coeff = ufl.Coefficient(scalarUFLSpace)
 coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [2])
 expr = ufl.as_vector([ s*s*coeff[0] ])
+# needs virtual gf wrapper - also note that the use of funcUFL fails
 funcUFL1 = create.function("ufl", grid, "ufl1", 4, expr,
 #                           coefficients={coeff: funcUFL})
-                           coefficients={coeff: coeffFunc})
+                           coefficients={coeff: coeffFunc.gf})
 plot(funcUFL1)
 # for e in grid.elements():
 #     print( funcUFL1.localFunction(e) )
@@ -114,7 +115,8 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 code = { 'eval': func1, 'jac': func2 }
 
 coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
-func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
+# needs virtual gf wrapper - also note that the use of funcUFL fails
+func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc.gf} )
 func.setConstant("fac", [10])
 # show all components but not the grid
 plotComponents(func,gridLines="")
@@ -216,7 +218,7 @@ def id(x):
 dofs = np.random.random(spc.size)
 print("id of numpy array: ", id(dofs))
 # reinterpret the numpy vector as a discrete function
-xh = spc.numpyfunction(dofs,"name")
+xh = spc.numpyFunction(dofs,"name")
 # get the dof vector as numpy array
 xh_dofs = np.array( xh, copy=False )
 print("id of dof vector: ", id(xh_dofs))

@@ -51,12 +51,11 @@ old_solution = solution.copy();
 
 # now define the actual pde to solve:
 #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0
-uflSpace = Space(spc)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-u_n = GridCoefficient(old_solution)
-tau = Constant(triangle)
-a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
+u = spc.uflTrialFunction
+v = spc.uflTestFunction
+# u_n = GridCoefficient(old_solution)
+tau = spc.namedConstant(name="tau")
+a = (inner(u - old_solution, v) + tau * inner(grad(theta*u + (1-theta)*old_solution), grad(v))) * dx
 
 # now generate the model code and compile
 model = create.model("elliptic", grid, a == 0)
@@ -75,7 +74,10 @@ scheme = create.scheme("h1", spc, model, parameters=solverParameter)
 
 endTime = 0.4
 deltaT = 0.01
-model.setConstant(tau, deltaT)
+# model.setConstant(tau, deltaT) fails with named constant
+model.setConstant("tau", deltaT)
+model.tau = deltaT
+print(model.tau)
 
 # now loop through time and output the solution after each time step
 steps = int(endTime / deltaT)

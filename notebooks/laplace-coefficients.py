@@ -1,4 +1,5 @@
 # coding: utf-8
+from __future__ import print_function
 
 # # Heat Equation - adding coefficient and constants to the model [(Notebook)][1]
 #
@@ -11,7 +12,6 @@ try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 
 import math
 from ufl import *

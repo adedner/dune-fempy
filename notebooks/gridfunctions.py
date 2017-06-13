@@ -201,7 +201,7 @@ import numpy as np
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
-uh_dofs = np.array( uh, copy=False )
+uh_dofs = uh.array
 uh_dofs *= -2
 plot(uh)
 
@@ -220,7 +220,7 @@ print("id of numpy array: ", id(dofs))
 # reinterpret the numpy vector as a discrete function
 xh = spc.numpyFunction(dofs,"name")
 # get the dof vector as numpy array
-xh_dofs = np.array( xh, copy=False )
+xh_dofs = xh.array
 print("id of dof vector: ", id(xh_dofs))
 
 # plot the random values

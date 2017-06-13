@@ -98,7 +98,10 @@ res = uh.copy()
 # during its resizing - use copy=True to avoid this problem at
 # the cost of a copy
 sol_coeff = uh.array
-res_coeff = np.array( res, copy=False )
+res_coeff = res.array
+# note: not downward compatible since
+# > np.array( res, copy=False )
+# doesn't work anymore
 n = 0
 
 while True:

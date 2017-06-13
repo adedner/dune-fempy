@@ -1,4 +1,5 @@
 # coding: utf-8
+from __future__ import print_function
 
 # # Spiral Wave [(Notebook)][1]
 #
@@ -66,7 +67,6 @@ try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 import math
 from functools import reduce
 
@@ -145,14 +145,14 @@ equation = a_im == a_ex
 
 rhs_gf = create.function("ufl", grid, "rhs", order=2,
                          ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
-                         coefficients={un: uh_n, vn: vh_n} )
+                         coefficients={un: uh_n.gf, vn: vh_n.gf} )
 
 
 # The model is now completely implemented and can be created, together with the corresponding scheme:
 
 # In[6]:
 
-model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
+model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n.gf, vn: vh_n.gf} )
 
 
 # In[7]:

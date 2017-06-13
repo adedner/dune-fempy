@@ -45,7 +45,7 @@ parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", 
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
 
-grid = create.grid("ALUConform", {"vertex": vertices, "simplex": triangles}, dimgrid=2)
+grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles}, dimgrid=2)
 grid.hierarchicalGrid.globalRefine(4)
 
 

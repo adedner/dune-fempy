@@ -152,7 +152,7 @@ solution_n = solution.copy()
 
 # In[ ]:
 
-model  = create.model("elliptic", grid, equation, coefficients={un:solution_n} )
+model  = create.model("elliptic", grid, equation, coefficients={un:solution_n.gf} )
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-5,
         "fem.solver.newton.linabstol": 1e-8,
@@ -187,8 +187,8 @@ hgrid    = grid.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(0,maxLevel):
     hgrid.mark(mark)
-    fem.adapt(hgrid,[solution])
-    fem.loadBalance(hgrid,[solution])
+    fem.adapt(hgrid,[solution.gf])
+    fem.loadBalance(hgrid,[solution.gf])
     solution.interpolate(initial_gf)
     print(grid.size(0),end=" ")
 print()
@@ -240,7 +240,7 @@ matplot(grid,solution, [0])
 # In[ ]:
 
 timeStep     = 0.0002
-model.setConstant(dt,[timeStep])
+model.setConstant(dt,timeStep)
 count    = 1
 t        = 0.0
 
@@ -256,8 +256,8 @@ while t < endTime:
     print(t,grid.size(0),end="\r")
     t += timeStep
     hgrid.mark(mark)
-    fem.adapt(hgrid,[solution])
-    fem.loadBalance(hgrid,[solution])
+    fem.adapt(hgrid,[solution.gf])
+    fem.loadBalance(hgrid,[solution.gf])
 print()
 
 

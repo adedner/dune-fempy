@@ -86,7 +86,7 @@ y = numpy.append(0, (radii*numpy.sin(angles)).flatten())
 points = numpy.stack((x,y), axis=-1)
 triangles = Delaunay(points).simplices
 
-grid = create.grid("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
+grid = create.grid("ALUConform", {'vertices':points, 'simplices':triangles}, dimgrid=2)
 plotGrid(grid)
 
 
@@ -222,7 +222,8 @@ phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])],
 
 for nr in range(101):
     hgrid.mark(lambda e: mark(e, nr/100.*2.*math.pi))
-    dune.fem.adapt(hgrid, [phi])
+    # note: virtual wrapper for GridCoefficients not yet working
+    dune.fem.adapt(hgrid, [phi.gf])
     if nr % 10 == 0:
         plot(phi)
 pyplot.close('all')
@@ -260,7 +261,8 @@ phi1 = spc1.interpolate(lambda x: [-1], name="phi1")
 phi2 = spc2.interpolate(lambda x: [ (x-[0.5,0.5] ).two_norm], name="phi2")
 spc = dgonb(grid, dimrange=1, order=1)
 phi = spc.interpolate(lambda en,x: [phi1.localFunction(en).evaluate(x) if subGrid1.contains(en) else phi2.localFunction(en).evaluate(x)], name="phi")
-plot(phi,gridLines="white")
+# this doesn't work anymore - don't know why...
+# plot(phi,gridLines="white")
 
 
 # Note the use of the `contains` method on the view to determin if an element is part of the view or not.

@@ -99,12 +99,6 @@ for i in range(levels):
     # problem: when removing that the local function is not exported and
     # then uh[0] doesn't work because the PyLocalFunction is not registered
     # with pybind11
-    def l2error(en,x):
-        val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
-        return [ val[0]*val[0] ];
-    l2error_gf = create.function("local", grid, "error", 5, l2error)
-    old_error = sqrt(l2error_gf.integrate()[0])
-
     plot(uh,gridLines="black")
     plot(exact_gf[0],gridLines="black")
     plot(exact,gridLines="black",grid=grid)
@@ -114,6 +108,12 @@ for i in range(levels):
     plot((uh-exact)[0],gridLines="black",grid=grid)
     plotComponents(grad(exact[0]),gridLines="black",grid=grid)
     plotComponents(grad(uh[0]-exact[0]),gridLines="black",grid=grid)
+
+    def l2error(en,x):
+        val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
+        return [ val[0]*val[0] ];
+    l2error_gf = create.function("local", grid, "error", 5, l2error)
+    old_error = sqrt(l2error_gf.integrate()[0])
 
     error = uh-exact
     l2error_gf = create.function("ufl", grid, "test", 5, error**2 )

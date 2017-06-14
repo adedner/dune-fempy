@@ -54,7 +54,7 @@ old_solution = solution.copy();
 u = spc.uflTrialFunction
 v = spc.uflTestFunction
 # u_n = GridCoefficient(old_solution)
-tau = spc.namedConstant(name="tau")
+tau = spc.uflNamedConstant(name="tau")
 a = (inner(u - old_solution, v) + tau * inner(grad(theta*u + (1-theta)*old_solution), grad(v))) * dx
 
 # now generate the model code and compile

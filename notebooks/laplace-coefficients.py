@@ -74,7 +74,7 @@ scheme = create.scheme("h1", spc, model, parameters=solverParameter)
 
 endTime = 0.4
 deltaT = 0.01
-# model.setConstant(tau, deltaT) fails with named constant
+model.setConstant(tau, deltaT) # fails with named constant
 model.setConstant("tau", deltaT)
 model.tau = deltaT
 print(model.tau)

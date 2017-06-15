@@ -40,9 +40,9 @@ spc = create.space("Lagrange", grid, dimrange=1, order=1)
 
 # In[ ]:
 
-u = spc.uflTrialFunction
-v = spc.uflTestFunction
-x = spc.uflSpatialCoordinate
+u = spc.uflTrialFunction()
+v = spc.uflTestFunction()
+x = spc.uflSpatialCoordinate()
 
 
 # Next we define the equation for the weak form, given by

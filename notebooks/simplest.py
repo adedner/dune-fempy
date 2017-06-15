@@ -1,9 +1,11 @@
 from __future__ import print_function, division
 
-from ufl import as_vector, inner, grad, cos, pi, dx
-from math import sqrt
+import numpy as np
+from ufl import as_vector, inner, grad, sin, cos, pi, dx, atan_2, conditional
+from math import sqrt, pi
 from dune.ufl import DirichletBC
 
+import dune.create as create
 from dune.grid import structuredGrid
 from dune.fem.space import lagrange
 from dune.fem.plotting import plotPointData as plot
@@ -34,9 +36,10 @@ error = solution - exact
 print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )
 print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )
 
+
 # heat equation
 solution.clear()
-un  = space.interpolate(-f,name="oldSolution")
+un  = space.interpolate(-exact,name="oldSolution")
 tau = space.uflNamedConstant(name="tau")
 scheme = h1(space,
         ( inner(u,v)  + tau*inner(grad(u),grad(v)) )*dx == inner(un+tau*f,v)*dx )
@@ -53,3 +56,23 @@ while dist > 0.01:
     dist = integrate(grid,error**2,order=5)[0]
     print(t,dist)
 plot(solution)
+
+# complicated domain with boundary conditions
+vertices = np.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
+triangles = np.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
+grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles}, dimgrid=2)
+grid.hierarchicalGrid.globalRefine(4)
+space = lagrange(grid, dimrange=1, order=1)
+u = space.uflTrialFunction()
+v = space.uflTestFunction()
+x = space.uflSpatialCoordinate()
+phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
+exact = as_vector([inner(x,x)**(0.5*180./270.) * sin((180./270.) * phi)])
+a = inner(grad(u), grad(v))*dx
+scheme = h1(space, [a==0,DirichletBC(space.uflSpace(),exact,1)])
+solution, _ = scheme.solve()
+plot(solution)
+error = solution - exact
+print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )
+# problem with division by zero in the following
+# print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )

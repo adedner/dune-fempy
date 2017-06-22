@@ -42,8 +42,12 @@ def compute():
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
     # now generate the model code and compile
-    model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
-    model.setConstant(tau,[deltaT])
+    #model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
+    #model.setConstant(tau,[deltaT])
+
+    model = create.model("integrands", grid, a == 0)
+    model.setCoefficient(u_n, old_solution)
+    model.setConstant(tau, [deltaT])
 
     # setup structure for olver parameters
     solverParameter={"fem.solver.newton.linabstol": 1e-13,
@@ -52,9 +56,11 @@ def compute():
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
-    scheme = create.scheme("h1", spc, model, parameters=solverParameter)
+    # scheme = create.scheme("h1", spc, model, parameters=solverParameter)
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
     # scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
+
+    scheme = create.scheme("galerkin", spc, model, parameters=solverParameter)
 
     # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
     # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)

@@ -8,6 +8,7 @@ from ._adaptation import adapt, loadBalance
 from . import view as view
 from . import space as space
 from . import discretefunction as discretefunction
+from . import operator as operator
 from . import scheme as scheme
 from . import function as function
 from . import model as model
@@ -20,16 +21,23 @@ registry["view"] = {
          "geometry"   : view.geometryGridView
      }
 registry["space"] = {
-         "Lagrange"   : space.lagrange,
-         "DGONB"      : space.dgonb,
-         "P1Bubble"   : space.p1Bubble
+         "Lagrange"     : space.lagrange,
+         "DGONB"        : space.dgonb,
+         "FiniteVolume" : space.finiteVolume,
+         "P1Bubble"     : space.p1Bubble,
+         "combined"     : space.combined,
+         "tuple"        : space.combined
      }
 registry["discretefunction"] = {
          "adaptive" : discretefunction.adaptive,
          "fem"      : discretefunction.adaptive,
          "istl"     : discretefunction.istl,
-         "eigen"    : discretefunction.eigen
+         "eigen"    : discretefunction.eigen,
+         "petsc"    : discretefunction.petsc
      }
+registry["operator"] = {
+        "galerkin"   : operator.galerkin
+    }
 registry["solver"] = {
          "fem"         : discretefunction.femsolver,
          "pardg"       : discretefunction.pardgsolver,
@@ -37,13 +45,15 @@ registry["solver"] = {
          "istl"        : discretefunction.istlsolver,
          "suitesparse" : discretefunction.suitesparsesolver,
          "eigen"       : discretefunction.eigensolver,
-         "viennacl"    : discretefunction.viennaclsolver
+         "viennacl"    : discretefunction.viennaclsolver,
+         "petsc"       : discretefunction.petscsolver
      }
 registry["scheme"] = {
          "h1"         : scheme.h1,
          "h1galerkin" : scheme.h1Galerkin,
          "dg"         : scheme.dg,
          "dggalerkin" : scheme.dgGalerkin,
+         "galerkin"   : scheme.galerkin,
          "linearized" : scheme.linearized,
          "mvdg"       : scheme.nvdg,
          "stokes"     : scheme.stokes,
@@ -61,5 +71,6 @@ registry["function"] = {
      }
 registry["model"] = {
          "elliptic"   : model.elliptic,
-         "split"      : model.splitdomain
+         "split"      : model.splitdomain,
+         "integrands" : model.integrands
      }

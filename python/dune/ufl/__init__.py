@@ -1,19 +1,25 @@
 from __future__ import absolute_import
 
 import ufl
+import ufl.domain
 import ufl.equation
 
 # cell
 # ----
 
-def cell(dimDomain):
-    if isinstance(dimDomain, tuple):
-        if len(dimDomain) != 2:
-            raise Exception('dimDomain tuple must contain exactly two elements.')
-        dimWorld = int(dimDomain[1])
-        dimDomain = dimDomain[0]
-    else:
-        dimWorld = int(dimDomain)
+def cell(dimDomainOrGrid):
+    try:
+        dimWorld = int(dimDomainOrGrid.dimWorld)
+        dimDomain = int(dimDomainOrGrid.dimGrid)
+    except:
+        dimDomain = dimDomainOrGrid
+        if isinstance(dimDomain, tuple):
+            if len(dimDomain) != 2:
+                raise Exception('dimDomain tuple must contain exactly two elements.')
+            dimWorld = int(dimDomain[1])
+            dimDomain = dimDomain[0]
+        else:
+            dimWorld = int(dimDomain)
     if dimDomain == 1:
         return ufl.Cell("interval", dimWorld)
     elif dimDomain == 2:
@@ -24,19 +30,42 @@ def cell(dimDomain):
         raise NotImplementedError('UFL cell not implemented for dimension' + str(dimDomain) + '.')
 
 
-
-# Space
-# -----
-
 class Space(ufl.VectorElement):
-    def __init__(self, dimDomain, dimRange, field="double"):
-        ufl.VectorElement.__init__(self, "Lagrange", cell(dimDomain), 1, int(dimRange))
+    def __init__(self, dimDomainOrGridOrSpace, dimRange=None, field="double"):
+        if not dimRange:
+            dimRange = dimDomainOrGridOrSpace.dimRange
+            dimDomainOrGridOrSpace = dimDomainOrGridOrSpace.grid
+        ufl.VectorElement.__init__(self, "Lagrange", cell(dimDomainOrGridOrSpace), 1, int(dimRange))
+        self.dimRange = dimRange
         self._field = field
+
     def field(self):
         return self._field
 
-# Coefficient
-# -----------
+
+def Coefficient(functionSpace, name=None, count=None):
+    """UFL form argument type: Representation of a form coefficient."""
+    coefficient = ufl.Coefficient(functionSpace, count=count)
+    if name is not None:
+        coefficient.name = name
+    return coefficient
+
+
+def Constant(domain, name=None, count=None):
+    """UFL value: Represents a globally constant coefficient."""
+    domain = ufl.domain.as_domain(domain)
+    element = ufl.FiniteElement("Real", domain.ufl_cell(), 0)
+    functionSpace = ufl.FunctionSpace(domain, element)
+    return Coefficient(functionSpace, name=name, count=count)
+
+
+def VectorConstant(domain, dimRange=None, name=None, count=None):
+    """UFL value: Represents a globally constant vector-valued coefficient."""
+    domain = ufl.domain.as_domain(domain)
+    element = ufl.VectorElement("Real", domain.ufl_cell(), 0, dimRange)
+    functionSpace = ufl.FunctionSpace(domain, element)
+    return Coefficient(functionSpace, name=name, count=count)
+
 
 class GridCoefficient(ufl.Coefficient):
     def __init__(self, gf):
@@ -46,19 +75,13 @@ class GridCoefficient(ufl.Coefficient):
         ufl.Coefficient.__init__(self, uflSpace)
         self.gf = gf
 
-class NamedCoefficient(ufl.Coefficient):
-    def __init__(self, uflSpace, name):
-        ufl.Coefficient.__init__(self, uflSpace)
-        self.name = name
-    def str(self):
-        return self.name
 
-class NamedConstant(ufl.Coefficient):
-    def __init__(self, uflSpace, name):
-        ufl.Constant.__init__(self, uflSpace)
-        self.name = name
-    def str(self):
-        return self.name
+class DirichletBC:
+    def __init__(self, functionSpace, value, subDomain):
+        self.functionSpace = functionSpace
+        self.value = value
+        self.subDomain = subDomain
+
 
 # register markdown formatter for integrands, forms and equations to IPython
 

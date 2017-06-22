@@ -42,6 +42,7 @@ def dgonb(gridview, order=1, dimrange=1, field="double", storage=None, **unused)
 
     return module(field, storage, includes, typeName).Space(gridview)
 
+
 def lagrange(view, order=1, dimrange=1, field="double", storage=None, **unused):
     """create a Lagrange space
 
@@ -78,6 +79,36 @@ def lagrange(view, order=1, dimrange=1, field="double", storage=None, **unused):
 
     return module(field, storage, includes, typeName).Space(view)
 
+
+def finiteVolume(gridview, dimrange=1, field="double", storage=None, **unused):
+    """create a finite volume space
+
+    A finite volume space is a discontinuous function space, using the element
+    indicator function as its sole basis function.
+
+    Args:
+        gridview: the underlying grid view
+        dimrange: dimension of the range space
+        field: field of the range space
+        storage: underlying linear algebra backend
+
+    Returns:
+        Space: the constructed Space
+    """
+
+    from dune.fem.space import module
+    if dimrange < 1:
+        raise KeyError("invalid dimRange: " + str(dimrange) + " (must be >= 1)")
+    if field == "complex":
+        field = "std::complex<double>"
+
+    includes = ["dune/fem/space/finitevolume.hh" ] + gridview._includes
+    functionSpaceType = "Dune::Fem::FunctionSpace< double, " + field + ", " + str(gridview.dimWorld) + ", " + str(dimrange) + " >"
+    typeName = "Dune::Fem::FiniteVolumeSpace< " + functionSpaceType + ", Dune::FemPy::GridPart< " + gridview._typeName + " > >"
+
+    return module(field, storage, includes, typeName).Space(gridview)
+
+
 def p1Bubble(gridview, dimrange=1, field="double", order=1, storage=None, **unused):
     """create a P1 space enriched with element bubble functions
 
@@ -112,3 +143,38 @@ def p1Bubble(gridview, dimrange=1, field="double", order=1, storage=None, **unus
       "Dune::FemPy::GridPart< " + gridview._typeName + " > >"
 
     return module(field, storage, includes, typeName).Space(gridview)
+
+
+def combined(*spaces, **unused):
+    """create a discrete function space from a tuple of discrete function spaces
+
+    Args:
+        spaces: tuple of discrete function spaces
+
+    Returns:
+        Space: the constructed Space
+    """
+
+    from dune.fem.space import module
+
+    if not spaces:
+        raise Exception("Cannot create TupleDiscreteFunctionSpace from empty tuple of discrete function spaces")
+    combinedStorage = None
+    combinedField = None
+    for space in spaces:
+        storage, _, _, _, _ = space.storage
+        if combinedStorage and (combinedStorage != storage):
+            raise Exception("Cannot create TupleDiscreteFunctionSpace with different types of storage")
+        else:
+            combinedStorage = storage
+        if combinedField and (combinedField != space.field):
+            raise Exception("Cannot create TupleDiscreteFunctionSpace with different field types")
+        else:
+            combinedField = space.field
+
+    includes = ["dune/fem/space/combinedspace/tuplespace.hh"]
+    for space in spaces:
+        includes += space._includes
+    typeName = "Dune::Fem::TupleDiscreteFunctionSpace< " + ", ".join([space._typeName for space in spaces]) + " >"
+
+    return module(combinedField, combinedStorage, includes, typeName).Space(spaces[0].grid)

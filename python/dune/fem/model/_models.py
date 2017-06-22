@@ -6,48 +6,42 @@ logger = logging.getLogger(__name__)
 
 import dune.common.checkconfiguration as checkconfiguration
 
-def elliptic(view, equation, dirichlet = {}, exact = None, tempVars = True, coefficients = {}, header = False):
+def elliptic(view, equation, *args, **kwargs):
     import ufl
     import dune.ufl
     import dune.models.elliptic as elliptic
-    Model = elliptic.importModel(view, equation, dirichlet, exact, tempVars, header).Model
-    if isinstance(equation, ufl.equation.Equation):
-        form = equation.lhs - equation.rhs
-        uflCoeff = set(form.coefficients())
-        for bndId in dirichlet:
-            for expr in dirichlet[bndId]:
-                _, c = ufl.algorithms.analysis.extract_arguments_and_coefficients(expr)
-                uflCoeff |= set(c)
-        fullCoeffs = {c:c.gf for c in uflCoeff if isinstance(c,dune.ufl.GridCoefficient)}
-        #lhs = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
-        #if lhs == ufl.adjoint(lhs):
-        #    setattr(Model, 'symmetric', 'true')
-        #else:
-        #    setattr(Model, 'symmetric', 'false')
-    else:
-        fullCoeffs = {}
-    fullCoeffs.update(coefficients)
-    return Model( coefficients=fullCoeffs )
 
-def splitdomain(view, equation, dirichlet = {}, exact = None, tempVars = True, coefficients = {}, header = False):
+    coefficients = kwargs.pop('coefficients', dict())
+
+    Model = elliptic.load(view, equation, *args, **kwargs).Model
+    if isinstance(equation, ufl.equation.Equation):
+        lhs = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
+        if lhs == ufl.adjoint(lhs):
+            setattr(Model, 'symmetric', 'true')
+        else:
+            setattr(Model, 'symmetric', 'false')
+
+    return Model(coefficients=coefficients)
+
+def splitdomain(view, equation, *args, **kwargs):
     import ufl
     import dune.ufl
     import dune.models.elliptic as elliptic
-    Model = elliptic.importModel(view, equation, dirichlet, exact, tempVars, header, modelType='split').Model
+
+    coefficients = kwargs.pop('coefficients', dict())
+
+    Model = elliptic.load(view, equation, modelType='split', *args, **kwargs).Model
     if isinstance(equation, ufl.equation.Equation):
-        form = equation.lhs - equation.rhs
-        uflCoeff = set(form.coefficients())
-        for bndId in dirichlet:
-            for expr in dirichlet[bndId]:
-                _, c = ufl.algorithms.analysis.extract_arguments_and_coefficients(expr)
-                uflCoeff |= set(c)
-        fullCoeffs = {c:c.gf for c in uflCoeff if isinstance(c,dune.ufl.GridCoefficient)}
-        #lhs = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
-        #if lhs == ufl.adjoint(lhs):
-        #    setattr(Model, 'symmetric', 'true')
-        #else:
-        #    setattr(Model, 'symmetric', 'false')
-    else:
-        fullCoeffs = {}
-    fullCoeffs.update(coefficients)
-    return Model( coefficients=fullCoeffs )
+        lhs = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
+        if lhs == ufl.adjoint(lhs):
+            setattr(Model, 'symmetric', 'true')
+        else:
+            setattr(Model, 'symmetric', 'false')
+
+    return Model(coefficients=coefficients)
+
+def integrands(view, equation, tempVars=True, coefficients={}):
+    import ufl
+    import dune.ufl
+    import dune.models.integrands as integrands
+    return integrands.create(view, equation, tempVars=tempVars)

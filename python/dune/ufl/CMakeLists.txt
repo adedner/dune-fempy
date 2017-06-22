@@ -1,6 +1,9 @@
 add_python_targets(ufl
   __init__
+  applyrestrictions
   codegen
+  formfiles
+  gatherderivatives
   latex
   linear
   tensors

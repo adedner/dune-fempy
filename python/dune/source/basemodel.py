@@ -1,6 +1,9 @@
 from __future__ import print_function, unicode_literals
 
-from .cplusplus import Method, SourceWriter, TypeAlias, Variable, Function
+from .cplusplus import AccessModifier, Constructor, Declaration, Function, Method, TypeAlias, UnformattedExpression, UnformattedBlock, Variable
+from .cplusplus import SourceWriter
+from .cplusplus import nullptr
+from .fem import declareFunctionSpace
 
 class BaseModel:
     def __init__(self, dimRange, signature):
@@ -19,105 +22,89 @@ class BaseModel:
             raise KeyError('two coefficients provided with same name')
         return e[0]["number"]
 
-    def pre(self, sourceWriter, name='Model', targs=[], bases=[]):
-        sourceWriter.openStruct(name, targs=(['class GridPart'] + targs + ['class... Coefficients']),\
-        bases=(bases))
-
-        sourceWriter.typedef("GridPart", "GridPartType")
-        sourceWriter.typedef(SourceWriter.cpp_fields(self.field), "RangeFieldType")
-
-        sourceWriter.emit("static const int dimRange = " + str(self.dimRange) + ";")
-        sourceWriter.emit("static const int dimDomain = GridPartType::dimensionworld;")
-        sourceWriter.emit("static const int dimLocal = GridPartType::dimension;")
-
-        typedefs = [TypeAlias("EntityType", "typename GridPart::template Codim< 0 >::EntityType"),
-                    TypeAlias("IntersectionType", "typename GridPart::IntersectionType"),
-                    TypeAlias("FunctionSpaceType", "Dune::Fem::FunctionSpace< double, RangeFieldType, dimDomain, dimRange >"),
-                    TypeAlias("DomainType", "typename FunctionSpaceType::DomainType"),
-                    TypeAlias("RangeType", "typename FunctionSpaceType::RangeType"),
-                    TypeAlias("JacobianRangeType", "typename FunctionSpaceType::JacobianRangeType"),
-                    TypeAlias("HessianRangeType", "typename FunctionSpaceType::HessianRangeType")]
-        sourceWriter.emit(typedefs)
+    def pre(self, name='Model'):
+        code = [TypeAlias('GridPartType', 'GridPart'),
+                TypeAlias("EntityType", "typename GridPart::template Codim< 0 >::EntityType"),
+                TypeAlias("IntersectionType", "typename GridPart::IntersectionType")]
+        code.append(declareFunctionSpace("typename GridPartType::ctype", SourceWriter.cpp_fields(self.field), UnformattedExpression("int", "GridPartType::dimensionworld"), self.dimRange))
+        code.append(Declaration(Variable("const int", "dimLocal"), initializer=UnformattedExpression("int", "GridPartType::dimension"), static=True))
 
         if self.coefficients:
-            sourceWriter.typedef('std::tuple< ' + ', '.join(\
+            code.append(TypeAlias('ConstantsTupleType', 'std::tuple< ' + ', '.join(\
                     [('std::shared_ptr<Dune::FieldVector< ' +\
                     SourceWriter.cpp_fields(coefficient['field']) + ', ' +\
                     str(coefficient['dimRange']) + ' >>')\
-                    for coefficient in self.coefficients if coefficient['constant']]) + ' >',\
-                    'ConstantsTupleType;')
-            sourceWriter.typedef('std::tuple< ' + ', '.join(\
+                    for coefficient in self.coefficients if coefficient['constant']]) + ' >'))
+            code.append(TypeAlias('CoefficientFunctionSpaceTupleType', 'std::tuple< ' + ', '.join(\
                     [('Dune::Fem::FunctionSpace< double,' +\
                     SourceWriter.cpp_fields(coefficient['field']) + ', ' +\
                     'dimDomain, ' +\
                     str(coefficient['dimRange']) + ' >')\
-                    for coefficient in self.coefficients if not coefficient['constant']]) + ' >',\
-                    'CoefficientFunctionSpaceTupleType')
+                    for coefficient in self.coefficients if not coefficient['constant']]) + ' >'))
 
-            sourceWriter.typedef('typename std::tuple_element_t<i,ConstantsTupleType>::element_type', 'ConstantsRangeType', targs=['std::size_t i'])
-            sourceWriter.emit('static const std::size_t numCoefficients = std::tuple_size< CoefficientFunctionSpaceTupleType >::value;')
-            sourceWriter.typedef('typename std::tuple_element< i, CoefficientFunctionSpaceTupleType >::type', 'CoefficientFunctionSpaceType', targs=['std::size_t i'] )
-            sourceWriter.typedef('typename CoefficientFunctionSpaceType< i >::RangeType', 'CoefficientRangeType', targs=['std::size_t i'])
-            sourceWriter.typedef('typename CoefficientFunctionSpaceType< i >::JacobianRangeType', 'CoefficientJacobianRangeType', targs=['std::size_t i'])
-            sourceWriter.typedef('typename CoefficientFunctionSpaceType< i >::HessianRangeType', 'CoefficientHessianRangeType', targs=['std::size_t i'])
+            code.append(TypeAlias('ConstantsRangeType', 'typename std::tuple_element_t<i,ConstantsTupleType>::element_type', targs=['std::size_t i']))
+            code.append(Declaration(Variable('const std::size_t', 'numCoefficients'), initializer=UnformattedExpression('std::size_t', 'std::tuple_size< CoefficientFunctionSpaceTupleType >::value'), static=True))
+            code.append(TypeAlias('CoefficientFunctionSpaceType', 'typename std::tuple_element< i, CoefficientFunctionSpaceTupleType >::type', targs=['std::size_t i']))
+            code.append(TypeAlias('CoefficientRangeType', 'typename CoefficientFunctionSpaceType< i >::RangeType', targs=['std::size_t i']))
+            code.append(TypeAlias('CoefficientJacobianRangeType', 'typename CoefficientFunctionSpaceType< i >::JacobianRangeType', targs=['std::size_t i']))
+            code.append(TypeAlias('CoefficientHessianRangeType', 'typename CoefficientFunctionSpaceType< i >::HessianRangeType', targs=['std::size_t i']))
         else:
-            sourceWriter.emit('static const std::size_t numCoefficients = 0u;')
-            sourceWriter.typedef('std::tuple<>', 'ConstantsTupleType')
+            code.append(Declaration(Variable('const std::size_t', 'numCoefficients'), initializer=0, static=True))
+            code.append(TypeAlias('ConstantsTupleType', 'std::tuple<>'))
 
-        sourceWriter.emit('')
-        sourceWriter.emit(TypeAlias('CoefficientType', 'typename std::tuple_element< i, std::tuple< Coefficients... > >::type', targs=['std::size_t i']))
-        sourceWriter.emit(TypeAlias('ConstantsType', 'typename std::tuple_element< i, ConstantsTupleType >::type::element_type', targs=['std::size_t i']))
 
-        sourceWriter.openMethod(name, args=[])
-        sourceWriter.emit('constructConstants( std::make_index_sequence< std::tuple_size<ConstantsTupleType>::value >() );' )
-        sourceWriter.closeMethod()
+        code.append(TypeAlias('CoefficientType', 'typename std::tuple_element< i, std::tuple< Coefficients... > >::type', targs=['std::size_t i']))
+        code.append(TypeAlias('ConstantsType', 'typename std::tuple_element< i, ConstantsTupleType >::type::element_type', targs=['std::size_t i']))
 
-        init = Method('bool init', args=['const EntityType &entity'], const=True)
+        code.append(Constructor(code=UnformattedBlock('constructConstants( std::make_index_sequence< std::tuple_size<ConstantsTupleType>::value >() );')))
+
+        init = Method('bool', 'init', args=['const EntityType &entity'], const=True)
         init.append('entity_ = &entity;',
                     'initCoefficients( std::make_index_sequence< numCoefficients >() );',
                     self.init,
                     'return true;')
 
-        entity = Method('const EntityType &entity', const=True)
+        entity = Method('const EntityType &', 'entity', const=True)
         entity.append('return *entity_;')
 
-        sourceWriter.emit([init, entity, Method('std::string name', const=True, code=['return "' + name + '";'])])
+        code.append([init, entity])
+        code.append(Method('std::string', 'name', const=True, code=['return "' + name + '";']))
+        return code
 
-    def post(self, sourceWriter, name='Model', targs=[]):
-        constant = Method('ConstantsType< i > &constant', targs=['std::size_t i'])
+    def post(self):
+        constant = Method('ConstantsType< i > &', 'constant', targs=['std::size_t i'])
         constant.append('return *( std::get< i >( constants_ ) );')
-        sourceWriter.emit([constant.variant('const ConstantsType< i > &constant', const=True), constant])
 
-        coefficient = Method('CoefficientType< i > &coefficient', targs=['std::size_t i'])
+        code = [constant.variant('const ConstantsType< i > &constant', const=True), constant]
+
+        coefficient = Method('CoefficientType< i > &', 'coefficient', targs=['std::size_t i'])
         coefficient.append('return std::get< i >( coefficients_ );')
-        sourceWriter.emit([coefficient.variant('const CoefficientType< i > &coefficient', const=True), coefficient])
+        code +=[coefficient.variant('const CoefficientType< i > &coefficient', const=True), coefficient]
 
-        sourceWriter.section('private')
+        code.append(AccessModifier('private'))
 
-        initCoefficients = Method('void initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], const=True)
-        initCoefficients.append(self.initCoefficients)
+        initCoefficients = Method('void', 'initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], const=True)
+        initCoefficients.append('std::ignore = std::make_tuple( (std::get< i >( coefficients_ ).init( entity() ), i)... );')
 
-        constructConstants = Method('void constructConstants', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
+        constructConstants = Method('void', 'constructConstants', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
         constructConstants.append('std::ignore = std::make_tuple( (std::get< i >( constants_ ) = std::make_shared<ConstantsType< i >>(), i)... );')
 
-        sourceWriter.emit([initCoefficients, self.privateMethods, constructConstants])
+        code += [initCoefficients, constructConstants]
 
-        sourceWriter.emit('')
-        sourceWriter.emit(Variable('const EntityType *entity_', 'nullptr', mutable=True))
-        sourceWriter.emit(Variable('const IntersectionType *intersection_', 'nullptr', mutable=True))
-        sourceWriter.emit(Variable('std::tuple< Coefficients... > coefficients_', mutable=True))
-        sourceWriter.emit(Variable('ConstantsTupleType constants_', mutable=True))
-        sourceWriter.emit(self.vars)
-        sourceWriter.closeStruct(name)
+        code.append(Declaration(Variable('const EntityType *', 'entity_'), nullptr, mutable=True))
+        code.append(Declaration(Variable('const IntersectionType *', 'intersection_', 'nullptr', mutable=True))
+        code.append(Declaration(Variable('std::tuple< Coefficients... >', 'coefficients_;'), mutable=True))
+        code.append(Declaration(Variable('ConstantsTupleType', 'constants_;'), mutable=True))
+        code.append(self.vars)
+        return code
 
     def setCoef(self, sourceWriter, modelClass='Model', wrapperClass='ModelWrapper'):
         sourceWriter.emit('')
-        sourceWriter.typedef('std::tuple< ' + ', '.join(\
-                [('Dune::FemPy::VirtualizedGridFunction< GridPart, Dune::FieldVector< ' +\
+        sourceWriter.emit(TypeAlias('Coefficients', 'std::tuple< ' + ', '.join(\
+                [('Dune::FemPy::VirtualizedGridFunction< GridPartType, Dune::FieldVector< ' +\
                 SourceWriter.cpp_fields(coefficient['field']) + ', ' +\
                 str(coefficient['dimRange']) + ' > >') \
-                for coefficient in self.coefficients if not coefficient["constant"]]) \
-              + ' >', 'Coefficients')
+                for coefficient in self.coefficients if not coefficient["constant"]]) + ' >'))
 
         sourceWriter.openFunction('std::size_t renumberConstants', args=['pybind11::handle &obj'])
         sourceWriter.emit('std::string id = obj.str();')
@@ -133,7 +120,7 @@ class BaseModel:
         sourceWriter.closeFunction()
 
         sourceWriter.openFunction('auto defSetConstant', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
-        sourceWriter.typedef('std::function< void( ' + modelClass + ' &model, pybind11::list ) >', 'Dispatch')
+        sourceWriter.emit(TypeAlias('Dispatch', 'std::function< void( ' + modelClass + ' &model, pybind11::list ) >'))
         sourceWriter.emit('std::array< Dispatch, sizeof...( i ) > dispatch = {{ Dispatch( setConstant< i > )... }};')
         sourceWriter.emit('')
         sourceWriter.emit('return [ dispatch ] ( ' + wrapperClass + ' &model, pybind11::handle coeff, pybind11::list l ) {')
@@ -145,13 +132,13 @@ class BaseModel:
         sourceWriter.emit('  };')
         sourceWriter.closeFunction()
 
-        setCoefficient = Function('void setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &model', 'pybind11::handle o'])
+        setCoefficient = Function('void', 'setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &model', 'pybind11::handle o'])
         setCoefficient.append('model.template coefficient< i >() = o.template cast< typename std::tuple_element< i, Coefficients >::type >().localFunction();')
         sourceWriter.emit(setCoefficient)
 
-        defSetCoefficient = Function('auto defSetCoefficient', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
+        defSetCoefficient = Function('auto', 'defSetCoefficient', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
         defSetCoefficient.append(TypeAlias('Dispatch', 'std::function< void( ' + modelClass + ' &model, pybind11::handle ) >'),
-                                 Variable('std::array< Dispatch, sizeof...( i ) > dispatch', '{{ Dispatch( setCoefficient< i > )... }}'),
+                                 Declaration(Variable('std::array< Dispatch, sizeof...( i ) >', 'dispatch'), '{{ Dispatch( setCoefficient< i > )... }}'),
                                  '',
                                  'return [ dispatch ] ( ' + wrapperClass + ' &model, pybind11::handle coeff, pybind11::handle o ) {',
                                  '    std::size_t k = renumberConstants(coeff);',

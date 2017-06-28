@@ -152,7 +152,7 @@ solution_n = solution.copy()
 
 # In[ ]:
 
-model  = create.model("elliptic", grid, equation, coefficients={un:solution_n.gf} )
+model  = create.model("elliptic", grid, equation, coefficients={un:solution_n} )
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-5,
         "fem.solver.newton.linabstol": 1e-8,
@@ -187,8 +187,8 @@ hgrid    = grid.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(0,maxLevel):
     hgrid.mark(mark)
-    fem.adapt(hgrid,[solution.gf])
-    fem.loadBalance(hgrid,[solution.gf])
+    fem.adapt(hgrid,[solution])
+    fem.loadBalance(hgrid,[solution])
     solution.interpolate(initial_gf)
     print(grid.size(0),end=" ")
 print()
@@ -229,8 +229,8 @@ def matplot(grid, solution, show=range(dimRange)):
 pyplot.figure()
 
 from dune.fem.function import levelFunction, partitionFunction
-# tk = grid.writeVTK("crystal", pointdata=[solution],
-#        celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
+tk = grid.writeVTK("crystal", pointdata=[solution],
+       celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
 
 matplot(grid,solution, [0])
 
@@ -256,8 +256,9 @@ while t < endTime:
     print(t,grid.size(0),end="\r")
     t += timeStep
     hgrid.mark(mark)
-    fem.adapt(hgrid,[solution.gf])
-    fem.loadBalance(hgrid,[solution.gf])
+    fem.adapt(hgrid,[solution])
+    fem.loadBalance(hgrid,[solution])
+    tk.write("crystal", count)
 print()
 
 

@@ -145,14 +145,14 @@ equation = a_im == a_ex
 
 rhs_gf = create.function("ufl", grid, "rhs", order=2,
                          ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
-                         coefficients={un: uh_n.gf, vn: vh_n.gf} )
+                         coefficients={un: uh_n, vn: vh_n} )
 
 
 # The model is now completely implemented and can be created, together with the corresponding scheme:
 
 # In[6]:
 
-model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n.gf, vn: vh_n.gf} )
+model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
 
 
 # In[7]:

@@ -83,7 +83,7 @@ expr = ufl.as_vector([ s*s*coeff[0] ])
 # needs virtual gf wrapper - also note that the use of funcUFL fails
 funcUFL1 = create.function("ufl", grid, "ufl1", 4, expr,
 #                           coefficients={coeff: funcUFL})
-                           coefficients={coeff: coeffFunc.gf})
+                           coefficients={coeff: coeffFunc})
 plot(funcUFL1)
 # for e in grid.elements():
 #     print( funcUFL1.localFunction(e) )
@@ -116,7 +116,7 @@ code = { 'eval': func1, 'jac': func2 }
 
 coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
 # needs virtual gf wrapper - also note that the use of funcUFL fails
-func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc.gf} )
+func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
 func.setConstant("fac", [10])
 # show all components but not the grid
 plotComponents(func,gridLines="")

@@ -223,7 +223,7 @@ phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])],
 for nr in range(101):
     hgrid.mark(lambda e: mark(e, nr/100.*2.*math.pi))
     # note: virtual wrapper for GridCoefficients not yet working
-    dune.fem.adapt(hgrid, [phi.gf])
+    dune.fem.adapt(hgrid, [phi])
     if nr % 10 == 0:
         plot(phi)
 pyplot.close('all')

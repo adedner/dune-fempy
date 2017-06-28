@@ -14,6 +14,9 @@ from dune.fem.scheme import h1
 
 import ufl
 
+def plot(*args,**kwargs):
+    pass
+
 ###################################################################
 
 # grid and space
@@ -29,6 +32,7 @@ f = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])] )
 # elliptic equation
 scheme = h1(space,
           ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx )
+
 solution, info = scheme.solve()
 
 print(isinstance(solution,ufl.Coefficient))
@@ -36,8 +40,8 @@ print(dir(solution))
 print(type(solution))
 print(solution.space)
 help(solution)
-help(solution.GridFunction)
-help(solution.Coefficient)
+# help(solution.GridFunction)
+# help(solution.Coefficient)
 # help(solution.grid)
 # help(solution.interpolate)
 

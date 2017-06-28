@@ -111,7 +111,7 @@ def exactJac(x):
 exact_gf = create.function("global", grid, "exact", order+1, exact)
 bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
-model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf.gf})
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf})
 
 
 # In[6]:
@@ -143,8 +143,8 @@ while count < 8:
         grid.hierarchicalGrid.globalRefine(2)
         uh.interpolate([0])  # initial guess needed
     else:
-        fem.adapt(grid.hierarchicalGrid, [uh.gf])
-        fem.loadBalance(grid.hierarchicalGrid, [uh.gf])
+        fem.adapt(grid.hierarchicalGrid, [uh])
+        fem.loadBalance(grid.hierarchicalGrid, [uh])
     laplace.solve( target=uh )
     count += 1
 

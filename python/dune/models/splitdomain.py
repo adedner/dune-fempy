@@ -19,6 +19,30 @@ class SplitDomainModel(EllipticModel):
         self.extraMethods.append(self.gridCheck())
         self.vars += 'mutable std::vector< int > coeffInitialized_ = std::vector< int >( numCoefficients );'
 
+    def coefficient(self, idx, x):
+        coefficient = []
+        for t, n in (('RangeType', 'evaluate'), ('JacobianRangeType', 'jacobian'), ('HessianRangeType', 'hessian')):
+            result = Variable('typename std::tuple_element_t< ' + str(idx) + ', CoefficientFunctionSpaceTupleType >::' + t, 'result')
+            code = [Declaration(result)]
+            code.append('if (coeffInitialized_[' + str(idx) + '] == 1)')
+            code.append('  std::get< ' + str(idx) + ' >( coefficients_ ).' + n + '( x, ' + result.name + ' );')
+            code.append('else if (coeffInitialized_[' + str(idx) + '] == -1)')
+            code.append('{')
+            code.append('  using Dune::Fem::coordinate;')
+            code.append('  auto xc = coordinate(x);')
+            code.append('  auto xinter = intersection_->geometryInInside().local(xc);')
+            code.append('  auto xnb = intersection_->geometryInOutside().global(xinter);')
+            code.append('  std::get< ' + str(idx) + ' >( coefficients_ ).' + n + '( xnb, ' + result.name + ' );')
+            code.append('}')
+            code.append('else')
+            code.append('{')
+            code.append('  std::cout << "coefficient not initialized!" << std::endl;')
+            code.append('  abort();')
+            code.append('}')
+            code.append('return result;')
+            coefficient += [lambda_(capture=[this], args=['auto x'], code=code)(x)]
+        return coefficient
+
     def intersectionImpl(self):
         output = []
         code1 = ['if (intersection.neighbor())']

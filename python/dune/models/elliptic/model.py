@@ -15,7 +15,7 @@ class EllipticModel:
         assert isInteger(dimRange)
         self.dimRange = dimRange
         self.init = []
-        self.vars = None
+        self.vars = ''
         self.signature = signature
         self.field = "double"
 
@@ -45,6 +45,9 @@ class EllipticModel:
         self.fluxDivergence = [assign(self.arg_r, construct("RangeType", 0))]
         self.alpha = [assign(self.arg_r, construct("RangeType", 0))]
         self.linAlpha = [assign(self.arg_r, construct("RangeType", 0))]
+
+        self.initIntersection = 'intersection_ = &intersection;'
+        self.extraMethods = ''
 
         self.hasDirichletBoundary = False
         self.hasNeumanBoundary = False
@@ -149,6 +152,9 @@ class EllipticModel:
         code.append(Method('bool', 'isDirichletIntersection', args=[self.arg_i, 'Dune::FieldVector< int, dimRange > &dirichletComponent'], code=self.isDirichletIntersection, const=True))
         code.append(Method('void', 'dirichlet', targs=['class Point'], args=[self.arg_bndId, self.arg_x, self.arg_r], code=self.dirichlet, const=True))
 
+        code.append(Method('void', 'initIntersection', args=['const IntersectionType &intersection'], code=self.initIntersection, const=True))
+        code.append(self.extraMethods)
+
         if self.hasConstants:
             code.append(Method("const ConstantType< i > &", "constant", targs=["std::size_t i"], code=return_(dereference(get("i")(constants_))), const=True))
             code.append(Method("ConstantType< i > &", "constant", targs=["std::size_t i"], code=return_(dereference(get("i")(constants_)))))
@@ -159,10 +165,12 @@ class EllipticModel:
 
         code.append(AccessModifier("private"))
         code.append(Declaration(entity_, nullptr, mutable=True))
+        code.append(Declaration(Variable('const IntersectionType *', 'intersection_'), nullptr, mutable=True))
         if self.hasConstants:
             code.append(Declaration(constants_, mutable=True))
         if self.hasCoefficients:
             code.append(Declaration(coefficients_, mutable=True))
+        code.append(self.vars)
         return code
 
     #def write(self, sourceWriter, name='Model', targs=[]):
@@ -339,238 +347,3 @@ def splitUFL2(u,du,d2u,tree):
             else:
                 raise Exception('Invalid trial function derivative encountered in bulk integral: ' + str(op[0]))
     return tree0, tree1, tree2
-
-
-
-# generateCode
-# ------------
-
-def generateCode(predefined, tensor, coefficients, tempVars=True):
-    from dune.ufl import codegen
-    keys = tensor.keys()
-    expressions = [tensor[i] for i in keys]
-    preamble, results = codegen.generateCode(predefined, expressions, coefficients, tempVars=tempVars)
-    result = Variable('auto', 'result')
-    return preamble + [assign(result[i], r) for i, r in zip(keys, results)]
-
-
-#def compileUFL(equation, dirichlet = {}, exact = None, tempVars = True):
-def compileUFL(equation, *args, **kwargs):
-    form = equation.lhs - equation.rhs
-    if not isinstance(form, Form):
-        raise Exception("ufl.Form expected.")
-    if len(form.arguments()) < 2:
-        raise Exception("Elliptic model requires form with at least two arguments.")
-
-    phi = form.arguments()[0]
-    dimRange = phi.ufl_shape[0]
-
-    u = form.arguments()[1]
-    du = Grad(u)
-    d2u = Grad(du)
-    ubar = Coefficient(u.ufl_function_space())
-    dubar = Grad(ubar)
-    d2ubar = Grad(dubar)
-
-    x = SpatialCoordinate(form.ufl_cell())
-
-    try:
-        field = u.ufl_function_space().ufl_element().field()
-    except AttributeError:
-        field = "double"
-
-    # if exact solution is passed in subtract a(u,.) from the form
-    if "exact" in kwargs:
-        b = ufl.replace(form, {u: ufl.as_vector(kwargs["exact"])} )
-        form = form - b
-
-    dform = apply_derivatives(derivative(action(form, ubar), ubar, u))
-
-    source, diffusiveFlux, boundarySource = splitUFLForm(form)
-    linSource, linDiffusiveFlux, linBoundarySource = splitUFLForm(dform)
-    fluxDivergence, _, _ = splitUFLForm(inner(source.as_ufl() - div(diffusiveFlux.as_ufl()), phi) * dx(0))
-
-    # split linNVSource off linSource
-    # linSources = splitUFL2(u, du, d2u, linSource)
-    # linNVSource = linSources[2]
-    # linSource = linSources[0] + linSources[1]
-
-    model = EllipticModel(dimRange, form.signature())
-
-    model.hasNeumanBoundary = not boundarySource.is_zero()
-
-    expandform = expand_indices(expand_derivatives(expand_compounds(equation.lhs)))
-    if expandform == adjoint(expandform):
-        model.symmetric = 'true'
-    model.field = field
-
-    dirichletBCs = [arg for arg in args if isinstance(arg, DirichletBC)]
-    if "dirichlet" in kwargs:
-        dirichletBCs += [DirichletBC(u.ufl_space(), ufl.as_vector(value), bndId) for bndId, value in kwargs["dirichlet"].items()]
-
-    coefficients = set(form.coefficients())
-    for bc in dirichletBCs:
-        _, c = extract_arguments_and_coefficients(bc.value)
-        coefficients |= set(c)
-
-    idxConst = 0
-    idxCoeff = 0
-    for coefficient in coefficients:
-        if coefficient.is_cellwise_constant():
-            field = None  # must be improved for 'complex'
-            idx = idxConst
-            dimRange = 1 if coefficient.ufl_shape==() else coefficient.ufl_shape[0]
-            idxConst += 1
-        else:
-            field = coefficient.ufl_function_space().ufl_element().field()
-            dimRange = coefficient.ufl_shape[0]
-            idx = idxCoeff
-            idxCoeff += 1
-        try:
-            name = coefficient.str()
-        except:
-            name = str(coefficient)
-        model.coefficients.append({ \
-            'name' : name, \
-            'number' : idx, \
-            'counter' : coefficient.count(), \
-            'dimRange' : dimRange,\
-            'constant' : coefficient.is_cellwise_constant(),\
-            'field': field } )
-
-    tempVars = kwargs.get("tempVars", True)
-
-    predefined = {u: model.arg_u, du: model.arg_du}
-    predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
-    model.source = generateCode(predefined, source, model.coefficients, tempVars)
-    model.diffusiveFlux = generateCode(predefined, diffusiveFlux, model.coefficients, tempVars=tempVars)
-    predefined.update({ubar: model.arg_ubar, dubar: model.arg_dubar})
-    model.linSource = generateCode(predefined, linSource, model.coefficients, tempVars=tempVars)
-    model.linDiffusiveFlux = generateCode(predefined, linDiffusiveFlux, model.coefficients, tempVars=tempVars)
-
-    # model.linNVSource = generateCode({u: arg, du: darg, d2u: d2arg, ubar: argbar, dubar: dargbar, d2ubar: d2argbar}, linNVSource, model.coefficients, tempVars)
-
-    predefined = {u: model.arg_u}
-    predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
-    model.alpha = generateCode(predefined, boundarySource, model.coefficients, tempVars)
-    predefined.update({ubar: model.arg_ubar})
-    model.linAlpha = generateCode(predefined, linBoundarySource, model.coefficients, tempVars)
-
-    predefined = {u: model.arg_u, du: model.arg_du, d2u: model.arg_d2u}
-    predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
-    model.fluxDivergence = generateCode(predefined, fluxDivergence, model.coefficients, tempVars=tempVars)
-
-    if dirichletBCs:
-        model.hasDirichletBoundary = True
-
-        bySubDomain = dict()
-        for bc in dirichletBCs:
-            if bc.subDomain in bySubDomain:
-                raise Exception('Multiply defined Dirichlet boundary for subdomain ' + str(bc.subDomain))
-
-            if not isinstance(bc.functionSpace, (FunctionSpace, FiniteElementBase)):
-                raise Exception('Function space must either be a ufl.FunctionSpace or a ufl.FiniteElement')
-            if isinstance(bc.functionSpace, FunctionSpace) and (bc.functionSpace != u.ufl_function_space()):
-                raise Exception('Cannot handle boundary conditions on subspaces, yet')
-            if isinstance(bc.functionSpace, FiniteElementBase) and (bc.functionSpace != u.ufl_element()):
-                raise Exception('Cannot handle boundary conditions on subspaces, yet')
-
-            value = ExprTensor(u.ufl_shape)
-            for key in value.keys():
-                value[key] = Indexed(bc.value, MultiIndex(tuple(FixedIndex(k) for k in key)))
-            bySubDomain[bc.subDomain] = value
-
-        bndId = Variable('const int', 'bndId')
-        getBndId = UnformattedExpression('int', 'Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType >::boundaryId( ' + model.arg_i.name + ' )')
-
-        switch = SwitchStatement(bndId, default=return_(False))
-        for i in bySubDomain:
-            switch.append(i, return_(True))
-        model.isDirichletIntersection = [Declaration(bndId, initializer=UnformattedExpression('int', 'BoundaryIdProviderType::boundaryId( ' + model.arg_i.name + ' )')),
-                                         UnformattedBlock('std::fill( dirichletComponent.begin(), dirichletComponent.end(), ' + bndId.name + ' );'),
-                                         switch
-                                        ]
-
-        switch = SwitchStatement(model.arg_bndId, default=assign(model.arg_r, construct("RangeType", 0)))
-        predefined = {}
-        predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
-        for i, value in bySubDomain.items():
-            switch.append(i, generateCode(predefined, value, model.coefficients, tempVars=tempVars))
-        model.dirichlet = [switch]
-
-    return model
-
-
-#def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
-def generateModel(grid, model, *args, **kwargs):
-    from dune.common.hashit import hashIt
-    start_time = timeit.default_timer()
-
-    if isinstance(model, Equation):
-        model = compileUFL(model, *args, **kwargs)
-
-    # if not isinstance(grid, types.ModuleType):
-    #     grid = grid._module
-    name = 'ellipticmodel_' + model.signature + "_" + hashIt(grid._typeName)
-
-    code = []
-
-    code += [Include(i) for i in grid._includes]
-    code.append(Include("dune/fem/misc/boundaryidprovider.hh>"))
-
-    code.append(Include("dune/corepy/pybind11/pybind11.h"))
-    code.append(Include("dune/corepy/pybind11/extensions.h"))
-    code.append(Include("dune/fempy/py/grid/gridpart.hh"))
-    if model.coefficients:
-        code.append(Include("dune/fempy/function/virtualizedgridfunction.hh"))
-    code.append(Include("dune/fem/schemes/diffusionmodel.hh"))
-
-    nameSpace = NameSpace("ModelImpl_" + model.signature)
-    nameSpace.append(model.code())
-    code.append(nameSpace)
-
-    code += [TypeAlias("GridPart", "typename Dune::FemPy::GridPart< " + grid._typeName + " >")]
-
-    rangeTypes = ["Dune::FieldVector< " + SourceWriter.cpp_fields(c['field']) + ", " + str(c['dimRange']) + " >" for c in model.coefficients if not c['constant']]
-    coefficients = ["Dune::FemPy::VirtualizedLocalFunction< GridPart, " + r + " >" for r in rangeTypes]
-    code += [TypeAlias("Model", nameSpace.name + "::Model< " + ", ".join(["GridPart"] + coefficients) + " >")]
-
-    code += [TypeAlias("ModelWrapper", "DiffusionModelWrapper< Model >"),
-             TypeAlias("ModelBase", "typename ModelWrapper::Base")]
-
-    writer = SourceWriter()
-    writer.emit(code)
-
-    if model.constants:
-        model.exportSetConstant(writer)
-
-    writer.openPythonModule(name)
-    writer.emit('// export abstract base class')
-    writer.emit('if( !pybind11::already_registered< ModelBase >() )')
-    writer.emit('  pybind11::class_< ModelBase >( module, "ModelBase" );')
-    writer.emit('')
-    writer.emit('// actual wrapper class for model derived from abstract base')
-    writer.emit('pybind11::class_< ModelWrapper > cls( module, "Model", pybind11::base< ModelBase >() );')
-    writer.emit('cls.def_property_readonly( "dimRange", [] ( ModelWrapper & ) { return ' + str(model.dimRange) + '; } );')
-    writer.emit('')
-    model.export(writer, 'Model', 'ModelWrapper')
-    writer.closePythonModule(name)
-
-    if "header" in kwargs:
-        with open(kwargs["header"], 'w') as modelFile:
-            modelFile.write(writer.writer.getvalue())
-    return writer, name
-
-
-#def importModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
-def importModel(grid, model, *args, **kwargs):
-    if isinstance(model, str):
-        with open(model, 'r') as modelFile:
-            data = modelFile.read()
-        name = data.split('PYBIND11_PLUGIN( ')[1].split(' )')[0]
-        builder.load(name, data, "ellipticModel")
-        return importlib.import_module("dune.generated." + name)
-    writer, name = generateModel(grid, model, *args, **kwargs)
-    builder.load(name, writer.writer.getvalue(), "ellipticModel")
-    writer.close()
-    return importlib.import_module("dune.generated." + name)

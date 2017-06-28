@@ -1,5 +1,5 @@
-from dune.source import Method
-from dune.models.elliptic import EllipticModel
+from dune.source.cplusplus import Declaration, Method, Variable
+from dune.models.elliptic.model import EllipticModel
 from dune.ufl.codegen import CodeGenerator
 
 class SplitDomainModel(EllipticModel):
@@ -11,7 +11,8 @@ class SplitDomainModel(EllipticModel):
         self.extraMethods = self.intersectionImpl()
         self.initCoefficients = 'std::ignore = std::make_tuple( (gridCheck(std::get< i >( coefficients_ ), i), 1) ... );'
         self.privateMethods = self.gridCheck()
-        self.vars += 'mutable std::vector< int > coeffInitialized_ = std::vector< int >( numCoefficients );'
+        print(self._coefficients)
+        self.vars += 'mutable std::vector< int > coeffInitialized_ = std::vector< int >( ' + str(len(self._coefficients)) + ' );'
 
     def intersectionImpl(self):
         output = []
@@ -20,14 +21,14 @@ class SplitDomainModel(EllipticModel):
         code1.append('  const EntityType &nb = intersection.outside();')
         code1.append('  std::ignore = std::make_tuple( (initCoeffOnNb(nb, std::get< i >( coefficients_ ), i), 1) ... );')
         code1.append('}')
-        output.append(Method('void initIntersectionImpl', targs=['std::size_t... i'],
+        output.append(Method('void', 'initIntersectionImpl', targs=['std::size_t... i'],
                         args=['const IntersectionType &intersection', 'std::index_sequence< i... >'], code=code1, const=True))
         code2 = ['if (coeffInitialized_[i] != 1)']
         code2.append('{')
         code2.append('  coeff.init( nb );')
         code2.append('  coeffInitialized_[i] = -1;')
         code2.append('}')
-        output.append(Method('void initCoeffOnNb', targs=['class CoeffType'],
+        output.append(Method('void', 'initCoeffOnNb', targs=['class CoeffType'],
                       args=['const EntityType &nb', 'CoeffType &coeff', 'std::size_t i'], code=code2, const=True))
         return output
 
@@ -40,7 +41,7 @@ class SplitDomainModel(EllipticModel):
         code.append('}')
         code.append('else')
         code.append('  coeffInitialized_[i] = 0;')
-        return Method('void gridCheck', targs=['class CoeffType'], args=['CoeffType &coeff', 'std::size_t i'], code=code, const=True)
+        return Method('void', 'gridCheck', targs=['class CoeffType'], args=['CoeffType &coeff', 'std::size_t i'], code=code, const=True)
 
 class SplitDomainCodeGenerator(CodeGenerator):
     def __init__(self, predefined, coefficients, tempVars):
@@ -48,33 +49,31 @@ class SplitDomainCodeGenerator(CodeGenerator):
 
     def coefficient(self, expr):
         try:
-            return self.predefined[expr]
+            return self._makeTmp(self.predefined[expr], True)
         except KeyError:
             pass
 
+        print('Warning: ' + ('Constant ' if expr.is_cellwise_constant() else 'Coefficient ') + str(expr) + ' not predefined.')
         idx = str(self._getNumber(expr))
         if expr.is_cellwise_constant():
-            init = 'ConstantsRangeType< ' + idx + ' > cc' + idx + ' = constant< ' + idx + ' >();'
-            if not init in self.code:
-                self.code.append(init)
-            return 'cc' + idx
+            var = Variable('const ConstantsRangeType< ' + idx + ' >', 'cc' + idx)
+            self.code.append(Declaration(var, 'constant< ' + idx + ' >()'))
         else:
-            init = 'CoefficientRangeType< ' + idx + ' > c' + idx + ';'
-            if not init in self.code:
-                self.code.append(init)
-                self.code.append('if (coeffInitialized_[' + idx + '] == 1)')
-                self.code.append('  coefficient< ' + idx + ' >().evaluate( x, c' + idx + ' );')
-                self.code.append('else if (coeffInitialized_[' + idx + '] == -1)')
-                self.code.append('{')
-                self.code.append('  using Dune::Fem::coordinate;')
-                self.code.append('  auto xc = coordinate(x);')
-                self.code.append('  auto xinter = intersection_->geometryInInside().local(xc);')
-                self.code.append('  auto xnb = intersection_->geometryInOutside().global(xinter);')
-                self.code.append('  coefficient< ' + idx + ' >().evaluate( xnb, c' + idx + ' );')
-                self.code.append('}')
-                self.code.append('else')
-                self.code.append('{')
-                self.code.append('  std::cout << "coefficient not initialized!" << std::endl;')
-                self.code.append('  abort();')
-                self.code.append('}')
-            return 'c' + idx
+            var = Variable('CoefficientRangeType< ' + idx + ' >', 'c' + idx)
+            self.code.append(Declaration(var))
+            self.code.append('if (coeffInitialized_[' + idx + '] == 1)')
+            self.code.append('coefficient< ' + idx + ' >().evaluate( x, c' + idx + ' );')
+            self.code.append('else if (coeffInitialized_[' + idx + '] == -1)')
+            self.code.append('{')
+            self.code.append('  using Dune::Fem::coordinate;')
+            self.code.append('  auto xc = coordinate(x);')
+            self.code.append('  auto xinter = intersection_->geometryInInside().local(xc);')
+            self.code.append('  auto xnb = intersection_->geometryInOutside().global(xinter);')
+            self.code.append('  coefficient< ' + idx + ' >().evaluate( xnb, c' + idx + ' );')
+            self.code.append('}')
+            self.code.append('else')
+            self.code.append('{')
+            self.code.append('  std::cout << "coefficient not initialized!" << std::endl;')
+            self.code.append('  abort();')
+            self.code.append('}')
+        return var

@@ -15,7 +15,6 @@ from dune.source.cplusplus import SourceWriter
 
 from dune.ufl import GridCoefficient
 
-from .model import EllipticModel
 from .ufl import compileUFL
 
 
@@ -144,7 +143,7 @@ def load(grid, model, *args, **kwargs):
 
 
 def create(grid, model, *args, **kwargs):
-    module = load(grid, integrands, renumbering=renumbering, tempVars=tempVars)
+    module = load(grid, integrands, **kwargs)
     coefficients = kwargs.get('coefficients')
     if coefficients is not None:
         return module.Model(coefficients=coefficients)

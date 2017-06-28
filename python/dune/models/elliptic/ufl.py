@@ -81,10 +81,10 @@ def splitUFLForm(form):
 #    return tree0, tree1, tree2
 
 
-def generateCode(predefined, tensor, tempVars=True):
+def generateCode(predefined, tensor, **kwargs):
     keys = tensor.keys()
     expressions = [tensor[i] for i in keys]
-    preamble, results = codegen.generateCode(predefined, expressions, tempVars=tempVars)
+    preamble, results = codegen.generateCode(predefined, expressions, **kwargs)
     result = Variable('auto', 'result')
     return preamble + [assign(result[i], r) for i, r in zip(keys, results)]
 
@@ -130,7 +130,11 @@ def compileUFL(form, *args, **kwargs):
     # linNVSource = linSources[2]
     # linSource = linSources[0] + linSources[1]
 
-    model = EllipticModel(dimRange, form.signature())
+    if kwargs['modelType'] == None:
+        model = EllipticModel(dimRange, form.signature())
+    elif kwargs['modelType'] == 'split':
+        from dune.models.splitdomain import SplitDomainModel
+        model = SplitDomainModel(dimRange, form.signature())
 
     model.hasNeumanBoundary = not boundarySource.is_zero()
 
@@ -180,25 +184,25 @@ def compileUFL(form, *args, **kwargs):
     predefined = {u: model.arg_u, du: model.arg_du}
     predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
     predefineCoefficients(predefined, model.arg_x)
-    model.source = generateCode(predefined, source, tempVars=tempVars)
-    model.diffusiveFlux = generateCode(predefined, diffusiveFlux, tempVars=tempVars)
+    model.source = generateCode(predefined, source, **kwargs)
+    model.diffusiveFlux = generateCode(predefined, diffusiveFlux, **kwargs)
     predefined.update({ubar: model.arg_ubar, dubar: model.arg_dubar})
-    model.linSource = generateCode(predefined, linSource, tempVars=tempVars)
-    model.linDiffusiveFlux = generateCode(predefined, linDiffusiveFlux, tempVars=tempVars)
+    model.linSource = generateCode(predefined, linSource, **kwargs)
+    model.linDiffusiveFlux = generateCode(predefined, linDiffusiveFlux, **kwargs)
 
     # model.linNVSource = generateCode({u: arg, du: darg, d2u: d2arg, ubar: argbar, dubar: dargbar, d2ubar: d2argbar}, linNVSource, model.coefficients, tempVars)
 
     predefined = {u: model.arg_u}
     predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
     predefineCoefficients(predefined, model.arg_x)
-    model.alpha = generateCode(predefined, boundarySource, tempVars=tempVars)
+    model.alpha = generateCode(predefined, boundarySource, **kwargs)
     predefined.update({ubar: model.arg_ubar})
-    model.linAlpha = generateCode(predefined, linBoundarySource, tempVars=tempVars)
+    model.linAlpha = generateCode(predefined, linBoundarySource, **kwargs)
 
     predefined = {u: model.arg_u, du: model.arg_du, d2u: model.arg_d2u}
     predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
     predefineCoefficients(predefined, model.arg_x)
-    model.fluxDivergence = generateCode(predefined, fluxDivergence, tempVars=tempVars)
+    model.fluxDivergence = generateCode(predefined, fluxDivergence, **kwargs)
 
     if dirichletBCs:
         model.hasDirichletBoundary = True
@@ -236,8 +240,9 @@ def compileUFL(form, *args, **kwargs):
         predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
         predefineCoefficients(predefined, model.arg_x)
         for i, value in bySubDomain.items():
-            switch.append(i, generateCode(predefined, value, tempVars=tempVars))
+            switch.append(i, generateCode(predefined, value, **kwargs))
         model.dirichlet = [switch]
 
     coefficients.update(constants)
+    print(coefficients)
     return model, coefficients

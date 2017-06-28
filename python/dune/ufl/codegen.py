@@ -90,8 +90,8 @@ class CodeGenerator(MultiFunction):
     facet_normal = _require_predefined
 
     def exp(self, expr, x):
-        self.using.add('using std::exp;')
-        return self._makeTmp('exp( ' + x + ' )')
+        self.using.add(Using(cplusplus.exp))
+        return self._makeTmp(cplusplus.exp(x))
 
     # only implemented for 3D normal
     def facet_normal(self, expr):
@@ -252,7 +252,7 @@ class CodeGenerator(MultiFunction):
             return cexpr
 
 
-def generateCode(predefined, expressions, coefficients, tempVars = True, modelType = None):
+def generateCode(predefined, expressions, coefficients = None, tempVars = True, modelType = None, **kwargs):
     expressions = [applyRestrictions(expand_indices(apply_derivatives(apply_algebra_lowering(expr)))) for expr in expressions]
     if modelType == None:
         generator = CodeGenerator(predefined, coefficients, tempVars)

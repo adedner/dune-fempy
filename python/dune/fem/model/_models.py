@@ -30,7 +30,8 @@ def splitdomain(view, equation, *args, **kwargs):
 
     coefficients = kwargs.pop('coefficients', dict())
 
-    Model = elliptic.load(view, equation, modelType='split', *args, **kwargs).Model
+    kwargs['modelType'] = 'split'
+    Model = elliptic.load(view, equation, *args, **kwargs).Model
     if isinstance(equation, ufl.equation.Equation):
         lhs = ufl.algorithms.expand_indices(ufl.algorithms.expand_derivatives(ufl.algorithms.expand_compounds(equation.lhs)))
         if lhs == ufl.adjoint(lhs):

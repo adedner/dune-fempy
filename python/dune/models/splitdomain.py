@@ -1,6 +1,11 @@
-from dune.source.cplusplus import Declaration, Method, Variable
+from dune.source.builtin import get, make_shared
+from dune.source.cplusplus import AccessModifier, Constructor, Declaration, Function, Method, NameSpace, Struct, TypeAlias, UnformattedBlock, Variable
+from dune.source.cplusplus import UnformattedExpression
+from dune.source.cplusplus import SourceWriter
+from dune.source.cplusplus import assign, construct, dereference, lambda_, nullptr, return_, this
 from dune.models.elliptic.model import EllipticModel
 from dune.ufl.codegen import CodeGenerator
+from dune.source.fem import declareFunctionSpace
 
 class SplitDomainModel(EllipticModel):
     def __init__(self, dimRange, signature):
@@ -9,10 +14,10 @@ class SplitDomainModel(EllipticModel):
         self.linAlpha = ''
         self.initIntersection += '\n      initIntersectionImpl( intersection, std::make_index_sequence< numCoefficients >() );'
         self.extraMethods = self.intersectionImpl()
-        self.initCoefficients = 'std::ignore = std::make_tuple( (gridCheck(std::get< i >( coefficients_ ), i), 1) ... );'
-        self.privateMethods = self.gridCheck()
-        print(self._coefficients)
-        self.vars += 'mutable std::vector< int > coeffInitialized_ = std::vector< int >( ' + str(len(self._coefficients)) + ' );'
+        #self.initCoefficients = 'std::ignore = std::make_tuple( (gridCheck(std::get< i >( coefficients_ ), i), 1) ... );'
+        self.extraMethods.append(self.initCoefficients())
+        self.extraMethods.append(self.gridCheck())
+        self.vars += 'mutable std::vector< int > coeffInitialized_ = std::vector< int >( numCoefficients );'
 
     def intersectionImpl(self):
         output = []
@@ -32,6 +37,10 @@ class SplitDomainModel(EllipticModel):
                       args=['const EntityType &nb', 'CoeffType &coeff', 'std::size_t i'], code=code2, const=True))
         return output
 
+    def initCoefficients(self):
+        code = ['std::ignore = std::make_tuple( (gridCheck(std::get< i >( coefficients_ ), i), 1) ... );']
+        return Method('void', 'initCoefficients', targs=['std::size_t... i'], args=['std::index_sequence< i... >'], code=code, const=True)
+
     def gridCheck(self):
         code = ['const auto &gridPart = coeff.gridPart();']
         code.append('if (gridPart.contains( entity() ))')
@@ -42,6 +51,89 @@ class SplitDomainModel(EllipticModel):
         code.append('else')
         code.append('  coeffInitialized_[i] = 0;')
         return Method('void', 'gridCheck', targs=['class CoeffType'], args=['CoeffType &coeff', 'std::size_t i'], code=code, const=True)
+
+    def code(self, name='Model', targs=[]):
+        constants_ = Variable('std::tuple< ' + ', '.join('std::shared_ptr< ' + c  + ' >' for c in self._constants) + ' >', 'constants_')
+        coefficients_ = Variable('std::tuple< ' + ', '.join('Coefficient' + str(i) for i, c in enumerate(self._coefficients)) + ' >', 'coefficients_')
+        entity_ = Variable('const EntityType *', 'entity_')
+
+        code = Struct(name, targs=(['class GridPart'] + ['class Coefficient' + str(i) for i, c in enumerate(self._coefficients)] + targs))
+
+        code.append(TypeAlias("GridPartType", "GridPart"))
+        code.append(TypeAlias("EntityType", "typename GridPart::template Codim< 0 >::EntityType"))
+        code.append(TypeAlias("IntersectionType", "typename GridPart::IntersectionType"))
+
+        code.append(declareFunctionSpace("typename GridPartType::ctype", SourceWriter.cpp_fields(self.field), UnformattedExpression("int", "GridPartType::dimensionworld"), self.dimRange))
+        code.append(Declaration(Variable("const int", "dimLocal"), initializer=UnformattedExpression("int", "GridPartType::dimension"), static=True))
+
+        if self.hasConstants:
+            code.append(TypeAlias("ConstantType", "typename std::tuple_element_t< i, " + constants_.cppType + " >::element_type", targs=["std::size_t i"]))
+            code.append(Declaration(Variable("const std::size_t", "numConstants"), initializer=len(self._constants), static=True))
+
+        if self.hasCoefficients:
+            coefficientSpaces = ["Dune::Fem::FunctionSpace< DomainFieldType, " + SourceWriter.cpp_fields(c['field']) + ", dimDomain, " + str(c['dimRange']) + " >" for c in self._coefficients]
+            code.append(TypeAlias("CoefficientFunctionSpaceTupleType", "std::tuple< " + ", ".join(coefficientSpaces) + " >"))
+            code.append('static const std::size_t numCoefficients = std::tuple_size< CoefficientFunctionSpaceTupleType >::value;')
+            code.append(TypeAlias('CoefficientType', 'std::tuple_element_t< i, ' + coefficients_.cppType + ' >', targs=['std::size_t i']))
+
+        if self.hasCoefficients:
+            args = [Variable("const Coefficient" + str(i) + " &", "coefficient" + str(i)) for i, c in enumerate(self._coefficients)]
+            init = ["coefficients_( " + ", ".join("coefficient" + str(i) for i, c in enumerate(self._coefficients)) + " )"]
+            constructor = Constructor(args=args, init=init)
+        else:
+            constructor = Constructor()
+        if self.hasConstants:
+            constructor.append([assign(get(str(i))(constants_), make_shared(c)()) for i, c in enumerate(self._constants)])
+        code.append(constructor)
+
+        init = ['entity_ = &entity;']
+        init += ['initCoefficients( std::make_index_sequence< numCoefficients >() );']
+        init = [UnformattedBlock(init)] + self.init + [return_(True)]
+        code.append(Method('bool', 'init', args=['const EntityType &entity'], code=init, const=True))
+
+        code.append(Method('const EntityType &', 'entity', code=return_(dereference(entity_)), const=True))
+        code.append(Method('std::string', 'name', const=True, code=return_(UnformattedExpression('const char *', '"' + name + '"'))))
+
+        code.append(TypeAlias("BoundaryIdProviderType", "Dune::Fem::BoundaryIdProvider< typename GridPartType::GridType >"))
+        code.append(Declaration(Variable("const bool", "symmetric"), initializer=self.symmetric, static=True))
+
+        code.append(Method('void', 'source', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_r], code=self.source, const=True))
+        code.append(Method('void', 'linSource', targs=['class Point'], args=[self.arg_ubar, self.arg_dubar, self.arg_x, self.arg_u, self.arg_du, self.arg_r], code=self.linSource, const=True))
+
+        code.append(Method('void', 'diffusiveFlux', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_dr], code=self.diffusiveFlux, const=True))
+        code.append(Method('void', 'linDiffusiveFlux', targs=['class Point'], args=[self.arg_ubar, self.arg_dubar, self.arg_x, self.arg_u, self.arg_du, self.arg_dr], code=self.linDiffusiveFlux, const=True))
+
+        code.append(Method('void', 'fluxDivergence', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_du, self.arg_d2u, self.arg_r], code=self.fluxDivergence, const=True))
+
+        code.append(Method('void', 'alpha', targs=['class Point'], args=[self.arg_x, self.arg_u, self.arg_r], code=self.alpha, const=True))
+        code.append(Method('void', 'linAlpha', targs=['class Point'], args=[self.arg_ubar, self.arg_x, self.arg_u, self.arg_r], code=self.linAlpha, const=True))
+
+        code.append(Method('bool', 'hasDirichletBoundary', const=True, code=return_(self.hasDirichletBoundary)))
+        code.append(Method('bool', 'hasNeumanBoundary', const=True, code=return_(self.hasNeumanBoundary)))
+
+        code.append(Method('bool', 'isDirichletIntersection', args=[self.arg_i, 'Dune::FieldVector< int, dimRange > &dirichletComponent'], code=self.isDirichletIntersection, const=True))
+        code.append(Method('void', 'dirichlet', targs=['class Point'], args=[self.arg_bndId, self.arg_x, self.arg_r], code=self.dirichlet, const=True))
+
+        code.append(Method('void', 'initIntersection', args=['const IntersectionType &intersection'], code=self.initIntersection, const=True))
+        code.append(self.extraMethods)
+
+        if self.hasConstants:
+            code.append(Method("const ConstantType< i > &", "constant", targs=["std::size_t i"], code=return_(dereference(get("i")(constants_))), const=True))
+            code.append(Method("ConstantType< i > &", "constant", targs=["std::size_t i"], code=return_(dereference(get("i")(constants_)))))
+
+        if self.hasCoefficients:
+            code.append(Method("const CoefficientType< i > &", "coefficient", targs=["std::size_t i"], code=return_(get("i")(coefficients_)), const=True))
+            code.append(Method("CoefficientType< i > &", "coefficient", targs=["std::size_t i"], code=return_(get("i")(coefficients_))))
+
+        code.append(AccessModifier("private"))
+        code.append(Declaration(entity_, nullptr, mutable=True))
+        code.append(Declaration(Variable('const IntersectionType *', 'intersection_'), nullptr, mutable=True))
+        if self.hasConstants:
+            code.append(Declaration(constants_, mutable=True))
+        if self.hasCoefficients:
+            code.append(Declaration(coefficients_, mutable=True))
+        code.append(self.vars)
+        return code
 
 class SplitDomainCodeGenerator(CodeGenerator):
     def __init__(self, predefined, coefficients, tempVars):

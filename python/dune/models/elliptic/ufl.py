@@ -244,5 +244,4 @@ def compileUFL(form, *args, **kwargs):
         model.dirichlet = [switch]
 
     coefficients.update(constants)
-    print(coefficients)
     return model, coefficients

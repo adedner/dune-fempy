@@ -158,38 +158,3 @@ class SplitDomainModel(EllipticModel):
             code.append(Declaration(coefficients_, mutable=True))
         code.append(self.vars)
         return code
-
-class SplitDomainCodeGenerator(CodeGenerator):
-    def __init__(self, predefined, coefficients, tempVars):
-        CodeGenerator.__init__(self, predefined, coefficients, tempVars)
-
-    def coefficient(self, expr):
-        try:
-            return self._makeTmp(self.predefined[expr], True)
-        except KeyError:
-            pass
-
-        print('Warning: ' + ('Constant ' if expr.is_cellwise_constant() else 'Coefficient ') + str(expr) + ' not predefined.')
-        idx = str(self._getNumber(expr))
-        if expr.is_cellwise_constant():
-            var = Variable('const ConstantsRangeType< ' + idx + ' >', 'cc' + idx)
-            self.code.append(Declaration(var, 'constant< ' + idx + ' >()'))
-        else:
-            var = Variable('CoefficientRangeType< ' + idx + ' >', 'c' + idx)
-            self.code.append(Declaration(var))
-            self.code.append('if (coeffInitialized_[' + idx + '] == 1)')
-            self.code.append('coefficient< ' + idx + ' >().evaluate( x, c' + idx + ' );')
-            self.code.append('else if (coeffInitialized_[' + idx + '] == -1)')
-            self.code.append('{')
-            self.code.append('  using Dune::Fem::coordinate;')
-            self.code.append('  auto xc = coordinate(x);')
-            self.code.append('  auto xinter = intersection_->geometryInInside().local(xc);')
-            self.code.append('  auto xnb = intersection_->geometryInOutside().global(xinter);')
-            self.code.append('  coefficient< ' + idx + ' >().evaluate( xnb, c' + idx + ' );')
-            self.code.append('}')
-            self.code.append('else')
-            self.code.append('{')
-            self.code.append('  std::cout << "coefficient not initialized!" << std::endl;')
-            self.code.append('  abort();')
-            self.code.append('}')
-        return var

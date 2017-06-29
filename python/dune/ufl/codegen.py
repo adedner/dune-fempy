@@ -252,12 +252,8 @@ class CodeGenerator(MultiFunction):
             return cexpr
 
 
-def generateCode(predefined, expressions, coefficients = None, tempVars = True, modelType = None, **kwargs):
+def generateCode(predefined, expressions, coefficients = None, tempVars = True, **kwargs):
     expressions = [applyRestrictions(expand_indices(apply_derivatives(apply_algebra_lowering(expr)))) for expr in expressions]
-    if modelType == None:
-        generator = CodeGenerator(predefined, coefficients, tempVars)
-    elif modelType == 'split':
-        from dune.models.splitdomain import SplitDomainCodeGenerator
-        generator = SplitDomainCodeGenerator(predefined, coefficients, tempVars)
+    generator = CodeGenerator(predefined, coefficients, tempVars)
     results = map_expr_dags(generator, expressions)
     return list(generator.using) + generator.code, results

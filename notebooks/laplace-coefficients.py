@@ -17,7 +17,6 @@ import math
 from ufl import *
 
 from dune.grid import cartesianDomain
-from dune.ufl import GridCoefficient, Space
 
 import dune.create as create
 import dune.fem

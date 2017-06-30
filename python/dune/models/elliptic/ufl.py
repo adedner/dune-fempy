@@ -28,7 +28,7 @@ def splitUFLForm(form):
 
     source = ExprTensor(phi.ufl_shape)
     diffusiveFlux = ExprTensor(dphi.ufl_shape)
-    boundarySource = ExprTensor(phi.ufl_shape)
+    boundaryDict = {1: ExprTensor(phi.ufl_shape)}
 
     form = expand_indices(expand_derivatives(expand_compounds(form)))
     for integral in form.integrals():
@@ -36,22 +36,29 @@ def splitUFLForm(form):
             fluxExprs = splitMultiLinearExpr(integral.integrand(), [phi])
             for op in fluxExprs:
                 if op[0] == phi:
-                    source = source + fluxExprs[op]
+                    source += fluxExprs[op]
                 elif op[0] == dphi:
-                    diffusiveFlux = diffusiveFlux + fluxExprs[op]
+                    diffusiveFlux += fluxExprs[op]
                 else:
                     raise Exception('Invalid derivative encountered in bulk integral: ' + str(op[0]))
         elif integral.integral_type() == 'exterior_facet':
             fluxExprs = splitMultiLinearExpr(integral.integrand(), [phi])
             for op in fluxExprs:
                 if op[0] == phi:
-                    boundarySource = boundarySource + fluxExprs[op]
+                    try:
+                        bndId = int(integral.subdomain_id())
+                    except:
+                        bndId = 1
+                    if bndId in boundaryDict:
+                        boundaryDict[bndId] += fluxExprs[op]
+                    else:
+                        boundaryDict[bndId] = fluxExprs[op]
                 else:
                     raise Exception('Invalid derivative encountered in boundary integral: ' + str(op[0]))
         else:
             raise NotImplementedError('Integrals of type ' + integral.integral_type() + ' are not supported.')
 
-    return source, diffusiveFlux, boundarySource
+    return source, diffusiveFlux, boundaryDict
 
 
 #def splitUFL2(u,du,d2u,tree):
@@ -88,6 +95,24 @@ def generateCode(predefined, tensor, **kwargs):
     result = Variable('auto', 'result')
     return preamble + [assign(result[i], r) for i, r in zip(keys, results)]
 
+def alphaSwitch(predefined, boundaryDict, function, **kwargs):
+    output = []
+    output.append('const int bndId = BoundaryIdProviderType::boundaryId( *intersection_ );')
+    output.append('switch( bndId )')
+    output.append('{')
+    for bndId in boundaryDict:
+        output.append('case ' + str(bndId) + ':')
+        output.append('  {')
+        if function == 'alpha':
+            output.append(generateCode(predefined, boundaryDict[bndId], **kwargs))
+        elif function == 'linalpha':
+            output.append(generateCode(predefined, boundaryDict[bndId], **kwargs))
+        output.append('  }')
+        output.append('  break;')
+    output.append('default:')
+    output.append('  result = RangeType( 0 );')
+    output.append('}')
+    return output
 
 def compileUFL(form, *args, **kwargs):
     if isinstance(form, Equation):
@@ -121,8 +146,8 @@ def compileUFL(form, *args, **kwargs):
 
     dform = apply_derivatives(derivative(action(form, ubar), ubar, u))
 
-    source, diffusiveFlux, boundarySource = splitUFLForm(form)
-    linSource, linDiffusiveFlux, linBoundarySource = splitUFLForm(dform)
+    source, diffusiveFlux, boundaryDict = splitUFLForm(form)
+    linSource, linDiffusiveFlux, linBoundaryDict = splitUFLForm(dform)
     fluxDivergence, _, _ = splitUFLForm(inner(source.as_ufl() - div(diffusiveFlux.as_ufl()), phi) * dx(0))
 
     # split linNVSource off linSource
@@ -136,7 +161,7 @@ def compileUFL(form, *args, **kwargs):
         from dune.models.splitdomain import SplitDomainModel
         model = SplitDomainModel(dimRange, form.signature())
 
-    model.hasNeumanBoundary = not boundarySource.is_zero()
+    model.hasNeumanBoundary = not all(value.is_zero() for value in boundaryDict.values())
 
     #expandform = expand_indices(expand_derivatives(expand_compounds(equation.lhs)))
     #if expandform == adjoint(expandform):
@@ -195,9 +220,11 @@ def compileUFL(form, *args, **kwargs):
     predefined = {u: model.arg_u}
     predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
     predefineCoefficients(predefined, model.arg_x)
-    model.alpha = generateCode(predefined, boundarySource, **kwargs)
+    #model.alpha = generateCode(predefined, boundarySource, **kwargs)
+    model.alpha = alphaSwitch(predefined, boundaryDict, 'alpha', **kwargs)
     predefined.update({ubar: model.arg_ubar})
-    model.linAlpha = generateCode(predefined, linBoundarySource, **kwargs)
+    #model.linAlpha = generateCode(predefined, linBoundarySource, **kwargs)
+    model.linAlpha = alphaSwitch(predefined, linBoundaryDict, 'linalpha', **kwargs)
 
     predefined = {u: model.arg_u, du: model.arg_du, d2u: model.arg_d2u}
     predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')

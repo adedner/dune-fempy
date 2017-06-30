@@ -10,11 +10,8 @@ from dune.source.fem import declareFunctionSpace
 class SplitDomainModel(EllipticModel):
     def __init__(self, dimRange, signature):
         EllipticModel.__init__(self, dimRange, signature)
-        self.alpha = ''
-        self.linAlpha = ''
         self.initIntersection += '\n      initIntersectionImpl( intersection, std::make_index_sequence< numCoefficients >() );'
         self.extraMethods = self.intersectionImpl()
-        #self.initCoefficients = 'std::ignore = std::make_tuple( (gridCheck(std::get< i >( coefficients_ ), i), 1) ... );'
         self.extraMethods.append(self.initCoefficients())
         self.extraMethods.append(self.gridCheck())
         self.vars += 'mutable std::vector< int > coeffInitialized_ = std::vector< int >( numCoefficients );'

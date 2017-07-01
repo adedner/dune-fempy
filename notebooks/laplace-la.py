@@ -19,7 +19,7 @@
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
 
-# In[ ]:
+# In[1]:
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
@@ -75,7 +75,7 @@ uh = create.function("discrete", spc, name="solution")
 #
 # Let's first use the solve method on the scheme directly:
 
-# In[ ]:
+# In[2]:
 
 uh,info = scheme.solve(target = uh)
 print("size:", grid.size(0), "newton iterations:", int(info['iterations']))
@@ -84,7 +84,7 @@ plot(uh)
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
 
-# In[ ]:
+# In[3]:
 
 # Let's first clear the solution again
 uh.clear()
@@ -99,9 +99,6 @@ res = uh.copy()
 # the cost of a copy
 sol_coeff = uh.array
 res_coeff = res.array
-# note: not downward compatible since
-# > np.array( res, copy=False )
-# doesn't work anymore
 n = 0
 
 while True:
@@ -119,7 +116,7 @@ plot(uh)
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
-# In[ ]:
+# In[7]:
 
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()

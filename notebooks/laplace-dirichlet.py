@@ -49,7 +49,7 @@ grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles},
 grid.hierarchicalGrid.globalRefine(4)
 
 
-# In[5]:
+# In[3]:
 
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
 
@@ -62,19 +62,13 @@ phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*math.pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 a = inner(grad(u), grad(v))*dx
 
-# model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact,1))
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact,1))
 
 
-# In[6]:
+# In[4]:
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
-# scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
-
-scheme = create.scheme("h1", spc, [a==0,DirichletBC(uflSpace,exact,1)],
-                parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 solution, _ = scheme.solve()
 plot(solution)
-
-
-# In[ ]:

@@ -133,7 +133,7 @@ while t < endTime:
     scheme.solve(target=solution)
     t     += dt
     count += 1
-    positions.assign(solution.dofVector())
+    positions.dofVector.assign(solution.dofVector)
     if count % 4 == 0:
         # surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
         # surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
@@ -195,7 +195,7 @@ for i in range(numberOfLoops):
     while t < endTime:
         solution,info = scheme.solve(target=solution)
         # move the surface
-        positions.assign(solution.dofVector())
+        positions.dofVector.assign(solution.dofVector)
         # store some information about the solution process
         iterations += int( info["linear_iterations"] )
         t          += dt

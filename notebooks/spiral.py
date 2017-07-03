@@ -62,11 +62,11 @@
 
 # In[1]:
 
+from __future__ import print_function
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 import math
 from functools import reduce
 
@@ -120,7 +120,7 @@ vh_n = vh.copy()
 # - first we define the standard parts, not involving $f_E,f_I$:
 # - then we add the missing parts with the required _if_ statement directly using C++ code
 
-# In[5]:
+# In[4]:
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u   = ufl.TrialFunction(uflSpace)
@@ -141,7 +141,7 @@ a_ex += ufl.conditional(un[0]<ustar, dt/spiral_eps* u[0]*(1-un[0])*(un[0]-ustar)
 equation = a_im == a_ex
 
 
-# In[6]:
+# In[5]:
 
 rhs_gf = create.function("ufl", grid, "rhs", order=2,
                          ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
@@ -150,12 +150,12 @@ rhs_gf = create.function("ufl", grid, "rhs", order=2,
 
 # The model is now completely implemented and can be created, together with the corresponding scheme:
 
-# In[7]:
+# In[6]:
 
 model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
 
 
-# In[8]:
+# In[7]:
 
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-3,
@@ -169,7 +169,7 @@ scheme = create.scheme("h1", spc, model, ("pardg","cg"),parameters=solverParamet
 
 # To show the solution we make use of the _animate_ module of _matplotlib_:
 
-# In[9]:
+# In[8]:
 
 import matplotlib.pyplot as plt
 from numpy import linspace

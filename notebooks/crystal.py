@@ -229,8 +229,8 @@ def matplot(grid, solution, show=range(dimRange)):
 pyplot.figure()
 
 from dune.fem.function import levelFunction, partitionFunction
-# tk = grid.writeVTK("crystal", pointdata=[solution],
-#        celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
+tk = grid.writeVTK("crystal", pointdata=[solution],
+       celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
 
 matplot(grid,solution, [0])
 
@@ -258,12 +258,12 @@ while t < endTime:
     hgrid.mark(mark)
     fem.adapt(hgrid,[solution])
     fem.loadBalance(hgrid,[solution])
+    count += 1
+    # tk.write("crystal", count)
 print()
 
 
 # In[15]:
 
 pyplot.figure()
-count += 1
-# tk.write("crystal", count)
 matplot(grid, solution)

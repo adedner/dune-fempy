@@ -35,6 +35,31 @@ scheme = h1(space,
 
 solution, info = scheme.solve()
 
+print(space.size)
+uh_dofsA = solution.as_numpy
+uh_dofsB = solution.dofVector
+uh_dofsC = np.array( solution.dofVector, copy=False )
+print(solution.array.size,solution.array.strides)
+print(uh_dofsC.size,uh_dofsC.strides)
+print(uh_dofsB.size)
+for a in range(space.size):
+    print(a,uh_dofsB[a])
+    print(a,uh_dofsC[a])
+    print(a,uh_dofsA[a])
+    print(a,uh_dofsA[a]-uh_dofsB[a],uh_dofsA[a]-uh_dofsC[a])
+for a in range(space.size):
+    uh_dofsB[a] = 0
+for a in range(space.size):
+    print(a,uh_dofsA[a],uh_dofsB[a],uh_dofsC[a])
+for a in range(space.size):
+    uh_dofsA[a] = 1
+for a in range(space.size):
+    print(a,uh_dofsA[a],uh_dofsB[a],uh_dofsC[a])
+print(uh_dofsA.size, uh_dofsA.strides)
+print(len(uh_dofsB),uh_dofsB.size)
+print(uh_dofsC.size, uh_dofsC.strides)
+exit(1)
+
 print(isinstance(solution,ufl.Coefficient))
 print(dir(solution))
 print(type(solution))

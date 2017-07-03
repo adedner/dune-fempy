@@ -185,7 +185,7 @@ plot(copy)
 
 # Note that in the last case a piecewise constant function is interpolated onto the continuous first order lagrange space.
 #
-# Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` method on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
+# Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` property on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
 #
 # Accessing the dof vector becomes useful when the `eigen` backend is used for storing the dofs. In this case the
 # python buffer protocol is used to convert the dof vector into an `numpy` array without requiring any copy.
@@ -199,9 +199,7 @@ import numpy as np
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
-# not working - dofVector should export buffer
-# uh_dofs = np.array( uh.dofVector, copy=False )
-uh_dofs = uh.array
+uh_dofs = uh.as_numpy # equivalent to np.array( uh.dofVector, copy=False )
 uh_dofs *= -2
 plot(uh)
 
@@ -220,7 +218,7 @@ print("id of numpy array: ", id(dofs))
 # reinterpret the numpy vector as a discrete function
 xh = spc.numpyFunction(dofs,"name")
 # get the dof vector as numpy array
-xh_dofs = xh.array
+xh_dofs = xh.as_numpy
 print("id of dof vector: ", id(xh_dofs))
 
 # plot the random values

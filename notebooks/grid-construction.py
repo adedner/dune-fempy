@@ -11,11 +11,12 @@
 
 # In[1]:
 
+from __future__ import print_function
+
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
@@ -47,7 +48,7 @@ def plotGrid(grid):
         pyplot.gca().add_collection(coll)
     fig.gca().set_aspect('equal')
     fig.gca().autoscale()
-    pyplot.show()
+    pyplot.show(block=False)
 
 
 # First the simplest approach - this simply results in a cube tesselated with a nicely structured grid:
@@ -252,6 +253,7 @@ from dune.fem.space import dgonb
 # first using a new index set
 filter = lambda e: 1 if (e.geometry.center - [0.5, 0.5]).two_norm < 0.25 else 2
 subGrid = filteredGridView(grid, filter , 1, True)
+
 # interpolate some data onto the subgrid
 spc = lagrange(subGrid, dimrange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")

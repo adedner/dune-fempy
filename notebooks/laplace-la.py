@@ -97,8 +97,8 @@ res = uh.copy()
 # will be invalid since the shared dof vector will have moved
 # during its resizing - use copy=True to avoid this problem at
 # the cost of a copy
-sol_coeff = uh.array
-res_coeff = res.array
+sol_coeff = uh.as_numpy
+res_coeff = res.as_numpy
 n = 0
 
 while True:

@@ -62,7 +62,7 @@ phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*math.pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 a = inner(grad(u), grad(v))*dx
 
-model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact,1))
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace, exact, 1))
 
 
 # In[6]:

@@ -1,7 +1,11 @@
 #ifndef DUNE_FEM_OPERATOR_COMMON_LOCALMATRIXCOLUMN_HH
 #define DUNE_FEM_OPERATOR_COMMON_LOCALMATRIXCOLUMN_HH
 
+#include <type_traits>
 #include <utility>
+
+#include <dune/common/ftraits.hh>
+#include <dune/common/typetraits.hh>
 
 #include <dune/fem/operator/common/temporarylocalmatrix.hh>
 
@@ -48,12 +52,9 @@ namespace Dune
     // LocalMatrixColumn
     // -----------------
 
-    template< class LocalMatrix >
-    class LocalMatrixColumn
+    template< class LocalMatrix, class = void >
+    struct LocalMatrixColumn
     {
-      typedef LocalMatrixColumn< LocalMatrix > ThisType;
-
-    public:
       typedef LocalMatrix LocalMatrixType;
 
       typedef typename LocalMatrixType::RangeFieldType RangeFieldType;
@@ -89,25 +90,23 @@ namespace Dune
 
 
 
-    // LocalMatrixColumn for TemporaryLocalMatrix
-    // ------------------------------------------
+    // LocalMatrixColumn for Indexable LocalMatrix
+    // -------------------------------------------
 
-    template< class DomainSpace, class RangeSpace >
-    class LocalMatrixColumn< TemporaryLocalMatrix< DomainSpace, RangeSpace > >
+    template< class LocalMatrix >
+    struct LocalMatrixColumn< LocalMatrix, std::enable_if_t< is_indexable< LocalMatrix, unsigned int >::value > >
     {
-      typedef LocalMatrixColumn< TemporaryLocalMatrix< DomainSpace, RangeSpace > > ThisType;
+      typedef LocalMatrix LocalMatrixType;
 
-    public:
-      typedef TemporaryLocalMatrix< DomainSpace, RangeSpace > LocalMatrixType;
-
-      typedef typename LocalMatrixType::RangeFieldType RangeFieldType;
       typedef typename LocalMatrixType::RangeBasisFunctionSetType BasisFunctionSetType;
 
       typedef typename BasisFunctionSetType::RangeType RangeType;
       typedef typename BasisFunctionSetType::JacobianRangeType JacobianRangeType;
       typedef typename BasisFunctionSetType::HessianRangeType HessianRangeType;
 
-      typedef RangeFieldType value_type;
+      typedef typename FieldTraits< RangeType >::field_type RangeFieldType;
+
+      typedef std::decay_t< decltype( std::declval< const LocalMatrix & >()[ 0u ][ 0u ] ) > value_type;
       typedef unsigned int size_type;
 
       LocalMatrixColumn ( LocalMatrixType &localMatrix, unsigned int col )

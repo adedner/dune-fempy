@@ -12,13 +12,15 @@
 
 #include <dune/grid/common/rangegenerators.hh>
 
-#include <dune/fem/function/localfunction/temporary.hh>
+#include <dune/fem/common/bindguard.hh>
+#include <dune/fem/function/common/localcontribution.hh>
+#include <dune/fem/function/localfunction/const.hh>
 #include <dune/fem/io/parameter/reader.hh>
 #include <dune/fem/operator/common/automaticdifferenceoperator.hh>
 #include <dune/fem/operator/common/differentiableoperator.hh>
 #include <dune/fem/operator/common/operator.hh>
 #include <dune/fem/operator/common/stencil.hh>
-#include <dune/fem/operator/common/temporarylocalmatrix.hh>
+#include <dune/fem/operator/common/localcontribution.hh>
 #include <dune/fem/quadrature/cachingquadrature.hh>
 #include <dune/fem/quadrature/intersectionquadrature.hh>
 #include <dune/fem/solver/newtoninverseoperator.hh>
@@ -426,14 +428,13 @@ namespace Dune
         {
           w.clear();
 
-          TemporaryLocalFunction< typename DiscreteFunction::DiscreteFunctionSpaceType > wLocal( w.space() );
+          Fem::ConstLocalFunction< GridFunction > uLocal( u );
+          AddLocalContribution< DiscreteFunction > wLocal( w );
 
           for( const EntityType &entity : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uLocal = u.localFunction( entity );
-
-            wLocal.init( entity );
-            wLocal.clear();
+            auto uGuard = bindGuard( uLocal, entity );
+            auto wGuard = bindGuard( wLocal, entity );
 
             if( integrands_.hasInterior() )
               addInteriorIntegral( uLocal, wLocal );
@@ -446,11 +447,7 @@ namespace Dune
                   addBoundaryIntegral( intersection, uLocal, wLocal );
               }
             }
-
-            w.addLocalDofs( entity, wLocal.localDofVector() );
           }
-
-          w.communicate();
         }
 
         template< class GridFunction, class DiscreteFunction >
@@ -458,15 +455,14 @@ namespace Dune
         {
           w.clear();
 
-          TemporaryLocalFunction< typename DiscreteFunction::DiscreteFunctionSpaceType > wInside( w.space() ), wOutside( w.space() );
+          Fem::ConstLocalFunction< GridFunction > uInside( u ), uOutside( u );
+          AddLocalContribution< DiscreteFunction > wInside( w ), wOutside( w );
 
           const auto &indexSet = gridPart().indexSet();
           for( const EntityType &inside : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uInside = u.localFunction( inside );
-
-            wInside.init( inside );
-            wInside.clear();
+            auto uInGuard = bindGuard( uInside, inside );
+            auto wInGuard = bindGuard( wInside, inside );
 
             if( integrands_.hasInterior() )
               addInteriorIntegral( uInside, wInside );
@@ -482,22 +478,18 @@ namespace Dune
               {
                 const EntityType &outside = intersection.outside();
 
+                auto uOutGuard = bindGuard( uOutside, outside );
+
                 if( outside.partitionType() != InteriorEntity )
-                  addSkeletonIntegral( intersection, uInside, u.localFunction( outside ), wInside );
+                  addSkeletonIntegral( intersection, uInside, uOutside, wInside );
                 else if( indexSet.index( inside ) < indexSet.index( outside ) )
                 {
-                  wOutside.init( outside );
-                  wOutside.clear();
-                  addSkeletonIntegral( intersection, uInside, u.localFunction( outside ), wInside, wOutside );
-                  w.addLocalDofs( outside, wOutside.localDofVector() );
+                  auto wOutGuard = bindGuard( wOutside, outside );
+                  addSkeletonIntegral( intersection, uInside, uOutside, wInside, wOutside );
                 }
               }
             }
-
-            w.addLocalDofs( inside, wInside.localDofVector() );
           }
-
-          w.communicate();
         }
 
       public:
@@ -519,23 +511,19 @@ namespace Dune
         template< class GridFunction, class JacobianOperator >
         void assemble ( const GridFunction &u, JacobianOperator &jOp, std::false_type ) const
         {
-          typedef TemporaryLocalMatrix< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > TemporaryLocalMatrixType;
-
           DiagonalStencil< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > stencil( jOp.domainSpace(), jOp.rangeSpace() );
           jOp.reserve( stencil );
           jOp.clear();
 
-          const std::size_t maxNumLocalDofs = jOp.domainSpace().blockMapper().maxNumDofs() * jOp.domainSpace().localBlockSize;
-          DomainValueVectorType phi = makeDomainValueVector( maxNumLocalDofs );
+          DomainValueVectorType phi = makeDomainValueVector( jOp.domainSpace().maxNumDofs() );
 
-          TemporaryLocalMatrixType jOpLocal( jOp.domainSpace(), jOp.rangeSpace() );
+          Fem::ConstLocalFunction< GridFunction > uLocal( u );
+          AddLocalContribution< JacobianOperator > jOpLocal( jOp );
 
           for( const EntityType &entity : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uLocal = u.localFunction( entity );
-
-            jOpLocal.init( entity, entity );
-            jOpLocal.clear();
+            auto uGuard = bindGuard( uLocal, entity );
+            auto jOpGuard = bindGuard( jOpLocal, entity, entity );
 
             if( integrands_.hasInterior() )
               addLinearizedInteriorIntegral( uLocal, phi, jOpLocal );
@@ -548,8 +536,6 @@ namespace Dune
                   addLinearizedBoundaryIntegral( intersection, uLocal, phi, jOpLocal );
               }
             }
-
-            jOp.addLocalMatrix( entity, entity, jOpLocal );
           }
 
           jOp.communicate();
@@ -558,26 +544,21 @@ namespace Dune
         template< class GridFunction, class JacobianOperator >
         void assemble ( const GridFunction &u, JacobianOperator &jOp, std::true_type ) const
         {
-          typedef TemporaryLocalMatrix< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > TemporaryLocalMatrixType;
-
           DiagonalAndNeighborStencil< typename JacobianOperator::DomainSpaceType, typename JacobianOperator::RangeSpaceType > stencil( jOp.domainSpace(), jOp.rangeSpace() );
           jOp.reserve( stencil );
           jOp.clear();
 
-          const std::size_t maxNumLocalDofs = jOp.domainSpace().blockMapper().maxNumDofs() * jOp.domainSpace().localBlockSize;
-          DomainValueVectorType phiIn = makeDomainValueVector( maxNumLocalDofs );
-          DomainValueVectorType phiOut = makeDomainValueVector( maxNumLocalDofs );
+          DomainValueVectorType phiIn = makeDomainValueVector( jOp.domainSpace().maxNumDofs() );
+          DomainValueVectorType phiOut = makeDomainValueVector( jOp.domainSpace().maxNumDofs() );
 
-          TemporaryLocalMatrixType jOpInIn( jOp.domainSpace(), jOp.rangeSpace() ), jOpOutIn( jOp.domainSpace(), jOp.rangeSpace() );
-          TemporaryLocalMatrixType jOpInOut( jOp.domainSpace(), jOp.rangeSpace() ), jOpOutOut( jOp.domainSpace(), jOp.rangeSpace() );
+          Fem::ConstLocalFunction< GridFunction > uIn( u ), uOut( u );
+          AddLocalContribution< JacobianOperator > jOpInIn( jOp ), jOpOutIn( jOp ), jOpInOut( jOp ), jOpOutOut( jOp );
 
           const auto &indexSet = gridPart().indexSet();
           for( const EntityType &inside : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uIn = u.localFunction( inside );
-
-            jOpInIn.init( inside, inside );
-            jOpInIn.clear();
+            auto uInGuard = bindGuard( uIn, inside );
+            auto jOpInInGuard = bindGuard( jOpInIn, inside, inside );
 
             if( integrands_.hasInterior() )
               addLinearizedInteriorIntegral( uIn, phiIn, jOpInIn );
@@ -593,29 +574,20 @@ namespace Dune
               {
                 const EntityType &outside = intersection.outside();
 
-                jOpOutIn.init( outside, inside );
-                jOpOutIn.clear();
+                auto uOutGuard = bindGuard( uOut, outside );
+                auto jOpOutInGuard = bindGuard( jOpOutIn, outside, inside );
 
                 if( outside.partitionType() != InteriorEntity )
-                  addLinearizedSkeletonIntegral( intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn );
+                  addLinearizedSkeletonIntegral( intersection, uIn, uOut, phiIn, phiOut, jOpInIn, jOpOutIn );
                 else if( indexSet.index( inside ) < indexSet.index( outside ) )
                 {
-                  jOpInOut.init( inside, outside );
-                  jOpInOut.clear();
-                  jOpOutOut.init( outside, outside );
-                  jOpOutOut.clear();
+                  auto jOpInOutGuard = bindGuard( jOpInOut, inside, outside );
+                  auto jOpOutOutGuard = bindGuard( jOpOutOut, outside, outside );
 
-                  addLinearizedSkeletonIntegral( intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn, jOpInOut, jOpOutOut );
-
-                  jOp.addLocalMatrix( inside, outside, jOpInOut );
-                  jOp.addLocalMatrix( outside, outside, jOpOutOut );
+                  addLinearizedSkeletonIntegral( intersection, uIn, uOut, phiIn, phiOut, jOpInIn, jOpOutIn, jOpInOut, jOpOutOut );
                 }
-
-                jOp.addLocalMatrix( outside, inside, jOpOutIn );
               }
             }
-
-            jOp.addLocalMatrix( inside, inside, jOpInIn );
           }
 
           jOp.communicate();

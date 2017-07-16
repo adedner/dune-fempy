@@ -1,10 +1,10 @@
 space = Space(2, 1)
 u, v = TrialFunction(space), TestFunction(space)
 x = SpatialCoordinate(space.cell())
-diffusion = Coefficient(space, name="diffusion")
+diffusion = Coefficient(space) # , "diffusion")
 
 velocitySpace = Space(2, 2)
-velocity = Coefficient(velocitySpace, name="velocity")
+velocity = Coefficient(velocitySpace) # , name="velocity")
 
 a = (inner(grad(u), outer(v, velocity)) + 0.01 * inner(u, v) + diffusion[0] * inner(grad(u), grad(v))) * dx
 L = 10 / (1 + dot(x, x)**4) * v[0] * dx(0)

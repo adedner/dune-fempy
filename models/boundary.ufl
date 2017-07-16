@@ -1,7 +1,7 @@
 space = Space(2, 2)
 u, v = TrialFunction(space), TestFunction(space)
 x = SpatialCoordinate(space.cell())
-bnd = Coefficient(space, name="bnd")
+bnd = Coefficient(space) # , "bnd")
 
 F = (inner(u, v) + inner(grad(u), grad(v))) * dx + inner(u, u) * v[0] * ds
 g1 = as_vector([x[1]*cos(x[0]),sin(x[0])])

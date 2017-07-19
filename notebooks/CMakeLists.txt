@@ -5,20 +5,24 @@ file(COPY sphere.dgf DESTINATION ${SPHINXDIR})
 file(COPY parameter DESTINATION ${SPHINXDIR})
 file(COPY mcf.gif DESTINATION ${SPHINXDIR})
 
-add_sphinx_files(notebooks
+set(JUPYTER_FILES
   create.ipynb
   crystal.ipynb
   extending.ipynb
   grid-construction.ipynb
   gridfunctions.ipynb
-  laplace-intro.ipynb
-  laplace-dirichlet.ipynb
-  laplace-coefficients.ipynb
-  laplace-la.ipynb
   laplace-adaptive.ipynb
+  laplace-coefficients.ipynb
   laplace-dg.ipynb
+  laplace-dirichlet.ipynb
+  laplace-intro.ipynb
+  laplace-la.ipynb
   mcf.ipynb
   parameters.ipynb
   spiral.ipynb
   uflbindings.ipynb
 )
+
+add_sphinx_files(notebooks ${JUPYTER_FILES})
+
+install(FILES ${JUPYTER_FILES} DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}/jupyter)

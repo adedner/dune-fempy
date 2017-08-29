@@ -70,7 +70,7 @@ equation
 
 # In[5]:
 
-spc = create.space("Lagrange", grid, dimrange=1, order=1)
+spc = create.space("lagrange", grid, dimrange=1, order=1)
 model = create.model("elliptic", grid, equation)
 
 
@@ -117,7 +117,7 @@ for i in range(levels):
 
 # In[9]:
 
-spc = create.space("Lagrange", grid, dimrange=1, order=2)
+spc = create.space("lagrange", grid, dimrange=1, order=2)
 # create the scheme but change some of the default parameters..
 scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.newton.tolerance": 1e-9,
         "fem.solver.newton.linabstol": 1e-12,

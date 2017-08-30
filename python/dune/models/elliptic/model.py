@@ -171,6 +171,7 @@ class EllipticModel:
     def exportSetConstant(self, sourceWriter, modelClass='Model', wrapperClass='ModelWrapper'):
         sourceWriter.openFunction('std::size_t renumberConstants', args=['pybind11::handle &obj'])
         sourceWriter.emit('std::string id = pybind11::str( obj );')
+        sourceWriter.emit('if( obj.attr("name") ) id = pybind11::str(obj.attr("name"));')
         for name, number in self._constantNames.items():
             sourceWriter.emit('if (id == "' + name + '") return ' + str(number) + ';')
         sourceWriter.emit('throw pybind11::value_error("coefficient \'" + id + "\' has not been registered");')
@@ -375,7 +376,7 @@ def compileUFL(equation, *args, **kwargs):
     x = SpatialCoordinate(form.ufl_cell())
 
     try:
-        field = u.ufl_function_space().ufl_element().field()
+        field = u.ufl_function_space().field()
     except AttributeError:
         field = "double"
 
@@ -422,7 +423,7 @@ def compileUFL(equation, *args, **kwargs):
             dimRange = 1 if coefficient.ufl_shape==() else coefficient.ufl_shape[0]
             idxConst += 1
         else:
-            field = coefficient.ufl_function_space().ufl_element().field()
+            field = coefficient.ufl_function_space().field()
             dimRange = coefficient.ufl_shape[0]
             idx = idxCoeff
             idxCoeff += 1
@@ -503,6 +504,7 @@ def compileUFL(equation, *args, **kwargs):
 
 #def generateModel(grid, model, dirichlet = {}, exact = None, tempVars = True, header = False):
 def generateModel(grid, model, *args, **kwargs):
+    assert True
     from dune.common.hashit import hashIt
     start_time = timeit.default_timer()
 
@@ -513,7 +515,7 @@ def generateModel(grid, model, *args, **kwargs):
     #     grid = grid._module
     name = 'ellipticmodel_' + model.signature + "_" + hashIt(grid._typeName)
 
-    code = []
+    code = [Include(config.h)]
 
     code += [Include(i) for i in grid._includes]
     code.append(Include("dune/fem/misc/boundaryidprovider.hh>"))
@@ -552,6 +554,7 @@ def generateModel(grid, model, *args, **kwargs):
     writer.emit('// actual wrapper class for model derived from abstract base')
     writer.emit('pybind11::class_< ModelWrapper > cls( module, "Model", pybind11::base< ModelBase >() );')
     writer.emit('cls.def_property_readonly( "dimRange", [] ( ModelWrapper & ) { return ' + str(model.dimRange) + '; } );')
+
     writer.emit('')
     model.export(writer, 'Model', 'ModelWrapper')
     writer.closePythonModule(name)
@@ -571,6 +574,6 @@ def importModel(grid, model, *args, **kwargs):
         builder.load(name, data, "ellipticModel")
         return importlib.import_module("dune.generated." + name)
     writer, name = generateModel(grid, model, *args, **kwargs)
-    builder.load(name, writer.writer.getvalue(), "ellipticModel")
+    module = builder.load(name, writer.writer.getvalue(), "ellipticModel")
     writer.close()
-    return importlib.import_module("dune.generated." + name)
+    return module

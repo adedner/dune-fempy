@@ -19,7 +19,7 @@
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
 
-# In[ ]:
+# In[1]:
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
@@ -75,7 +75,7 @@ uh = create.function("discrete", spc, name="solution")
 #
 # Let's first use the solve method on the scheme directly:
 
-# In[ ]:
+# In[2]:
 
 uh,info = scheme.solve(target = uh)
 print("size:", grid.size(0), "newton iterations:", int(info['iterations']))
@@ -84,7 +84,7 @@ plot(uh)
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
 
-# In[ ]:
+# In[3]:
 
 # Let's first clear the solution again
 uh.clear()
@@ -97,8 +97,8 @@ res = uh.copy()
 # will be invalid since the shared dof vector will have moved
 # during its resizing - use copy=True to avoid this problem at
 # the cost of a copy
-sol_coeff = np.array( uh, copy=False )
-res_coeff = np.array( res, copy=False )
+sol_coeff = uh.as_numpy
+res_coeff = res.as_numpy
 n = 0
 
 while True:
@@ -116,12 +116,12 @@ plot(uh)
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
-# In[ ]:
+# In[7]:
 
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()
 def f(x_coeff):
-    x = spc.numpyfunction(x_coeff, "tmp")
+    x = spc.numpyFunction(x_coeff, "tmp")
     scheme(x,res)
     return res_coeff
 # class for the derivative DS of S
@@ -131,12 +131,12 @@ class Df(scipy.sparse.linalg.LinearOperator):
         self.dtype = sol_coeff.dtype
         # the following converts a given numpy array
         # into a discrete function over the given space
-        x = spc.numpyfunction(x_coeff, "tmp")
+        x = spc.numpyFunction(x_coeff, "tmp")
         # store the assembled matrix
         self.jac = scheme.assemble(x)
     # reassemble the matrix DF(u) gmiven a dof vector for u
     def update(self,x_coeff,f):
-        x = spc.numpyfunction(x_coeff, "tmp")
+        x = spc.numpyFunction(x_coeff, "tmp")
         # Note: the following does produce a copy of the matrix
         # and each call here will reproduce the full matrix
         # structure - no reuse possible in this version

@@ -8,7 +8,7 @@
 # This is a demo that demonstrates crystallisation on the surface of a liquid due to cooling. See
 # http://www.ctcms.nist.gov/fipy/examples/phase/generated/examples.phase.anisotropy.html for more details.
 
-# In[ ]:
+# In[1]:
 
 from __future__ import print_function
 try:
@@ -43,7 +43,7 @@ except:
 #
 # Let us first set up the parameters for the problem.
 
-# In[ ]:
+# In[2]:
 
 alpha        = 0.015
 tau          = 3.e-4
@@ -55,7 +55,7 @@ N            = 6.
 
 # We define the initial data.
 
-# In[ ]:
+# In[3]:
 
 def initial(x):
     r  = (x-[6,6]).two_norm
@@ -64,7 +64,7 @@ def initial(x):
 
 # As we will be discretising in time, we define the unknown data as $u = (\phi_1, \Delta T_1)$, while given data (from the previous time step) is $u_n = (\phi_0, \Delta T_0)$ and test function $v = (v_0, v_1)$.
 
-# In[ ]:
+# In[4]:
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, Coefficient, Constant, triangle
@@ -99,7 +99,7 @@ dt = Constant(triangle)      # set to time step size later on
 #
 # First we put in the right hand side which only contains explicit data.
 
-# In[ ]:
+# In[5]:
 
 from ufl import inner, dx
 a_ex = (inner(un, v) - inner(un[0], v[1])) * dx
@@ -107,7 +107,7 @@ a_ex = (inner(un, v) - inner(un[0], v[1])) * dx
 
 # For the left hand side we have the spatial derivatives and the implicit parts.
 
-# In[ ]:
+# In[6]:
 
 from ufl import pi, atan, atan_2, tan, grad, as_vector, inner, dot
 psi        = pi/8.0 + atan_2(grad(un[0])[1], (grad(un[0])[0]))
@@ -131,7 +131,7 @@ equation = a_im == a_ex
 
 # We set up the grid, the space, and we set the solution to the initial function. We use the default dof storage available in ```dune-fem``` - this can be changed for example to ```istl,eigen``` or ```petsc```.
 
-# In[ ]:
+# In[7]:
 
 import dune.common as common
 import dune.fem as fem
@@ -150,7 +150,7 @@ solution_n = solution.copy()
 
 # We set up the model and the scheme with some parameters:
 
-# In[ ]:
+# In[8]:
 
 model  = create.model("elliptic", grid, equation, coefficients={un:solution_n} )
 solverParameters = {
@@ -166,7 +166,7 @@ scheme = create.scheme("h1", space, model, solver="gmres",
 
 # We set up the adaptive method. We start with a marking strategy based on the value of the gradient of the phase field variable:
 
-# In[ ]:
+# In[9]:
 
 def mark(element):
     marker = common.Marker
@@ -180,7 +180,7 @@ def mark(element):
 
 # We do the initial refinement of the grid.
 
-# In[ ]:
+# In[10]:
 
 maxLevel = 11
 hgrid    = grid.hierarchicalGrid
@@ -196,7 +196,7 @@ print()
 
 # We define a method for matplotlib output.
 
-# In[ ]:
+# In[11]:
 
 from numpy import amin, amax, linspace
 from matplotlib import pyplot
@@ -224,30 +224,30 @@ def matplot(grid, solution, show=range(dimRange)):
     display.display(pyplot.gcf())
 
 
-# In[ ]:
+# In[12]:
 
 pyplot.figure()
 
 from dune.fem.function import levelFunction, partitionFunction
-# tk = grid.writeVTK("crystal", pointdata=[solution],
-#        celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
+tk = grid.writeVTK("crystal", pointdata=[solution],
+       celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
 
 matplot(grid,solution, [0])
 
 
 # Some constants needed for the time loop:
 
-# In[ ]:
+# In[13]:
 
 timeStep     = 0.0002
-model.setConstant(dt,[timeStep])
+model.setConstant(dt,timeStep)
 count    = 1
 t        = 0.0
 
 
 # Finally we set up the time loop and solve the problem - each time this cell is run the simulation will progress to the given ```endTime``` and then the result is shown. Just rerun it multiple times while increasing the ```endTime``` to progress the simulation further - this might take a bit...
 
-# In[ ]:
+# In[14]:
 
 endTime = 0.05
 while t < endTime:
@@ -258,12 +258,12 @@ while t < endTime:
     hgrid.mark(mark)
     fem.adapt(hgrid,[solution])
     fem.loadBalance(hgrid,[solution])
+    count += 1
+    # tk.write("crystal", count)
 print()
 
 
-# In[ ]:
+# In[15]:
 
 pyplot.figure()
-count += 1
-# tk.write("crystal", count)
 matplot(grid, solution)

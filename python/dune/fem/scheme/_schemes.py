@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import sys
 import logging
+from ufl.equation import Equation
 logger = logging.getLogger(__name__)
 
 def getSolver(solver,storage,default):
@@ -127,6 +128,17 @@ def h1(space, model, solver=None, parameters={}):
     Returns:
         Scheme: the constructed scheme
     """
+    modelParam = None
+    if isinstance(model, (list, tuple)):
+        modelParam = model[1:]
+        model = model[0]
+    if isinstance(model,Equation):
+        from dune.fem.model._models import elliptic
+        if modelParam:
+            model = elliptic(space.grid,model,*modelParam)
+        else:
+            model = elliptic(space.grid,model)
+
     from . import module
     includes = ["dune/fem/schemes/elliptic.hh"]
 

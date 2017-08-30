@@ -62,11 +62,11 @@
 
 # In[1]:
 
+from __future__ import print_function
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
 except:
     pass
-from __future__ import print_function
 import math
 from functools import reduce
 
@@ -125,8 +125,8 @@ vh_n = vh.copy()
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u   = ufl.TrialFunction(uflSpace)
 phi = ufl.TestFunction(uflSpace)
-un  = dune.ufl.Coefficient(uflSpace) # , name="un")
-vn  = dune.ufl.Coefficient(uflSpace) # , name="vn")
+un  = ufl.Coefficient(uflSpace)
+vn  = ufl.Coefficient(uflSpace)
 
 # right hand sie (time derivative part + explicit forcing in v)
 a_ex = ufl.inner(un, phi) * ufl.dx

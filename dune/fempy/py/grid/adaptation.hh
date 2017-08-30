@@ -9,9 +9,7 @@
 
 #include <dune/fempy/grid/adaptation.hh>
 #include <dune/fempy/py/grid/restrictprolong.hh>
-
-#include <dune/corepy/pybind11/pybind11.h>
-#include <dune/corepy/pybind11/stl.h>
+#include <dune/fempy/pybind11/pybind11.hh>
 
 namespace Dune
 {
@@ -81,8 +79,8 @@ namespace Dune
         } );
 
       cls.def( "adapt", [] ( GridAdaptation< Grid > &gridAdaptation, const std::list< RestrictProlong > &rpList ) {
-          if( gridAdaptation.grid().comm().rank() == 0 )
-            std::cout << "adapting grid and " << rpList.size() << " functions..." << std::endl;
+          // if( gridAdaptation.grid().comm().rank() == 0 )
+          //   std::cout << "adapting grid and " << rpList.size() << " functions..." << std::endl;
           gridAdaptation.adapt( rpList.begin(), rpList.end() );
         } );
 
@@ -92,8 +90,8 @@ namespace Dune
         } );
 
       cls.def( "loadBalance", [] ( GridAdaptation< Grid > &gridAdaptation, const std::list< RestrictProlong > &rpList ) {
-          if( gridAdaptation.grid().comm().rank() == 0 )
-            std::cout << "loadbalanding grid and " << rpList.size() << " functions..." << std::endl;
+          // if( gridAdaptation.grid().comm().rank() == 0 )
+          //   std::cout << "loadbalanding grid and " << rpList.size() << " functions..." << std::endl;
           gridAdaptation.loadBalance( rpList.begin(), rpList.end() );
         } );
 

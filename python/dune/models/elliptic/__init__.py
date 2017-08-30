@@ -13,7 +13,7 @@ from dune.common.hashit import hashIt
 from dune.source.cplusplus import NameSpace, TypeAlias
 from dune.source.cplusplus import SourceWriter
 
-from dune.ufl import GridCoefficient
+from dune.ufl import GridFunction
 
 from .model import EllipticModel
 from .ufl import compileUFL
@@ -59,7 +59,7 @@ def initModel(model, *args, **kwargs):
         args[i] = value
 
     if hasattr(model, '_renumbering'):
-        for c in (k for k in model._renumbering if isinstance(k, GridCoefficient)):
+        for c in (k for k in model._renumbering if isinstance(k, GridFunction)):
             i = model._renumbering[c]
             if args[i] is None:
                 args[i] = c.gf
@@ -81,6 +81,7 @@ def load(grid, model, *args, **kwargs):
 
     writer = SourceWriter()
 
+    writer.emit('#include <config.h>')
     writer.emit(["#include <" + i + ">" for i in grid._includes])
     writer.emit('')
     writer.emit('#include <dune/fem/misc/boundaryidprovider.hh>')
@@ -123,6 +124,13 @@ def load(grid, model, *args, **kwargs):
     writer.emit('pybind11::class_< ModelWrapper > cls( module, "Model", pybind11::base< ModelBase >() );')
     writer.emit('cls.def_property_readonly( "dimRange", [] ( ModelWrapper & ) { return ' + str(model.dimRange) + '; } );')
     writer.emit('')
+    for n, number in model._constantNames.items():
+        writer.emit('cls.def_property( "' + n + '", ' +
+          '[] ( ModelWrapper &self ) { return self.impl().template constant<' + str(number) + '>(); }, ' +
+          '[] ( ModelWrapper &self, typename ModelWrapper::Impl::ConstantType<' + str(number) + '>& value) { self.impl().template constant<' + str(number) + '>() = value; }' +
+          ');')
+    writer.emit('')
+
     model.export(writer, 'Model', 'ModelWrapper')
     writer.closePythonModule(name)
 

@@ -66,7 +66,7 @@ parameters *dimgrid* and *dimworld*.
 
 On the fly code generation is done with the python module *dune.generator*.
 
-.. autoclass:: dune.generator.generator.Generator
+.. autoclass:: dune.generator.Generator
    :members:
    :special-members: __init__
 

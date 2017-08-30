@@ -4,15 +4,16 @@ import sys
 import logging
 logger = logging.getLogger(__name__)
 
-try:
-    import ufl
-except:
-    pass
 
 import dune.models.localfunction
 
 import dune.common.checkconfiguration as checkconfiguration
 from dune.common.hashit import hashIt
+
+try:
+    from dune.ufl import GridFunction
+except:
+    pass
 
 def registerGridFunctions(gridview):
     from dune.generator import builder
@@ -21,7 +22,8 @@ def registerGridFunctions(gridview):
 
     includes = ["dune/fempy/py/grid/gridpart.hh", "dune/fempy/py/grid/function.hh"] + gridview._includes
 
-    source = "".join(["#include <" + i + ">\n" for i in includes])
+    source = "#include <config.h>\n\n"
+    source += "".join(["#include <" + i + ">\n" for i in includes])
     source += "\n"
     source += "PYBIND11_PLUGIN( " + moduleName + " )\n"
     source += "{\n"
@@ -34,19 +36,26 @@ def registerGridFunctions(gridview):
 
     return builder.load(moduleName, source, "gridfunctions")
 
+def addUFL(instance):
+    return instance.as_ufl()
+    try:
+        gf = GridFunction(instance)
+        return GridFunction(instance)
+    except NameError:
+        return instance
 
 def globalFunction(gridview, name, order, value):
     module = registerGridFunctions(gridview)
-    return module.globalGridFunction(gridview,name,order,value)
+    return addUFL(module.globalGridFunction(gridview,name,order,value))
 
 
 def localFunction(gridview, name, order, value):
     module = registerGridFunctions(gridview)
-    return module.localGridFunction(gridview,name,order,value)
+    return addUFL(module.localGridFunction(gridview,name,order,value))
 
 
 def levelFunction(gridview):
-    return localFunction(gridview, "level", 0, lambda en,_: [en.level] )
+    return localFunction(gridview, "level", 0, lambda en,_: [en.level])
 
 
 def partitionFunction(gridview):
@@ -63,7 +72,7 @@ def cppFunction(gridview, name, order, code, *args, **kwargs):
 
 
 def uflFunction(gridview, name, order, ufl, *args, **kwargs):
-    return dune.models.localfunction.UFLFunction(gridview, name, order, ufl, *args, **kwargs)
+    return addUFL( dune.models.localfunction.UFLFunction(gridview, name, order, ufl, *args, **kwargs))
 
 
 def discreteFunction(space, name, expr=None, *args, **kwargs):
@@ -81,11 +90,9 @@ def discreteFunction(space, name, expr=None, *args, **kwargs):
     df = dune.fem.discretefunction.module(storage, dfIncludes, dfTypeName).DiscreteFunction(space,name)
     if expr is None:
         df.clear()
-    elif ufl and isinstance(expr, ufl.core.expr.Expr):
-        raise ValueError("Cannot process ufl expression, yet")
     else:
         df.interpolate(expr)
-    return df
+    return addUFL(df)
 
 
 def numpyFunction(space, vec, name="tmp", **unused):
@@ -110,4 +117,4 @@ def numpyFunction(space, vec, name="tmp", **unused):
     typeName = "Dune::Fem::VectorDiscreteFunction< " +\
           spaceType + ", Dune::FemPy::NumPyVector< " + field + " > >"
 
-    return module("numpy", includes, typeName).DiscreteFunction(space,name,vec)
+    return addUFL(module("numpy", includes, typeName).DiscreteFunction(space,name,vec))

@@ -36,7 +36,7 @@ def generateCode(predefined, tensor, coefficients, tempVars=True):
 
 def UFLFunction(grid, name, order, expr, **kwargs):
     import ufl
-    from dune.ufl import GridCoefficient
+    from dune.ufl import GridFunction
     from dune.ufl.tensors import ExprTensor
     try:
         _, c = ufl.algorithms.analysis.extract_arguments_and_coefficients(expr)
@@ -55,7 +55,7 @@ def UFLFunction(grid, name, order, expr, **kwargs):
         else:
             idx = idxCoeff
             idxCoeff += 1
-            field = coefficient.ufl_function_space().ufl_element().field()
+            field = coefficient.ufl_function_space().field()
             dimR = coefficient.ufl_shape[0]
 
         try:
@@ -96,7 +96,7 @@ def UFLFunction(grid, name, order, expr, **kwargs):
     Gf = gridFunction(grid, code, coefficients, None).GFWrapper
 
     coefficients = kwargs.pop("coefficients", {})
-    fullCoeff = {c:c.gf for c in coef if isinstance(c, GridCoefficient)}
+    fullCoeff = {c:c.gf for c in coef if isinstance(c, GridFunction)}
     fullCoeff.update(coefficients)
     kwargs["coefficients"] = fullCoeff
     return Gf(name, order, grid, **kwargs)
@@ -151,7 +151,9 @@ def gridFunction(grid, code, coefficients, constants):
 
     code = []
 
-    code = [Include(i) for i in grid._includes]
+    code.append(Include("config.h"))
+
+    code += [Include(i) for i in grid._includes]
 
     code.append(Include("dune/corepy/pybind11/pybind11.h"))
     code.append(Include("dune/corepy/pybind11/extensions.h"))

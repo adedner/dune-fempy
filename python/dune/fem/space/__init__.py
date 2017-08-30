@@ -11,6 +11,9 @@ from dune.fem import function
 
 from ._spaces import *
 
+import ufl
+import dune.ufl
+
 
 def interpolate(space, func, name=None, **kwargs):
     """interpolate a function into a discrete function space
@@ -57,6 +60,37 @@ def addAttr(module, cls, field, storage):
     else:
         storage = storage(cls)
     setattr(cls, "storage", storage)
+
+    from ufl.finiteelement import FiniteElementBase
+    def uflSpace(self):
+        space = dune.ufl.Space(self)
+        return space
+    cls.uflSpace = uflSpace
+    def uflTrialFunction(self):
+        trialFunction = ufl.TrialFunction(self.uflSpace())
+        return trialFunction
+    cls.uflTrialFunction = uflTrialFunction
+    def uflTestFunction(self):
+        testFunction = ufl.TestFunction(self.uflSpace())
+        return testFunction
+    cls.uflTestFunction  = uflTestFunction
+    def uflSpatialCoordinate(self):
+        spatialCoordinate = ufl.SpatialCoordinate(self.uflSpace().cell())
+        # spatialCoordinate.duneSpace = self
+        # find a way to get the space (or the grid) from the
+        # spatialCoordinate?
+        return spatialCoordinate
+    cls.uflSpatialCoordinate = uflSpatialCoordinate
+    def uflConstant(self, dimRange, name):
+        if name:
+            return dune.ufl.NamedConstant(self.uflSpace().cell(),dimRange,name)
+        elif dimRange == 0:
+            return ufl.Constant(self.uflSpace().cell())
+        else:
+            return ufl.VectorConstant(self.uflSpace().cell(), dim=dimRange)
+    cls.uflConstant    = lambda self: uflConstant(self,0,None)
+    cls.uflVectorConstant = lambda self,dimRange: uflConstant(self,dimRange,None)
+    cls.uflNamedConstant  = lambda self, name, dimRange=0: uflConstant(self,dimRange,name)
 
 fileBase = "femspace"
 

@@ -7,7 +7,7 @@
 #
 # In addition we also show some simple inline plotting functionality.
 
-# In[ ]:
+# In[1]:
 
 try:
     get_ipython().magic(u'matplotlib inline # can also use notebook or inline # can also use notebook or nbagg')
@@ -26,7 +26,7 @@ grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[4,4]), d
 
 # There are a number of different ways *grid function* can be constructed. We start with the simplest approach using callback to python function:
 
-# In[ ]:
+# In[2]:
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(10*x[1]), math.cos(10*x[1])**2]
@@ -48,7 +48,7 @@ plot(gf_loc[0])
 #
 # This is quite a coarse grid. By changing the `level` argument in the plotting functions one can get a better representation of the functions without changing the grid. Since the data was never interpolate onto a grid the full information of the original function is still available:
 
-# In[ ]:
+# In[3]:
 
 plot(gf_loc[0],level=3)
 # of coarse we could refine the grid and plot with the original level
@@ -62,7 +62,7 @@ plot(gf_loc[0],level=3)
 #
 # Finaly, since evaluating these functions requires a callback from C++ to python and no *just in time* compilation is used, this approach can be quite slow compared to some of the others described in the following.
 
-# In[ ]:
+# In[4]:
 
 uflSpace = dune.ufl.Space(grid, 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
@@ -90,7 +90,7 @@ plot(funcUFL1)
 
 # Finally the grid function can be described proving strings with valid C++ code
 
-# In[ ]:
+# In[5]:
 
 func1 = """
 double s = sin(xGlobal[0]);
@@ -122,7 +122,7 @@ plotComponents(func,gridLines="")
 
 # Most of the methods available on the grid functions have been used above - mainly the `localfunction` method. There are a few more of interst are:
 
-# In[ ]:
+# In[6]:
 
 print("dimension of range: ",func.dimRange)
 print("underlying grid instance: ",func.grid)
@@ -131,7 +131,7 @@ print("name: ",func.name)
 
 # The following two methods can be used together with the `grid.triangulation( level )` method to obtain a simple numpy vector representation of the solution:
 
-# In[ ]:
+# In[7]:
 
 print("return array with values at cell centers: ", func.cellData(0))
 print("return array with values at nodes: ", func.pointData(0))
@@ -139,14 +139,14 @@ print("return array with values at nodes: ", func.pointData(0))
 
 # The following method computes the integral of the function over the domain - a possible usage is to compute the approximation error of a function:
 
-# In[ ]:
+# In[8]:
 
 print("value of integral over whole domain: ", func.integrate())
 
 
 # The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:
 
-# In[ ]:
+# In[9]:
 
 # first a constant function
 vector_space = create.space("Lagrange", grid, dimrange=grid.dimension, order=2)
@@ -164,7 +164,7 @@ plot(vorticity_h)
 #
 # While discrete functions are grid functions and have the same attributes, they have a few additional methods
 
-# In[ ]:
+# In[10]:
 
 print("number of dofs: ", vorticity_h.size)
 print("the underlying space: ", vorticity_h.space)
@@ -185,7 +185,7 @@ plot(copy)
 
 # Note that in the last case a piecewise constant function is interpolated onto the continuous first order lagrange space.
 #
-# Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` method on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
+# Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` property on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
 #
 # Accessing the dof vector becomes useful when the `eigen` backend is used for storing the dofs. In this case the
 # python buffer protocol is used to convert the dof vector into an `numpy` array without requiring any copy.
@@ -193,20 +193,20 @@ plot(copy)
 #
 # [1]: http://eigen.tuxfamily.org/index.php?title=Main_Page
 
-# In[ ]:
+# In[28]:
 
 import numpy as np
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
-uh_dofs = np.array( uh, copy=False )
+uh_dofs = uh.as_numpy # equivalent to np.array( uh.dofVector, copy=False )
 uh_dofs *= -2
 plot(uh)
 
 
 # We can also use an existing `numpy` array as basis of a discrete function (over space with `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
 
-# In[ ]:
+# In[29]:
 
 # a simple function to check the address of the memory block of a numpy array
 def id(x):
@@ -216,9 +216,9 @@ def id(x):
 dofs = np.random.random(spc.size)
 print("id of numpy array: ", id(dofs))
 # reinterpret the numpy vector as a discrete function
-xh = spc.numpyfunction(dofs,"name")
+xh = spc.numpyFunction(dofs,"name")
 # get the dof vector as numpy array
-xh_dofs = np.array( xh, copy=False )
+xh_dofs = xh.as_numpy
 print("id of dof vector: ", id(xh_dofs))
 
 # plot the random values

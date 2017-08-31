@@ -57,12 +57,14 @@ BOUNDARYDOMAIN
 #
 PROJECTION
   function p(x) = x / |x|
-  segment  1 2  p
+  % segment  1 2  p
   segment  2 3  p
   segment  3 4  p
   segment  4 5  p
+  segment  0 5  p
 #
 """
+print(dgf)
 grid = create.view("adaptive", "ALUConform", grid.string2dgf(dgf), dimgrid=2)
 grid.hierarchicalGrid.globalRefine(2)
 spc  = create.space( "Lagrange", grid, dimrange=1, order=order )
@@ -109,17 +111,23 @@ def exactJac(x):
     return [dx,dy]
 
 exact_gf = create.function("global", grid, "exact", order+1, exact)
-bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
-model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf})
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact_gf,1) )
 
 
 # In[3]:
 
 # set up the scheme
-laplace = create.scheme("h1", spc, model)
+parameters = {"fem.solver.newton.tolerance": 1e-9,
+        "fem.solver.newton.linabstol": 1e-12,
+        "fem.solver.newton.linreduction": 1e-12,
+        "fem.solver.newton.verbose": 1,
+        "fem.solver.newton.linear.verbose": 1}
+laplace = create.scheme("h1", spc, model, parameters=parameters, solver="cg")
 uh = spc.interpolate(lambda x: [0], name="solution")
+print("solving...")
 laplace.solve(target=uh)
+print("...done")
 
 # function used for computing approximation error
 def h1error(en,x):
@@ -132,11 +140,11 @@ h1error_gf = create.function( "local", grid, "error", order+1, h1error )
 # adaptive loop (mark, estimate, solve)
 count = 0
 tol = 0.1 # use 0 for global refinement
-while count < 8:
+while count < 20:
     error = math.sqrt(h1error_gf.integrate()[0])
     [estimate, marked] = laplace.mark(uh, tol)
-    plot(uh)
     print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
+    plot(uh)
     if marked == False or estimate < tol:
         break
     if tol == 0.:

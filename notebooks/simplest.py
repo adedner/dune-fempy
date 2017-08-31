@@ -28,7 +28,9 @@ u = space.uflTrialFunction()
 v = space.uflTestFunction()
 x = space.uflSpatialCoordinate()
 
-uflSpace = UFLSpace(2, 1)
+from dune.ufl import Space
+from ufl import TrialFunction, TestFunction, SpatialCoordinate
+uflSpace = Space(2, 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())

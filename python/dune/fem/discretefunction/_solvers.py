@@ -11,7 +11,7 @@ def solvers(includes, storage, operator):
     return includes, typeName
 
 
-def femsolver(storage): #,solverType="cg"):
+def femsolver(storage,solverType=None):
     includes = ["dune/fem/solver/krylovinverseoperators.hh"]
 
     operator = lambda df,_: "Dune::Fem::KrylovInverseOperator< " + df + " >"

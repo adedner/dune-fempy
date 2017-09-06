@@ -43,6 +43,26 @@ except:
 #
 # Let us first set up the parameters for the problem.
 
+# We set up the grid, the space, and we set the solution to the initial function. We use the default dof storage available in ```dune-fem``` - this can be changed for example to ```istl,eigen``` or ```petsc```.
+
+# In[7]:
+
+import dune.common as common
+import dune.fem as fem
+import dune.grid as grid
+import dune.create as create
+order = 1
+dimDomain = 2     # we are solving this in 2d
+dimRange = 2      # we have a system with two unknowns
+domain = grid.cartesianDomain([4,4],[8,8],[3,3])
+grid   = create.view("adaptive", grid="ALUConform",
+                    constructor=domain, dimgrid=dimDomain)
+space = create.space("Lagrange", grid, dimrange=dimRange,
+                order=order, storage="fem")
+solution   = space.interpolate([0,0], name="solution")
+solution_n = solution.copy()
+
+
 # In[2]:
 
 alpha        = 0.015
@@ -60,6 +80,7 @@ N            = 6.
 def initial(x):
     r  = (x-[6,6]).two_norm
     return [ 0 if r>0.3 else 1, -0.5 ]
+initial_gf = create.function("global", grid, "initial", order+1, initial)
 
 
 # As we will be discretising in time, we define the unknown data as $u = (\phi_1, \Delta T_1)$, while given data (from the previous time step) is $u_n = (\phi_0, \Delta T_0)$ and test function $v = (v_0, v_1)$.
@@ -68,8 +89,6 @@ def initial(x):
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, Coefficient, Constant, triangle
-dimDomain = 2     # we are solving this in 2d
-dimRange = 2      # we have a system with two unknowns
 uflSpace = Space(dimDomain, dimRange)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
@@ -102,7 +121,10 @@ dt = Constant(triangle)      # set to time step size later on
 # In[5]:
 
 from ufl import inner, dx
-a_ex = (inner(un, v) - inner(un[0], v[1])) * dx
+# a_ex = (inner(un, v) - inner(un[0], v[1])) * dx
+phi_n = solution_n[0] # un[0]
+T_test = v[1]
+a_ex = (inner(un, v) - inner(phi_n, T_test)) * dx
 
 
 # For the left hand side we have the spatial derivatives and the implicit parts.
@@ -127,26 +149,6 @@ a_im = (alpha*alpha*dt / tau * (inner(dot(d0, grad(u[0])), grad(v[0])[0]) +
        + inner(u,v) - inner(s,v)) * dx
 
 equation = a_im == a_ex
-
-
-# We set up the grid, the space, and we set the solution to the initial function. We use the default dof storage available in ```dune-fem``` - this can be changed for example to ```istl,eigen``` or ```petsc```.
-
-# In[7]:
-
-import dune.common as common
-import dune.fem as fem
-import dune.grid as grid
-import dune.create as create
-order = 1
-domain = grid.cartesianDomain([4,4],[8,8],[3,3])
-grid   = create.view("adaptive", grid="ALUConform",
-                    constructor=domain, dimgrid=dimDomain)
-space = create.space("Lagrange", grid, dimrange=dimRange,
-                order=order, storage="fem")
-initial_gf = create.function("global", grid, "initial", order+1, initial)
-solution   = space.interpolate(initial_gf, name="solution")
-solution_n = solution.copy()
-
 
 # We set up the model and the scheme with some parameters:
 
@@ -186,12 +188,13 @@ maxLevel = 11
 hgrid    = grid.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(0,maxLevel):
+    solution.interpolate(initial_gf)
     hgrid.mark(mark)
     fem.adapt(hgrid,[solution])
     fem.loadBalance(hgrid,[solution])
-    solution.interpolate(initial_gf)
     print(grid.size(0),end=" ")
 print()
+solution.interpolate(initial_gf)
 
 
 # We define a method for matplotlib output.
@@ -229,8 +232,8 @@ def matplot(grid, solution, show=range(dimRange)):
 pyplot.figure()
 
 from dune.fem.function import levelFunction, partitionFunction
-tk = grid.writeVTK("crystal", pointdata=[solution],
-       celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
+vtk = grid.writeVTK("crystal", pointdata=[solution],
+         celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
 
 matplot(grid,solution, [0])
 
@@ -259,7 +262,7 @@ while t < endTime:
     fem.adapt(hgrid,[solution])
     fem.loadBalance(hgrid,[solution])
     count += 1
-    # tk.write("crystal", count)
+    vtk.write("crystal", count)
 print()
 
 

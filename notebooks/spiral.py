@@ -188,13 +188,13 @@ iterations = 0
 
 def animate(count):
     global t, stepsize, nextstep, iterations, dt
-    # print('frame',count,t)
+    print('frame',count,t)
     while t < nextstep:
         uh_n.assign(uh)
         vh_n.assign(vh)
         _,info = scheme.solve(target=uh)
         vh.interpolate( rhs_gf )
-        # print("Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
+        print("Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
         iterations += int( info["linear_iterations"] )
         t     += dt
     data = uh.pointData(1)
@@ -202,4 +202,7 @@ def animate(count):
     grid.writeVTK("spiral", pointdata=[uh], number=count)
     nextstep += stepsize
 
-animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
+print("starting animation...")
+for f in range(25):
+    animate(f)
+# animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)

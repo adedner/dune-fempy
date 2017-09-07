@@ -14,9 +14,10 @@ import dune.create as create
 parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
 domain = cartesianDomain([0,0],[0.9,0.65],[30,20])
-grid = create.view("adaptive", "ALUCube", domain, dimgrid=2) # string2dgf(dgf), dimgrid=2)
+grid = create.view("adaptive", "ALUCube", domain, dimgrid=2)
 hgrid = grid.hierarchicalGrid
-spc = create.space("dglagrange", grid, dimrange=2, order=3, storage="istl")
+order = 3
+spc = create.space("dglagrange", grid, dimrange=2, order=order, storage="istl")
 solution     = spc.interpolate([0,0], name="solution")
 solution_old = spc.interpolate([0,0], name="solution_old")
 
@@ -93,14 +94,15 @@ l_w  = kr_w / mu_w
 q_n  = 0
 q_w  = 0
 
-velocity_n = K*(grad(p_w)-r_n*g)
+velocity_n = K*(grad(p_n)-r_n*g)
+velocity_w = K*(grad(p_w)-r_w*g)
 
 bulk_s1 = K*l_n*grad(p_c)
 bulk_p1 = K*( (l_n+l_w)*grad(p_w) + l_n*grad(p_c) )
 bulk_p2 = -K*( (r_n*l_n+r_w*l_w)*g )
 bulk_p3 = q_w+q_n
 bulk_s1 = K*l_n*grad(p_c)
-bulk_s2 = velocity_n*l_n
+bulk_s2 = K*(grad(p_w)-r_n*g)*l_n
 bulk_s3 = q_n
 
 #### bulk
@@ -115,9 +117,12 @@ n, h = FacetNormal(uflSpace.cell()), MinFacetEdgeLength(uflSpace.cell())
 # Q: shouldn't this involve at least K/mu_n so let's say we want 20 for
 #    simple laplace then we should use a constant C satisfying
 #    20 = C/(K/mu) = C 10^{11} 9.e-4 = C 10^8
-#    so C = 2e-8 so much smaller then suggested by Birane
-penalty_p_w = 1.e-2 / avg(h) # 20 * avg(K)/mu_n / avg(h)
-penalty_s_n = 1.e-3 / avg(h) # 20 * avg(K)/mu_n / avg(h)
+#    so C = 2e-8 so much smaller then suggested by Birane, e.g.,
+# penalty = 10. * order*(order+grid.dimWorld-1) / avg(h) * avg(K)/mu_n
+# penalty_p_w = penalty
+# penalty_s_n = penalty
+penalty_p_w = 1.e-2 / avg(h)
+penalty_s_n = 1.e-3 / avg(h)
 #### skeleton
 ## penalty
 form_p += penalty_p_w * inner(jump(p_w), jump(v[0])) * dS
@@ -149,7 +154,7 @@ form = Phi*(u[1]-solution_old[1])*v[1] * dx + form_p + \
 model = create.model( "integrands", grid, form == 0)
 model.setCoefficient(0,solution_old) # shouldn't be required - needs to be set during model generation
 
-newtonParameter = {"linabstol": 1e-8, "linreduction": 1e-8, "tolerance": 1e-7,
+newtonParameter = {"linabstol": 1e-10, "linreduction": 1e-10, "tolerance": 5e-7,
         "verbose": "true", "linear.verbose": "false",
         "istl.gmres.restart": 50}
 scheme = create.scheme("galerkin", spc, model,
@@ -158,47 +163,56 @@ scheme = create.scheme("galerkin", spc, model,
 
 maxLevel=3
 tol=0.2
+marker = common.Marker
 def mark(element):
-    marker = common.Marker
     solutionLocal = solution.localFunction(element)
     grad = solutionLocal.jacobian(element.geometry.domain.center)
-    eta = grad[1].infinity_norm # *sqrt(element.geometry.volume)
+    eta = grad[1].infinity_norm
     if eta > tol:
       return marker.refine if element.level < maxLevel else marker.keep
     else:
       return marker.coarsen
 
-count = 0
 solution.interpolate(as_vector( [p_w0,s_n0] ))
+dt = 1.
+model.setConstant(tau,dt) # [s]  (5 in paper)
+# the following is not really cool - one can't direcly output ufl expressions as yet
+cutoff_h = create.function("ufl", grid, "cutoff", 5,
+           as_vector([cutOff(solution[1]), cutOff(1.-solution[1])]))
+velocity_nh = create.function("ufl", grid, "velocity_n", 5,
+        replace(velocity_n,{u:solution}))
+velocity_wh = create.function("ufl", grid, "velocity_w", 5,
+        replace(velocity_w,{u:solution}))
+print(cutoff_h.name)
+count = 0
+vtk = grid.writeVTK("twophaseB", pointvector=[velocity_nh,velocity_wh], pointdata=[solution, solution_old,cutoff_h], number=count)
+if 0:
+    for i in range(2):
+        hgrid.mark(lambda e: marker.refine if e.geometry.center[1]>0.6 else marker.keep)
+        fem.adapt(hgrid)
+        fem.loadBalance(hgrid)
+else:
+    for i in range(2):
+        print("pre adaptive (",i,"): ",grid.size(0),end="\n")
+        solution_old.assign(solution)
+        scheme.solve(target=solution)
+        hgrid.mark(mark)
+        fem.adapt(hgrid,[solution])
+        fem.loadBalance(hgrid,[solution])
+        solution.interpolate(as_vector( [p_w0,s_n0] ))
+
 endTime = 2000.
 t = 0.
-dt = 10.
-model.setConstant(tau,dt) # [s]  (5 in paper)
-for i in range(2):
-    print("pre adaptive (",i,"): ",grid.size(0),end="\n")
-    solution_old.assign(solution)
-    scheme.solve(target=solution)
-    hgrid.mark(mark)
-    fem.adapt(hgrid,[solution])
-    fem.loadBalance(hgrid,[solution])
-    solution.interpolate(as_vector( [p_w0,s_n0] ))
-
-stables_n = solution.copy()
-vtk = grid.writeVTK("twophaseA", pointvector=[velocity_n], pointdata=[solution, solution_old,stables_n], number=count)
+++count
+vtk.write("twophaseB", count) # why do we repeat the name here?
 
 while t < endTime:
     print(t,grid.size(0),end="\n")
     solution_old.assign(solution)
     scheme.solve(target=solution)
     t += dt
-    try:
-        stables_n.interpolate(as_vector([p_w0,cutOff(solution[1])]))
-    except:
-        # probably a NAN in the solution....
-        grid.writeVTK("fault", pointdata=[solution,solution_old], number=0)
-        raise
     count += 1
-    vtk.write("twophaseA", count) # why do we repeat the name here?
+    vtk.write("twophaseB", count) # why do we repeat the name here?
     hgrid.mark(mark)
     fem.adapt(hgrid,[solution])
     fem.loadBalance(hgrid,[solution])

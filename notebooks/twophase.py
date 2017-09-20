@@ -131,10 +131,10 @@ form_s += penalty_s_n * inner(jump(s_n), jump(v[1])) * dS
 form_p -= inner(avg(bulk_p1+bulk_p2), outer(jump(v[0]), n('+'))) * dS
 form_s -= inner(avg(bulk_s1+bulk_s2), outer(jump(v[1]), n('+'))) * dS
 ## symmetry
-# form -= inner(outer(jump(p_w), n('+')), avg(K*(l_n+l_w)*grad(v[0]))) * dS
-# form -= inner(outer(jump(s_n), n('+')), avg(K*l_n*grad(v[0]))) * dS
-# form -= 1./avg(Phi) * inner(outer(jump(p_w), n('+')), avg(K*upwl_n*grad(v[1]))) * dS
-# form -= 1./avg(Phi) * inner(outer(jump(s_n), n('+')), avg(K*upwl_n*grad(v[1]))) * dS
+form_p -= inner(outer(jump(p_w), n('+')), avg(K*(l_n+l_w)*grad(v[0]))) * dS
+form_s -= inner(outer(jump(s_n), n('+')), avg(K*l_n*grad(v[0]))) * dS
+form_p -= inner(outer(jump(p_w), n('+')), avg(K*l_n*grad(v[1]))) * dS
+form_s -= inner(outer(jump(s_n), n('+')), avg(K*l_n*grad(v[1]))) * dS
 
 ##### dirichlet conditions
 ## penalty
@@ -144,10 +144,10 @@ form_s += penalty_s_n * (s_n-s_nD) * v[1] * dirichlet * ds
 form_p -= inner(bulk_p1+bulk_p2, outer(v[0], n)) * dirichlet * ds
 form_s -= inner(bulk_s1+bulk_s2, outer(v[1], n)) * dirichlet * ds
 ## symmetry
-# form -= inner(outer(p_w-p_wD, n), K*(l_n+l_w)*grad(v[0])) * dirichlet * ds
-# form -= inner(outer(s_n-s_nD, n), K*l_n*grad(v[0])) * dirichlet * ds
-# form -= inner(outer(p_w-p_wD, n), K*l_n*grad(v[1])) * dirichlet * ds
-# form -= inner(outer(s_n-s_nD, n), K*l_n*grad(v[1])) * dirichlet * ds
+form_p -= inner(outer(p_w-p_wD, n), K*(l_n+l_w)*grad(v[0])) * dirichlet * ds
+form_s -= inner(outer(s_n-s_nD, n), K*l_n*grad(v[0])) * dirichlet * ds
+form_p -= inner(outer(p_w-p_wD, n), K*l_n*grad(v[1])) * dirichlet * ds
+form_s -= inner(outer(s_n-s_nD, n), K*l_n*grad(v[1])) * dirichlet * ds
 
 form = Phi*(u[1]-solution_old[1])*v[1] * dx + form_p + \
         0.5*tau*(form_s + replace(form_s,{u:solution_old}))
@@ -158,7 +158,7 @@ newtonParameter = {"linabstol": 1e-10, "linreduction": 1e-10, "tolerance": 5e-7,
         "verbose": "true", "linear.verbose": "false",
         "istl.gmres.restart": 50}
 scheme = create.scheme("galerkin", spc, model,
-         # solver=("suitesparse","umfpack"),
+         solver=("suitesparse","umfpack"),
          parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 maxLevel=3

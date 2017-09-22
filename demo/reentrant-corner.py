@@ -38,7 +38,7 @@ scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v
 
 solution, _ = scheme.solve()
 
-fvspc = create.space("FiniteVolume", grid, dimrange=1, storage="istl")
+fvspc = create.space("finitevolume", grid, dimrange=1, storage="istl")
 estimate = fvspc.interpolate(solution, name="estimate")
 
 hT = MaxCellEdgeLength(uflSpace.cell())

@@ -35,16 +35,10 @@ def interpolate(space, func, name=None, **kwargs):
 
 
 def storageToSolver(storage):
-    if storage == "adaptive" or storage == "fem":
+    if storage == "adaptive":
         return "fem"
-    elif storage == "istl":
-        return "istl"
-    elif storage == "numpy":
-        return "numpy"
-    elif storage == "eigen":
-        return "eigen"
-    elif storage == "petsc":
-        return "petsc"
+    else:
+        return str(storage)
 
 generator = SimpleGenerator("Space", "Dune::FemPy")
 

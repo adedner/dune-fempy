@@ -36,7 +36,8 @@ registry["discretefunction"] = {
          "fem"      : discretefunction.adaptive,
          "istl"     : discretefunction.istl,
          "eigen"    : discretefunction.eigen,
-         "petsc"    : discretefunction.petsc
+         "petsc"    : discretefunction.petsc,
+         "petscadapt"  : discretefunction.petscadapt
      }
 registry["operator"] = {
         "galerkin"   : operator.galerkin

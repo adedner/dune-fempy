@@ -38,6 +38,8 @@ print("size:",grid.size(0),"L2-error:",error)
 grid.writeVTK("laplace", pointdata=[ uh, l2error_gf, exact_gf ])
 ```
 
+See the file COPYING for full copying permissions.
+
 Dependencies
 ------------
 

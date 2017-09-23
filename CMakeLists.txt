@@ -23,6 +23,7 @@ add_subdirectory("data")
 add_subdirectory("navierstokes")
 add_subdirectory("phasefield")
 add_subdirectory("models")
+add_subdirectory("comparison")
 
 if(NOT (${DUNE_COMMON_VERSION} VERSION_LESS 2.6))
   dune_python_install_package(PATH "python")

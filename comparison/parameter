@@ -1,0 +1,5 @@
+fem.verboserank: 0
+fem.solver.verbose: false
+fem.preconditioning: false
+fem.solver.newton.verbose: false
+fem.solver.newton.linear.verbose: false

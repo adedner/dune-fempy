@@ -1,0 +1,21 @@
+from __future__ import print_function
+
+import math
+from ufl import *
+from dune.ufl import NamedConstant
+
+from dune.ufl import Space
+
+uflSpace = Space(2, 1)
+u     = TrialFunction(uflSpace)
+v     = TestFunction(uflSpace)
+x     = SpatialCoordinate(triangle)
+tau   = NamedConstant(triangle, "tau")
+theta = NamedConstant(triangle, "theta")
+t     = NamedConstant(triangle, "time")
+u_n   = Coefficient(uflSpace)
+
+f     = lambda time: sin(2.*pi*dot(x,x)*time**2)
+space = inner(grad(u),grad(v)) - f(t+tau)*v[0]
+spc_n = inner(grad(u_n),grad(v)) - f(t)*v[0]
+F     = inner(u-u_n,v) * dx + tau*( theta*space+(1.-theta)*spc_n ) * dx

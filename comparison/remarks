@@ -1,0 +1,21 @@
+1) ufl->hh in build directory doesn't help since it is needed in source
+   so now one needs to copy the generated model header back to source dir
+2) BoundaryWrapper is missing in generated model, i.e., now one need the
+   virtualization or to copy BoundaryWrapper into the generated model from
+   dune/fem/scheme/diffusionmodel.hh
+3) constant<int> is not helpful, need the names (if available)
+4) Coefficients in Model could be GF and the model stores ConstLDF<Coeff>
+
+First results:
+--------------
+Grid=20x20 T=10, dt=0.02
+CPP:
+5.78user 0.27system 0:05.99elapsed 101%CPU
+Python:
+6.98user 0.27system 0:08.20elapsed 88%CPU
+
+Grid=220x220, T=10, dt=0.02
+CPP:
+137.18user 0.66system 2:17.79elapsed 100%CPU
+Python:
+137.38user 0.43system 2:18.87elapsed 99%CPU

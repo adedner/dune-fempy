@@ -55,7 +55,7 @@ print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)
 # heat equation
 solution.clear()
 un  = space.interpolate(-exact,name="oldSolution")
-tau = space.uflNamedConstant(name="tau")
+tau = space.uflNamedConstant("tau")
 scheme = h1(space,
         ( inner(u,v)  + tau*inner(grad(u),grad(v)) )*dx == inner(un+tau*f,v)*dx )
 

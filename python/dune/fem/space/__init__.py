@@ -80,7 +80,7 @@ def addAttr(module, cls, field, storage):
     cls.uflSpatialCoordinate = uflSpatialCoordinate
     def uflConstant(self, dimRange, name):
         if name:
-            return dune.ufl.NamedConstant(self.uflSpace().cell(),dimRange,name)
+            return dune.ufl.NamedConstant(self.uflSpace().cell(),name,dimRange)
         elif dimRange == 0:
             return ufl.Constant(self.uflSpace().cell())
         else:

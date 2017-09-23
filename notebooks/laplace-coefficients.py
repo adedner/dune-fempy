@@ -52,7 +52,7 @@ old_solution = solution.copy();
 #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0
 u = spc.uflTrialFunction()
 v = spc.uflTestFunction()
-tau = spc.uflNamedConstant(name="tau")
+tau = spc.uflNamedConstant("tau")
 a = (inner(u - old_solution, v) +    tau * inner(grad(theta*u + (1-theta)*old_solution), grad(v)) ) * dx
 
 # now generate the model code and compile

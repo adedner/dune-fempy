@@ -47,6 +47,7 @@ namespace Dune {
 } // namespcae Dune
 #endif // #else // #if DUNE_VERSION_NEWER( DUNE_FEM, 2, 5 )
 
+#include <dune/corepy/common/string_constant.hh>
 #include <dune/corepy/grid/vtk.hh>
 
 #include <dune/fempy/function/gridfunctionview.hh>
@@ -108,18 +109,18 @@ namespace Dune
           }, order );
       }
 
-    }
 
-    namespace detail
-    {
 
-      // registerGridFunction
-      // --------------------
       template< class GridPart, int dimRange >
       auto registerPyLocalGridFunction ( pybind11::handle scope, const std::string &name, std::integral_constant< int, dimRange > );
 
-      template< class GridFunction, class Cls >
-      void registerGridFunction ( pybind11::handle scope, Cls &cls)
+
+
+      // registerGridFunction
+      // --------------------
+
+      template< class GridFunction, class... options >
+      void registerGridFunction ( pybind11::handle scope, pybind11::class_< GridFunction, options... > &cls )
       {
         using pybind11::operator""_a;
 
@@ -186,16 +187,16 @@ namespace Dune
               return PyObject_Call( Dune::FemPy::getGridFunctionWrapper().ptr(), args.ptr(), nullptr );
             },  pybind11::keep_alive<0,1>() );
 #endif
-
       }
 
-      template< class GridFunction >
-      pybind11::class_< GridFunction > registerGridFunction ( pybind11::handle scope, const char *clsName = "GridFunction" )
-      {
-        pybind11::class_< GridFunction > cls( scope, clsName );
-        registerGridFunction< GridFunction >( scope, cls );
-        return cls;
-      }
+
+
+      // nameVirtualizedGridFunction
+      // ---------------------------
+
+      template< int dimRange >
+      static const auto nameVirtualizedGridFunction = "VirtualizedGridFunction_" + CorePy::make_string_constant( std::integral_constant< int, dimRange >() );
+
 
 
       // clsVirtualizedGridFunction
@@ -205,9 +206,13 @@ namespace Dune
       DUNE_EXPORT inline pybind11::class_< VirtualizedGridFunction< GridPart, Value > > clsVirtualizedGridFunction ( pybind11::handle scope )
       {
         typedef VirtualizedGridFunction< GridPart, Value > GridFunction;
-        static const std::string clsName = "VirtualizedGridFunction" + std::to_string( Value::dimension );
-        static pybind11::class_< GridFunction > cls = registerGridFunction< GridFunction >( scope, clsName.c_str() );
-        return cls;
+        static std::unique_ptr< pybind11::class_< GridFunction > > cls;
+        if( !cls )
+        {
+          cls.reset( new pybind11::class_< GridFunction >( scope, nameVirtualizedGridFunction< Value::dimension > ) );
+          detail::registerGridFunction( scope, *cls );
+        }
+        return *cls;
       }
 
     } // namespace detail
@@ -223,7 +228,8 @@ namespace Dune
       typedef typename GridFunction::GridPartType GridPart;
       typedef typename GridFunction::RangeType Value;
 
-      auto cls = detail::registerGridFunction< GridFunction >( scope, clsName );
+      pybind11::class_< GridFunction > cls( scope, clsName );
+      detail::registerGridFunction( scope, cls );
 
       detail::clsVirtualizedGridFunction< GridPart, Value >( scope ).def( pybind11::init< GridFunction >() );
       pybind11::implicitly_convertible< GridFunction, VirtualizedGridFunction< GridPart, Value > >();

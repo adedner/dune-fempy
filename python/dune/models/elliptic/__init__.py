@@ -72,6 +72,8 @@ def initModel(model, *args, **kwargs):
 
 
 def load(grid, model, *args, **kwargs):
+    from dune.generator import builder
+
     if isinstance(model, (Equation, Form)):
         model, renumbering = compileUFL(model, *args, **kwargs)
     else:
@@ -79,75 +81,78 @@ def load(grid, model, *args, **kwargs):
 
     name = 'ellipticmodel_' + model.signature + "_" + hashIt(grid._typeName)
 
-    writer = SourceWriter()
+    module = builder.load(name, None, "ellipticModel")
 
-    writer.emit('#include <config.h>')
-    writer.emit(["#include <" + i + ">" for i in grid._includes])
-    writer.emit('')
-    writer.emit('#include <dune/fem/misc/boundaryidprovider.hh>')
-    writer.emit('')
-    writer.emit('#include <dune/corepy/pybind11/pybind11.h>')
-    writer.emit('#include <dune/corepy/pybind11/extensions.h>')
-    writer.emit('')
-    writer.emit('#include <dune/fempy/py/grid/gridpart.hh>')
-    if model.hasCoefficients:
-        writer.emit('#include <dune/fempy/function/virtualizedgridfunction.hh>')
+    if not module:
+        writer = SourceWriter()
+
+        writer.emit('#include <config.h>')
+        writer.emit(["#include <" + i + ">" for i in grid._includes])
         writer.emit('')
-    writer.emit('#include <dune/fem/schemes/diffusionmodel.hh>')
+        writer.emit('#include <dune/fem/misc/boundaryidprovider.hh>')
+        writer.emit('')
+        writer.emit('#include <dune/corepy/pybind11/pybind11.h>')
+        writer.emit('#include <dune/corepy/pybind11/extensions.h>')
+        writer.emit('')
+        writer.emit('#include <dune/fempy/py/grid/gridpart.hh>')
+        if model.hasCoefficients:
+            writer.emit('#include <dune/fempy/function/virtualizedgridfunction.hh>')
+            writer.emit('')
+        writer.emit('#include <dune/fem/schemes/diffusionmodel.hh>')
 
-    code = []
+        code = []
 
-    nameSpace = NameSpace("ModelImpl_" + model.signature)
-    nameSpace.append(model.code())
-    code.append(nameSpace)
+        nameSpace = NameSpace("ModelImpl_" + model.signature)
+        nameSpace.append(model.code())
+        code.append(nameSpace)
 
-    code += [TypeAlias("GridPart", "typename Dune::FemPy::GridPart< " + grid._typeName + " >")]
+        code += [TypeAlias("GridPart", "typename Dune::FemPy::GridPart< " + grid._typeName + " >")]
 
-    rangeTypes = ["Dune::FieldVector< " + SourceWriter.cpp_fields(c['field']) + ", " + str(c['dimRange']) + " >" for c in model._coefficients]
-    coefficients = ["Dune::FemPy::VirtualizedLocalFunction< GridPart, " + r + " >" for r in rangeTypes]
-    code += [TypeAlias("Model", nameSpace.name + "::Model< " + ", ".join(["GridPart"] + coefficients) + " >")]
+        rangeTypes = ["Dune::FieldVector< " + SourceWriter.cpp_fields(c['field']) + ", " + str(c['dimRange']) + " >" for c in model._coefficients]
+        coefficients = ["Dune::FemPy::VirtualizedLocalFunction< GridPart, " + r + " >" for r in rangeTypes]
+        code += [TypeAlias("Model", nameSpace.name + "::Model< " + ", ".join(["GridPart"] + coefficients) + " >")]
 
-    code += [TypeAlias("ModelWrapper", "DiffusionModelWrapper< Model >"),
-             TypeAlias("ModelBase", "typename ModelWrapper::Base")]
+        code += [TypeAlias("ModelWrapper", "DiffusionModelWrapper< Model >"),
+                 TypeAlias("ModelBase", "typename ModelWrapper::Base")]
 
-    writer.emit(code)
+        writer.emit(code)
 
-    if model.hasConstants:
-        model.exportSetConstant(writer)
+        if model.hasConstants:
+            model.exportSetConstant(writer)
 
-    writer.openPythonModule(name)
-    writer.emit('// export abstract base class')
-    writer.emit('if( !pybind11::already_registered< ModelBase >() )')
-    writer.emit('  pybind11::class_< ModelBase >( module, "ModelBase" );')
-    writer.emit('')
-    writer.emit('// actual wrapper class for model derived from abstract base')
-    writer.emit('pybind11::class_< ModelWrapper > cls( module, "Model", pybind11::base< ModelBase >() );')
-    writer.emit('cls.def_property_readonly( "dimRange", [] ( ModelWrapper & ) { return ' + str(model.dimRange) + '; } );')
-    writer.emit('')
-    for n, number in model._constantNames.items():
-        writer.emit('cls.def_property( "' + n + '", ' +
-          '[] ( ModelWrapper &self ) { return self.impl().template constant<' + str(number) + '>(); }, ' +
-          '[] ( ModelWrapper &self, typename ModelWrapper::Impl::ConstantType<' + str(number) + '>& value) { self.impl().template constant<' + str(number) + '>() = value; }' +
-          ');')
-    writer.emit('')
+        writer.openPythonModule(name)
+        writer.emit('// export abstract base class')
+        writer.emit('if( !pybind11::already_registered< ModelBase >() )')
+        writer.emit('  pybind11::class_< ModelBase >( module, "ModelBase" );')
+        writer.emit('')
+        writer.emit('// actual wrapper class for model derived from abstract base')
+        writer.emit('pybind11::class_< ModelWrapper > cls( module, "Model", pybind11::base< ModelBase >() );')
+        writer.emit('cls.def_property_readonly( "dimRange", [] ( ModelWrapper & ) { return ' + str(model.dimRange) + '; } );')
+        writer.emit('')
+        for n, number in model._constantNames.items():
+            writer.emit('cls.def_property( "' + n + '", ' +
+              '[] ( ModelWrapper &self ) { return self.impl().template constant<' + str(number) + '>(); }, ' +
+              '[] ( ModelWrapper &self, typename ModelWrapper::Impl::ConstantType<' + str(number) + '>& value) { self.impl().template constant<' + str(number) + '>() = value; }' +
+              ');')
+        writer.emit('')
 
-    model.export(writer, 'Model', 'ModelWrapper')
-    writer.closePythonModule(name)
+        model.export(writer, 'Model', 'ModelWrapper')
+        writer.closePythonModule(name)
 
-    source = writer.writer.getvalue()
-    writer.close()
+        source = writer.writer.getvalue()
+        writer.close()
 
-    if "header" in kwargs:
-        with open(kwargs["header"], 'w') as modelFile:
-            modelFile.write(source)
+        if "header" in kwargs:
+            with open(kwargs["header"], 'w') as modelFile:
+                modelFile.write(source)
 
-    from dune.generator import builder
-    module = builder.load(name, source, "ellipticModel")
-    if renumbering is not None:
-        setattr(module.Model, '_renumbering', renumbering)
-        setattr(module.Model, '_coefficientNames', {c['name']: i for i, c in enumerate(model._coefficients)})
-        module.Model._init = module.Model.__dict__['__init__']
-        setattr(module.Model, '__init__', initModel)
+        module = builder.load(name, source, "ellipticModel")
+        if renumbering is not None:
+            setattr(module.Model, '_renumbering', renumbering)
+            setattr(module.Model, '_coefficientNames', {c['name']: i for i, c in enumerate(model._coefficients)})
+            module.Model._init = module.Model.__dict__['__init__']
+            setattr(module.Model, '__init__', initModel)
+
     return module
 
 

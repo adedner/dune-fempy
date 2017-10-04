@@ -92,11 +92,11 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        cls.def( "assemble", [] ( Scheme &self, const DiscreteFunction &ubar ) {
-            return getBCRSMatrix( self.assemble( ubar ).matrix() );
-          }, pybind11::return_value_policy::reference_internal, "ubar"_a );
-        cls.def( "assemble", [] ( Scheme &self, const VirtualizedGridFunction< GridPart, RangeType > &ubar ) {
-            return getBCRSMatrix( self.assemble( ubar ).matrix() );
+        cls.def( "assemble", [] ( Scheme &self, pybind11::object ubar ) {
+            if( isinstance< DiscreteFunction >( ubar ) )
+              return getBCRSMatrix( self.assemble( pybind11::cast< const DiscreteFunction & >( ubar ) ).matrix() );
+            else
+              return getBCRSMatrix( self.assemble( *getVirtualizedGridFunction< GridPart, RangeType >( ubar ).first ).matrix() );
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 #endif // #if HAVE_DUNE_ISTL
@@ -111,11 +111,11 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        cls.def( "assemble", [] ( Scheme &self, const DiscreteFunction &ubar ) {
-            return self.assemble( ubar ).matrix().data();
-          }, pybind11::return_value_policy::reference_internal, "ubar"_a );
-        cls.def( "assemble", [] ( Scheme &self, const VirtualizedGridFunction< GridPart, RangeType > &ubar ) {
-            return self.assemble( ubar ).matrix().data();
+        cls.def( "assemble", [] ( Scheme &self, pybind11::object ubar ) {
+            if( isinstance< DiscreteFunction >( ubar ) )
+              return self.assemble( pybind11::cast< const DiscreteFunction & >( ubar ) ).matrix().data();
+            else
+              return self.assemble( *getVirtualizedGridFunction< GridPart, RangeType >( ubar ).first ).matrix().data();
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 
@@ -144,7 +144,12 @@ namespace Dune
         typedef typename Scheme::DiscreteFunctionSpaceType::RangeType RangeType;
         typedef typename Scheme::GridPartType GridPart;
         typedef typename Scheme::DiscreteFunctionType DiscreteFunction;
-        cls.def( "__call__", [] ( Scheme &self, const VirtualizedGridFunction< GridPart, RangeType > &arg, DiscreteFunction &dest ) { self( arg, dest ); } );
+
+        using pybind11::operator""_a;
+
+        cls.def( "__call__", [] ( Scheme &self, pybind11::object arg, DiscreteFunction &dest ) {
+            self( *getVirtualizedGridFunction< GridPart, RangeType >( arg ).first, dest );
+          }, "arg"_a, "dest"_a );
       }
 
       template< class Scheme, class... options >

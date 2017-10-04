@@ -159,23 +159,33 @@ namespace Dune
 
 
 
-      // clsVirtualizedGridFunction
-      // --------------------------
+      // registerVirtualizedGridFunction
+      // -------------------------------
 
       template< class GridPart, class Value >
-      DUNE_EXPORT inline pybind11::class_< VirtualizedGridFunction< GridPart, Value > > clsVirtualizedGridFunction ( pybind11::handle scope )
+      inline void registerVirtualizedGridFunction ( pybind11::handle scope )
       {
         typedef VirtualizedGridFunction< GridPart, Value > GridFunction;
-        static std::unique_ptr< pybind11::class_< GridFunction > > cls;
-        if( !cls )
-        {
-          cls.reset( new pybind11::class_< GridFunction >( scope, nameVirtualizedGridFunction< Value::dimension > ) );
-          detail::registerGridFunction( scope, *cls );
-        }
-        return *cls;
+        if( !pybind11::already_registered< GridFunction >() )
+          detail::registerGridFunction( scope, pybind11::class_< GridFunction >( scope, nameVirtualizedGridFunction< Value::dimension > ) );
       }
 
     } // namespace detail
+
+
+
+    // getVirtualizedGridFunction
+    // --------------------------
+
+    template< class GridPart, class Value >
+    inline static auto getVirtualizedGridFunction ( pybind11::object gf )
+      -> std::pair< VirtualizedGridFunction< GridPart, Value > *, pybind11::object >
+    {
+      typedef VirtualizedGridFunction< GridPart, Value > GridFunction;
+      if( !pybind11::isinstance< GridFunction >( gf ) )
+        gf = gf.attr( "asVirtualizedGridFunction" )();
+      return std::make_pair( &pybind11::cast< GridFunction >( gf ), gf );
+    }
 
 
 
@@ -185,28 +195,10 @@ namespace Dune
     template< class GridFunction >
     inline static pybind11::class_< GridFunction > registerGridFunction ( pybind11::handle scope, const char *clsName = "GridFunction" )
     {
-      typedef typename GridFunction::GridPartType GridPart;
-      typedef typename GridFunction::RangeType Value;
-
       pybind11::class_< GridFunction > cls( scope, clsName );
       detail::registerGridFunction( scope, cls );
-
-      detail::clsVirtualizedGridFunction< GridPart, Value >( scope ).def( pybind11::init< GridFunction >() );
-      pybind11::implicitly_convertible< GridFunction, VirtualizedGridFunction< GridPart, Value > >();
-
       return cls;
     }
-
-
-
-    // registerVirtualizedGridFunction
-    // -------------------------------
-
-    template< class GridPart, int... dimRange >
-    inline static void registerVirtualizedGridFunction ( pybind11::handle scope, std::integer_sequence< int, dimRange... > )
-    {
-      std::ignore = std::make_tuple( detail::clsVirtualizedGridFunction< GridPart, FieldVector< double, dimRange > >( scope )... );
-    };
 
 
 

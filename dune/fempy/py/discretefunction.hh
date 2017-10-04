@@ -156,11 +156,6 @@ namespace Dune
 
         detail::registerGridFunction< DF >( module, cls );
 
-        detail::clsVirtualizedGridFunction< GridPart, Value >( module ).def( pybind11::init( [] ( DF &df ) {
-            return new VirtualizedGridFunction< GridPart, Value >( pyGridFunction( df ) );
-          } ) );
-        pybind11::implicitly_convertible< DF, VirtualizedGridFunction< GridPart, Value > >();
-
         registerRestrictProlong< DF >( module );
 
         cls.def_property_readonly( "space", [] ( pybind11::object self ) { return getSpace( self.cast< const DF & >(), self ); } );
@@ -200,6 +195,9 @@ namespace Dune
         }
 
         cls.def_property_readonly( "dofVector", [] ( DF &self ) -> DofVector & { return self.dofVector(); } ); // , pybind11::return_value_policy::reference_internal );
+
+        detail::registerVirtualizedGridFunction< GridPart, Value >( scope );
+        cls.def( "asVirtualizedGridFuncton", [] ( DF &self ) { return new VirtualizedGridFunction< GridPart, Value >( pyGridFunction( df ) ); } );
       }
 
     } // namespace detail

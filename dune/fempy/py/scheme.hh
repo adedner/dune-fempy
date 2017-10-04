@@ -44,20 +44,21 @@ namespace Dune
       // registerSchemeConstructor
       // -------------------------
 
-      template< class Scheme, class... options, std::enable_if_t< std::is_constructible< Scheme, const typename Scheme::DiscreteFunctionSpaceType &, const typename Scheme::ModelType & >::value, int > = 0 >
-      inline static void registerSchemeConstructor ( pybind11::class_< Scheme, options... > cls, PriorityTag< 1 > )
+      template< class Scheme, class... options >
+      inline static auto registerSchemeConstructor ( pybind11::class_< Scheme, options... > cls, PriorityTag< 1 > )
+        -> std::enable_if_t< std::is_constructible< Scheme, const typename Scheme::DiscreteFunctionSpaceType &, const typename Scheme::ModelType & >::value >
       {
         typedef typename Scheme::DiscreteFunctionSpaceType Space;
         typedef typename Scheme::ModelType ModelType;
 
         using pybind11::operator""_a;
 
-        cls.def( "__init__", [] ( Scheme &self, Space &space, const ModelType &model ) {
-            new (&self) Scheme( space, model );
-          }, "space"_a, "model"_a, pybind11::keep_alive< 1, 3 >(), pybind11::keep_alive< 1, 2 >() );
-        cls.def( "__init__", [] ( Scheme &self, Space &space, const ModelType &model, const pybind11::dict &parameters ) {
-            new (&self) Scheme( space, model, pyParameter( parameters, std::make_shared< std::string >() ) );
-          }, "space"_a, "model"_a, "parameters"_a, pybind11::keep_alive< 1, 3 >(), pybind11::keep_alive< 1, 2 >() );
+        cls.def( pybind11::init( [] ( Space &space, const ModelType &model ) {
+            return new Scheme( space, model );
+          } ), "space"_a, "model"_a, pybind11::keep_alive< 0, 1 >(), pybind11::keep_alive< 0, 2 >() );
+        cls.def( pybind11::init( [] ( Space &space, const ModelType &model, const pybind11::dict &parameters ) {
+            return new Scheme( space, model, pyParameter( parameters, std::make_shared< std::string >() ) );
+          } ), "space"_a, "model"_a, "parameters"_a, pybind11::keep_alive< 0, 1 >(), pybind11::keep_alive< 0, 2 >() );
       }
 
       template< class Scheme, class... options >

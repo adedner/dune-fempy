@@ -36,20 +36,25 @@ namespace Dune
       inline static auto registerOperatorCall ( pybind11::class_< Operator, options... > cls, PriorityTag< 1 > )
         -> void_t< decltype( std::declval< const Operator & >()( std::declval< const GeneralGridFunction< typename Operator::DomainFunctionType > & >(), std::declval< typename Operator::RangeFunctionType & >() ) >
       {
+        typedef typename Operator::DomainFunctionType DomainFunction;
+
         using pybind11::operator""_a;
-        cls.def( "__call__", [] ( Operator &op, pybind11::object u, RangeFunction &w ) {
-            if( pybind11::isinstance< DiscreteFunction >( u ) )
-              op( pybind11::cast< const DiscreteFunction & >( u ), w );
+        cls.def( "__call__", [] ( Operator &self, pybind11::object u, RangeFunction &w ) {
+            if( pybind11::isinstance< DomainFunction >( u ) )
+              self( pybind11::cast< const DomainFunction & >( u ), w );
             else
-              op( *getVirtualizedGridFunction( u ).first, w );
+              asGridFunction< typename DomainFunction::RangeType >( w.gridPart(), u, [ &self, &w ] ( const auto &u ) { self( u, w ); } );
           }, "u"_a, "w"_a );
       }
 
       template< class Operator, class... options >
       inline static void registerOperatorCall ( pybind11::class_< Operator, options... > cls, PriorityTag< 0 > )
       {
+        typedef typename Operator::DomainFunctionType DomainFunction;
+
         using pybind11::operator""_a;
-        cls.def( "__call__", [] ( Operator &op, const DomainFunction &u, RangeFunction &w ) { op( u, w ); }, "u"_a, "w"_a );
+
+        cls.def( "__call__", [] ( Operator &self, const DomainFunction &u, RangeFunction &w ) { self( u, w ); }, "u"_a, "w"_a );
       }
 
       template< class Operator, class... options >
@@ -67,12 +72,15 @@ namespace Dune
       inline static void registerGeneralOperatorJacobian ( pybind11::class_< Operator, options... > &cls, PriorityTag< 2 > )
         -> void_t< decltype( std::declval< const Operator & >().jacobian( std::declval< const GeneralGridFunction< typename Operator::DomainFunctionType > & >(), std::declval< typename Operator::JacobianOperatorType >() ) >
       {
+        typedef typename Operator::DomainFunctionType DomainFunction;
+
         using pybind11::operator""_a;
-        cls.def( "jacobian", [] ( Operator &op, pybind11::object u, typename Operator::JacobianRangeType &jOp ) {
-            if( pybind11::isinstance< DiscreteFunction >( u ) )
-              op.jacobian( pybind11::cast< const DiscreteFunction & >( u ), jOp );
+
+        cls.def( "jacobian", [] ( Operator &self, pybind11::object u, typename Operator::JacobianRangeType &jOp ) {
+            if( pybind11::isinstance< DomainFunction >( u ) )
+              self.jacobian( pybind11::cast< const DomainFunction & >( u ), jOp );
             else
-              op.jacobian( *getVirtualizedGridFunction( u ).first, jOp );
+              asGridFunction< typename DomainFunction::RangeType >( jOp.domainSpace().gridPart(), u, [ &self, &jOp ] ( const auto &u ) { self.jacobian( u, jOp ); } );
           }, "u"_a, "jOp"_a );
       }
 
@@ -80,9 +88,12 @@ namespace Dune
       inline static auto registerOperatorJacobian ( pybind11::class_< Operator, options... > &cls, PriorityTag< 1 > )
         -> void_t< std::declval< const Operator & >().jacobian( std::declval< const typename Operator::DomainFunctionType & >(), std::declval< typename Operator::JacobianOperatorType >() ) >
       {
+        typedef typename Operator::DomainFunctionType DomainFunction;
+
         using pybind11::operator""_a;
-        cls.def( "jacobian", [] ( Operator &op, const typename Operator::DomainFunctionType &u, typename Operator::JacobianRangeType &jOp ) {
-            op.jacobian( u, jOp );
+
+        cls.def( "jacobian", [] ( Operator &self, const DomainFunction &u, typename Operator::JacobianRangeType &jOp ) {
+            self.jacobian( u, jOp );
           }, "u"_a, "jOp"_a );
       }
 

@@ -92,11 +92,10 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        cls.def( "assemble", [] ( Scheme &scheme, pybind11::object ubar ) {
-            if( isinstance< DiscreteFunction >( ubar ) )
-              return getBCRSMatrix( scheme.assemble( pybind11::cast< const DiscreteFunction & >( ubar ) ).matrix() );
-            else
-              return getBCRSMatrix( scheme.assemble( *getVirtualizedGridFunction< GridPart, RangeType >( ubar ).first ).matrix() );
+        cls.def( "assemble", [] ( Scheme &self, pybind11::object ubar ) -> const BCRSMatrix & {
+            return asGridFunction< RangeType >( self.space().gridPart(), ubar, [ &self ] ( const auto &ubar ) -> const BCRSMatrix & {
+                return getBCRSMatrix( self.assemble( ubar ).matrix() );
+              } );
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 #endif // #if HAVE_DUNE_ISTL
@@ -111,11 +110,12 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        cls.def( "assemble", [] ( Scheme &scheme, pybind11::object ubar ) {
-            if( isinstance< DiscreteFunction >( ubar ) )
-              return scheme.assemble( pybind11::cast< const DiscreteFunction & >( ubar ) ).matrix().data();
-            else
-              return scheme.assemble( *getVirtualizedGridFunction< GridPart, RangeType >( ubar ).first ).matrix().data();
+        typedef decltype( std::declval< const typename Scheme::LinearOperatorType & >().matrix().data() ) Result;
+
+        cls.def( "assemble", [] ( Scheme &scheme, pybind11::object ubar ) -> Result {
+            return asGridFunction< RangeType >( self.space().gridPart(), ubar, [ &self ] ( const auto &ubar ) -> Result {
+                return self.assemble( ubar ).matrix().data();
+              } );
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 
@@ -148,7 +148,7 @@ namespace Dune
         using pybind11::operator""_a;
 
         cls.def( "__call__", [] ( Scheme &self, pybind11::object arg, DiscreteFunction &dest ) {
-            self( *getVirtualizedGridFunction< GridPart, RangeType >( arg ).first, dest );
+            asGridFunction< RangeType >( self.space().gridPart(), arg, [ &self ] ( const auto &arg ) { self( arg.first, dest ); } );
           }, "arg"_a, "dest"_a );
       }
 

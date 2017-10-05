@@ -313,17 +313,43 @@ namespace Dune
 
 
 
-    // getVirtualizedGridFunction
-    // --------------------------
+    // asGridFunction
+    // --------------
 
-    template< class GridPart, class Value >
-    inline static auto getVirtualizedGridFunction ( pybind11::object gf )
-      -> std::pair< VirtualizedGridFunction< GridPart, Value > *, pybind11::object >
+    template< class Value, class GridPart, class Apply >
+    inline static auto asGridFunction ( const GridPart &gridPart, pybind11::object gf, Apply &&apply )
+      -> decltype( apply( std::declval< const VirtualizedGridFunction< GridPart, Value > & >() ) )
     {
       typedef VirtualizedGridFunction< GridPart, Value > GridFunction;
-      if( !pybind11::isinstance< GridFunction >( gf ) )
-        gf = gf.attr( "asVirtualizedGridFunction" )();
-      return std::make_pair( &pybind11::cast< GridFunction >( gf ), gf );
+      typedef typename GridPart::template Codim< 0 >::EntityType Entity;
+      typedef typename GridPart::template Codim< 0 >::GeometryType::LocalCoordinate LocalCoordinate;
+
+      try
+      {
+        return apply( pybind11::cast< GridFunction >( gf ) );
+      }
+      catch( pybind11::cast_error )
+      {}
+
+      try
+      {
+        if( pybind11::hasattr( gf, "asVirtualizedGridFunction" ) )
+          std::cout << "this is a grid function" << std::endl;
+        return apply( pybind11::cast< GridFunction >( gf.attr( "asVirtualizedGridFunction" )() ) );
+      }
+      catch( pybind11::error_already_set )
+      {}
+
+      try
+      {
+        const Value value = pybind11::cast< Value >( gf );
+        return apply( simpleGridFunction( gridPart, [ value ] ( const Entity &entity, const LocalCoordinate & ) { return value; }, 0 ) );
+      }
+      catch( pybind11::cast_error )
+      {}
+
+      const std::string typeName( pybind11::str( gf.get_type() ) );
+      throw pybind11::cast_error("Unable to cast Python instance of type " + typeName + " to grid function");
     }
 
 

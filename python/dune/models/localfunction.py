@@ -161,7 +161,7 @@ def gridFunction(grid, code, coefficients, constants):
     code.append(Include("dune/fem/function/common/localfunctionadapter.hh"))
 
     code.append(Include("dune/fempy/py/grid/gridpart.hh"))
-    code.append(Include("dune/fempy/py/grid/function.hh"))
+    code.append(Include("dune/fempy/py/function/grid.hh"))
 
     struct = Struct(locname, targs=['class GridPart', 'class Range', 'class... Coefficients'])
     struct.append(base.pre(name=locname))

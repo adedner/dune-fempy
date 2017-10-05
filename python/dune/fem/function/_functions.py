@@ -20,7 +20,7 @@ def registerGridFunctions(gridview):
     typeName = gridview._typeName
     moduleName = "femgridfunctions_" + hashIt(typeName)
 
-    includes = ["dune/fempy/py/grid/gridpart.hh", "dune/fempy/py/grid/function.hh"] + gridview._includes
+    includes = ["dune/fempy/py/grid/gridpart.hh", "dune/fempy/py/function/grid.hh"] + gridview._includes
 
     source = "#include <config.h>\n\n"
     source += "".join(["#include <" + i + ">\n" for i in includes])

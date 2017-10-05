@@ -1,5 +1,5 @@
-#ifndef DUNE_FEMPY_PY_DISCRETEFUNCTION_HH
-#define DUNE_FEMPY_PY_DISCRETEFUNCTION_HH
+#ifndef DUNE_FEMPY_PY_FUNCTION_DISCRETE_HH
+#define DUNE_FEMPY_PY_FUNCTION_DISCRETE_HH
 
 #include <cstddef>
 
@@ -14,7 +14,6 @@
 
 #include <dune/fempy/py/common/numpyvector.hh>
 #include <dune/fempy/py/function/grid.hh>
-#include <dune/fempy/py/grid/function.hh>
 #include <dune/fempy/py/grid/restrictprolong.hh>
 #include <dune/fempy/py/space.hh>
 #include <dune/fempy/pybind11/pybind11.hh>
@@ -193,9 +192,6 @@ namespace Dune
         }
 
         cls.def_property_readonly( "dofVector", [] ( DF &self ) -> DofVector & { return self.dofVector(); } ); // ,pybind11::return_value_policy::reference_internal );
-
-        detail::registerVirtualizedGridFunction< GridPart, Value >( scope );
-        cls.def( "asVirtualizedGridFuncton", [] ( DF &self ) { return new VirtualizedGridFunction< GridPart, Value >( pyGridFunction( df ) ); } );
       }
 
     } // namespace detail
@@ -215,4 +211,4 @@ namespace Dune
 
 } // namespace Dune
 
-#endif // #ifndef DUNE_FEMPY_PY_DISCRETEFUNCTION_HH
+#endif // #ifndef DUNE_FEMPY_PY_FUNCTION_DISCRETE_HH

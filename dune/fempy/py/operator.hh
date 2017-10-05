@@ -9,7 +9,7 @@
 #include <dune/fem/operator/common/differentiableoperator.hh>
 
 #include <dune/fempy/function/virtualizedgridfunction.hh>
-#include <dune/fempy/py/discretefunction.hh>
+#include <dune/fempy/py/function/discrete.hh>
 #include <dune/fempy/pybind11/pybind11.hh>
 
 namespace Dune

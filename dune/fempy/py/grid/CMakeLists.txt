@@ -1,6 +1,5 @@
 set(HEADERS
   adaptation.hh
-  function.hh
   gridpart.hh
   numpy.hh
   restrictprolong.hh

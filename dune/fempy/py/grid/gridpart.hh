@@ -188,7 +188,7 @@ namespace Dune
     {
       void operator() ( Dune::GridView< Fem::GridPart2GridViewTraits< GridPart > > *gridView )
       {
-        delete &gridView.template cast< GridView >().impl().gridPart();
+        delete &gridView->impl().gridPart();
         delete gridView;
       }
     };
@@ -198,7 +198,7 @@ namespace Dune
     {
       void operator() ( Fem::GridPart2GridViewImpl< GridPart > *gridView )
       {
-        delete &gridView.template cast< GridView >().gridPart();
+        delete &gridView->gridPart();
         delete gridView;
       }
     };

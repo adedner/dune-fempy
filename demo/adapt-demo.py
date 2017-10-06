@@ -12,11 +12,15 @@ from dune.fem.space import lagrange
 from dune.fem.view import adaptiveLeafGridView
 
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
+print("HALLO A")
 grid = adaptiveLeafGridView(aluConformGrid(domain, dimgrid=2))
 
+print("HALLO B")
 # interpolate some data onto macro grid
 spc = lagrange(grid, dimrange=1, order=1)
+print("HALLO C")
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
+print("HALLO D")
 
 # add phi to vtk output
 grid.writeVTK("initial", pointdata=[phi])

@@ -40,6 +40,6 @@ def galerkin(integrands, domainSpace, rangeSpace=None):
 
     constructor = Constructor(['pybind11::object gridView', integrandsType + ' &integrands'],
                               ['return new ' + typeName + '( Dune::FemPy::gridPart< typename ' + rangeSpaceType + '::GridPartType::GridViewType >( gridView ), integrands );'],
-                              ['"grid"_a', '"integrands"_a', 'pybind11::keep_alive< 0, 1 >()', 'pybind11::keep_alive< 0, 2 >()'])
+                              ['"grid"_a', '"integrands"_a', 'pybind11::keep_alive< 1, 2 >()', 'pybind11::keep_alive< 1, 3 >()'])
 
     return load(includes, typeName, constructor).Operator(rangeSpace.grid, integrands)

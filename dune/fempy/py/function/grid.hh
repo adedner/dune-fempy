@@ -285,7 +285,7 @@ namespace Dune
 
         cls.def( "integrate", [] ( const GridFunction &self ) { return Dune::Fem::Integral<GridPartType>(self.gridPart(),self.space().order()).norm(self); });
 
-        cls.def( "as_ufl", [] ( pybind11::object &self ) -> pybind11::handle { return Dune::FemPy::getGridFunctionWrapper()( self ); },  pybind11::keep_alive< 0, 1 >() );
+        // cls.def( "as_ufl", [] ( pybind11::object &self ) -> pybind11::handle { return Dune::FemPy::getGridFunctionWrapper()( self ); },  pybind11::keep_alive< 0, 1 >() );
       }
 
 
@@ -440,11 +440,11 @@ namespace Dune
       return [ dispatch ] ( pybind11::object gv, std::string name, int order, pybind11::function evaluate ) {
           typedef typename GridPart::GridViewType GridView;
           const auto &gp = gridPart<GridView>( gv );
-          // typename GridPart::template Codim< 0 >::GeometryType::GlobalCoordinate x( 0 );
           auto x = gp.template begin<0>()->geometry().center();
           pybind11::gil_scoped_acquire acq;
           pybind11::object v( evaluate( x ) );
           const std::size_t dimR = len( v );
+          std::cout << "SETTING UP GLOBALGF<" << dimR << ">" << std::endl;
           if( dimR >= dispatch.size() )
             DUNE_THROW( NotImplemented, "globalGridFunction not implemented for dimRange = " + std::to_string( dimR ) );
           return dispatch[ dimR ]( gp, std::move( name ), order, std::move( evaluate ), std::move(gv) );

@@ -55,7 +55,7 @@ def adaptiveLeafGridView(grid, *args, **kwargs):
     constructor = Constructor([grid._typeName + " &grid"],
                               ["Dune::FemPy::detail::addGridModificationListener( grid );",
                                "return Dune::FemPy::makeGridPart< " + typeName + " >( grid );"],
-                              ["pybind11::keep_alive< 0, 1 >()"])
+                              ["pybind11::keep_alive< 1, 2 >()"])
 
     return module(includes, typeName, constructor).GridView(grid)
 
@@ -84,7 +84,7 @@ def filteredGridView(hostGridView, contains, domainId, useFilteredIndexSet=False
                                "  };",
                                hostGridPartType + " &hostGridPart = Dune::FemPy::gridPart< " + hostGridViewType + " >( hostGridView );",
                                "return Dune::FemPy::makeGridPart< " + typeName + " >( hostGridPart, " + filterType + "( hostGridPart, containsCpp, domainId ) );"],
-                               ["pybind11::keep_alive< 0, 1 >()"])
+                               ["pybind11::keep_alive< 1, 2 >()"])
 
     return module(includes, typeName, constructor).GridView(hostGridView, contains, domainId)
 
@@ -103,7 +103,7 @@ def geometryGridView(coordFunction):
 
     constructor = Constructor([coordFunction._typeName + " &coordFunction"],
                               ["return Dune::FemPy::makeGridPart< " + typeName + " >( coordFunction );"],
-                              ["pybind11::keep_alive< 0, 1 >()"])
+                              ["pybind11::keep_alive< 1, 2 >()"])
 
     return module(includes, typeName, constructor).GridView(coordFunction)
 

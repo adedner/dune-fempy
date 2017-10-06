@@ -55,7 +55,7 @@ def istl():
 def petsc():
     dfType = lambda space: "Dune::Fem::PetscDiscreteFunction< " + space._typeName + " >"
     return lambda space:[\
-        "istl",\
+        "petsc",\
         ["dune/fem/function/petscdiscretefunction.hh", "dune/fem/operator/linear/petscoperator.hh"] +\
               space._includes,\
         dfType(space),\

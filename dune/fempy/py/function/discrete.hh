@@ -38,7 +38,7 @@ namespace Dune
 
         detail::clsVirtualizedRestrictProlong< Grid >( module ).def( pybind11::init( [] ( DF &df ) {
             return new VirtualizedRestrictProlong< Grid >( df );
-          } ), pybind11::keep_alive< 0, 1 >() );
+          } ), pybind11::keep_alive< 1, 2 >() );
         pybind11::implicitly_convertible< DF, VirtualizedRestrictProlong< Grid > >();
       }
 
@@ -72,7 +72,7 @@ namespace Dune
         cls.def( pybind11::init( [] ( const Space &space, std::string name, pybind11::buffer dof ) {
             VectorType *vec = new VectorType( std::move( dof ) );
             return new DF( std::move( name ), space, *vec );
-          } ), "space"_a, "name"_a, "dof"_a, pybind11::keep_alive< 0, 1 >(), pybind11::keep_alive< 0, 3 >() );
+          } ), "space"_a, "name"_a, "dof"_a, pybind11::keep_alive< 1, 2 >(), pybind11::keep_alive< 1, 4 >() );
       }
 
       template< class DF, class... options >
@@ -83,7 +83,7 @@ namespace Dune
 
         cls.def( pybind11::init( [] ( const typename DF::DiscreteFunctionSpaceType &space, std::string name ) {
             return new DF( std::move( name ), space );
-          } ), "space"_a, "name"_a, pybind11::keep_alive< 0, 1 >() );
+          } ), "space"_a, "name"_a, pybind11::keep_alive< 1, 2 >() );
       }
 
       template< class DF, class... options >
@@ -155,9 +155,9 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        detail::registerGridFunction< DF >( module, cls );
+        FemPy::registerGridFunction< DF >( module, cls );
 
-        registerRestrictProlong< DF >( module );
+        // registerRestrictProlong< DF >( module );
 
         cls.def_property_readonly( "space", [] ( pybind11::object self ) { return getSpace( self.cast< const DF & >(), self ); } );
         cls.def_property_readonly( "size", [] ( DF &self ) { return self.size(); } );
@@ -175,9 +175,18 @@ namespace Dune
         cls.def( "assign", [] ( DF &self, const DF &other ) { self.assign(other); }, "other"_a );
 
         typedef VirtualizedGridFunction< GridPart, typename Space::RangeType > GridFunction;
+        /*
         cls.def( "_interpolate", [] ( DF &self, pybind11::object gf ) {
             asGridFunction< Value >( self.gridPart(), gf, [ &self ] ( const auto &gf ) { Fem::interpolate( gf, self ); } );
           }, "gridFunction"_a );
+        */
+        cls.def( "_interpolate", [] ( DF &df, const GridFunction &gf ) {
+            Fem::interpolate( gf, df );
+          } );
+        cls.def( "_interpolate", [] ( DF &df, typename Space::RangeType value ) {
+            const auto gf = simpleGridFunction( df.space().gridPart(), [ value ] ( typename DF::DomainType ) { return value; }, 0 );
+            Fem::interpolate( gf, df );
+          } );
 
         typedef typename DF::DofVectorType DofVector;
         if( !pybind11::already_registered< DofVector >() )

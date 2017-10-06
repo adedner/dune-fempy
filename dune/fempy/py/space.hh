@@ -32,7 +32,7 @@ namespace Dune
 
         cls.def( pybind11::init( [] ( pybind11::object gridView ) {
             return std::unique_ptr< Space >( new Space( gridPart< GridView >( gridView ) ) );
-          } ), pybind11::keep_alive< 0, 1 >(), "gridView"_a );
+          } ), pybind11::keep_alive< 1, 2 >(), "gridView"_a );
       }
       template< class Space, class... options >
       void registerSpaceConstructor ( pybind11::class_< Space, options... > &cls )

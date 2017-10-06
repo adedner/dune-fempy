@@ -116,10 +116,10 @@ def galerkin(space, integrands, solver=None, parameters={}):
     ctors = []
     ctors.append(Constructor(['const ' + spaceType + ' &space', integrandsType + ' &integrands'],
                              ['return new ' + typeName + '( space, std::ref( integrands ) );'],
-                             ['"space"_a', '"integrands"_a', 'pybind11::keep_alive< 0, 1 >()', 'pybind11::keep_alive< 0, 2 >()']))
+                             ['"space"_a', '"integrands"_a', 'pybind11::keep_alive< 1, 2 >()', 'pybind11::keep_alive< 1, 3 >()']))
     ctors.append(Constructor(['const ' + spaceType + ' &space', integrandsType + ' &integrands', 'const pybind11::dict &parameters'],
                              ['return new ' + typeName + '( space, std::ref( integrands ), Dune::FemPy::pyParameter( parameters, std::make_shared< std::string >() ) );'],
-                             ['"space"_a', '"integrands"_a', '"parameters"_a', 'pybind11::keep_alive< 0, 1 >()', 'pybind11::keep_alive< 0, 2 >()']))
+                             ['"space"_a', '"integrands"_a', '"parameters"_a', 'pybind11::keep_alive< 1, 2 >()', 'pybind11::keep_alive< 1, 3 >()']))
 
     return module(includes, typeName, *ctors).Scheme(space, integrands, parameters)
 
@@ -173,10 +173,10 @@ def linearized(scheme, ubar=None, solver=None, parameters={}):
 
     constructor1 = Constructor(['typename DuneType::SchemeType &scheme,', 'typename DuneType::DiscreteFunctionType &ubar,', 'const pybind11::dict &parameters'],
                                ['return new DuneType( scheme, ubar, Dune::FemPy::pyParameter( parameters, std::make_shared< std::string >() ) );'],
-                               ['"scheme"_a', '"ubar"_a', '"parameters"_a,', 'pybind11::keep_alive< 0, 1 >()'])
+                               ['"scheme"_a', '"ubar"_a', '"parameters"_a,', 'pybind11::keep_alive< 1, 2 >()'])
     constructor2 = Constructor(['typename DuneType::SchemeType &scheme,', 'const pybind11::dict &parameters'],
                                ['return new DuneType( scheme,  Dune::FemPy::pyParameter( parameters, std::make_shared< std::string >() ) );'],
-                               ['"scheme"_a', '"parameters"_a,', 'pybind11::keep_alive< 0, 1 >()'])
+                               ['"scheme"_a', '"parameters"_a,', 'pybind11::keep_alive< 1, 2 >()'])
     setup = Method('setup', 'DuneType::setup')
 
     m = module(includes, typeName, constructor1, constructor2, setup)

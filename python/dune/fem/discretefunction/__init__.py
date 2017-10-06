@@ -36,7 +36,11 @@ def interpolate(self, func):
                 func = expression2GF(self.space.grid,func,self.space.order)
         except NameError:
             pass
-    return self._interpolate(func)
+    print("in interpolate: ",func)
+    try:
+        return self._interpolate(func.asVirtualizedGridFuncton())
+    except AttributeError:
+        return self._interpolate(func)
 
 def addAttr(module, cls, storage):
     setattr(cls, "_module", module)
@@ -49,5 +53,7 @@ def module(storage, includes, typeName, *args):
     includes = includes + ["dune/fempy/py/function/discrete.hh"]
     moduleName = fileBase + "_" + hashlib.md5(typeName.encode('utf-8')).hexdigest()
     module = generator.load(includes, typeName, moduleName, *args, bufferProtocol=True)
+    print(__file__," in module A")
     addAttr(module, module.DiscreteFunction, storage)
+    print(__file__," in module B")
     return module

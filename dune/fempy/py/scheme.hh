@@ -55,10 +55,10 @@ namespace Dune
 
         cls.def( pybind11::init( [] ( Space &space, const ModelType &model ) {
             return new Scheme( space, model );
-          } ), "space"_a, "model"_a, pybind11::keep_alive< 0, 1 >(), pybind11::keep_alive< 0, 2 >() );
+          } ), "space"_a, "model"_a, pybind11::keep_alive< 1, 2 >(), pybind11::keep_alive< 1, 3 >() );
         cls.def( pybind11::init( [] ( Space &space, const ModelType &model, const pybind11::dict &parameters ) {
             return new Scheme( space, model, pyParameter( parameters, std::make_shared< std::string >() ) );
-          } ), "space"_a, "model"_a, "parameters"_a, pybind11::keep_alive< 0, 1 >(), pybind11::keep_alive< 0, 2 >() );
+          } ), "space"_a, "model"_a, "parameters"_a, pybind11::keep_alive< 1, 2 >(), pybind11::keep_alive< 1, 3 >() );
       }
 
       template< class Scheme, class... options >

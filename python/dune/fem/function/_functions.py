@@ -35,7 +35,7 @@ def registerGridFunctions(gridview):
     return builder.load(moduleName, source, "gridfunctions")
 
 def addUFL(instance):
-    return instance.as_ufl()
+    return instance # instance.as_ufl()
     try:
         gf = GridFunction(instance)
         return GridFunction(instance)
@@ -85,7 +85,9 @@ def discreteFunction(space, name, expr=None, *args, **kwargs):
         DiscreteFunction: the constructed discrete function
     """
     storage, dfIncludes, dfTypeName, _, _ = space.storage
+    print("inA ",__file__)
     df = dune.fem.discretefunction.module(storage, dfIncludes, dfTypeName).DiscreteFunction(space,name)
+    print("inB ",__file__)
     if expr is None:
         df.clear()
     else:

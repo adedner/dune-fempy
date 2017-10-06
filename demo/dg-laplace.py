@@ -9,10 +9,10 @@ from dune.ufl import Space
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0, "fem.preconditioning.method": "ilu-0", "fem.preconditioning.iterations": 1, "fem.preconditioning.relaxation": 1.2})
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("DGONB", grid, dimrange=1, order=2, storage="fem")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)

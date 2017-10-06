@@ -14,15 +14,15 @@ deltaT = 0.01
 
 import dune.fem
 dune.fem.parameter.append({"fem.verboserank": 0,
-                           "istl.preconditioning.method": "ilu-0",
-                           "istl.preconditioning.iterations": 1,
-                           "istl.preconditioning.relaxation": 1.2})
+                           "fem.preconditioning.method": "ilu-0",
+                           "fem.preconditioning.iterations": 1,
+                           "fem.preconditioning.relaxation": 1.2})
 
 def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
     grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
-    spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
+    spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="fem")
     # spc = create.space("DGONB", grid, dimrange=1, order=2)
 
     # set up initial conditions

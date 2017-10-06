@@ -22,7 +22,7 @@ def adaptive():
 
 def eigen():
     try:
-        checkconfiguration.preprocessorTest([ ("#if HAVE_EIGEN","Eigen package is not available") ])
+        checkconfiguration.preprocessorAssert([ ("#if HAVE_EIGEN","Eigen package is not available") ])
     except builder.ConfigurationError as err:
         print("configuration error while creating a discrete function with storage=eigen exiting...")
         print("You need to install the `eigen` package and reconfigure dune-py")
@@ -43,6 +43,12 @@ def eigen():
     ]
 
 def istl():
+    try:
+        checkconfiguration.preprocessorAssert([ ("#if HAVE_DUNE_ISTL","dune-ist is not available") ])
+    except builder.ConfigurationError as err:
+        print("configuration error while creating a discrete function with storage=istl exiting...")
+        print("You need to provide the `dune-istl` module and reconfigure dune-py")
+        raise
     dfType = lambda space: "Dune::Fem::ISTLBlockVectorDiscreteFunction< " + space._typeName + " >"
     return lambda space:[\
         "istl",\
@@ -52,7 +58,14 @@ def istl():
         "Dune::Fem::ISTLLinearOperator< " + dfType(space) + "," + dfType(space) + ">",
         solvers.istlsolver
     ]
+
 def petsc():
+    try:
+        checkconfiguration.preprocessorAssert([ ("#if HAVE_PETSC","Petsc package is not available") ])
+    except builder.ConfigurationError as err:
+        print("configuration error while creating a discrete function with storage=petsc exiting...")
+        print("You need to install the `petsc` package and reconfigure dune-py")
+        raise
     dfType = lambda space: "Dune::Fem::PetscDiscreteFunction< " + space._typeName + " >"
     return lambda space:[\
         "istl",\

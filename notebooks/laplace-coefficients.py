@@ -23,9 +23,9 @@ import dune.fem
 from dune.fem.plotting import plotPointData as plot
 
 dune.fem.parameter.append({"fem.verboserank": 0,
-                           "istl.preconditioning.method": "ilu-0",
-                           "istl.preconditioning.iterations": 1,
-                           "istl.preconditioning.relaxation": 1.2})
+                           "fem.preconditioning.method": "ilu-0",
+                           "fem.preconditioning.iterations": 1,
+                           "fem.preconditioning.relaxation": 1.2})
 
 
 # In[2]:
@@ -36,7 +36,7 @@ theta = 0.5
 # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 # set up a lagrange scalar space with polynomial order 2 over that grid
-spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="fem")
 
 # set up initial conditions
 solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")

@@ -13,8 +13,8 @@ import dune.create as create
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = aluConformGrid(domain, dimgrid=2)
 
-lagrangeSpace = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
-dgSpace = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
+lagrangeSpace = create.space("Lagrange", grid, dimrange=1, order=2, storage="fem")
+dgSpace = create.space("DGONB", grid, dimrange=1, order=2, storage="fem")
 space = create.space("combined", lagrangeSpace, dgSpace)
 
 uflSpace = UFLSpace(2, 2)

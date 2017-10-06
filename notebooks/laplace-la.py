@@ -6,9 +6,9 @@
 #
 # For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Changing the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
 # ~~~
-# spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+# spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="fem")
 # ~~~
-# in the above code will switch to the solvers from `dune-istl`, other options are for example `eigen` or `petsc`.
+# in the above code will switch to the solvers from `dune-fem`, other options are for example `eigen` or `petsc`.
 #
 # It is also possible to store the degrees of freedom in such a way that they can be treated as `numpy` vectors and an assembled system matrix can be stored in a `sympy` sparse matrix.
 #

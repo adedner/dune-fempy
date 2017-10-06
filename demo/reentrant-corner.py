@@ -11,7 +11,7 @@ from dune.ufl import Space
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0, "fem.preconditioning.method": "ilu-0", "fem.preconditioning.iterations": 1, "fem.preconditioning.relaxation": 1.2})
 
 #vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 #triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
@@ -21,7 +21,7 @@ triangles = [(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)]
 grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles}, dimgrid=2)
 grid.hierarchicalGrid.globalRefine(4)
 
-spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="fem")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
@@ -38,7 +38,7 @@ scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v
 
 solution, _ = scheme.solve()
 
-fvspc = create.space("FiniteVolume", grid, dimrange=1, storage="istl")
+fvspc = create.space("FiniteVolume", grid, dimrange=1, storage="fem")
 estimate = fvspc.interpolate(solution, name="estimate")
 
 hT = MaxCellEdgeLength(uflSpace.cell())

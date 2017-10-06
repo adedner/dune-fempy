@@ -37,7 +37,7 @@ from dune.ufl import Space, DirichletBC
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0, "fem.preconditioning.method": "ilu-0", "fem.preconditioning.iterations": 1, "fem.preconditioning.relaxation": 1.2})
 
 
 # In[2]:
@@ -51,7 +51,7 @@ grid.hierarchicalGrid.globalRefine(4)
 
 # In[3]:
 
-spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="fem")
 
 uflSpace = Space(spc)
 u = TrialFunction(uflSpace)

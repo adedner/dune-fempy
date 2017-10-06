@@ -8,7 +8,7 @@ import dune.fem.space as space
 import dune.create as create
 
 def testSpace(grid2d, spacetype, dimRange, order):
-    lagrangespace = create.space(spacetype, grid2d, dimrange=dimRange, order=order, storage="istl")
+    lagrangespace = create.space(spacetype, grid2d, dimrange=dimRange, order=order, storage="fem")
 
     # would work but perhaps not desired
     # df0 = discfunc.create("Adaptive",lagrangespace,name="test")

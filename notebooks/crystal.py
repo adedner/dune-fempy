@@ -129,7 +129,7 @@ a_im = (alpha*alpha*dt / tau * (inner(dot(d0, grad(u[0])), grad(v[0])[0]) +
 equation = a_im == a_ex
 
 
-# We set up the grid, the space, and we set the solution to the initial function. We use the default dof storage available in ```dune-fem``` - this can be changed for example to ```istl,eigen``` or ```petsc```.
+# We set up the grid, the space, and we set the solution to the initial function. We use the default dof storage available in ```dune-fem``` - this can be changed for example to ```fem,eigen``` or ```petsc```.
 
 # In[7]:
 

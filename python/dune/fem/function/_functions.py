@@ -4,16 +4,10 @@ import sys
 import logging
 logger = logging.getLogger(__name__)
 
-
 import dune.models.localfunction
 
 import dune.common.checkconfiguration as checkconfiguration
 from dune.common.hashit import hashIt
-
-try:
-    from dune.ufl import GridFunction
-except:
-    pass
 
 def registerGridFunctions(gridview):
     from dune.generator import builder
@@ -34,22 +28,14 @@ def registerGridFunctions(gridview):
 
     return builder.load(moduleName, source, "gridfunctions")
 
-def addUFL(instance):
-    return instance.as_ufl()
-    try:
-        gf = GridFunction(instance)
-        return GridFunction(instance)
-    except NameError:
-        return instance
-
 def globalFunction(gridview, name, order, value):
     module = registerGridFunctions(gridview)
-    return addUFL(module.globalGridFunction(gridview,name,order,value))
+    return module.globalGridFunction(gridview,name,order,value)
 
 
 def localFunction(gridview, name, order, value):
     module = registerGridFunctions(gridview)
-    return addUFL(module.localGridFunction(gridview,name,order,value))
+    return module.localGridFunction(gridview,name,order,value)
 
 
 def levelFunction(gridview):
@@ -70,7 +56,7 @@ def cppFunction(gridview, name, order, code, *args, **kwargs):
 
 
 def uflFunction(gridview, name, order, ufl, *args, **kwargs):
-    return addUFL( dune.models.localfunction.UFLFunction(gridview, name, order, ufl, *args, **kwargs))
+    return dune.models.localfunction.UFLFunction(gridview, name, order, ufl, *args, **kwargs)
 
 
 def discreteFunction(space, name, expr=None, *args, **kwargs):
@@ -90,7 +76,7 @@ def discreteFunction(space, name, expr=None, *args, **kwargs):
         df.clear()
     else:
         df.interpolate(expr)
-    return addUFL(df)
+    return df
 
 
 def numpyFunction(space, vec, name="tmp", **unused):
@@ -115,4 +101,4 @@ def numpyFunction(space, vec, name="tmp", **unused):
     typeName = "Dune::Fem::VectorDiscreteFunction< " +\
           spaceType + ", Dune::FemPy::NumPyVector< " + field + " > >"
 
-    return addUFL(module("numpy", includes, typeName).DiscreteFunction(space,name,vec))
+    return module("numpy", includes, typeName).DiscreteFunction(space,name,vec)

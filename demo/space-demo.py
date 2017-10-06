@@ -21,13 +21,18 @@ def testSpace(grid2d, spacetype, dimRange, order):
     expr_global = lambda x: [-(x[1] - 0.5)*math.sin(x[0]*12)]*dimRange
 
     gf = create.function("global", grid2d, "expr_global", 1, expr_global)
+    print("interpolating", gf)
     df1 = lagrangespace.interpolate( gf, name="test" )
+    print("interpolating constant")
     df2 = lagrangespace.interpolate( [5]*dimRange, name="zero" )
+    print("interpolating discrete function")
     df3 = lagrangespace.interpolate( df1, name="copy" )
-    df4 = lagrangespace.interpolate( lambda x:
-            [(x-[0.5,0.5]).infinity_norm,]*dimRange, name="radius")
+    #print("interpolating lambda")
+    #df4 = lagrangespace.interpolate( lambda x:
+    #        [(x-[0.5,0.5]).infinity_norm,]*dimRange, name="radius")
     lagrangespace=0
-    grid2d.writeVTK("space_demo", pointdata=[gf,df1,df2,df3,df4])
+    #grid2d.writeVTK("space_demo", pointdata=[gf,df1,df2,df3,df4])
+    grid2d.writeVTK("space_demo", pointdata=[gf,df1,df2,df3])
 
 def test(gridtype):
     grid2d = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)

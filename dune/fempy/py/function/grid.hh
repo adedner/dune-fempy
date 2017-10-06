@@ -284,8 +284,6 @@ namespace Dune
         cls.def( "pointData", [] ( const GridFunction &self, int level ) { return pointData( self, refinementLevels( level ) ); }, "level"_a = 0 );
 
         cls.def( "integrate", [] ( const GridFunction &self ) { return Dune::Fem::Integral<GridPartType>(self.gridPart(),self.space().order()).norm(self); });
-
-        cls.def( "as_ufl", [] ( pybind11::object &self ) -> pybind11::handle { return Dune::FemPy::getGridFunctionWrapper()( self ); },  pybind11::keep_alive< 0, 1 >() );
       }
 
 
@@ -333,8 +331,6 @@ namespace Dune
 
       try
       {
-        if( pybind11::hasattr( gf, "asVirtualizedGridFunction" ) )
-          std::cout << "this is a grid function" << std::endl;
         return apply( pybind11::cast< GridFunction >( gf.attr( "asVirtualizedGridFunction" )() ) );
       }
       catch( pybind11::error_already_set )
@@ -366,7 +362,7 @@ namespace Dune
       detail::registerGridFunction( scope, cls );
 
       detail::registerVirtualizedGridFunction< GridPart, Value >( scope );
-      cls.def( "asVirtualizedGridFuncton", [] ( GridFunction &self ) { return new VirtualizedGridFunction< GridPart, Value >( pyGridFunction( self ) ); } );
+      cls.def( "asVirtualizedGridFunction", [] ( GridFunction &self ) { return new VirtualizedGridFunction< GridPart, Value >( pyGridFunction( self ) ); } );
     }
 
     template< class GridFunction >

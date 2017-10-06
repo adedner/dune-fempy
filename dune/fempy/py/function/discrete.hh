@@ -173,7 +173,7 @@ namespace Dune
         cls.def( "assign", [] ( DF &self, const DF &other ) { self.assign( other ); }, "other"_a );
 
         typedef VirtualizedGridFunction< GridPart, typename Space::RangeType > GridFunction;
-        cls.def( "_interpolate", [] ( DF &self, pybind11::object gf ) {
+        cls.def( "interpolate", [] ( DF &self, pybind11::object gf ) {
             asGridFunction< Value >( self.gridPart(), gf, [ &self ] ( const auto &gf ) { Fem::interpolate( gf, self ); } );
           }, "gridFunction"_a );
 

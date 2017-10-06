@@ -44,8 +44,8 @@ def test(gridtype):
     testSpace(grid2d, "DGONB",2,0)
     print("DGONB(1,2)")
     testSpace(grid2d, "DGONB",1,2)
-    print("P1Bubble(2)")
-    testSpace(grid2d, "P1Bubble",2,1)
+    # print("P1Bubble(2)")
+    # testSpace(grid2d, "P1Bubble",2,1)
 
 
 print("ALUSimplex")

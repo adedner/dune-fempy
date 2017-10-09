@@ -93,9 +93,10 @@ namespace Dune
         using pybind11::operator""_a;
 
         cls.def( "assemble", [] ( Scheme &self, pybind11::object ubar ) -> const BCRSMatrix & {
-            return asGridFunction< RangeType >( self.space().gridPart(), ubar, [ &self ] ( const auto &ubar ) -> const BCRSMatrix & {
+            auto assemble = [ &self ] ( const auto &ubar ) -> decltype( getBCRSMatrix( self.assemble( ubar ).matrix() ) ) {
                 return getBCRSMatrix( self.assemble( ubar ).matrix() );
-              } );
+              };
+            return asGridFunction< DiscreteFunction >( self.space().gridPart(), ubar, assemble );
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 #endif // #if HAVE_DUNE_ISTL
@@ -113,9 +114,10 @@ namespace Dune
         typedef decltype( std::declval< const typename Scheme::LinearOperatorType & >().matrix().data() ) Result;
 
         cls.def( "assemble", [] ( Scheme &self, pybind11::object ubar ) -> Result {
-            return asGridFunction< RangeType >( self.space().gridPart(), ubar, [ &self ] ( const auto &ubar ) -> Result {
+            auto assemble = [ &self ] ( const auto &ubar ) -> decltype( self.assemble( ubar ).matrix().data() ) {
                 return self.assemble( ubar ).matrix().data();
-              } );
+              };
+            return asGridFunction< DiscreteFunction >( self.space().gridPart(), ubar, assemble );
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 
@@ -127,39 +129,6 @@ namespace Dune
       inline static void registerSchemeAssemble ( pybind11::class_< Scheme, options... > cls )
       {
         registerSchemeAssemble( cls, PriorityTag< 42 >() );
-      }
-
-
-
-      // registerSchemeGeneralCall
-      // -------------------------
-
-      template< class Scheme, class... options >
-      inline static auto registerSchemeGeneralCall ( pybind11::class_< Scheme, options... > cls, PriorityTag< 1 > )
-        -> void_t< decltype( std::declval< Scheme & >()(
-                     std::declval< const VirtualizedGridFunction< typename Scheme::GridPartType, typename Scheme::DiscreteFunctionSpaceType::RangeType > & >(),
-                     std::declval< typename Scheme::DiscreteFunctionType & >()
-                   ) ) >
-      {
-        typedef typename Scheme::DiscreteFunctionSpaceType::RangeType RangeType;
-        typedef typename Scheme::GridPartType GridPart;
-        typedef typename Scheme::DiscreteFunctionType DiscreteFunction;
-
-        using pybind11::operator""_a;
-
-        cls.def( "__call__", [] ( Scheme &self, pybind11::object arg, DiscreteFunction &dest ) {
-            asGridFunction< RangeType >( self.space().gridPart(), arg, [ &self ] ( const auto &arg ) { self( arg.first, dest ); } );
-          }, "arg"_a, "dest"_a );
-      }
-
-      template< class Scheme, class... options >
-      inline static void registerSchemeGeneralCall ( pybind11::class_< Scheme, options... > cls, PriorityTag< 0 > )
-      {}
-
-      template< class Scheme, class... options >
-      inline static void registerSchemeGeneralCall ( pybind11::class_< Scheme, options... > cls )
-      {
-        registerSchemeGeneralCall( cls, PriorityTag< 42 >() );
       }
 
 
@@ -199,28 +168,27 @@ namespace Dune
         registerSchemeConstructor( cls );
 
         cls.def( "_solve", [] ( Scheme &self, DiscreteFunction &solution ) {
-            auto info = self.solve( solution );
-            // needs pybind 1.9: return pybind11::dict("converged"_a=info.converged, "iterations"_a=info.nonlinearIterations, "linear_iterations"_a=info.linearIterations);
-            return std::map<std::string,std::string> {
-                {"converged",std::to_string(info.converged)},
-                {"iterations",std::to_string(info.nonlinearIterations)},
-                {"linear_iterations",std::to_string(info.linearIterations)}
-              };
-          } );
-        cls.def( "__call__", [] ( Scheme &self, const DiscreteFunction &arg, DiscreteFunction &dest) { self( arg, dest ); } );
-        registerSchemeGeneralCall( cls );
+              auto info = self.solve( solution );
+              return pybind11::dict( "converged"_a = info.converged, "iterations"_a = info.nonlinearIterations, "linear_iterations"_a = info.linearIterations );
+            }, "solution"_a );
+        cls.def( "__call__", [] ( Scheme &self, pybind11::object arg, DiscreteFunction &dest ) {
+            auto call = [ &self, &dest ] ( const auto &ubar ) -> void_t< decltype( self( ubar, dest ) ) > {
+                self( ubar, dest );
+              } );
+            return asGridFunction< DiscreteFunction >( self.space().gridPart(), ubar, call );
+          }, "arg"_a, "dest"_a );
 
-        cls.def_property_readonly( "dimRange", [] ( Scheme & ) -> int { return DiscreteFunction::FunctionSpaceType::dimRange; } );
+        cls.def_property_readonly( "dimRange", [] ( pybind11::object ) -> int { return DiscreteFunction::FunctionSpaceType::dimRange; } );
         cls.def_property_readonly( "space", [] ( pybind11::object self ) { return detail::getSpace( self.cast< const Scheme & >(), self ); } );
         registerSchemeModel( cls );
 
         registerSchemeAssemble( cls );
 
-        cls.def( "constraint", [] ( Scheme &self, DiscreteFunction &u) { self.constraint( u ); } );
+        cls.def( "constraint", [] ( Scheme &self, DiscreteFunction &u ) { scheme.constraint( u ); } );
 
         cls.def( "mark", [] ( Scheme &self, const DiscreteFunction &solution, double tolerance ) {
-            double est = self.estimate( solution );
-            return std::make_tuple( est, self.mark( tolerance ) );
+            double est = scheme.estimate( solution );
+            return std::make_tuple( est, scheme.mark( tolerance ) );
           } );
       }
 

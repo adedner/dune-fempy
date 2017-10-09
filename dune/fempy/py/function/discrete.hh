@@ -148,8 +148,6 @@ namespace Dune
       inline static void registerDiscreteFunction ( pybind11::module module, pybind11::class_< DF, options... > cls )
       {
         typedef typename DF::DiscreteFunctionSpaceType Space;
-        typedef typename DF::GridPartType GridPart;
-        typedef typename DF::RangeType Value;
 
         using pybind11::operator""_a;
 
@@ -172,9 +170,10 @@ namespace Dune
         cls.def( "clear", [] ( DF &self ) { self.clear(); } );
         cls.def( "assign", [] ( DF &self, const DF &other ) { self.assign( other ); }, "other"_a );
 
-        typedef VirtualizedGridFunction< GridPart, typename Space::RangeType > GridFunction;
         cls.def( "interpolate", [] ( DF &self, pybind11::object gf ) {
-            asGridFunction< Value >( self.gridPart(), gf, [ &self ] ( const auto &gf ) { Fem::interpolate( gf, self ); } );
+            auto copy = [ &self ] ( const DF &gf ) { self.assign( gf ); };
+            auto interpolate = [ &self ] ( const auto &gf ) { Fem::interpolate( gf, self ); };
+            asGridFunction< DF >( self.gridPart(), gf, firstMatch( copy, interpolate ) );
           }, "gridFunction"_a );
 
         typedef typename DF::DofVectorType DofVector;

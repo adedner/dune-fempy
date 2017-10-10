@@ -14,6 +14,8 @@
 #include <dune/fem/function/localfunction/const.hh>
 #include <dune/fem/space/common/functionspace.hh>
 
+#include <dune/fempy/function/utility.hh>
+
 namespace Dune
 {
 
@@ -36,7 +38,7 @@ namespace Dune
 
 
     template< class FunctionSpace >
-    using ScalarFunctionSpace = typename detail::ScalarFunctionSpace< FunctionSpace >::Type;
+    using ScalarFunctionSpaceType = typename detail::ScalarFunctionSpace< FunctionSpace >::Type;
 
 
 
@@ -54,10 +56,13 @@ namespace Dune
       typedef typename EntityType::Geometry::LocalCoordinate LocalCoordinateType;
       typedef typename EntityType::Geometry::GlobalCoordinate GlobalCoordinateType;
 
-      typedef ScalarFunctionSpace< typename LocalFunction::FunctionSpaceType > FunctionSpaceType;
+      typedef ScalarFunctionSpaceType< typename LocalFunction::FunctionSpaceType > FunctionSpaceType;
 
       static const int dimDomain = FunctionSpaceType::dimDomain;
       static const int dimRange = FunctionSpaceType::dimRange;
+
+      typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+      typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
 
       typedef typename FunctionSpaceType::DomainType DomainType;
       typedef typename FunctionSpaceType::RangeType RangeType;
@@ -74,6 +79,15 @@ namespace Dune
       explicit SubLocalFunction ( const GF &gf )
         : localFunction_( gf.gridFunction() ), component_( gf.component() )
       {}
+
+      template< class GF,
+                std::enable_if_t< std::is_constructible< LocalFunction, decltype( std::declval< const GF & >().gridFunction() ) >::value, int > = 0,
+                std::enable_if_t< std::is_constructible< std::size_t, decltype( std::declval< const GF & >().component() ) >::value, int > = 0 >
+      explicit SubLocalFunction ( const GF &gf, const EntityType &entity )
+        : localFunction_( gf.gridFunction() ), component_( gf.component() )
+      {
+        init( entity );
+      }
 
       void init ( const EntityType &entity ) { localFunction().init( entity ); }
 
@@ -136,11 +150,13 @@ namespace Dune
 
     template< class GridFunction >
     class SubGridFunction
-      : public Fem::Function< ScalarFunctionSpace< typename std::decay_t< decltype( std::ref( std::declval< GridFunction & >() ).get() ) >::FunctionSpaceType >, SubGridFunction< GridFunction > >,
+      : public Fem::Function< ScalarFunctionSpaceType< typename std::decay_t< decltype( std::ref( std::declval< GridFunction & >() ).get() ) >::FunctionSpaceType >, SubGridFunction< GridFunction > >,
         public Fem::HasLocalFunction
     {
       typedef SubGridFunction< GridFunction > This;
-      typedef Fem::Function< ScalarFunctionSpace< typename std::decay_t< decltype( std::ref( std::declval< GridFunction & >() ).get() ) >::FunctionSpaceType >, SubGridFunction< GridFunction > > Base;
+      typedef Fem::Function< ScalarFunctionSpaceType< typename std::decay_t< decltype( std::ref( std::declval< GridFunction & >() ).get() ) >::FunctionSpaceType >, SubGridFunction< GridFunction > > Base;
+
+      static_assert( std::is_same< ScalarFunctionSpaceType< typename Base::FunctionSpaceType >, typename Base::FunctionSpaceType >::value, "SubGridFunction does not have a scalar function space." );
 
     public:
       typedef std::decay_t< decltype( std::ref( std::declval< GridFunction & >() ).get() ) > GridFunctionType;
@@ -150,6 +166,11 @@ namespace Dune
       typedef SubLocalFunction< Fem::ConstLocalFunction< GridFunctionType > > LocalFunctionType;
 
       typedef typename LocalFunctionType::EntityType EntityType;
+
+      using typename Base::FunctionSpaceType;
+
+      static const int dimDomain = FunctionSpaceType::dimDomain;
+      static const int dimRange = FunctionSpaceType::dimRange;
 
       using typename Base::DomainType;
       using typename Base::RangeType;
@@ -162,7 +183,7 @@ namespace Dune
       LocalFunctionType localFunction () const { return LocalFunctionType( *this ); }
       LocalFunctionType localFunction ( const EntityType &entity ) const { return LocalFunctionType( *this, entity ); }
 
-      std::string name () const { return gridFunction().name() + "[ " + std::to_string( component ) + " ]"; }
+      std::string name () const { return gridFunction().name() + "[ " + std::to_string( component() ) + " ]"; }
 
       const GridPartType &gridPart () const { return gridFunction().gridPart(); }
 
@@ -179,6 +200,8 @@ namespace Dune
         gridFunction().evaluate( x, tmp );
         jacobian[ 0 ] = jacobian[ tmp ];
       }
+
+      int order () const { return FemPy::order( gridFunction() ); }
 
       const GridFunctionType &gridFunction () const { return std::ref( gridFunction_ ).get(); }
       const std::size_t component () const { return component_; }

@@ -129,19 +129,19 @@ class BaseModel:
         sourceWriter.emit('  };')
         sourceWriter.closeFunction()
 
-        setCoefficient = Function('void', 'setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &model', 'pybind11::handle o'])
-        setCoefficient.append('model.template coefficient< i >() = o.template cast< typename std::tuple_element< i, Coefficients >::type >().localFunction();')
+        setCoefficient = Function('void', 'setCoefficient', targs=['std::size_t i'], args=[ modelClass + ' &self', 'pybind11::object o'])
+        setCoefficient.append('Dune::FemPy::asGridFunction< std::tuple_element_t< i, Coefficients > >( o, [ &self ] ( const std::tuple_element_t< i, Coefficients > &c ) { self.template coefficient< i >() = c.localFunction(); } );')
         sourceWriter.emit(setCoefficient)
 
         defSetCoefficient = Function('auto', 'defSetCoefficient', targs=['std::size_t... i'], args=['std::index_sequence< i... >'])
-        defSetCoefficient.append(TypeAlias('Dispatch', 'std::function< void( ' + modelClass + ' &model, pybind11::handle ) >'),
+        defSetCoefficient.append(TypeAlias('Dispatch', 'std::function< void( ' + modelClass + ' &model, pybind11::object ) >'),
                                  Declaration(Variable('std::array< Dispatch, sizeof...( i ) >', 'dispatch'), '{{ Dispatch( setCoefficient< i > )... }}'),
                                  '',
-                                 'return [ dispatch ] ( ' + wrapperClass + ' &model, pybind11::handle coeff, pybind11::handle o ) {',
+                                 'return [ dispatch ] ( ' + wrapperClass + ' &self, pybind11::handle coeff, pybind11::object o ) {',
                                  '    std::size_t k = renumberConstants(coeff);',
                                  'if( k >= dispatch.size() )',
                                  '      throw std::range_error( "No such coefficient: "+std::to_string(k)+" >= "+std::to_string(dispatch.size()) );',
-                                 '    dispatch[ k ]( model.impl(), o );',
+                                 '    dispatch[ k ]( self.impl(), std::move( o ) );',
                                  '    return k;'
                                  '  };')
 
@@ -152,23 +152,18 @@ class BaseModel:
             # sourceWriter.emit('cls.def( "setCoefficient", defSetCoefficient( std::make_index_sequence< std::tuple_size<Coefficients>::value >() ) );')
             sourceWriter.emit('cls.def( "setConstant", defSetConstant( std::make_index_sequence< std::tuple_size <typename '+ modelClass + '::ConstantsTupleType>::value >() ) );')
         sourceWriter.emit('')
-        sourceWriter.emit('cls.def( "__init__", [] (' + wrapperClass + ' &instance, '+\
-                ' '.join( i[1]+' '+i[0]+',' for i in constrArgs) +\
-                'const pybind11::dict &coeff) {')
-        sourceWriter.emit('  new (&instance) ' + wrapperClass + '('+\
-                ', '.join(i[0] for i in constrArgs) +\
-                ');')
+        sourceWriter.emit('cls.def( pybind11::init( [] ( ' + ', '.join(i[1] + ' ' + i[0] for i in constrArgs) + ', const pybind11::dict &coeff ) {')
+        sourceWriter.emit('  std::unique_ptr< ' + wrapperClass + ' > self( new ' + wrapperClass + '(' + ', '.join(i[0] for i in constrArgs) + ') );')
         if self.coefficients:
-            sourceWriter.emit('  const int size = std::tuple_size<Coefficients>::value;')
-            sourceWriter.emit('  auto dispatch = defSetCoefficient( std::make_index_sequence<size>() );' )
-            sourceWriter.emit('  std::vector<bool> coeffSet(size,false);')
-            sourceWriter.emit('  for (auto item : coeff) {')
-            sourceWriter.emit('    int k = dispatch(instance, item.first, item.second); ')
-            sourceWriter.emit('    coeffSet[k] = true;')
-            sourceWriter.emit('  }')
-            sourceWriter.emit('  if ( !std::all_of(coeffSet.begin(),coeffSet.end(),[](bool v){return v;}) )')
-            sourceWriter.emit('    throw pybind11::key_error("need to set all coefficients during construction");')
-        sourceWriter.emit('  },')
+            sourceWriter.emit('    const std::size_t size = std::tuple_size< Coefficients >::value;')
+            sourceWriter.emit('    auto dispatch = defSetCoefficient( std::make_index_sequence< size >() );' )
+            sourceWriter.emit('    std::bitset< size > coeffSet;')
+            sourceWriter.emit('    for( auto item : coeff )')
+            sourceWriter.emit('      coeffSet.set( dispatch( *self, item.first, pybind11::reinterpret_borrow< pybind11::object >( item.second ) ) );')
+            sourceWriter.emit('    if( !coeffSet.all() )')
+            sourceWriter.emit('      throw pybind11::key_error( "need to set all coefficients during construction" );')
+        sourceWriter.emit('    return self;');
+        sourceWriter.emit('  } ),')
         if constrKeepAlive:
             sourceWriter.emit(constrKeepAlive + ',')
         sourceWriter.emit(''.join('pybind11::arg("' + i[0] + '"), ' for i in constrArgs) +\

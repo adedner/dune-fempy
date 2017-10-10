@@ -6,10 +6,12 @@
 #include <utility>
 
 #include <dune/common/ftraits.hh>
+#include <dune/common/visibility.hh>
 
 #include <dune/fem/function/common/discretefunction.hh>
 #include <dune/fem/space/common/functionspace.hh>
 
+#include <dune/fempy/function/utility.hh>
 #include <dune/fempy/quadrature/cachingpoint.hh>
 #include <dune/fempy/quadrature/elementpoint.hh>
 
@@ -33,8 +35,9 @@ namespace Dune
       typedef typename EntityType::Geometry::LocalCoordinate LocalCoordinateType;
       typedef typename EntityType::Geometry::GlobalCoordinate GlobalCoordinateType;
 
+      typedef typename GridPart::ctype DomainFieldType;
       typedef typename FieldTraits< Value >::field_type RangeFieldType;
-      typedef Fem::FunctionSpace< typename GridPart::ctype, RangeFieldType, GridPart::dimensionworld, Value::dimension > FunctionSpaceType;
+      typedef Fem::FunctionSpace< DomainFieldType, RangeFieldType, GridPart::dimensionworld, Value::dimension > FunctionSpaceType;
 
       static const int dimDomain = FunctionSpaceType::dimDomain;
       static const int dimRange = FunctionSpaceType::dimRange;
@@ -101,7 +104,7 @@ namespace Dune
       };
 
       template< class Impl >
-      struct Implementation final
+      struct DUNE_PRIVATE Implementation final
         : public Interface
       {
         Implementation ( Impl impl ) : impl_( std::move( impl ) ) {}
@@ -299,6 +302,7 @@ namespace Dune
         virtual LocalFunctionType localFunction () const = 0;
         virtual LocalFunctionType localFunction ( const EntityType &entity ) const = 0;
         virtual std::string name () const = 0;
+        virtual int order () const = 0;
         virtual const GridPartType &gridPart () const = 0;
         virtual void evaluate ( const DomainType &x, RangeType &value ) const = 0;
         virtual void jacobian ( const DomainType &x, JacobianRangeType &jacobian ) const = 0;
@@ -314,6 +318,7 @@ namespace Dune
         virtual LocalFunctionType localFunction () const override { return std::decay_t< decltype( impl().localFunction( std::declval< const EntityType & >() ) ) >( impl() ); }
         virtual LocalFunctionType localFunction ( const EntityType &entity ) const override { return impl().localFunction( entity ); }
         virtual std::string name () const override { return impl().name(); }
+        virtual int order () const override { return FemPy::order( impl() ); }
         virtual const GridPartType &gridPart () const override { return impl().gridPart(); }
         virtual void evaluate ( const DomainType &x, RangeType &value ) const override { impl().evaluate( x, value ); }
         virtual void jacobian ( const DomainType &x, JacobianRangeType &jacobian ) const override { impl().jacobian( x, jacobian ); }
@@ -338,11 +343,10 @@ namespace Dune
 
       std::string name () const { return impl_->name(); }
 
+      int order () const { return impl_->order(); }
+
       const GridPartType &gridPart () const { return impl_->gridPart(); }
-      const Space space() const
-      {
-        return Space(impl_->gridPart(), 5);
-      }
+      const Space space() const { return Space( impl_->gridPart(), impl_->order() ); }
 
       void evaluate ( const DomainType &x, RangeType &value ) const { return impl_->evaluate( x, value ); }
       void jacobian ( const DomainType &x, JacobianRangeType &jacobian ) const { return impl_->jacobian( x, jacobian ); }

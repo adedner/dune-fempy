@@ -21,6 +21,7 @@
 #include <dune/fempy/function/gridfunctionview.hh>
 #include <dune/fempy/function/simplegridfunction.hh>
 #include <dune/fempy/function/subgridfunction.hh>
+#include <dune/fempy/function/utility.hh>
 #include <dune/fempy/function/virtualizedgridfunction.hh>
 #include <dune/fempy/py/grid/numpy.hh>
 #include <dune/fempy/py/grid/gridpart.hh>
@@ -37,6 +38,9 @@ namespace Dune
 
     template< class GridFunction, class... options >
     static void registerGridFunction ( pybind11::handle scope, pybind11::class_< GridFunction, options... > cls );
+
+    template< class GridFunction >
+    static pybind11::class_< GridFunction > registerGridFunction ( pybind11::handle scope, const char *clsName = "GridFunction" );
 
 
 
@@ -72,9 +76,13 @@ namespace Dune
         static const int dimDomain = FunctionSpaceType::dimDomain;
         static const int dimRange = FunctionSpaceType::dimRange;
 
+        typedef typename FunctionSpaceType::DomainFieldType DomainFieldType;
+        typedef typename FunctionSpaceType::RangeFieldType RangeFieldType;
+
         typedef typename FunctionSpaceType::DomainType DomainType;
         typedef typename FunctionSpaceType::RangeType RangeType;
         typedef typename FunctionSpaceType::JacobianRangeType JacobianRangeType;
+        typedef typename FunctionSpaceType::HessianRangeType HessianRangeType;
 
         explicit LocalFunctionType ( const PyGridFunction &gf ) : impl_( *gf.impl_ ), pyObj_( gf.pyObj_ ) {}
 
@@ -128,12 +136,14 @@ namespace Dune
 
       PyGridFunction ( const GridFunction &impl )
         : impl_( &impl ),
-          pyObj_( pybind11::detail::get_object_handle( impl_, pybind11::detail::get_type_info( typeid( GridFunction ) ) ), true )
+          pyObj_( pybind11::reinterpret_borrow< pybind11::object >( pybind11::detail::get_object_handle( impl_, pybind11::detail::get_type_info( typeid( GridFunction ) ) ) ) )
       {}
 
       LocalFunctionType localFunction ( const EntityType &entity ) const { return LocalFunctionType( impl_->localFunction( entity ), pyObj_ ); }
 
       std::string name () const { return impl_->name(); }
+
+      int order () const { return FemPy::order( *impl_ ); }
 
       const GridPartType &gridPart () const { return impl_->gridPart(); }
 
@@ -165,7 +175,8 @@ namespace Dune
     template< class GridFunction >
     inline static PyGridFunction< GridFunction > pyGridFunction ( pybind11::object pyObj ) noexcept
     {
-      return PyGridFunction< GridFunction >( pybind11::cast< const GridFunction & >( pyObj ), std::move( pyObj ) );
+      const GridFunction &gridFunction = pybind11::cast< const GridFunction & >( pyObj );
+      return PyGridFunction< GridFunction >( gridFunction, std::move( pyObj ) );
     }
 
 
@@ -211,7 +222,7 @@ namespace Dune
 
       template< class GridFunction, class... options >
       inline static auto registerGridFunctionSubscript ( pybind11::handle scope, pybind11::class_< GridFunction, options... > cls, PriorityTag< 1 > )
-        -> std::enable_if_t< !std::is_same< ScalarFunctionSpace< typename GridFunction::FunctionSpaceType >, typename GridFunction::FunctionSpaceType >::value >
+        -> std::enable_if_t< !std::is_same< ScalarFunctionSpaceType< typename GridFunction::FunctionSpaceType >, typename GridFunction::FunctionSpaceType >::value >
       {
         typedef FemPy::SubGridFunction< PyGridFunction< GridFunction > > SubGridFunction;
 
@@ -229,7 +240,7 @@ namespace Dune
 
       template< class GridFunction, class... options >
       inline static auto registerGridFunctionSubscript ( pybind11::handle scope, pybind11::class_< GridFunction, options... > cls, PriorityTag< 1 > )
-        -> std::enable_if_t< std::is_same< ScalarFunctionSpace< typename GridFunction::FunctionSpaceType >, typename GridFunction::FunctionSpaceType >::value >
+        -> std::enable_if_t< std::is_same< ScalarFunctionSpaceType< typename GridFunction::FunctionSpaceType >, typename GridFunction::FunctionSpaceType >::value >
       {
         using pybind11::operator""_a;
 
@@ -267,13 +278,14 @@ namespace Dune
         typedef typename GridPartType::GridViewType GridView;
 
         registerLocalFunction< LocalFunction >( cls );
+        registerGridFunctionSubscript( scope, cls );
 
         cls.def( "__repr__", [] ( GridFunction &self ) -> std::string {
             return "GridFunction< " + std::to_string( GridFunction::RangeType::dimension ) + " >(name = " + self.name() + ")";
           } );
 
         cls.def_property_readonly( "dimRange", [] ( GridFunction &self ) -> int { return GridFunction::RangeType::dimension; } );
-        cls.def_property_readonly( "order", [] ( GridFunction &self ) -> unsigned int { return self.space().order(); } );
+        cls.def_property_readonly( "order", [] ( GridFunction &self ) -> unsigned int { return FemPy::order( self ); } );
         cls.def_property_readonly( "name", [] ( GridFunction &self ) -> std::string { return self.name(); } );
         cls.def_property_readonly( "grid", [] ( GridFunction &self ) -> GridView { return static_cast< GridView >( self.gridPart() ); } );
 
@@ -286,7 +298,7 @@ namespace Dune
         cls.def( "cellData", [] ( const GridFunction &self, int level ) { return cellData( self, refinementLevels( level ) ); }, "level"_a = 0 );
         cls.def( "pointData", [] ( const GridFunction &self, int level ) { return pointData( self, refinementLevels( level ) ); }, "level"_a = 0 );
 
-        cls.def( "integrate", [] ( const GridFunction &self ) { return Dune::Fem::Integral<GridPartType>(self.gridPart(),self.space().order()).norm(self); });
+        cls.def( "integrate", [] ( const GridFunction &self ) { return Dune::Fem::Integral< GridPartType >( self.gridPart(), FemPy::order( self ) ).norm( self ); } );
       }
 
 
@@ -330,7 +342,7 @@ namespace Dune
     }
 
     template< class GridFunction >
-    inline static pybind11::class_< GridFunction > registerGridFunction ( pybind11::handle scope, const char *clsName = "GridFunction" )
+    inline static pybind11::class_< GridFunction > registerGridFunction ( pybind11::handle scope, const char *clsName )
     {
       pybind11::class_< GridFunction > cls( scope, clsName );
       FemPy::registerGridFunction( scope, cls );
@@ -347,11 +359,38 @@ namespace Dune
 
 
 
+
+      // withGridFunction
+      // ----------------
+
+      template< class GridFunction, class Apply >
+      inline static auto withGridFunction ( const GridFunction &gridFunction, Apply &&apply, PriorityTag< 1 > )
+        -> same_type< decltype( apply( std::declval< const GridFunction & >() ) ), decltype( apply( std::declval< const VirtualizedGridFunctionFor< GridFunction > & >() ) ) >
+      {
+        return apply( gridFunction );
+      }
+
+      template< class GridFunction, class Apply >
+      inline static auto withGridFunction ( const GridFunction &gridFunction, Apply &&apply, PriorityTag< 0 > )
+        -> decltype( apply( std::declval< const VirtualizedGridFunctionFor< GridFunction > & >() ) )
+      {
+        return apply( VirtualizedGridFunctionFor< GridFunction >( gridFunction ) );
+      }
+
+      template< class GridFunction, class Apply >
+      inline static auto withGridFunction ( const GridFunction &gridFunction, Apply &&apply )
+        -> decltype( withGridFunction( gridFunction, std::forward< Apply >( apply ), PriorityTag< 42 >() ) )
+      {
+        return withGridFunction( gridFunction, std::forward< Apply >( apply ), PriorityTag< 42 >() );
+      }
+
+
+
       // asGridFunction
       // --------------
 
       template< class GridFunction, class Apply >
-      inline static auto asGridFunction ( const typename GridFunction::GridPartType &gridPart, pybind11::object gf, Apply &&apply, PriorityTag< 2 > )
+      inline static auto asGridFunction ( const typename GridFunction::GridPartType *gridPart, pybind11::object gf, Apply &&apply, PriorityTag< 2 > )
         -> std::enable_if_t< std::is_same< GridFunction, VirtualizedGridFunctionFor< GridFunction > >::value, decltype( apply( std::declval< const GridFunction & >() ) ) >
       {
         typedef typename GridFunction::GridPartType::template Codim< 0 >::EntityType Entity;
@@ -371,20 +410,23 @@ namespace Dune
         catch( pybind11::error_already_set )
         {}
 
-        try
+        if( gridPart )
         {
-          const typename GridFunction::RangeType value = pybind11::cast< typename GridFunction::RangeType >( gf );
-          return apply( simpleGridFunction( gridPart, [ value ] ( const Entity &entity, const LocalCoordinate & ) { return value; }, 0 ) );
+          try
+          {
+            const typename GridFunction::RangeType value = pybind11::cast< typename GridFunction::RangeType >( gf );
+            return withGridFunction( simpleGridFunction( *gridPart, [ value ] ( const Entity &entity, const LocalCoordinate & ) { return value; }, 0 ), std::forward< Apply >( apply ) );
+          }
+          catch( pybind11::cast_error )
+          {}
         }
-        catch( pybind11::cast_error )
-        {}
 
         const std::string typeName( pybind11::str( gf.get_type() ) );
         throw pybind11::cast_error("Unable to cast Python instance of type " + typeName + " to grid function");
       }
 
       template< class GridFunction, class Apply >
-      inline static auto asGridFunction ( const typename GridFunction::GridPartType &gridPart, pybind11::object gf, Apply &&apply, PriorityTag< 1 > )
+      inline static auto asGridFunction ( const typename GridFunction::GridPartType *gridPart, pybind11::object gf, Apply &&apply, PriorityTag< 1 > )
         -> same_type< decltype( apply( std::declval< const GridFunction & >() ) ), decltype( apply( std::declval< const VirtualizedGridFunctionFor< GridFunction > & >() ) ) >
       {
         try
@@ -398,7 +440,7 @@ namespace Dune
       }
 
       template< class GridFunction, class Apply >
-      inline static auto asGridFunction ( const typename GridFunction::GridPartType &gridPart, pybind11::object gf, Apply &&apply, PriorityTag< 0 > )
+      inline static auto asGridFunction ( const typename GridFunction::GridPartType *gridPart, pybind11::object gf, Apply &&apply, PriorityTag< 0 > )
         -> decltype( apply( std::declval< const GridFunction & >() ) )
       {
         try
@@ -420,10 +462,17 @@ namespace Dune
     // --------------
 
     template< class GridFunction, class Apply >
+    inline static auto asGridFunction ( pybind11::object gf, Apply &&apply )
+      -> decltype( apply( std::declval< const GridFunction & >() ) )
+    {
+      return detail::asGridFunction< GridFunction >( nullptr, gf, std::forward< Apply >( apply ), PriorityTag< 42 >() );
+    }
+
+    template< class GridFunction, class Apply >
     inline static auto asGridFunction ( const typename GridFunction::GridPartType &gridPart, pybind11::object gf, Apply &&apply )
       -> decltype( apply( std::declval< const GridFunction & >() ) )
     {
-      return detail::asGridFunction< GridFunction >( gridPart, gf, apply, PriorityTag< 42 >() );
+      return detail::asGridFunction< GridFunction >( &gridPart, gf, std::forward< Apply >( apply ), PriorityTag< 42 >() );
     }
 
 

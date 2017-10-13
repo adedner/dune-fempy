@@ -27,12 +27,12 @@ triangles = Delaunay(points).simplices
 # plt.plot(points[:,0], points[:,1], 'o')
 # plt.show()
 
-alugrid = create.grid("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
+alugrid = create.grid("ALUConform", {'vertices':points, 'simplex':triangles}, dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction000")
 
 print("GridFactory 2")
-alugrid = create.grid("ALUConform", {'vertex':points, 'simplex':triangles}, dimgrid=2)
+alugrid = create.grid("ALUConform", {'vertices':points, 'simplex':triangles}, dimgrid=2)
 
 print("from file 1")
 alugrid = create.grid("ALUConform", "../data/unitcube-2d.dgf", dimgrid=2)

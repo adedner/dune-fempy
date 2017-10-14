@@ -4,7 +4,7 @@ import math
 from ufl import *
 
 from dune.grid import cartesianDomain
-from dune.ufl import GridCoefficient, Space
+from dune.ufl import Space
 
 import dune.create as create
 
@@ -37,7 +37,7 @@ def compute():
     uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
     u = TrialFunction(uflSpace)
     v = TestFunction(uflSpace)
-    u_n = GridCoefficient(solution)
+    u_n = solution
     tau = Constant(triangle)
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 

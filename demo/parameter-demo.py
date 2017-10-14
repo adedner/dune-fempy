@@ -10,7 +10,8 @@ print(parameter["mir"])
 parameter.append( "../data/parameter" )
 
 # test that these changes actually make it through to the C++ side
-from dune.generator import algorithm
-print( algorithm.run('run', 'parameter-demo.hh', unicode("mir"), parameter["mir"]) )
-print( algorithm.run('run', 'parameter-demo.hh', "quark", 12 ) )
-print( "not",algorithm.run('run', 'parameter-demo.hh', "quark", -int( parameter["quark"] )) )
+# problem with determining the C++ type for the string
+# from dune.generator import algorithm
+# print( algorithm.run('run', 'parameter-demo.hh', "mir", parameter["mir"]) )
+# print( algorithm.run('run', 'parameter-demo.hh', "quark", 12 ) )
+# print( "not",algorithm.run('run', 'parameter-demo.hh', "quark", -int( parameter["quark"] )) )

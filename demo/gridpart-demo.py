@@ -6,6 +6,8 @@ from dune.fem.view import geometryGridView, filteredGridView
 
 import dune.create as create
 
+from dune.plotting import block
+
 def plot(grid):
     try:
         from matplotlib import pyplot
@@ -15,7 +17,7 @@ def plot(grid):
 
         pyplot.gca().set_aspect('equal')
         pyplot.triplot(grid.triangulation(), antialiased=True, linewidth=0.2, color='black')
-        pyplot.show()
+        pyplot.show(block=block)
     except ImportError:
         pass
 
@@ -44,7 +46,7 @@ def testGridView(gridtype):
     grid = create.grid(gridtype, "../data/unitcube-2d.dgf", dimgrid=2)
     testGeometryGridView(grid, "gridpart-demo")
 
-    subGrid = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25)
+    subGrid = filteredGridView(grid, lambda e: (e.geometry.center - [0.5, 0.5]).two_norm < 0.25, 1)
     testGeometryGridView(subGrid, "gridpart-demo-sub")
     plot(subGrid)
 

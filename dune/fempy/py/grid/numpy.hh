@@ -29,7 +29,7 @@ namespace Dune
 
     template< class GridFunction, unsigned int partitions >
     inline static pybind11::array_t< typename FieldTraits< typename GridFunction::RangeType >::field_type >
-    pointData ( const GridFunction &gridFunction, int level, PartitionSet< partitions > ps )
+    pointData ( const GridFunction &gridFunction, RefinementIntervals intervals, PartitionSet< partitions > ps )
     {
       typedef typename GridFunction::GridPartType GridPart;
       typedef typename GridFunction::RangeType Range;
@@ -37,14 +37,13 @@ namespace Dune
 
       const int dimGrid = GridPart::dimension;
 
-      const GeometryType gtSimplex( GeometryType::simplex, dimGrid );
       std::vector< Range > values;
       for( const auto &element : elements( static_cast< typename GridPart::GridViewType >( gridFunction.gridPart() ), ps ) )
       {
         const auto localFunction = gridFunction.localFunction( element );
-        const auto &refinement = buildRefinement< dimGrid, double >( element.type(), gtSimplex );
+        const auto &refinement = buildRefinement< dimGrid, double >( element.type(), GeometryTypes::simplex( dimGrid ) );
 
-        for( auto it = refinement.vBegin( level ), end = refinement.vEnd( level ); it != end; ++it )
+        for( auto it = refinement.vBegin( intervals ), end = refinement.vEnd( intervals ); it != end; ++it )
         {
           Range value;
           localFunction.evaluate( it.coords(), value );
@@ -59,14 +58,14 @@ namespace Dune
     inline static pybind11::array_t< typename FieldTraits< typename GridFunction::RangeType >::field_type >
     pointData ( const GridFunction &gridFunction, PartitionSet< partitions > ps )
     {
-      return pointData( gridFunction, 0, ps );
+      return pointData( gridFunction, refinementLevels( 0 ), ps );
     }
 
     template< class GridFunction >
     inline static pybind11::array_t< typename FieldTraits< typename GridFunction::RangeType >::field_type >
-    pointData ( const GridFunction &gridFunction, int level = 0 )
+    pointData ( const GridFunction &gridFunction, RefinementIntervals intervals = refinementLevels( 0 ) )
     {
-      return pointData( gridFunction, level, Partitions::all );
+      return pointData( gridFunction, intervals, Partitions::all );
     }
 
 
@@ -76,7 +75,7 @@ namespace Dune
 
     template< class GridFunction, unsigned int partitions >
     inline static pybind11::array_t< typename FieldTraits< typename GridFunction::RangeType >::field_type >
-    cellData ( const GridFunction &gridFunction, int level, PartitionSet< partitions > ps )
+    cellData ( const GridFunction &gridFunction, RefinementIntervals intervals, PartitionSet< partitions > ps )
     {
       typedef typename GridFunction::GridPartType GridPart;
       typedef typename GridFunction::RangeType Range;
@@ -84,14 +83,13 @@ namespace Dune
 
       const int dimGrid = GridPart::dimension;
 
-      const GeometryType gtSimplex( GeometryType::simplex, dimGrid );
       std::vector< Range > values;
       for( const auto &element : elements( static_cast< typename GridPart::GridViewType >( gridFunction.gridPart() ), ps ) )
       {
         const auto localFunction = gridFunction.localFunction( element );
-        const auto &refinement = buildRefinement< dimGrid, double >( element.type(), gtSimplex );
+        const auto &refinement = buildRefinement< dimGrid, double >( element.type(), GeometryTypes::simplex( dimGrid ) );
 
-        for( auto it = refinement.eBegin( 0 ), end = refinement.eEnd( 0 ); it != end; ++it )
+        for( auto it = refinement.eBegin( intervals ), end = refinement.eEnd( intervals ); it != end; ++it )
         {
           Range value;
           localFunction.evaluate( it.coords(), value );
@@ -106,14 +104,14 @@ namespace Dune
     inline static pybind11::array_t< typename FieldTraits< typename GridFunction::RangeType >::field_type >
     cellData ( const GridFunction &gridFunction, PartitionSet< partitions > ps )
     {
-      return cellData( gridFunction, 0, ps );
+      return cellData( gridFunction, refinementIntervals( 0 ), ps );
     }
 
     template< class GridFunction >
     inline static pybind11::array_t< typename FieldTraits< typename GridFunction::RangeType >::field_type >
-    cellData ( const GridFunction &gridFunction, int level = 0 )
+    cellData ( const GridFunction &gridFunction, RefinementIntervals intervals = refinementLevels( 0 ) )
     {
-      return cellData( gridFunction, level, Partitions::all );
+      return cellData( gridFunction, intervals, Partitions::all );
     }
 
   } // namespace FemPy

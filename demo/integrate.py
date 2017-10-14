@@ -50,15 +50,8 @@ def compute():
     print("Approach 2:",error)
 
     # Approach 3
-    uh_coeff = dune.ufl.GridCoefficient(uh)
-    l2error_gf = create.function("ufl", grid, "error", 5,
-            ufl.as_vector([(exact[0]-uh_coeff[0])**2]) )
+    l2error_gf = create.function("ufl", grid, "error", 5, (exact-uh)**2 )
     error = math.sqrt( l2error_gf.integrate()[0] )
-    print("Approach 3:",error)
-
-    # Approach 4 (not possible yet - requires grid functions to derive from ufl.Coefficients...)
-    # l2error_gf = create.function("ufl", grid, "error", 5, (exact-uh)**2 )
-    # error = math.sqrt( l2error_gf.integrate()[0] )
-    # print("Approach 4:",error)
+    print("Approach 4:",error)
 
 compute()

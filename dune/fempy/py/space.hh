@@ -20,19 +20,19 @@ namespace Dune
       // registerSpaceConstructor
       // -------------------------
       template< class Space, class... options >
-      void registerSpaceConstructor ( pybind11::class_< Space, options... > &cls, std::false_type )
+      void registerSpaceConstructor ( pybind11::class_< Space, options... > cls, std::false_type )
       {}
       template< class Space, class... options >
-      void registerSpaceConstructor ( pybind11::class_< Space, options... > &cls, std::true_type )
+      void registerSpaceConstructor ( pybind11::class_< Space, options... > cls, std::true_type )
       {
         typedef typename Space::GridPartType GridPart;
         typedef typename GridPart::GridViewType GridView;
-        cls.def( "__init__", [] ( Space &instance, pybind11::object gridView ) {
-            new( &instance ) Space( gridPart< GridView >( gridView ) );
+        cls.def( "__init__", [] ( Space &self, pybind11::object gridView ) {
+            new( &self ) Space( gridPart< GridView >( gridView ) );
           }, pybind11::keep_alive< 1, 2 >() );
       }
       template< class Space, class... options >
-      void registerSpaceConstructor ( pybind11::class_< Space, options... > &cls )
+      void registerSpaceConstructor ( pybind11::class_< Space, options... > cls )
       {
         typedef typename Space::GridPartType GridPart;
         registerSpaceConstructor( cls, std::is_constructible< Space, GridPart& >() );
@@ -41,8 +41,8 @@ namespace Dune
       // registerSpace
       // -------------
 
-      template< class Space, class Cls >
-      void registerSpace ( pybind11::module module, Cls &cls )
+      template< class Space, class... options >
+      void registerSpace ( pybind11::module module, pybind11::class_< Space, options... > cls )
       {
         typedef typename Space::FunctionSpaceType::RangeFieldType RangeFieldType;
         if( !std::is_same< RangeFieldType, double >::value )
@@ -54,10 +54,10 @@ namespace Dune
         typedef typename Space::GridPartType GridPart;
         typedef typename GridPart::GridViewType GridView;
 
-        cls.def_property_readonly( "dimRange", [] ( Space &spc ) -> int { return Space::dimRange; } );
-        cls.def_property_readonly( "grid", [] ( Space &spc ) -> GridView { return static_cast< GridView >( spc.gridPart() ); } );
-        cls.def_property_readonly( "order", [] ( Space &spc ) -> int { return spc.order(); } );
-        cls.def_property_readonly( "size", [] ( Space &spc ) -> int { return spc.size(); } );
+        cls.def_property_readonly( "dimRange", [] ( Space & ) -> int { return Space::dimRange; } );
+        cls.def_property_readonly( "grid", [] ( Space &self ) -> GridView { return static_cast< GridView >( self.gridPart() ); } );
+        cls.def_property_readonly( "order", [] ( Space &self ) -> int { return self.order(); } );
+        cls.def_property_readonly( "size", [] ( Space &self ) -> int { return self.size(); } );
 
         registerSpaceConstructor( cls );
       }
@@ -73,7 +73,7 @@ namespace Dune
         typedef std::decay_t< decltype( std::declval< const T & >().space() ) > Space;
 
         const Space &space = obj.space();
-        pybind11::object pySpace( pybind11::detail::get_object_handle( &space, pybind11::detail::get_type_info( typeid( Space ) ) ), true );
+        auto pySpace = pybind11::reinterpret_borrow< pybind11::object >( pybind11::detail::get_object_handle( &space, pybind11::detail::get_type_info( typeid( Space ) ) ) );
 #if 0
         // disable returning spaces not defined on Python side for now
         // Bug: pybind11 seems to require at least a move constructor to cast a reference to a Python object
@@ -96,9 +96,9 @@ namespace Dune
     // -------------
 
     template< class Space, class... options >
-    void registerSpace ( pybind11::module module, pybind11::class_<Space,options...> &cls )
+    void registerSpace ( pybind11::module module, pybind11::class_< Space, options... > cls )
     {
-      detail::registerSpace<Space>(module,cls);
+      detail::registerSpace( module, cls );
     }
 
   } // namespace FemPy

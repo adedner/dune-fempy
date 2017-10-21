@@ -1,7 +1,7 @@
 #include <config.h>
 
-// dune-corepy
-#include <dune/corepy/pybind11/pybind11.h>
+// dune-python
+#include <dune/python/pybind11/pybind11.h>
 
 // dune-fempy
 #include <dune/fempy/py/grid/function.hh>

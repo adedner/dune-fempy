@@ -14,12 +14,12 @@ OPTFLAGS='-std=c++11 -Wall -Winit-self -Wfatal-errors -DNDEBUG -O3 -funroll-loop
   -fexcess-precision=fast -march=native \
   -msse -mfpmath=sse --param inline-unit-growth=700'
 
-echo 'This script is for installing dune-fempy on Linux
+echo "This script is for installing dune-fempy on Linux
 
 It will install DUNE with the following components:
-dune-common dune-geometry dune-grid dune-istl dune-localfunctions dune-alugrid dune-fem dune-corepy dune-fempy
+dune-common dune-geometry dune-grid dune-istl dune-localfunctions dune-alugrid dune-fem dune-python dune-fempy
 Using version $DUNE_VERSION
-'
+"
 
 read -p "Continue (y/n)? " choice
 case "$choice" in y|Y|yes|Yes )
@@ -41,7 +41,7 @@ case "$choice" in y|Y|yes|Yes )
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-localfunctions.git dune-localfunctions
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/extensions/dune-alugrid.git dune-alugrid
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fem.git dune-fem
-            git clone -b corepy https://gitlab.dune-project.org/staging/dune-python.git dune-python
+            git clone -b $DUNE_VERSION https://gitlab.dune-project.org/staging/dune-python.git dune-python
             git clone -b $DUNE_VERSION ssh://git@gitlab.dune-project.org:22022/dune-fem/dune-fempy.git dune-fempy
             echo 'CMAKE_FLAGS=" -DCMAKE_CXX_FLAGS='\''$OPTFLAGS'\'' \
                   -DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE \

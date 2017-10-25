@@ -33,7 +33,7 @@ case "$choice" in y|Y|yes|Yes )
         read -p "Install DUNE (make sure cmake is installed first) (y/n)? " choice4
         case "$choice4" in
           y|Y|yes|Yes )
-            cd $HOME/$folder_name
+            cd $folder_name
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-common.git dune-common
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-geometry.git dune-geometry
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-grid.git dune-grid
@@ -41,7 +41,7 @@ case "$choice" in y|Y|yes|Yes )
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-localfunctions.git dune-localfunctions
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/extensions/dune-alugrid.git dune-alugrid
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fem.git dune-fem
-            git clone -b $DUNE_VERSION https://gitlab.dune-project.org/staging/dune-corepy.git dune-corepy
+            git clone -b $DUNE_VERSION https://gitlab.dune-project.org/staging/dune-python.git dune-python
             git clone -b $DUNE_VERSION ssh://git@gitlab.dune-project.org:22022/dune-fem/dune-fempy.git dune-fempy
             echo 'CMAKE_FLAGS=" -DCMAKE_CXX_FLAGS='\''$OPTFLAGS'\'' \
                   -DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE \
@@ -51,12 +51,11 @@ case "$choice" in y|Y|yes|Yes )
                   -DCMAKE_DISABLE_DOCUMENTATION=TRUE \
                   -DBUILD_SHARED_LIBS=TRUE \
                   -DADDITIONAL_PIP_PARAMS="-upgrade" \
-                  -DDUNE_PYTHON_INSTALL_LOCATION="user" \
                   " ' > config.opts
             echo 'Installing DUNE'
             ./dune-common/bin/dunecontrol --opts=config.opts all
             echo 'Setting up python environment'
-            ./dune-corepy/bin/setup-dunepy --opts=config.opts install
+            ./dune-python/bin/setup-dunepy.py --opts=config.opts install
             echo "Completed installation."
             echo "Demos can be found in $folder_name/dune-fempy/demo,"
             echo "jupyter notebooks in $folder_name/notebooks."

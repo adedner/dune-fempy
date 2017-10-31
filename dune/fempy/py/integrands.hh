@@ -7,6 +7,9 @@
 
 #include <dune/common/hybridutilities.hh>
 #include <dune/common/typeutilities.hh>
+#include <dune/common/visibility.hh>
+
+#include <dune/python/common/typeregistry.hh>
 
 #include <dune/fem/schemes/integrands.hh>
 
@@ -63,7 +66,7 @@ namespace Dune
         // --------------------
 
         template< class Integrands >
-        inline CoefficientsRegistry< Integrands > &coefficientsRegistry ()
+        DUNE_EXPORT inline CoefficientsRegistry< Integrands > &coefficientsRegistry ()
         {
           static CoefficientsRegistry< Integrands > registry;
           return registry;
@@ -157,12 +160,10 @@ namespace Dune
       // ------------------
 
       template< class Integrands >
-      inline pybind11::class_< Integrands > registerIntegrands ( pybind11::handle scope, const char *clsName )
+      inline void registerIntegrands ( pybind11::handle scope, pybind11::class_<Integrands> cls )
       {
-        pybind11::class_< Integrands > cls( scope, clsName );
         RegisterIntegrands::setConstant( cls, PriorityTag< 42 >() );
         RegisterIntegrands::setCoefficient( cls, PriorityTag< 42 >() );
-        return cls;
       }
 
 
@@ -171,11 +172,15 @@ namespace Dune
       // ------------------------
 
       template< class GridPart, class DomainValue, class RangeValue >
-      inline pybind11::class_< Fem::VirtualizedIntegrands< GridPart, DomainValue, RangeValue > > clsVirtualizedIntegrands ( pybind11::handle scope )
+      inline pybind11::class_< Fem::VirtualizedIntegrands< GridPart, DomainValue, RangeValue > >
+      clsVirtualizedIntegrands ( pybind11::handle scope )
       {
         typedef Fem::VirtualizedIntegrands< GridPart, DomainValue, RangeValue > Integrands;
-        static pybind11::class_< Integrands > cls = registerIntegrands< Integrands >( scope, "VirtualizedIntegrands" );
-        return cls;
+        auto cls = Python::insertClass<Integrands>(scope,"VirtualizedIntegrads",
+            Python::GenerateTypeName("TODO") );
+        if (cls.second)
+          registerIntegrands( scope, cls.first );
+        return cls.first;
       }
 
     } // namespace detail
@@ -193,14 +198,18 @@ namespace Dune
       typedef typename Integrands::RangeValueType RangeValue;
       typedef Fem::VirtualizedIntegrands< GridPart, DomainValue, RangeValue > VirtualizedIntegrands;
 
-      pybind11::class_< Integrands > cls = detail::registerIntegrands< Integrands >( scope, clsName );
+      auto cls = Python::insertClass<Integrands>(scope, clsName,
+          Python::GenerateTypeName("TODO") );
+      if (cls.second)
+        detail::registerIntegrands( scope, cls.first );
 
-      detail::clsVirtualizedIntegrands< GridPart, DomainValue, RangeValue >( scope ).def( "__init__", [] ( VirtualizedIntegrands &self, Integrands &integrands ) {
-          new (&self) VirtualizedIntegrands( std::ref( integrands ) );
-        }, pybind11::keep_alive< 1, 2 >() );
+      detail::clsVirtualizedIntegrands< GridPart, DomainValue, RangeValue >( scope ).
+        def( pybind11::init( [] ( Integrands &integrands ) {
+          return new VirtualizedIntegrands( std::ref( integrands ) );
+        }), pybind11::keep_alive< 1, 2 >() );
       pybind11::implicitly_convertible< Integrands, VirtualizedIntegrands >();
 
-      return cls;
+      return cls.first;
     }
 
   } // namespace FemPy

@@ -13,8 +13,8 @@
 #include <dune/fem/misc/l2norm.hh>
 #include <dune/fem/gridpart/common/gridpart2gridview.hh>
 
-#include <dune/corepy/grid/hierarchical.hh>
-#include <dune/corepy/grid/vtk.hh>
+#include <dune/python/grid/hierarchical.hh>
+#include <dune/python/grid/vtk.hh>
 
 #include <dune/fempy/grid/gridpartadapter.hh>
 #include <dune/fempy/pybind11/pybind11.hh>
@@ -33,7 +33,7 @@ namespace Dune
 
       template< class Grid >
       class GridModificationListener final
-        : public CorePy::GridModificationListener< Grid >
+        : public Python::GridModificationListener< Grid >
       {
         typedef Fem::DofManager< Grid > DofManager;
 
@@ -61,14 +61,14 @@ namespace Dune
       inline static void addGridModificationListener ( const Grid &grid )
       {
         typedef GridModificationListener< Grid > Listener;
-        for( const auto &listener : CorePy::detail::gridModificationListeners( grid ) )
+        for( const auto &listener : Python::detail::gridModificationListeners( grid ) )
         {
           if( dynamic_cast< Listener * >( listener.second ) )
             return;
         }
 
         pybind11::handle nurse = pybind11::detail::get_object_handle( &grid, pybind11::detail::get_type_info( typeid( Grid ) ) );
-        CorePy::detail::addGridModificationListener( grid, new Listener( grid ), nurse );
+        Python::detail::addGridModificationListener( grid, new Listener( grid ), nurse );
       }
 
 
@@ -145,7 +145,7 @@ namespace Dune
       // -----------------
 
       template< class GridView >
-      inline GridPartConverter< GridView > &gridPartConverter ()
+      inline DUNE_EXPORT GridPartConverter< GridView > &gridPartConverter ()
       {
         static GridPartConverter< GridView > converter;
         return converter;
@@ -178,17 +178,17 @@ namespace Dune
     // -----------------
 
     template< class GridPart, class... Args >
-    inline static void constructGridPart ( Dune::GridView< Fem::GridPart2GridViewTraits< GridPart > > &gridView,  Args &&... args )
+    inline static auto constructGridPart ( Args &&... args )
     {
-      typedef Dune::GridView< Fem::GridPart2GridViewTraits< GridPart > > GridView;
+      typedef typename GridPart::GridViewType GridView;
 
       GridPart *gridPart = new GridPart( std::forward< Args >( args )... );
-      new (&gridView) GridView( static_cast< GridView >( *gridPart ) );
+      GridView *gridView = new GridView( Fem::GridPart2GridViewImpl< GridPart >( *gridPart ) );
 
       // obtain Python object for grid view
       pybind11::handle nurse = pybind11::detail::get_object_handle( &gridView, pybind11::detail::get_type_info( typeid( GridView ) ) );
       if( !nurse )
-        return;
+        return gridView;
 
       // create Python guard object, removing the grid part once the grid view dies
       pybind11::cpp_function remove_gridpart( [ gridPart ] ( pybind11::handle weakref ) {
@@ -197,28 +197,7 @@ namespace Dune
         } );
       pybind11::weakref weakref( nurse, remove_gridpart );
       weakref.release();
-    }
-
-    template< class GridPart, class... Args >
-    inline static void constructGridPart ( Fem::GridPart2GridViewImpl< GridPart > &gridView,  Args &&... args )
-    {
-      typedef Fem::GridPart2GridViewImpl< GridPart > GridView;
-
-      GridPart *gridPart = new GridPart( std::forward< Args >( args )... );
-      new (&gridView) GridView( *gridPart );
-
-      // obtain Python object for grid view
-      pybind11::handle nurse = pybind11::detail::get_object_handle( &gridView, pybind11::detail::get_type_info( typeid( GridView ) ) );
-      if( !nurse )
-        return;
-
-      // create Python guard object, removing the grid part once the grid view dies
-      pybind11::cpp_function remove_gridpart( [ gridPart ] ( pybind11::handle weakref ) {
-          delete gridPart;
-          weakref.dec_ref();
-        } );
-      pybind11::weakref weakref( nurse, remove_gridpart );
-      weakref.release();
+      return gridView;
     }
 
   } // namespace FemPy

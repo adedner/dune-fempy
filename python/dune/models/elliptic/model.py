@@ -199,11 +199,12 @@ class EllipticModel:
             sourceWriter.emit('cls.def( "setConstant", defSetConstant( std::make_index_sequence< ' + modelClass + '::numConstants >() ) );')
         coefficients = [('Dune::FemPy::VirtualizedGridFunction< GridPart, Dune::FieldVector< ' + SourceWriter.cpp_fields(c['field']) + ', ' + str(c['dimRange']) + ' > >') for c in self._coefficients]
         sourceWriter.emit('')
-        sourceWriter.emit('cls.def( "__init__", [] ( ' + ', '.join([wrapperClass + ' &self'] + ['const ' + c + ' &coefficient' + str(i) for i, c in enumerate(coefficients)]) + ' ) {')
+        # TODO
+        sourceWriter.emit('cls.def( pybind11::init( [] ( ' + ', '.join( [] + ['const ' + c + ' &coefficient' + str(i) for i, c in enumerate(coefficients)]) + ' ) {')
         if self.hasCoefficients:
-            sourceWriter.emit('  new (&self) ' + wrapperClass + '( ' + ', '.join('coefficient' + str(i) + '.localFunction()' for i, c in enumerate(coefficients)) + ' );')
+            sourceWriter.emit('  return new  ' + wrapperClass + '( ' + ', '.join('coefficient' + str(i) + '.localFunction()' for i, c in enumerate(coefficients)) + ' );')
         else:
-            sourceWriter.emit('  new (&self) ' + wrapperClass + '();')
+            sourceWriter.emit('  return new  ' + wrapperClass + '();')
         #if self.coefficients:
         #    sourceWriter.emit('  const int size = std::tuple_size<Coefficients>::value;')
         #    sourceWriter.emit('  auto dispatch = defSetCoefficient( std::make_index_sequence<size>() );' )
@@ -215,9 +216,9 @@ class EllipticModel:
         #    sourceWriter.emit('  if ( !std::all_of(coeffSet.begin(),coeffSet.end(),[](bool v){return v;}) )')
         #    sourceWriter.emit('    throw pybind11::key_error("need to set all coefficients during construction");')
         if self.hasCoefficients:
-            sourceWriter.emit('  }, ' + ', '.join('pybind11::keep_alive< 1, ' + str(i) + ' >()' for i, c in enumerate(coefficients, start=2)) + ' );')
+            sourceWriter.emit('  }), ' + ', '.join('pybind11::keep_alive< 1, ' + str(i) + ' >()' for i, c in enumerate(coefficients, start=2)) + ' );')
         else:
-            sourceWriter.emit('  } );')
+            sourceWriter.emit('  } ) );')
 
     def codeCoefficient(self, code, coefficients, constants):
         """find coefficients/constants in code string and do replacements
@@ -520,8 +521,8 @@ def generateModel(grid, model, *args, **kwargs):
     code += [Include(i) for i in grid._includes]
     code.append(Include("dune/fem/misc/boundaryidprovider.hh>"))
 
-    code.append(Include("dune/corepy/pybind11/pybind11.h"))
-    code.append(Include("dune/corepy/pybind11/extensions.h"))
+    code.append(Include("dune/python/pybind11/pybind11.h"))
+    code.append(Include("dune/python/pybind11/extensions.h"))
     code.append(Include("dune/fempy/py/grid/gridpart.hh"))
     if model.coefficients:
         code.append(Include("dune/fempy/function/virtualizedgridfunction.hh"))
@@ -570,7 +571,7 @@ def importModel(grid, model, *args, **kwargs):
     if isinstance(model, str):
         with open(model, 'r') as modelFile:
             data = modelFile.read()
-        name = data.split('PYBIND11_PLUGIN( ')[1].split(' )')[0]
+        name = data.split('PYBIND11_MODULE( ')[1].split(', module )')[0]
         builder.load(name, data, "ellipticModel")
         return importlib.import_module("dune.generated." + name)
     writer, name = generateModel(grid, model, *args, **kwargs)

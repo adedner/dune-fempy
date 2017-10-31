@@ -5,13 +5,11 @@
 #include <dune/fem/misc/mpimanager.hh>
 #include <dune/fem/io/parameter.hh>
 
-#include <dune/corepy/pybind11/extensions.h>
-#include <dune/corepy/pybind11/pybind11.h>
+#include <dune/python/pybind11/extensions.h>
+#include <dune/python/pybind11/pybind11.h>
 
-PYBIND11_PLUGIN( _fem )
+PYBIND11_MODULE( _fem, module )
 {
-  pybind11::module module( "_fem" );
-
   try
   {
     int argc = 0;
@@ -83,6 +81,4 @@ PYBIND11_PLUGIN( _fem )
     module.attr( "parameter" ) = pybind11::cast( Dune::Fem::Parameter::container(),
            pybind11::return_value_policy::reference );
   }
-
-  return module.ptr();
 }

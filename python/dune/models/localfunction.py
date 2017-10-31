@@ -155,8 +155,8 @@ def gridFunction(grid, code, coefficients, constants):
 
     code += [Include(i) for i in grid._includes]
 
-    code.append(Include("dune/corepy/pybind11/pybind11.h"))
-    code.append(Include("dune/corepy/pybind11/extensions.h"))
+    code.append(Include("dune/python/pybind11/pybind11.h"))
+    code.append(Include("dune/python/pybind11/extensions.h"))
     code.append(Include("dune/fem/space/common/functionspace.hh"))
     code.append(Include("dune/fem/function/common/localfunctionadapter.hh"))
 
@@ -232,7 +232,8 @@ def gridFunction(grid, code, coefficients, constants):
     writer.emit('')
     writer.emit('// export function class')
     writer.emit('')
-    writer.emit('pybind11::class_< GFWrapper > cls = Dune::FemPy::registerGridFunction< GFWrapper >( module, "GFWrapper" );')
+    writer.emit('pybind11::class_< GFWrapper > cls = Dune::Python::insertClass<GFWrapper>(module,"GFWrapper",Dune::Python::GenerateTypeName("N/A")).first;')
+    writer.emit('Dune::FemPy::registerGridFunction( module, cls );')
     writer.emit('')
     base.export(writer, 'LocalFunction', 'GFWrapper', constrArgs = (('name', 'std::string'), ('order', 'int'), ('gridView', 'pybind11::handle')), constrKeepAlive='pybind11::keep_alive<0,3>()' )
     writer.emit('')

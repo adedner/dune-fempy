@@ -57,11 +57,10 @@ BOUNDARYDOMAIN
 #
 PROJECTION
   function p(x) = x / |x|
-  % segment  1 2  p
+  segment  1 2  p
   segment  2 3  p
   segment  3 4  p
   segment  4 5  p
-  segment  0 5  p
 #
 """
 grid = create.view("adaptive", "ALUConform", grid.string2dgf(dgf), dimgrid=2)

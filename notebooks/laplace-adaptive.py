@@ -64,7 +64,6 @@ PROJECTION
   segment  0 5  p
 #
 """
-print(dgf)
 grid = create.view("adaptive", "ALUConform", grid.string2dgf(dgf), dimgrid=2)
 grid.hierarchicalGrid.globalRefine(2)
 spc  = create.space( "Lagrange", grid, dimrange=1, order=order )
@@ -114,15 +113,14 @@ exact_gf = create.function("global", grid, "exact", order+1, exact)
 a = inner(grad(u), grad(v)) * dx
 model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact_gf,1) )
 
-
 # In[3]:
 
 # set up the scheme
 parameters = {"fem.solver.newton.tolerance": 1e-9,
         "fem.solver.newton.linabstol": 1e-12,
         "fem.solver.newton.linreduction": 1e-12,
-        "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 1}
+        "fem.solver.newton.verbose": 0,
+        "fem.solver.newton.linear.verbose": 0}
 laplace = create.scheme("h1", spc, model, parameters=parameters, solver="cg")
 uh = spc.interpolate(lambda x: [0], name="solution")
 print("solving...")

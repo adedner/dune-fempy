@@ -40,9 +40,9 @@ case "$choice" in y|Y|yes|Yes )
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-istl.git dune-istl
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/core/dune-localfunctions.git dune-localfunctions
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/extensions/dune-alugrid.git dune-alugrid
-            git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fem.git dune-fem
             git clone -b $DUNE_VERSION https://gitlab.dune-project.org/staging/dune-python.git dune-python
-            git clone -b $DUNE_VERSION ssh://git@gitlab.dune-project.org:22022/dune-fem/dune-fempy.git dune-fempy
+            git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fem.git dune-fem
+            git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fempy.git dune-fempy
             echo 'CMAKE_FLAGS=" -DCMAKE_CXX_FLAGS='\''$OPTFLAGS'\'' \
                   -DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE \
                   -DALLOW_CXXFLAGS_OVERWRITE=ON \
@@ -50,6 +50,7 @@ case "$choice" in y|Y|yes|Yes )
                   -DCMAKE_DISABLE_FIND_PACKAGE_LATEX=TRUE \
                   -DCMAKE_DISABLE_DOCUMENTATION=TRUE \
                   -DBUILD_SHARED_LIBS=TRUE \
+                  -DDUNE_PYTHON_INSTALL_EDITABLE=TRUE \
                   -DADDITIONAL_PIP_PARAMS="-upgrade" \
                   " ' > config.opts
             echo 'Installing DUNE'

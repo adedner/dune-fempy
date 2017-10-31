@@ -10,7 +10,5 @@ x = SpatialCoordinate(triangle)
 exact = as_vector([cos(2.*pi*x[0])*cos(2.*pi*x[1])])
 solution = space.interpolate(exact, name="solution")
 
-# works:
-# test = space.interpolate(solution[0], name="tmp")
-# fails:
+test = space.interpolate(solution[0], name="tmp")
 test = space.interpolate(grad(solution)[0,0], name="tmp")

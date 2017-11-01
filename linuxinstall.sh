@@ -31,16 +31,19 @@ case "$choice" in y|Y|yes|Yes )
         echo "Making directory: $folder_name"
         mkdir $folder_name
         cd $folder_name
+        BASE=$PWD
         read -p "Install Eigen3 as well (y/n)? " choice4
         case "$choice4" in
           y|Y|yes|Yes )
-            mkdir eigen
+            mkdir eigen-src
             wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.bz2
             bunzip2 3.3.4.tar.bz2
-            tar xvC eigen --strip-components=1 -f 3.3.4.tar
-            mkdir Eigen3
-            cd Eigen3
-            cmake ../eigen
+            tar xvC eigen-src --strip-components=1 -f 3.3.4.tar
+            rm 3.3.4.tar
+            mkdir eigen-build
+            cd eigen-build
+            cmake -DCMAKE_INSTALL_PREFIX=$BASE/eigen ../eigen-src
+            make install
             cd ..
             ;;
           n|N|no|No ) ;;
@@ -57,28 +60,27 @@ case "$choice" in y|Y|yes|Yes )
         git clone -b $DUNE_VERSION https://gitlab.dune-project.org/staging/dune-python.git dune-python
         git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fem.git dune-fem
         git clone -b $DUNE_VERSION https://gitlab.dune-project.org/dune-fem/dune-fempy.git dune-fempy
-        echo 'CMAKE_FLAGS=" -DCMAKE_CXX_FLAGS='\''$OPTFLAGS'\'' \
+        echo "CMAKE_FLAGS=\" -DCMAKE_CXX_FLAGS='$OPTFLAGS' \
               -DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE \
               -DALLOW_CXXFLAGS_OVERWRITE=ON \
               -DENABLE_HEADERCHECK=ON \
               -DCMAKE_DISABLE_FIND_PACKAGE_LATEX=TRUE \
               -DCMAKE_DISABLE_DOCUMENTATION=TRUE \
               -DBUILD_SHARED_LIBS=TRUE \
-              -DADDITIONAL_PIP_PARAMS="-upgrade" \
-              -DEigen3_DIR='\''$PWD/Eigen3'\'' \
-              -DCMAKE_PREFIX_PATH='\''$PWD/Eigen3'\'' \
-              "' > config.opts
+              -DADDITIONAL_PIP_PARAMS='-upgrade' \
+              -DEigen3_DIR='$PWD/eigen' \
+              -DCMAKE_PREFIX_PATH='$PWD/eigen' \
+              \"" > config.opts
         echo 'Installing DUNE'
         ./dune-common/bin/dunecontrol --opts=config.opts all
         echo 'Setting up python environment'
         ./dune-python/bin/setup-dunepy.py --opts=config.opts install
         echo "Completed installation."
-        echo "Demos can be found in $folder_name/dune-fempy/demo,"
-        echo "jupyter notebooks in $folder_name/dune-fempy/notebooks."
+        echo "Demos can be found in $BASE/dune-fempy/demo,"
+        echo "jupyter notebooks in $BASE/dune-fempy/notebooks."
         echo "You will need (at least) the python packages ufl,numpy,matplotlib."
         echo "You can try:"
         echo "  pip install --upgrade --user ufl numpy matplotlib"
-        esac
         ;;
   n|N|no|No ) exit 1 ;;
   * ) echo "Please choose y or n"

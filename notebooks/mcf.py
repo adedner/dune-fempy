@@ -47,6 +47,7 @@ import ufl
 import dune.ufl
 import dune.create as create
 import dune.fem as fem
+import dune.geometry
 
 # polynomial order of surface approximation
 order = 2
@@ -158,7 +159,7 @@ def calcRadius(surface):
     R   = 0
     vol = 0
     for e in surface.elements():
-        rule = grid._module.quadratureRule(e.type, 4)
+        rule = dune.geometry.quadratureRule(e.type, 4)
         for p in rule:
             geo = e.geometry
             weight = geo.volume * p.weight

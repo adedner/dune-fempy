@@ -5,7 +5,7 @@ please follow these steps:
 
 1. Acutally build the docker image:
   ```
-  docker build . --no-cache -t registry.dune-project.org/staging/dune-fempy
+  docker build . --no-cache -t registry.dune-project.org/dune-fem/dune-fempy
   ```
   Please do not omit `--no-cache` to ensure every step of the build is actually
   executed.
@@ -16,7 +16,7 @@ please follow these steps:
 1. Verify your build by testing the Docker image locally:
    ```
    docker run -d --rm -v dune:/dune -p 127.0.0.1:8888:8888 \
-      registry.dune-project.org/staging/dune-fempy
+      registry.dune-project.org/dune-fem/dune-fempy
    ```
    Use your favorite web browser, visit http://127.0.0.1:8888, enter the password
    `dune`, and run the demo notebooks.
@@ -29,7 +29,7 @@ please follow these steps:
 
 1. Push the Docker image:
   ```
-  docker push registry.dune-project.org/staging/dune-fempy
+  docker push registry.dune-project.org/dune-fem/dune-fempy
   ```
   This step actually updates the Docker image on the server.
 

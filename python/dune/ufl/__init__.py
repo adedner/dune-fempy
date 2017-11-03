@@ -60,18 +60,16 @@ class MixedFunctionSpace(ufl.MixedFunctionSpace):
         return self.ufl_sub_spaces()[0].field()
 
 
-def NamedCoefficient(functionSpace, name=None, count=None):
+def NamedCoefficient(functionSpace, name, count=None):
     coefficient = ufl.Coefficient(functionSpace, count=count)
-    if name is not None:
-        coefficient.name = name
+    coefficient.name = name
     return coefficient
-def NamedConstant(domain, dimRange=None, name=None, count=None):
-    if dimRange == 0:
+def NamedConstant(domain, name, dimRange=None, count=None):
+    if dimRange is None:
         constant = ufl.Constant(domain, count)
     else:
         constant = ufl.VectorConstant(domain, dim=dimRange, count=count)
-    if name is not None:
-        constant.name = name
+    constant.name = name
     return constant
 
 
@@ -118,10 +116,6 @@ class GridFunction(ufl.Coefficient):
     def as_numpy(self):
         import numpy as np
         return np.array( self.dofVector, copy=False )
-    @property
-    def array(self):
-        import numpy as np
-        return np.array( self.gf, copy=False )
     def __getitem__(self,i):
         if isinstance(i,int):
             return GridIndexed(self,i)
@@ -181,15 +175,15 @@ class CoordWrapper:
         self.local = x
         self.glb = e.geometry.position(x)
     def __getitem__(self,i): return self.glb[i]
-def expression2GF(grid,expression,order):
+def expression2GF(grid,expression,order,name="expr"):
     from dune.fem.function._functions import localFunction
     shape = expression.ufl_shape
     assert len(shape) == 0 or len(shape) == 1,\
             "can only generate grid function from scalar or vector valued expression, got %s" %str(shape)
     if len(shape) == 0:
-        return localFunction(grid, "tmp", order, lambda e,x: [expression(CoordWrapper(e,x))] )
+        return localFunction(grid, name, order, lambda e,x: [expression(CoordWrapper(e,x))] )
     if len(shape) == 1:
-        return localFunction(grid, "tmp", order, lambda e,x: [expression[i](CoordWrapper(e,x)) for i in range(shape[0]) ] )
+        return localFunction(grid, name, order, lambda e,x: [expression[i](CoordWrapper(e,x)) for i in range(shape[0]) ] )
 
 # register markdown formatter for integrands, forms and equations to IPython
 

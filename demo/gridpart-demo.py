@@ -27,7 +27,7 @@ def testGeometryGridView(grid, prefix):
         return [x[0]*(x[0]+1),(x[0]+1.)*x[1]*math.sin(0.1+2.*math.pi*t)] # ,math.sin(x[0]*x[1]*2*math.pi)] # problem in vtk with dimensionworld increase in geogp
 
     gf = create.function("global", grid, "coordinates", 1, expr_global)
-    spc = create.space("Lagrange", grid, dimrange=2, order=1)
+    spc = create.space("lagrange", grid, dimrange=2, order=1)
     df = spc.interpolate(gf, name="test")
 
     geogrid = geometryGridView(df)

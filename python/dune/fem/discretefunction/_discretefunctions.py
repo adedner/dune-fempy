@@ -17,7 +17,7 @@ def adaptive():
               space._includes,\
         dfType(space),\
         "Dune::Fem::SparseRowLinearOperator< " + dfType(space) + "," + dfType(space) + ">",\
-        solvers.pardgsolver
+        solvers.femsolver
     ]
 
 def eigen():
@@ -57,6 +57,16 @@ def petsc():
     return lambda space:[\
         "istl",\
         ["dune/fem/function/petscdiscretefunction.hh", "dune/fem/operator/linear/petscoperator.hh"] +\
+              space._includes,\
+        dfType(space),\
+        "Dune::Fem::PetscLinearOperator< " + dfType(space) + "," + dfType(space) + ">",
+        solvers.petscsolver
+    ]
+def petscadapt():
+    dfType = lambda space: "Dune::Fem::AdaptiveDiscreteFunction< " + space._typeName + " >"
+    return lambda space:[\
+        "adpetsc",\
+        ["dune/fem/function/adaptivefunction.hh", "dune/fem/operator/linear/petscoperator.hh"] +\
               space._includes,\
         dfType(space),\
         "Dune::Fem::PetscLinearOperator< " + dfType(space) + "," + dfType(space) + ">",

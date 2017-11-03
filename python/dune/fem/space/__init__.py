@@ -26,22 +26,19 @@ def interpolate(space, func, name=None, **kwargs):
     Returns:
         DiscreteFunction: the constructed discrete function
     """
+    if isinstance(func, ufl.core.expr.Expr) and not isinstance(func, dune.ufl.GridFunction):
+        func = dune.ufl.expression2GF(space.grid,func,space.order)
     if name is None:
         name = func.name
+    # assert func.dimRange == space.dimRange, "range dimension mismatch"
     return function.discreteFunction(space, name=name, expr=func, **kwargs)
 
 
 def storageToSolver(storage):
-    if storage == "adaptive" or storage == "fem":
+    if storage == "adaptive":
         return "fem"
-    elif storage == "istl":
-        return "istl"
-    elif storage == "numpy":
-        return "numpy"
-    elif storage == "eigen":
-        return "eigen"
-    elif storage == "petsc":
-        return "petsc"
+    else:
+        return str(storage)
 
 generator = SimpleGenerator("Space", "Dune::FemPy")
 
@@ -83,14 +80,14 @@ def addAttr(module, cls, field, storage):
     cls.uflSpatialCoordinate = uflSpatialCoordinate
     def uflConstant(self, dimRange, name):
         if name:
-            return dune.ufl.NamedConstant(self.uflSpace().cell(),dimRange,name)
+            return dune.ufl.NamedConstant(self.uflSpace().cell(),name,dimRange)
         elif dimRange == 0:
             return ufl.Constant(self.uflSpace().cell())
         else:
             return ufl.VectorConstant(self.uflSpace().cell(), dim=dimRange)
     cls.uflConstant    = lambda self: uflConstant(self,0,None)
     cls.uflVectorConstant = lambda self,dimRange: uflConstant(self,dimRange,None)
-    cls.uflNamedConstant  = lambda self, name, dimRange=0: uflConstant(self,dimRange,name)
+    cls.uflNamedConstant  = lambda self, name, dimRange=None: uflConstant(self,dimRange,name)
 
 fileBase = "femspace"
 

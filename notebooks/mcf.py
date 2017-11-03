@@ -158,7 +158,7 @@ def calcRadius(surface):
     # compute R = int_x |x| / int_x 1
     R   = 0
     vol = 0
-    for e in surface.elements():
+    for e in surface.elements:
         rule = dune.geometry.quadratureRule(e.type, 4)
         for p in rule:
             geo = e.geometry

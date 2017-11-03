@@ -14,7 +14,7 @@ wget -qO - https://gitlab.dune-project.org/core/dune-grid/repository/archive.tar
 wget -qO - https://gitlab.dune-project.org/core/dune-istl/repository/archive.tar.gz?ref=master | tar xz
 wget -qO - https://gitlab.dune-project.org/extensions/dune-alugrid/repository/archive.tar.gz?ref=master | tar xz
 wget -qO - https://gitlab.dune-project.org/extensions/dune-spgrid/repository/archive.tar.gz?ref=master | tar xz
-wget -qO - https://gitlab.dune-project.org/staging/dune-corepy/repository/archive.tar.gz?ref=master | tar xz
+wget -qO - https://gitlab.dune-project.org/staging/dune-python/repository/archive.tar.gz?ref=master | tar xz
 wget -qO - https://gitlab.dune-project.org/dune-fem/dune-fem/repository/archive.tar.gz?ref=master | tar xz
 wget -qO - https://gitlab.dune-project.org/dune-fem/dune-fempy/repository/archive.tar.gz?ref=master | tar xz
 

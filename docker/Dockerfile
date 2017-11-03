@@ -23,7 +23,7 @@ RUN cp -r /usr/local/share/doc/dune-python/jupyter /home/dune/dune-python
 RUN cp -r /usr/local/share/doc/dune-fempy/jupyter /home/dune/dune-fempy
 
 ENV LD_LIBRARY_PATH "/usr/lib:/usr/local/lib"
-ENV DUNE_CMAKE_FLAGS="CMAKE_BUILD_TYPE=Release BUILD_SHARED_LIBS=TRUE DUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE"
+ENV DUNE_CMAKE_FLAGS="CMAKE_BUILD_TYPE=Release BUILD_SHARED_LIBS=TRUE"
 
 EXPOSE 8888
 CMD ["/usr/local/bin/jupyter-notebook", "--no-browser", "--ip=*"]

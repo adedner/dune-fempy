@@ -6,7 +6,6 @@ cd /tmp/dune
 export CMAKE_FLAGS=" \
   -DCMAKE_BUILD_TYPE=Release \
   -DBUILD_SHARED_LIBS=TRUE \
-  -DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE \
   -DDUNE_PYTHON_INSTALL_LOCATION=system \
 "
 wget -qO - https://gitlab.dune-project.org/core/dune-common/repository/archive.tar.gz?ref=master | tar xz

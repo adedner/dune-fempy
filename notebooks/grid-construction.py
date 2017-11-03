@@ -153,7 +153,7 @@ print(grid.dimension,grid.dimensionworld)
 # In[11]:
 
 totalArea = 0
-for element in grid.elements():
+for element in grid.elements:
     print( "Center ", element.geometry.center, end=", " )
     print("Corners:", end=' ')
     for corner in element.geometry.corners:

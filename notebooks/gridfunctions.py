@@ -84,8 +84,6 @@ funcUFL1 = create.function("ufl", grid, "ufl1", 4, expr,
 #                           coefficients={coeff: funcUFL})
                            coefficients={coeff: coeffFunc})
 plot(funcUFL1)
-# for e in grid.elements():
-#     print( funcUFL1.localFunction(e) )
 
 
 # Finally the grid function can be described proving strings with valid C++ code

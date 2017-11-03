@@ -46,7 +46,7 @@ coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [1,2
 funcUFL = create.function("ufl", grid, "ufl", 1, expr, coefficients={coeff: coeffFunc})
 funcUFL.setConstant(const, [factor])
 
-space = create.space("Lagrange", grid, dimrange=3, order=2)
+space = create.space("lagrange", grid, dimrange=3, order=2)
 solution = space.interpolate(funcUFL, name="solution")
 
 def expr_global(x):

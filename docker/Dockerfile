@@ -19,7 +19,7 @@ RUN adduser --disabled-password --home /home/dune --gecos "" --uid 50000 dune
 USER dune
 WORKDIR /home/dune
 
-RUN cp -r /usr/local/share/doc/dune-corepy/jupyter /home/dune/dune-corepy
+RUN cp -r /usr/local/share/doc/dune-python/jupyter /home/dune/dune-python
 RUN cp -r /usr/local/share/doc/dune-fempy/jupyter /home/dune/dune-fempy
 
 ENV LD_LIBRARY_PATH "/usr/lib:/usr/local/lib"

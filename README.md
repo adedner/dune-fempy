@@ -70,13 +70,17 @@ Quick Dive-In Using Docker
 Users who simply want to use the functionality of `dune-fempy` as-is, e.g.,
 for experimenting, can do so using Docker and a web browser.
 
-Just type
+To run the docker container with the latest release just type
 ```
-docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/staging/dune-fempy
+docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/dune-fem/dune-fempy
 ```
 at the command prompt and connect to `localhost:8888` using your favorite web
 browser.
 Log into Jupyter using the password `dune` and have fun.
+The development version can be accessed using the `unstable` tag, i.e.,
+```
+docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/dune-fem/dune-fempy:unstable
+```
 
 For your convenience, the demo notebooks are provided in the folder
 `dune-fempy`.

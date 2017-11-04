@@ -5,7 +5,7 @@ please follow these steps:
 
 1. Actually build the docker image:
     ```
-    docker build . --no-cache -t registry.dune-project.org/dune-fem/dune-fempy
+    docker build . --no-cache -t registry.dune-project.org/dune-fem/dune-fempy:unstable
     ```
     Please do not omit `--no-cache` to ensure every step of the build is actually
     executed.
@@ -15,7 +15,7 @@ please follow these steps:
 
 1. Verify your build by testing the Docker image locally:
     ```
-    docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/dune-fem/dune-fempy
+    docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/dune-fem/dune-fempy:unstable
     ```
     Use your favorite web browser, visit http://127.0.0.1:8888, enter the password
     `dune`, and run the demo notebooks (depending on the jupyter version you
@@ -29,7 +29,7 @@ please follow these steps:
 
 1. Push the Docker image:
     ```
-    docker push registry.dune-project.org/dune-fem/dune-fempy
+    docker push registry.dune-project.org/dune-fem/dune-fempy:unstable
     ```
     This step actually updates the Docker image on the server.
 

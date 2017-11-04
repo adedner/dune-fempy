@@ -12,8 +12,11 @@ RUN apt-get install --yes --no-install-recommends \
 
 RUN pip3 install jupyter
 
-ADD install-dune.sh documentation.patch /root/
+ADD install-dune.sh /root/
 RUN /root/install-dune.sh
+
+ADD jupyter_config.py /etc/
+RUN chmod 644 /etc/jupyter_config.py
 
 RUN adduser --disabled-password --home /dune --gecos "" --uid 50000 dune
 USER dune
@@ -27,4 +30,4 @@ ENV DUNE_CMAKE_FLAGS="CMAKE_BUILD_TYPE=Release BUILD_SHARED_LIBS=TRUE"
 
 EXPOSE 8888
 VOLUME ["/dune"]
-CMD ["/usr/local/bin/jupyter-notebook", "--no-browser", "--ip=*"]
+CMD ["jupyter-notebook", "--config=/etc/jupyter_config.py"]

@@ -3,7 +3,7 @@
 To update the official Docker image on `registry.dune-project.org`,
 please follow these steps:
 
-1. Acutally build the docker image:
+1. Actually build the docker image:
   ```
   docker build . --no-cache -t registry.dune-project.org/dune-fem/dune-fempy
   ```
@@ -15,11 +15,12 @@ please follow these steps:
 
 1. Verify your build by testing the Docker image locally:
    ```
-   docker run -d --rm -v dune:/dune -p 127.0.0.1:8888:8888 \
+   docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 \
       registry.dune-project.org/dune-fem/dune-fempy
    ```
    Use your favorite web browser, visit http://127.0.0.1:8888, enter the password
-   `dune`, and run the demo notebooks.
+   `dune`, and run the demo notebooks (depending on the jupyter version you
+   might be given  tokenized http address to use instead).
    *Note*: If you already have a volume `dune`, you will not receive the updated demo notebooks. It might be better to start with a clean volume.
 
 1. Log into the Docker registry:

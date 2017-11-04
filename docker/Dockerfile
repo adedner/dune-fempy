@@ -15,15 +15,16 @@ RUN pip3 install jupyter
 ADD install-dune.sh documentation.patch /root/
 RUN /root/install-dune.sh
 
-RUN adduser --disabled-password --home /home/dune --gecos "" --uid 50000 dune
+RUN adduser --disabled-password --home /dune --gecos "" --uid 50000 dune
 USER dune
-WORKDIR /home/dune
+WORKDIR /dune
 
-RUN cp -r /usr/local/share/doc/dune-python/jupyter /home/dune/dune-python
-RUN cp -r /usr/local/share/doc/dune-fempy/jupyter /home/dune/dune-fempy
+RUN cp -r /usr/local/share/doc/dune-python/jupyter /dune/dune-python
+RUN cp -r /usr/local/share/doc/dune-fempy/jupyter /dune/dune-fempy
 
 ENV LD_LIBRARY_PATH "/usr/lib:/usr/local/lib"
 ENV DUNE_CMAKE_FLAGS="CMAKE_BUILD_TYPE=Release BUILD_SHARED_LIBS=TRUE"
 
 EXPOSE 8888
+VOLUME ["/dune"]
 CMD ["/usr/local/bin/jupyter-notebook", "--no-browser", "--ip=*"]

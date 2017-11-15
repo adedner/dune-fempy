@@ -23,7 +23,7 @@ namespace Dune
   {
 
     // DataProjectionVector
-    // -------------------
+    // --------------------
 
     /** \brief A DataProjection wrapping an arbitrary number of projection operators
      *
@@ -84,6 +84,7 @@ namespace Dune
         }
       }
 
+      /** apply projection for old p-adaptation method (PAdaptiveSpace..) */
       template <class TemporaryStorage>
       void operator () ( TemporaryStorage& tmp )
       {
@@ -103,15 +104,19 @@ namespace Dune
         }
       }
 
+      /** \brief add data projection to vector of data projections (one
+       * projection for each DF )
+       */
       void add( DataProjection&& dp )
       {
         vec_.emplace_back( std::forward< DataProjection > ( dp ) );
       }
 
+      /** clear all data projections */
       void clear() { vec_.clear(); }
 
     protected:
-      std::vector< DataProjection > vec_; // ???
+      std::vector< DataProjection > vec_; // vector holding data projection objects
     };
 
     template< class DiscreteFunctionSpace, class DataProjection >
@@ -141,9 +146,7 @@ namespace Dune
       {
         // add discrete functions to data projection list
         for( Iterator it = begin; it != end; ++it )
-        {
           adaptationManager_.dataProjection().add( DataProjectionType( *it ) );
-        }
 
         for( element : space_)
           space_.mark( marking(element), element );
@@ -155,24 +158,8 @@ namespace Dune
         // clear list of data projections
         adaptationManager_.dataProjection().clear();
       }
-      template< class Iterator >
-      void adapt ( Iterator begin, Iterator end )
-      {
-        // add discrete functions to data projection list
-        for( Iterator it = begin; it != end; ++it )
-        {
-          adaptationManager_.dataProjection().add( DataProjection( *it ) );
-        }
 
-        // ???? typedef Fem::hpDG::AdaptationManager< DiscreteFunctionSpace, DataProjectionVector > SpaceAdaptationManager;
-
-        adaptationManager_.adapt();
-
-        // clear list of data projections
-        adaptationManager_.dataProjection().clear();
-      }
-
-    private:
+    protected:
       DiscreteFunctionSpaceType& space_;
       AdaptationManager          adaptationManager_;
     };

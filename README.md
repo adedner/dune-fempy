@@ -93,6 +93,17 @@ docker volume rm dune
 ```
 at the command prompt.
 
+To share python scripts and other files located in the current directory and also
+share the output with the docker container use
+```
+docker run -it -v $PWD:/home/dune/work registry.dune-project.org/dune-fem/dune-fempy bash
+```
+The content of the current directory is then available in the `work`
+directory in the docker volume.
+
+**Note for MAC users:** docker on MAC allocates 2GB to docker by default
+which does not suffice for compiling the Dune shared libraries.
+Please increase the value to at least 3GB.
 
 Installation
 ------------

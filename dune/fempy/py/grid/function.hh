@@ -46,6 +46,11 @@ namespace Dune
           lf.jacobian( x, jacobian );
           return jacobian;
         } );
+      cls.def( "hessian", [] ( const LocalFunction &lf, const LocalCoordinate &x ) {
+          typename LocalFunction::HessianRangeType hessian;
+          lf.hessian( x, hessian );
+          return hessian;
+        } );
     }
 
 

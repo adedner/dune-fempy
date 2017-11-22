@@ -27,7 +27,8 @@ def compute():
 
     # set up initial conditions
     solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
-    grid.writeVTK("heat", pointdata=[solution], number=0)
+    vtk = grid.sequencedVTK("heat", pointdata=[solution])
+    vtk()
 
     # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
     old_solution = solution.copy();
@@ -70,6 +71,6 @@ def compute():
     for n in range(1,steps+1):
         old_solution.assign(solution)
         scheme.solve(target=solution)
-        grid.writeVTK("heat", pointdata=[solution], number=n)
+        vtk()
 
 compute()

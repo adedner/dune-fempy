@@ -74,4 +74,4 @@ for element in yaspgrid.elements():
 lgf = "null"
 ggf  ="null"
 
-yaspgrid.writeVTK("grid_demo", pointdata=output);
+yaspgrid.writeVTK("grid_demo", pointdata=output)

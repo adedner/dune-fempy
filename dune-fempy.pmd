@@ -1,0 +1,244 @@
+\documentclass{ansarticle}
+
+\usepackage{anslistings}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{xspace}
+\usepackage{a4wide}
+\usepackage{comment}
+
+\definecolor{hrefcolor}{rgb}{0.0,0.0,0.8}
+\newcommand{\linkcolor}{hrefcolor}
+\hypersetup{pdfstartview=FitR}
+\hypersetup{pdftitle={The DUNE-Fempy Module},
+            pdfauthor={L. Connellan, A. Dedner, M. Nolte},
+            breaklinks=true,
+            linkbordercolor=\linkcolor,
+            urlbordercolor=\linkcolor,
+            citebordercolor=\linkcolor,
+            runbordercolor=\linkcolor,
+            menubordercolor=\linkcolor,
+            filebordercolor=\linkcolor,
+            runcolor=\linkcolor
+            baseurl={https://gitlab.dune-project.org/extensions/dune-alugrid}
+}
+% make links underlined in acrobat reader
+\hypersetup{pdfborderstyle={/S/U/W 1}}
+
+\newcommand{\dune}[1][]{\textsc{Dune}\ifx&#1&\else\textsc{-{#1}}\fi\xspace}
+\newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
+\newcommand{\ug}{\textsc{UG}\xspace}
+\newcommand{\sionlib}{\textsc{SIONlib}\xspace}
+\newcommand{\alberta}{\textsc{ALBERTA}\xspace}
+\newcommand{\yaspgrid}{\textsc{YaspGrid}\xspace}
+
+\newcommand{\matplotlib}{\pyth{Matplotlib}\xspace}
+\newcommand{\quadpy}{\pyth{Quadpy}\xspace}
+\newcommand{\numpy}{\pyth{Numpy}\xspace}
+\newcommand{\scipy}{\pyth{Scipy}\xspace}
+\newcommand{\paraview}{Paraview\xspace}
+\newcommand{\vtk}{VTK\xspace}
+\newcommand{\cmake}{cmake\xspace}
+\newcommand{\pybind}{Pybind11\xspace}
+\newcommand{\code}[1]{\lstinline[basicstyle=\small\sffamily]{#1} }
+\newcommand{\file}[1]{\code{#1}}
+
+\newcommand{\Atodo}[1]{\todo[inline]{{\bf\color{green}Andreas:} #1}}
+\newcommand{\Ltodo}[1]{\todo[inline]{{\bf\color{blue}Lloyd:} #1}}
+\newcommand{\Mtodo}[1]{\todo[inline]{{\bf\color{green}Martin:} #1}}
+
+\newcommand{\pweavecaption}{}
+\newcommand{\pweavelabel}{}
+\lstnewenvironment{pweavecode}[1][]{\lstset{escapechar=`,moredelim=[il][]{\#tex},style=pythonstyle, title={\codetitlestyle{Python code }},belowcaptionskip=\belowtitleskip, caption=\pweavecaption,label=\pweavelabel}}{}
+\lstnewenvironment{pweaveout}[1][]{\lstset{style=gencodestyle, title={\codetitlestyle{Output}}, belowcaptionskip=\belowtitleskip}}{}
+
+\begin{document}
+
+\title{The \dune[Fempy] Module}
+\author[1]{Lloyd Connellan}% \thanks{l.connellan@warwick.ac.uk}}
+\author[2]{Andreas Dedner}% \thanks{a.s.dedner@warwick.ac.uk}}
+\author[3]{Martin Nolte}%\thanks{nolte@mathematik.uni-freiburg.de}}
+\affil[1]{University of Warwick, UK}
+\affil[2]{University of Warwick, UK}
+\affil[3]{University of Freiburg, Germany}
+\runningtitle{The \dune[Fempy] Module}
+\runningauthor{Connellan, Dedner, Nolte}
+
+\providecommand{\keywords}[1]{\textbf{Keywords: } #1}
+
+\date{November, 2017}
+
+\maketitle
+
+Remove the following from the final tex output - leave in now so that
+ptangle works
+```python, label="Intro"
+import time
+import numpy
+import math
+import dune.plotting
+dune.plotting.block = False
+```
+
+\begin{abstract}
+In this paper we present the new \dune[Fempy] module...
+
+\noindent
+\keywords{..., \dune}
+\end{abstract}
+
+\section{Introduction}
+
+\section{\dune[FEM]}
+
+When designing any software package, a natural challenge that arises
+is trying to make the user interface as simple and easy to use as possible.
+At the same time however, we also want to create an interface that retains
+all the functionality we need.
+
+In the context of finite element methods, this leads to the question
+of what the minimal structure for a FEM looks like. It is in trying to
+answer this question that we have ended up with the current structure
+of \dune[Fempy], where in particular we have considered the division
+of a FEM into its integral parts:
+
+\begin{itemize}
+  \item Grids
+  \item Spaces
+  \item Functions
+  \item Models
+  \item Schemes
+\end{itemize}
+
+In this section, we shall demonstrate how each of these function
+separately in the context of a worked example, a FEM implementation
+of the Forchheimer equation \cite{Kieu}.
+
+\subsection{Grids}
+
+The first aspect of FEMs that we consider is probably the most
+fundamental aspect, that of the grid (or mesh). Indeed before looking at the
+equations we want to solve themselves, we must look at the
+computational domain and how we want to discretise it. Any numerical
+software looking to emulate FEMs must be able to construct both simple
+triangulated 2D domains and more complex surfaces and refinements.
+
+For now we will look at a simple example. Let us suppose we
+have a domain of the following form.
+\begin{equation*}
+  \Omega = \{ (x,y) \in \mathbb{R}^2 : 0 \leq x \leq 1, 0 \leq y \leq 1\}.
+\label{eqn:domain}
+\end{equation*}
+
+In creating a grid for this domain, it will be necessary to specify
+the following things.
+
+\begin{enumerate}
+  \item The shape (a square) and its vertices.
+  \item The number of elements.
+  \item The type of elements (squares? triangles?).
+\end{enumerate}
+
+\Ltodo{Perhaps we should mention even simpler possibilities such as
+grid = square() that take default parameters that are possible}
+
+With these points in mind, we implement the grid in the following way
+in \dune[Fempy].
+
+\renewcommand{\pweavelabel}{lstCompilingGrid}
+```python, label="grid", fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
+from dune.fem.plotting import plotPointData as plot
+import dune.create as create
+grid1 = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]))
+plot(grid1)
+grid2 = create.grid("ALUCube", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]))
+plot(grid2)
+```
+
+We note that the above grid creation code snippet comes with two
+necessary arguments. The first which we will see throughout this
+example is a keyword for the \dune class we wish to use. In this case
+\pyth{ALUConform} corresponds to a triangular discretization, whilst
+\pyth{ALUCube} corresponds to squares.
+
+The second argument is an object describing a rectangular
+domain by specifying two opposite corners $(0,0)$ and $(1,1)$, and the number
+of elements in each direction $(4,4)$ or $(8,8)$.
+
+\section{Code (placeholder)}
+
+\renewcommand{\pweavecaption}{Forchheimer demo}
+\renewcommand{\pweavelabel}{lstForchheimer}
+%```python, label="ForchheimerPlot", fig=True, caption="plot of solution", width="0.475\\textwidth"
+\begin{pweavecode}
+import dune.fem
+from dune.fem.plotting import plotPointData as plot
+import dune.create as create
+from math import log
+from ufl import TestFunction, TrialFunction, SpatialCoordinate, Coefficient, Constant, triangle
+from ufl import as_vector, dx, grad, inner, replace, exp, sqrt
+from dune.ufl import Space
+
+dune.fem.parameter.append("../data/parameter")
+grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]), dimgrid=2)
+space = create.space("lagrange", grid, dimrange=1, order=2, storage='istl')
+
+uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
+u = TrialFunction(uflSpace)
+v = TestFunction(uflSpace)
+x = SpatialCoordinate(uflSpace.cell())
+un = Coefficient(uflSpace)   # coefficient used in ufl for old uh
+dt = Constant(triangle)      # set to time step size later on
+t  = Constant(triangle)      # current time
+
+abs_dphi = sqrt(inner(grad(u), grad(u)))
+K = 2/(1 + sqrt(1 + 4*abs_dphi))
+a = (inner((u - un)/dt, v) + inner(K*grad(u), grad(v)))*dx
+initial = 0.5*(x[0]*x[0] + x[1]*x[1]) - 1/3*(pow(x[0], 3) - pow(x[1], 3)) + 1
+exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
+exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
+b = replace(a, {u: exact})
+
+initial_gf = create.function("ufl", grid, "initial", 5, initial)
+exact_gf = create.function("ufl", grid, "exact", 5, exact_end)
+uh = space.interpolate(initial_gf, name="uh")
+uh_n = uh.copy()
+
+def l2error(en, x):
+    val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
+    return [ val[0]*val[0] ];
+l2error_gf = create.function("local", grid, "error", 5, l2error)
+
+model = create.model("elliptic", grid, a == b, coefficients={un: uh_n})
+
+scheme = create.scheme("h1", space, model)
+
+timeStep = 0.05
+model.setConstant(dt, timeStep)
+time = 0.0
+endTime = 1.0
+
+error = 10
+for eocLoop in range(3):
+    print('# step:', eocLoop, ", size:", grid.size(0))
+    time = 0.0
+    while time < (endTime + 1e-6):
+        model.setConstant(t, time)
+        uh_n.assign(uh)
+        scheme.solve(target=uh)
+        time += timeStep
+    error_old = error
+    error = sqrt(l2error_gf.integrate()[0])
+    if eocLoop == 0:
+        eoc = 'n/a'
+    else:
+        eoc = log(error/error_old)/log(0.5)
+    plot(uh)
+    print("|uh - u| =", error, ", eoc =", eoc)
+    #grid.writeVTK('forchheimer', pointdata=[uh, error], number=eocLoop)
+    grid.hierarchicalGrid.globalRefine(1)
+\end{pweavecode}
+\bibliographystyle{abbrvnat}
+\bibliography{dune-fempy}
+
+\end{document}

@@ -103,18 +103,19 @@ of \dune[Fempy], where in particular we have considered the division
 of a FEM into its integral parts:
 
 \begin{itemize}
-  \item Grids
-  \item Spaces
-  \item Functions
-  \item Models
-  \item Schemes
+  \item \ref{sec:grids} Grids. The computational domain the problem is set in.
+  \item \ref{sec:spaces} Spaces. The finite element space and type of basis functions.
+  \item \ref{sec:functions} Functions. Functions defined in the FEM space that store the
+  solution and other variables.
+  \item \ref{sec:models} Models. The weak form of the equation and its boundary conditions.
+  \item \ref{sec:schemes} Schemes. The method of solving the PDE.
 \end{itemize}
 
 In this section, we shall demonstrate how each of these function
 separately in the context of a worked example, a FEM implementation
 of the Forchheimer equation \cite{Kieu}.
 
-\subsection{Grids}
+\subsection{Grids} \label{sec:grids}
 
 The first aspect of FEMs that we consider is probably the most
 fundamental aspect, that of the grid (or mesh). Indeed before looking at the
@@ -163,7 +164,87 @@ example is a keyword for the \dune class we wish to use. In this case
 
 The second argument is an object describing a rectangular
 domain by specifying two opposite corners $(0,0)$ and $(1,1)$, and the number
-of elements in each direction $(4,4)$ or $(8,8)$.
+of elements in each direction $(4,4)$ or $(8,8)$. Grids in fempy can
+additionally be constructed via gmsh files or \textit{dune grid format} (dgf)
+files when more complexity is required.
+
+\subsection{Spaces} \label{sec:spaces}
+
+\subsection{Functions} \label{sec:functions}
+
+\subsection{Models} \label{sec:models}
+
+Let us now consider how models are implemented in \dune[Fempy].
+Specifically we refer to the weak form of a PDE and its boundary
+conditions.
+
+To see this applied to an example, let us consider a
+nonlinear parabolic equation derived in \cite{Kieu}. The origin of
+this equation stems from Darcy's law, an equation that describes flow
+through porous media, and is applied regularly to groundwater flow
+models.
+
+\begin{equation}
+  -\nabla p = \frac{\mu}{\kappa} v,
+\label{eqn:darcy}
+\end{equation}
+
+where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
+viscosity and permeability. For situations where the Reynolds number
+is greater than ~10, inertia begins to have an effect on the system,
+which is accounted for in the Darcy-Forchheimer equation. In its most
+general form we have the following.
+
+\begin{equation}
+  -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
+\label{eqn:darcy-forch}
+\end{equation}
+
+where $a_i$ and $\alpha_i$ are obtained empirically. Through some
+manipulations, we can simplify this to an equation for just the
+pressure $\rho$.
+
+\begin{equation}
+  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f,
+\label{eqn:forch}
+\end{equation}
+
+where the function $K: \mathbb{R}^{+} \to \mathbb{R}^{+}$ is dependent
+on the $a_i$ and $\alpha_i$ above. Adding in boundary data and initial
+values gives us the \textbf{boundary value problem}.
+
+\begin{equation}
+  \begin{array}{ll}
+  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
+  } \Omega \times I, \\
+  \rho(x, 0) = \rho^{0}(x) & \mbox{in } \Omega, \\
+  K(|\nabla \rho|) \nabla \rho \cdot \nu + \phi = 0 & \mbox{on }
+  \Gamma \times I,
+  \end{array}
+\label{eqn:forch-bvp}
+\end{equation}
+
+where $\rho^0$ and $\phi$ are initial and boundary data given. Thus
+the \textbf{weak form} or variational formulation follows.
+
+\begin{equation}
+  (\rho_t, w_h) + (K(|\nabla \rho|) \nabla \rho, \nabla w_h) = - <
+  \phi, w_h> + (f, w_h), \quad w_h \in W_h,
+\label{eqn:forch-weak}
+\end{equation}
+
+with $\rho(x, 0) = \rho^{0}(x)$. Finally it remains to discretize the
+equation in time using a backward Euler method.
+
+\begin{equation}
+  (\frac{\rho^n - \rho^{n-1}}{\Delta t}, w_h) + (K(|\nabla \rho^n|) \nabla \rho^n,
+  \nabla w_h) = - < \phi^n, w_h > + (f^n, w_h), \quad w \in W.
+\label{eqn:forch-time}
+\end{equation}
+
+\Ltodo{next: explain implementation in ufl and in dune-fem}
+
+\subsection{Schemes} \label{sec:schemes}
 
 \section{Code (placeholder)}
 

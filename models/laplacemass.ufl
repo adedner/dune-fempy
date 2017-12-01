@@ -1,7 +1,8 @@
 space = Space(2, 2)
 u, v = TrialFunction(space), TestFunction(space)
 x = SpatialCoordinate(space.cell())
+d = Parameter(space.cell(), 'model.diffusion')
 
-F = (inner(u, v) + inner(grad(u), grad(v))) * dx
+F = (inner(u, v) + d*inner(grad(u), grad(v))) * dx
 g = as_vector([cos(2*pi*x[i]) for i in range(space.dimRange)])
 constraints = [DirichletBC(space, g, 1)]

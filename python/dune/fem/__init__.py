@@ -3,6 +3,7 @@ from __future__ import print_function
 import dune.common
 from ._fem import *
 from ._adaptation import adapt, loadBalance
+from ._spaceadaptation import spaceAdapt
 
 from . import view as view
 from . import space as space
@@ -22,7 +23,9 @@ registry["view"] = {
 registry["space"] = {
          "lagrange"      : space.lagrange,
          "dgonb"         : space.dgonb,
+         "dgonbhp"       : space.dgonbhp,
          "dglegendre"    : space.dglegendre,
+         "dglegendrehp"  : space.dglegendrehp,
          "dglagrange"    : space.dglagrange,
          "finitevolume"  : space.finiteVolume,
          "p1bubble"      : space.p1Bubble,
@@ -104,3 +107,10 @@ def evaluate(expression,x,**kwargs):
             if isinstance(coefficient,GridCoefficient):
                 coefficient.unbind()
     return val
+
+from dune.grid.grid_generator import _writeVTKDispatcher
+def vtkDispatchUFL(grid,f):
+    from dune.fem.function._functions import uflFunction
+    order = 5 # needs to be derived from f
+    return uflFunction(grid, "tmp", order, f)
+_writeVTKDispatcher.append(vtkDispatchUFL)

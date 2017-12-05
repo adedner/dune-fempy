@@ -23,7 +23,7 @@ class Integrands():
         if rangeValue is None:
             rangeValue = domainValue
 
-        self.signature = signature
+        self._signature = signature
         self.domainValue = tuple(domainValue)
         self.rangeValue = tuple(rangeValue)
 
@@ -41,6 +41,9 @@ class Integrands():
         self.linearizedSkeleton = None
 
         self._derivatives = [('RangeType', 'evaluate'), ('JacobianRangeType', 'jacobian'), ('HessianRangeType', 'hessian')]
+
+    def signature(self):
+        return _signature
 
     def _cppTensor(self, shape):
         if len(shape) == 1:

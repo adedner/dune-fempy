@@ -23,59 +23,80 @@ def setCoefficient(integrands, index, coefficient):
     integrands._setCoefficient(index, coefficient)
 
 
-def load(grid, integrands, renumbering=None, tempVars=True):
-    from dune.common.hashit import hashIt
+class Source(object):
+    def __init__(self, gridType, gridIncludes, integrands, tempVars=True):
+        self.gridType = gridType
+        self.gridIncludes = gridIncludes
+        self.integrands = integrands
+        self.tempVars = tempVars
 
+    def signature(self):
+        return integrands.signature()
+
+    def name(self):
+        from dune.common.hashit import hashIt
+        return 'integrands_' + self.signature() + '_' + hashIt(self.gridType)
+
+    def __str__(self):
+        if isinstance(self.integrands, Form):
+            coefficients = set(self.integrands.coefficients())
+            constants = [c for c in coefficients if c.is_cellwise_constant()]
+            coefficients = [c for f in coefficients if not c.is_cellwise_constant()]
+            integrands = compileUFL(self.integrands, constants=constants, coefficients=coefficients, tempVars=self.tempVars)
+        else:
+            integrands = self.integrands
+
+        code = [Include('config.h')]
+        code += [Include(i) for i in self.gridIncludes]
+        #code.append(Include("dune/fem/misc/boundaryidprovider.hh"))
+
+        code += integrands.includes()
+        code.append(Include("dune/python/pybind11/pybind11.h"))
+        code.append(Include("dune/python/pybind11/extensions.h"))
+        code.append(Include("dune/fempy/py/grid/gridpart.hh"))
+
+        if integrands._coefficients:
+            code.append(Include("dune/fempy/function/virtualizedgridfunction.hh"))
+        code.append(Include("dune/fempy/py/integrands.hh"))
+
+        nameSpace = NameSpace('Integrands_' + integrands.signature())
+        nameSpace.append(integrands.code())
+        code.append(nameSpace)
+
+        code.append(TypeAlias('GridPart', 'typename Dune::FemPy::GridPart< ' + self.gridType + ' >'))
+        if integrands._coefficients:
+            coefficients = ['Dune::FemPy::VirtualizedGridFunction< GridPart, ' + c + ' >' for c in integrands._coefficients]
+        else:
+            coefficients = []
+        code.append(TypeAlias('Integrands', nameSpace.name + '::Integrands< ' + ', '.join(['GridPart'] + coefficients) + ' >'))
+
+        writer = SourceWriter()
+        writer.emit(code);
+
+        name = self.name()
+        writer.openPythonModule(name)
+        writer.emit('auto cls = Dune::FemPy::registerIntegrands< Integrands >( module );')
+        writer.emit('cls.def( pybind11::init( [] () { return new Integrands(); } ) );')
+        writer.closePythonModule(name)
+
+        source = writer.writer.getvalue()
+        writer.close()
+        return source
+
+
+def load(grid, integrands, renumbering=None, tempVars=True):
     if isinstance(integrands, Equation):
         integrands = integrands.lhs - integrands.rhs
-    if isinstance(integrands, Form):
+
+    source = Source(grid._typeName, grid._includes, integrands, tempVars=tempVars)
+    if isinstance(integrands, Form) and renumbering is None:
         coefficients = set(form.coefficients())
-        constants = [c for c in coefficients if c.is_cellwise_constant()]
-        coefficients = [c for f in coefficients if not c.is_cellwise_constant()]
-        integrands = compileUFL(integrands, constants=constants, coefficients=coefficients, tempVars=tempVars)
         renumbering = dict()
-        renumering.update((c, i) for i, c in enumerate(coefficients))
-        renumering.update((c, i) for i, c in enumerate(constants))
-
-    name = 'integrands_' + integrands.signature + '_' + hashIt(grid._typeName)
-
-    code = [Include('config.h')]
-    code += [Include(i) for i in grid._includes]
-    #code.append(Include("dune/fem/misc/boundaryidprovider.hh"))
-
-    code += integrands.includes()
-    code.append(Include("dune/python/pybind11/pybind11.h"))
-    code.append(Include("dune/python/pybind11/extensions.h"))
-    code.append(Include("dune/fempy/py/grid/gridpart.hh"))
-
-    if integrands._coefficients:
-        code.append(Include("dune/fempy/function/virtualizedgridfunction.hh"))
-    code.append(Include("dune/fempy/py/integrands.hh"))
-
-    nameSpace = NameSpace('Integrands_' + integrands.signature)
-    nameSpace.append(integrands.code())
-    code.append(nameSpace)
-
-    code.append(TypeAlias('GridPart', 'typename Dune::FemPy::GridPart< ' + grid._typeName + ' >'))
-    if integrands._coefficients:
-        coefficients = ['Dune::FemPy::VirtualizedGridFunction< GridPart, ' + fieldVectorType(c) + ' >' for c in integrands._coefficients]
-    else:
-        coefficients = []
-    code.append(TypeAlias('Integrands', nameSpace.name + '::Integrands< ' + ', '.join(['GridPart'] + coefficients) + ' >'))
-
-    writer = SourceWriter()
-    writer.emit(code);
-
-    writer.openPythonModule(name)
-    writer.emit('auto cls = Dune::FemPy::registerIntegrands< Integrands >( module );')
-    writer.emit('cls.def( pybind11::init( [] () { return new Integrands(); } ) );')
-    writer.closePythonModule(name)
-
-    source = writer.writer.getvalue()
-    writer.close()
+        renumering.update((c, i) for i, c in enumerate(c for f in coefficients if not c.is_cellwise_constant()))
+        renumering.update((c, i) for i, c in enumerate(c for c in coefficients if c.is_cellwise_constant()))
 
     from dune.generator import builder
-    module = builder.load(name, source, "integrands")
+    module = builder.load(source.name(), source, "integrands")
     setattr(module.Integrands, "_domainValueType", integrands.domainValueTuple())
     setattr(module.Integrands, "_rangeValueType", integrands.rangeValueTuple())
     if (renumbering is not None) and not hasattr(module.Integrands, "_renumbering"):

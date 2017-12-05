@@ -3,11 +3,10 @@ from __future__ import division, print_function, unicode_literals
 from dune.source.builtin import get, hybridForEach, make_pair, make_index_sequence, make_shared
 from dune.source.cplusplus import AccessModifier, Declaration, Constructor, EnumClass, Include, InitializerList, Method, Struct, TypeAlias, UnformattedExpression, Variable
 from dune.source.cplusplus import assign, construct, coordinate, dereference, lambda_, makeExpression, maxEdgeLength, minEdgeLength, return_
-from dune.source.cplusplus import SourceWriter
 from dune.source.algorithm.extractincludes import extractIncludesFromStatements
 
 class Integrands():
-    def __init__(self, signature, domainValue, rangeValue=None):
+    def __init__(self, signature, domainValue, rangeValue=None, constants=None, coefficients=None):
         """construct new integrands
 
         Args:
@@ -29,8 +28,8 @@ class Integrands():
         self.rangeValue = tuple(rangeValue)
 
         self.field = "double"
-        self._constants = []
-        self._coefficients = []
+        self._constants = [] if constants is None else list(constants)
+        self._coefficients = [] if coefficients is None else list(coefficients)
         self.init = None
         self.vars = None
 
@@ -58,16 +57,6 @@ class Integrands():
 
     def rangeValueTuple(self):
         return 'std::tuple< ' + ', '.join([self._cppTensor(v) for v in self.rangeValue]) + ' >'
-
-    def addCoefficient(self, dimRange, field="double"):
-        idx = len(self._coefficients)
-        self._coefficients.append({'dimRange': dimRange, 'field': field})
-        return idx
-
-    def addConstant(self, cppType):
-        idx = len(self._constants)
-        self._constants.append(cppType)
-        return idx
 
     def constant(self, idx):
         return UnformattedExpression(self._constants[idx], 'constant< ' + str(idx) + ' >()')
@@ -119,7 +108,7 @@ class Integrands():
             code.append(TypeAlias("ConstantTupleType", "std::tuple<>"))
 
         if self._coefficients:
-            coefficientSpaces = [('Dune::Fem::FunctionSpace< double,' + SourceWriter.cpp_fields(c['field']) + ', GlobalCoordinateType::dimension, ' + str(c['dimRange']) + ' >') for c in self._coefficients]
+            coefficientSpaces = [('Dune::Fem::GridFunctionSpace< GridPartType, ' + c + ' >') for c in self._coefficients]
             code.append(TypeAlias("CoefficientFunctionSpaceTupleType", "std::tuple< " +", ".join(coefficientSpaces) + " >"))
             code.append(TypeAlias("CoefficientTupleType", "std::tuple< Coefficients... >"))
 

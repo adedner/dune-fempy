@@ -1,5 +1,6 @@
 from __future__ import division, print_function, unicode_literals
 
+from ufl import Form
 from ufl.equation import Equation
 
 from dune.source.cplusplus import Include, NameSpace, TypeAlias

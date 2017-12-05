@@ -15,6 +15,8 @@ from dune.source.cplusplus import ConditionalExpression, Declaration, Using, Var
 
 from .applyrestrictions import applyRestrictions
 
+import dune.ufl
+
 def translateIndex(index):
     if isinstance(index, (tuple, MultiIndex)):
         return ''.join([translateIndex(i) for i in index])
@@ -186,6 +188,9 @@ class CodeGenerator(MultiFunction):
         operand = expr.ufl_operands[0]
         if isinstance(operand, Coefficient) and operand.ufl_element().family() == "Real":
             return self.coefficient(operand)
+        if isinstance(operand, dune.ufl.GridFunction):
+            return self.coefficient(operand)
+        print(type(operand))
         raise Exception('Cannot compute restriction of ' + str(operand))
 
     def product(self, expr, x, y):

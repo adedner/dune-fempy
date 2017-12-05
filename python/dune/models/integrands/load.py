@@ -92,8 +92,8 @@ def load(grid, integrands, renumbering=None, tempVars=True):
     if isinstance(integrands, Form) and renumbering is None:
         coefficients = set(form.coefficients())
         renumbering = dict()
-        renumering.update((c, i) for i, c in enumerate(c for f in coefficients if not c.is_cellwise_constant()))
-        renumering.update((c, i) for i, c in enumerate(c for c in coefficients if c.is_cellwise_constant()))
+        renumbering.update((c, i) for i, c in enumerate(c for f in coefficients if not c.is_cellwise_constant()))
+        renumbering.update((c, i) for i, c in enumerate(c for c in coefficients if c.is_cellwise_constant()))
 
     from dune.generator import builder
     module = builder.load(source.name(), source, "integrands")

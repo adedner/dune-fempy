@@ -6,6 +6,7 @@
 \usepackage{xspace}
 \usepackage{a4wide}
 \usepackage{comment}
+\usepackage{minted}
 
 \definecolor{hrefcolor}{rgb}{0.0,0.0,0.8}
 \newcommand{\linkcolor}{hrefcolor}
@@ -72,7 +73,7 @@
 
 Remove the following from the final tex output - leave in now so that
 ptangle works
-```python, label="Intro"
+```python, label = "intro"
 import time
 import numpy
 import math
@@ -89,7 +90,19 @@ In this paper we present the new \dune[Fempy] module...
 
 \section{Introduction}
 
-\section{\dune[FEM]}
+Bullet point list of things to mention here:
+
+\begin{enumerate}
+  \item Remark on the importance of FEMs and their varied uses.
+  \item Existing FEM software packages, both c++ libraries and the
+  trend towards python packages and where there is a niche for fempy.
+  \item Corepy/Python and overview of the features it has introduced,
+  such as creation of .cache for efficiency of repeat usage.
+  \item Usage of more recent pybind11 and C++11 features compared to
+  other packages.
+\end{enumerate}
+
+\section{Finite Element Methods in Fempy}
 
 When designing any software package, a natural challenge that arises
 is trying to make the user interface as simple and easy to use as possible.
@@ -111,9 +124,17 @@ of a FEM into its integral parts:
   \item \ref{sec:schemes} Schemes. The method of solving the PDE.
 \end{itemize}
 
-In this section, we shall demonstrate how each of these function
-separately in the context of a worked example, a FEM implementation
-of the Forchheimer equation \cite{Kieu}.
+We note that there exist even further simplifications that can be made
+in terms of this choice of division, as well as possible simplifications to the
+accompanying methods themselves. Ultimately as a FEM package aimed more at
+extensibility and for researchers who are willing to to some degree of
+programming, we have opted for more complexity in some cases, though
+in general this is quite a nuanced design decision that must be made on an
+individual basis for each software package.
+
+With that in mind, for the remainder of this section we shall
+demonstrate in more detail how each of these function separately in the context of a
+worked example, a FEM implementation of the Forchheimer equation \cite{Kieu}.
 
 \subsection{Grids} \label{sec:grids}
 
@@ -131,7 +152,7 @@ have a domain of the following form.
 \label{eqn:domain}
 \end{equation*}
 
-In creating a grid for this domain, it will be necessary to specify
+In creating a computational grid for this domain, it will be necessary to specify
 the following things.
 
 \begin{enumerate}
@@ -140,19 +161,15 @@ the following things.
   \item The type of elements (squares? triangles?).
 \end{enumerate}
 
-\Ltodo{Perhaps we should mention even simpler possibilities such as
-grid = square() that take default parameters that are possible}
-
 With these points in mind, we implement the grid in the following way
 in \dune[Fempy].
 
-\renewcommand{\pweavelabel}{lstCompilingGrid}
 ```python, label="grid", fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
 from dune.fem.plotting import plotPointData as plot
 import dune.create as create
-grid1 = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]))
-plot(grid1)
-grid2 = create.grid("ALUCube", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]))
+grid = create.grid('ALUConform', dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]))
+plot(grid)
+grid2 = create.grid('ALUCube', dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]))
 plot(grid2)
 ```
 
@@ -168,6 +185,14 @@ of elements in each direction $(4,4)$ or $(8,8)$. Grids in fempy can
 additionally be constructed via gmsh files or \textit{dune grid format} (dgf)
 files when more complexity is required.
 
+We note here once more that from a design standpoint, assumptions
+could potentially be made to cut down on the complexity needed even
+further, in situations where the exact grid dimensions are not
+necessary. For instance a basic square grid could simply be made with
+\pyth{grid = square()}, at the cost of modifications being less
+obvious to make. This is a concept we would like to explore more in
+the future of this package.
+
 \subsection{Spaces} \label{sec:spaces}
 
 The next key part of a FEM after constructing the grid is defining the
@@ -177,12 +202,9 @@ dictate the solvability and the efficiency of the method.
 
 Let us look at a simple creation of a Lagrange space in \dune[Fempy].
 
-\renewcommand{\pweavecaption}{Space construction in \dune[Fempy]}
-\renewcommand{\pweavelabel}{lst:space}
-\begin{pweavecode}
-space = create.space('lagrange', grid, dimrange=1, order=2,
-storage='eigen')
-\end{pweavecode}
+```python, label = 'space'
+space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
+```
 
 We note once again the salient features of the above function.
 
@@ -193,9 +215,9 @@ We note once again the salient features of the above function.
   \item \pyth{dimrange=1} (optional) sets the dimension of the range space to 1.
   \item \pyth{order=2} (optional) sets the order of the finite
   elements to 2.
-  \item \pyth{storage='eigen'} (optional) sets the linear algebra
-  backend. This choice allows for compatibility with functions in the eigen
-  software package.
+  \item \pyth{storage='istl'} (optional) sets the linear algebra
+  backend. For instance \pyth{'eigen'} allows for compatibility with
+  functions in the eigen software package.
 \end{itemize}
 
 Crucially, like before the first argument tells DUNE which class to
@@ -217,6 +239,17 @@ following form.
   \varphi dx = \int_{\Omega} f \varphi dx.
 \label{eqn:elliptic}
 \end{equation}
+
+In the case where $D(u(x), x)$ and $m(u(x), x)$ are nonlinear,
+Newton's method is used to solve the system. Denoting the general PDE
+by the operator $L(u)$, that gives us the iteration
+
+\begin{equation}
+  L(u^n) = -DL(u^n, \delta^n)(u^{n+1} - u^n),
+\label{eqn:newton}
+\end{equation}
+
+where $DL$ is the Jacobian of $L$.
 
 To see this applied to an example, let us consider a
 nonlinear parabolic equation derived in \cite{Kieu}. The origin of
@@ -289,18 +322,6 @@ Then we have the time discretized PDE.
 We note that this is of the form described in (\ref{eqn:elliptic}) (plus
 boundary term).
 
-\Ltodo{Move newton explanation somewhere}
-Since $D(u(x), x)$ and $m(u(x), x)$ are nonlinear in this case,
-Newton's method is used to solve the system. Denoting the general PDE
-by the operator $L(u)$, that gives us the iteration
-
-\begin{equation}
-  L(u^n) = -DL(u^n, \delta^n)(u^{n+1} - u^n),
-\label{eqn:newton}
-\end{equation}
-
-where $DL$ is the Jacobian of $L$.
-
 Now let us implement this numerically. First let us prescribe the
 following values for (\ref{eqn:forch-time}).
 \begin{equation}
@@ -319,57 +340,58 @@ which leads to initial data $\rho^0 = \frac{1}{2}(x_0^2 + x_1^2) -
 
 Let us now see how this would be implemented in
 \dune[Fempy]. \Ltodo{explain some of the reason UFL is used as a
-package and its advantages} \dune[Fempy] uses Unified Form Language (UFL) \cite{UFL}
+package and its advantages, like automatic differentiation}
+\dune[Fempy] uses Unified Form Language (UFL) \cite{UFL}
 to define models, which accepts equations written in a human-readable
 variational form. The UFL implementation of (\ref{eqn:forch-time}) is
 given below.
 
-\renewcommand{\pweavecaption}{Forchheimer model in UFL}
-\renewcommand{\pweavelabel}{lst:forch-model}
-\begin{pweavecode}
+```python, label = 'forch-model'
+from ufl import TestFunction, TrialFunction, SpatialCoordinate, Coefficient, Constant, triangle
+from ufl import as_vector, dx, grad, inner, replace, exp, sqrt, dot
+from dune.ufl import Space
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 rho = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
-rho_n = Coefficient(uflSpace)   # previous rho
 dt = Constant(triangle)         # time step
 t  = Constant(triangle)         # current time
 
+initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+initial_gf = create.function('ufl', grid, 'initial', 5, initial)
+rho_h = space.interpolate(initial_gf, name='rho_h')
+rho_h_n = rho_h.copy()
+
 abs_drho = sqrt(inner(grad(rho), grad(rho)))
 K = 2/(1 + sqrt(1 + 4*abs_drho))
-a = (inner((rho - rho_n)/dt, v) + inner(K*grad(rho), grad(v)))*dx
-initial = 1/2*(x[0]*x[0] + x[1]*x[1]) - 1/3*(pow(x[0],3) - pow(x[1],3)) + 1
+a = (inner((rho - rho_h_n)/dt, v) + inner(K*grad(rho), grad(v)))*dx
 exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
 b = replace(a, {rho: exact})
 
-initial_gf = create.function("ufl", grid, "initial", 5, initial)
-rho_h = space.interpolate(initial_gf, name="rho_h")
-rho_h_n = rho_h.copy()
-
-model = create.model("elliptic", grid, a == b, coefficients={rho_n: rho_h_n})
-\end{pweavecode}
+model = create.model('elliptic', grid, a == b)
+```
 
 Let us explain some of the tools used to construct this equation.
 \begin{itemize}
-\item The pressure from the previous time step $\rho_n$ is defined as a
-\pyth{Coefficient} so that its value can be passed into the model
-at each new time step from \pyth{rho_h_n} (the function used to store
-it).
-\item Similarly $\Delta t$ and $t$ are \pyth{Constants} whose values
+\item $\rho$ and $v$ are defined as the trial and test functions.
+\item $\Delta t$ and $t$ are defined as \pyth{Constants} so that their values
 can be set later on in the program.
 \item The equation itself uses UFL expressions such as \pyth{sqrt, inner}
 and \pyth{exp} to represent the mathematical expressions. This
 is later translated into C++ code for \dune.
-\item Here $f$ is defined simply by substituting the exact data
-into the original equation.
 \item The initial data is assigned a function \pyth{initial_gf} using
-function creation (explained in example \ref{lst:function}). This is
+function creation (explained in section \ref{sec:functions}). This is
 used to give the solution function \pyth{rho_h} its initial value.
+\item The pressure from the previous time step $\rho_n$ is set up as a
+discrete function \pyth{rho_h_n} so that its value can be passed into the model
+at each new time step.
+\item Here the right hand side \pyth{b} is defined simply by
+substituting the exact data into the original equation.
 \end{itemize}
 
 \subsection{Functions} \label{sec:functions}
 
-As we saw in the model construction in example \ref{lst:forch-model}, it is
+As we saw in the model construction in section \ref{sec:models}, it is
 sometimes necessary to have functions aside from the model themselves
 that independently store the data for the initial solution and
 previous time step.
@@ -379,7 +401,7 @@ Let us once again look at the code snippet from before.
 \renewcommand{\pweavecaption}{Function construction in \dune[Fempy]}
 \renewcommand{\pweavelabel}{lst:function}
 \begin{pweavecode}
-initial = 1/2*(x[0]*x[0] + x[1]*x[1]) - 1/3*(pow(x[0],3) - pow(x[1],3)) + 1
+initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 
 initial_gf = create.function('ufl', grid, 'initial', 5, initial)
 rho_h = space.interpolate(initial_gf, name='rho_h')
@@ -397,120 +419,119 @@ Having constructed a grid function, a discrete function
 
 In addition to this, functions that store the exact solution and
 calculate the error will often be necessary to create. Say for
-instance we want to look at the $L^2$ error for our computed solution.
+instance we want to look at the $L^2$ and $H^1$ errors for our computed solution.
 
-\begin{equation*}
-  \int_{\Omega} | u - u_h |^2 dx.
-\label{eqn:l2error}
-\end{equation*}
+\begin{equation}
+ L^2\text{ error} = \int_{\Omega} | u - u_h |^2 dx, \qquad
+ H^1\text{ error} = \int_{\Omega} | \nabla(u - u_h) |^2 dx.
+\label{eqn:error}
+\end{equation}
 
 This can be achieved with the following code.
 
-\renewcommand{\pweavecaption}{Functions for error analysis}
-\renewcommand{\pweavelabel}{lst:error}
-\begin{pweavecode}
-exact_gf = create.function('ufl', grid, 'exact', 5, exact)
-def l2error(en, x):
-    val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
-    return [ val[0]*val[0] ];
-l2error_gf = create.function('local', grid, 'error', 5, l2error)
-\end{pweavecode}
+```python, label = 'error'
+exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
+l2error_gf = create.function('ufl', grid, 'error', 5, dot(rho_h-exact_end, rho_h-exact_end))
+h1error_gf = create.function('ufl', grid, 'error', 5, \
+                            inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
+```
 
-The \pyth{exact_gf} is created in the same way as before, but we see
-another way can be specified with \pyth{'local'} and providing a
-python function.
-
-\Ltodo{Is there a convenience function written for
-this?}
+First of all we define the exact solution at the end time $T=1$.
+Then much like with \pyth{initial_gf}, we can simply write the
+error functions via UFL by using \pyth{rho_h} and \pyth{exact_end}.
+Note that this works even though \pyth{rho_h} is not a UFL expression
+itself since the expression is extracted from it automatically.
 
 \subsection{Schemes} \label{sec:schemes}
 
-The last natural part of a FEM is solving it and providing some kind
-of data output or plot. To do this it is first of all necessary to
-define the method of solving (or scheme)
+The last natural part of a FEM is solving it, which in particular
+includes the assembly of the system matrices, and the choice of solver
+used (which are usually exported by \dune). Secondary to this is providing some kind
+of data output or plot from which we can analyze the results. To do
+these things it is first of all necessary to define the scheme object.
 
-\renewcommand{\pweavecaption}{Scheme construction}
-\renewcommand{\pweavelabel}{lst:scheme}
-\begin{pweavecode}
-scheme = create.scheme("h1", space, model)
-\end{pweavecode}
+```python, label = 'forch-scheme'
+scheme = create.scheme("h1", space, model, solver='cg')
+```
 
-The above function simply creates an elliptic FEM scheme for $H^1$
-conforming elements, with the space and model passed in.
+The above function creates a simple Galerkin method for $H^1$
+conforming elements, with the space and model passed in. As before
+there exist other such premade \dune schemes for different problems.
+For instance \pyth{'dg'} is used for discontinous Galerkin methods,
+\pyth{'stokes'} for Navier-Stokes problems, etc.
 
-\section{Code (placeholder)}
+Additionally the solver can be specified, so for this instance we use
+\pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
-\renewcommand{\pweavecaption}{Forchheimer demo}
-\renewcommand{\pweavelabel}{lst:forchheimer}
-%```python, label="ForchheimerPlot", fig=True, caption="plot of solution", width="0.475\\textwidth"
-\begin{pweavecode}
-import dune.fem
-from dune.fem.plotting import plotPointData as plot
-import dune.create as create
+Now let us solve the PDE. Since the problem is time-dependent, we
+solve over a for loop with $t_0 = 0, t_N = 1$ and $\Delta t = 0.05$. We
+also compute the estimated order of convergence (EOC), to test our
+method.
+
+\begin{equation*}
+  EOC = \frac{\log(e_{new}/e_{old})}{\log(h_{new}/h_{old})}.
+\label{eqn:eoc}
+\end{equation*}
+
+This is calculated by refining the grid and comparing the errors
+($e_{old}$ and $e_{new}$) to the grid sizes ($h_{old}$ and
+$h_{new}$), where the errors are computed using the error function
+\pyth{l2error_gf} from \ref{eqn:error}.
+
+If desired, lines can be added to plot the data visually. The two main ways to do
+this in Fempy are either a quick plot in \pyth{matplotlib}, or writing to a
+VTK file for use in Paraview, both of which are included below. In
+Fempy we have the following code.
+
+```python, label="forch-main", fig=True, caption="Plot of solutions at each level of refinement", width="0.32\\textwidth"
 from math import log
-from ufl import TestFunction, TrialFunction, SpatialCoordinate, Coefficient, Constant, triangle
-from ufl import as_vector, dx, grad, inner, replace, exp, sqrt
-from dune.ufl import Space
-
-dune.fem.parameter.append("../data/parameter")
-grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]), dimgrid=2)
-space = create.space("lagrange", grid, dimrange=1, order=2, storage='istl')
-
-uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
-un = Coefficient(uflSpace)   # coefficient used in ufl for old uh
-dt = Constant(triangle)      # set to time step size later on
-t  = Constant(triangle)      # current time
-
-abs_dphi = sqrt(inner(grad(u), grad(u)))
-K = 2/(1 + sqrt(1 + 4*abs_dphi))
-a = (inner((u - un)/dt, v) + inner(K*grad(u), grad(v)))*dx
-initial = 0.5*(x[0]*x[0] + x[1]*x[1]) - 1/3*(pow(x[0], 3) - pow(x[1], 3)) + 1
-exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
-exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
-b = replace(a, {u: exact})
-
-initial_gf = create.function("ufl", grid, "initial", 5, initial)
-exact_gf = create.function("ufl", grid, "exact", 5, exact_end)
-uh = space.interpolate(initial_gf, name="uh")
-uh_n = uh.copy()
-
-def l2error(en, x):
-    val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
-    return [ val[0]*val[0] ];
-l2error_gf = create.function("local", grid, "error", 5, l2error)
-
-model = create.model("elliptic", grid, a == b, coefficients={un: uh_n})
-
-scheme = create.scheme("h1", space, model)
-
 timeStep = 0.05
 model.setConstant(dt, timeStep)
-time = 0.0
-endTime = 1.0
+error = 0
 
-error = 10
 for eocLoop in range(3):
-    print('# step:', eocLoop, ", size:", grid.size(0))
+    print('# step:', eocLoop, ', size:', grid.size(0))
     time = 0.0
+    endTime = 1.0
+    rho_h.interpolate(initial_gf)
     while time < (endTime + 1e-6):
         model.setConstant(t, time)
-        uh_n.assign(uh)
-        scheme.solve(target=uh)
+        rho_h_n.assign(rho_h)
+        scheme.solve(target=rho_h)
         time += timeStep
     error_old = error
     error = sqrt(l2error_gf.integrate()[0])
     if eocLoop == 0:
-        eoc = 'n/a'
+        eoc = '-'
     else:
         eoc = log(error/error_old)/log(0.5)
-    plot(uh)
-    print("|uh - u| =", error, ", eoc =", eoc)
-    #grid.writeVTK('forchheimer', pointdata=[uh, error], number=eocLoop)
-    grid.hierarchicalGrid.globalRefine(1)
-\end{pweavecode}
+    print('|rho_h - rho| =', error, ', eoc =', eoc)
+    plot(rho_h)
+    grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf], number=eocLoop)
+    grid.hierarchicalGrid.globalRefine(2)
+```
+
+We compile a table of the errors and eocs for additional refinement
+steps and a smaller timestep of $\Delta t = 0.001$ below.
+
+\begin{center}
+  \begin{tabular}{l | l | l | l | l}
+    \hline
+    Elements & $\|u - u_h\|_{L^2}$ & EOC & $|u - u_h|_{H^1}$ & EOC \\ \hline
+    32 & 2.846e-05 & - & 9.128e-04 & - \\
+    128 & 3.526e-06 & 3.0128 & 2.051e-04 & 2.154 \\
+    512 & 4.605e-07 & 2.937 & 5.122e-05 & 2.002 \\
+    2048 & 5.884e-08 & 2.968 & 1.282e-05 & 1.998 \\
+    8192 & 1.605e-08 & 1.874 & 3.210e-06 & 1.998
+  \end{tabular}
+\end{center}
+
+\Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
+
+\section{Code (placeholder)}
+
+\inputpython{../../dune-fempy/demo/forchheimer.py}{}{lst:forch-file}
+
 \bibliographystyle{abbrvnat}
 \bibliography{dune-fempy}
 

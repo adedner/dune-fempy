@@ -17,13 +17,13 @@ distclean: clean
 .PRECIOUS: %.tex
 
 %.tex: %.pmd
-	@pweave -f tex $<
+	@pweave -f texminted $<
 
 %.py: %.pmd
 	@ptangle $<
 
 %.pdf: %.tex
-	@pdflatex --interaction=nonstopmode $<
+	@pdflatex -shell-escape --interaction=nonstopmode $<
 	@bibtex $(AUX)
-	@pdflatex --interaction=nonstopmode $<
-	@pdflatex --interaction=nonstopmode $<
+	@pdflatex -shell-escape --interaction=nonstopmode $<
+	@pdflatex -shell-escape --interaction=nonstopmode $<

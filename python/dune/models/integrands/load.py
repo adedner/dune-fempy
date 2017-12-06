@@ -1,9 +1,12 @@
 from __future__ import division, print_function, unicode_literals
 
+from ufl import Form
 from ufl.equation import Equation
 
 from dune.source.cplusplus import Include, NameSpace, TypeAlias
 from dune.source.cplusplus import SourceWriter
+from dune.source.fem import fieldTensorType
+from dune.ufl.gatherderivatives import gatherDerivatives
 
 from .ufl import compileUFL, fieldVectorType
 
@@ -31,17 +34,25 @@ class Source(object):
         self.tempVars = tempVars
 
     def signature(self):
-        return integrands.signature()
+        return self.integrands.signature()
 
     def name(self):
         from dune.common.hashit import hashIt
         return 'integrands_' + self.signature() + '_' + hashIt(self.gridType)
 
+
+    def valueTuples(self):
+        if isinstance(self.integrands, Form):
+            derivatives = gatherDerivatives(self.integrands)
+            return ['std::tuple< ' + ', '.join(fieldTensorType(v.ufl_shape) for v in d) + ' >' for d in derivatives]
+        else:
+            return [integrands.rangeValueType, integrands.domainValueTuple]
+
     def __str__(self):
         if isinstance(self.integrands, Form):
             coefficients = set(self.integrands.coefficients())
             constants = [c for c in coefficients if c.is_cellwise_constant()]
-            coefficients = [c for f in coefficients if not c.is_cellwise_constant()]
+            coefficients = [c for c in coefficients if not c.is_cellwise_constant()]
             integrands = compileUFL(self.integrands, constants=constants, coefficients=coefficients, tempVars=self.tempVars)
         else:
             integrands = self.integrands
@@ -83,22 +94,22 @@ class Source(object):
         writer.close()
         return source
 
-
 def load(grid, integrands, renumbering=None, tempVars=True):
     if isinstance(integrands, Equation):
         integrands = integrands.lhs - integrands.rhs
 
     source = Source(grid._typeName, grid._includes, integrands, tempVars=tempVars)
     if isinstance(integrands, Form) and renumbering is None:
-        coefficients = set(form.coefficients())
+        coefficients = set(integrands.coefficients())
         renumbering = dict()
-        renumbering.update((c, i) for i, c in enumerate(c for f in coefficients if not c.is_cellwise_constant()))
+        renumbering.update((c, i) for i, c in enumerate(c for c in coefficients if not c.is_cellwise_constant()))
         renumbering.update((c, i) for i, c in enumerate(c for c in coefficients if c.is_cellwise_constant()))
 
     from dune.generator import builder
     module = builder.load(source.name(), source, "integrands")
-    setattr(module.Integrands, "_domainValueType", integrands.domainValueTuple())
-    setattr(module.Integrands, "_rangeValueType", integrands.rangeValueTuple())
+    rangeValueTuple, domainValueTuple = source.valueTuples()
+    setattr(module.Integrands, "_domainValueType", domainValueTuple)
+    setattr(module.Integrands, "_rangeValueType", rangeValueTuple)
     if (renumbering is not None) and not hasattr(module.Integrands, "_renumbering"):
         module.Integrands._setConstant = module.Integrands.__dict__['setConstant']
         module.Integrands._setCoefficient = module.Integrands.__dict__['setCoefficient']

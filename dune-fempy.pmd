@@ -102,6 +102,9 @@ Bullet point list of things to mention here:
   other packages.
 \end{enumerate}
 
+
+%<*tag>
+
 \section{Finite Element Methods in Fempy}
 
 When designing any software package, a natural challenge that arises
@@ -110,15 +113,81 @@ At the same time however, we also want to create an interface that retains
 all the functionality we need.
 
 In the context of finite element methods, this leads to the question
-of what the minimal functional structure for a FEM looks like. It is in trying to
-answer this question that we have ended up with the current design
-of \dune[Fempy], where in particular we have considered the division
-of a FEM into its integral parts:
+of what the minimal functional structure for a FEM looks like. To
+understand this question best, let us first outline the general
+form that a FEM takes mathematically.
+
+To begin with, the original problem we typically want to apply a finite
+element method to is a continuous ODE or PDE in some
+infinite-dimensional space $V$. First let $\Omega \subset \mathbb{R}^d$ be
+a polygonal domain for our problem. We then choose a
+finite element space $V_h = \{ v_h : \Omega \to \mathbb{R}^r \}
+\subset V$, where dim $V_h = N$. This involves choosing a basis for
+$V_h$, which can vary depending on the problem, but typically involves
+piecewise polynomial functions.
+
+Next the variational (or weak) form of the equation is defined. For
+the purpose of illustration, let us assume to start with we have a
+parabolic PDE of the following general form.
+
+\begin{equation*}
+  \begin{array}{ll}
+  \partial_t u + L[u] = f & \mbox{in } \Omega \times [0, T], \\
+  u(x, 0) = u^0(x) & \mbox{in } \Omega, \\
+  D \cdot \textbf{n} = \phi(x) & \mbox{on } \Gamma \times [0, T],
+  \end{array}
+\label{eqn:parabolic}
+\end{equation*}
+
+where the elliptic operator L is defined as
+
+\begin{equation*}
+  L[u] := -\nabla \cdot D(x, u, \nabla u) \nabla u(x) + m(x, u, \nabla u).
+\label{eqn:elliptic}
+\end{equation*}
+
+and $u^0$ and $\phi$ are the initial and boundary conditions. The
+variational form is then obtained in the usual way via integration by
+parts and discretization in time. This leads to methods that take the following form.
+
+\begin{equation}
+  \int_{\Omega} u^{n+1} + \Delta t L_I[u^{n+1}] dx = \int_{\Omega} u^n + \Delta t L_E[u^n] dx.
+\label{eqn:rothe}
+\end{equation}
+
+where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
+defined as
+
+\begin{gather}
+  L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi dx, \quad \\
+  L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + (m_2(x, u, \nabla u) + f^n + \phi^n) \varphi dx,
+\label{eqn:im-ex}
+\end{gather}
+
+and $D_1 -D_2 = \Delta t D$, $m_1 - m_2 = m$. The last step is to
+solve this system iteratively for $u^{n+1} \in V_h$. This also
+involves potential variation in terms of the solver used and possible
+nonlinearity of the problem.
+
+%In the case where $D(u(x), x)$ and $m(u(x), x)$ are nonlinear,
+%Newton's method is used to solve the system. Denoting the general PDE
+%by the operator $L(u)$, that gives us the iteration
+
+%\begin{equation}
+%  L(u^n) = -DL(u^n, \delta^n)(u^{n+1} - u^n),
+%\label{eqn:newton}
+%\end{equation}
+
+%where $DL$ is the Jacobian of $L$.
+
+With this general form in mind, in \dune[Fempy] we have designed the
+structure to take as similar style as possible, in particular
+considering the following breakdown of parts.
 
 \begin{itemize}
   \item \ref{sec:grids} Grids. The computational domain the problem is set in.
   \item \ref{sec:spaces} Spaces. The finite element space and type of basis functions.
-  \item \ref{sec:models} Models. The weak form of the equation and its boundary conditions.
+  \item \ref{sec:models} Operators. The weak form of the equation and its boundary conditions.
   \item \ref{sec:functions} Functions. Functions defined in the FEM space that store the
   solution and other variables.
   \item \ref{sec:schemes} Schemes. The method of solving the PDE.
@@ -231,26 +300,6 @@ Let us now consider how models could be implemented.
 Specifically we refer to the weak form of a PDE and its boundary
 conditions.
 
-Generally speaking \dune allows for variational elliptic PDEs of the
-following form.
-
-\begin{equation}
-  \int_{\Omega} D(u(x),x) \nabla u \cdot \nabla \varphi + m(u(x), x)
-  \varphi dx = \int_{\Omega} f \varphi dx.
-\label{eqn:elliptic}
-\end{equation}
-
-In the case where $D(u(x), x)$ and $m(u(x), x)$ are nonlinear,
-Newton's method is used to solve the system. Denoting the general PDE
-by the operator $L(u)$, that gives us the iteration
-
-\begin{equation}
-  L(u^n) = -DL(u^n, \delta^n)(u^{n+1} - u^n),
-\label{eqn:newton}
-\end{equation}
-
-where $DL$ is the Jacobian of $L$.
-
 To see this applied to an example, let us consider a
 nonlinear parabolic equation derived in \cite{Kieu}. The origin of
 this equation stems from Darcy's law, an equation that describes flow
@@ -289,10 +338,10 @@ values gives us the \textbf{boundary value problem}.
 \begin{equation}
   \begin{array}{ll}
   \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
-  } \Omega \times I, \\
+  } \Omega \times [0, T], \\
   \rho(x, 0) = \rho^{0}(x) & \mbox{in } \Omega, \\
-  K(|\nabla \rho|) \nabla \rho \cdot \nu + \phi = 0 & \mbox{on }
-  \Gamma \times I,
+  K(|\nabla \rho|) \nabla \rho \cdot \textbf{n} + \phi(x) = 0 & \mbox{on }
+  \Gamma \times [0, T],
   \end{array}
 \label{eqn:forch-bvp}
 \end{equation}
@@ -489,7 +538,7 @@ timeStep = 0.05
 model.setConstant(dt, timeStep)
 error = 0
 
-for eocLoop in range(3):
+for eocLoop in range(1):
     print('# step:', eocLoop, ', size:', grid.size(0))
     time = 0.0
     endTime = 1.0
@@ -527,6 +576,9 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 \end{center}
 
 \Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
+
+
+%</tag>
 
 \section{Code (placeholder)}
 

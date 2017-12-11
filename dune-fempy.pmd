@@ -7,6 +7,7 @@
 \usepackage{a4wide}
 \usepackage{comment}
 \usepackage{minted}
+\usepackage{subcaption}
 
 \definecolor{hrefcolor}{rgb}{0.0,0.0,0.8}
 \newcommand{\linkcolor}{hrefcolor}
@@ -112,15 +113,16 @@ is trying to make the user interface as simple and easy to use as possible.
 At the same time however, we also want to create an interface that retains
 all the functionality we need.
 
-In the context of finite element methods, this leads to the question
+In the context of finite element methods (FEMs), this leads to the question
 of what the minimal functional structure for a FEM looks like. To
-understand this question best, let us first outline the general
-form that a FEM takes mathematically.
+understand this question best, let us first outline from a
+mathematical standpoint the general structure we have in mind for a
+FEM.
 
 To begin with, the original problem we typically want to apply a finite
-element method to is a continuous ODE or PDE in some
+element method to is a continuous PDE in some
 infinite-dimensional space $V$. First let $\Omega \subset \mathbb{R}^d$ be
-a polygonal domain for our problem. We then choose a
+a polygonal domain for our problem. We then choose a (conforming)
 finite element space $V_h = \{ v_h : \Omega \to \mathbb{R}^r \}
 \subset V$, where dim $V_h = N$. This involves choosing a basis for
 $V_h$, which can vary depending on the problem, but typically involves
@@ -159,8 +161,8 @@ where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
 defined as
 
 \begin{gather}
-  L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi dx, \quad \\
-  L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + (m_2(x, u, \nabla u) + f^n + \phi^n) \varphi dx,
+  L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi, \quad \\
+  L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + (m_2(x, u, \nabla u) + f^n + \phi^n) \varphi,
 \label{eqn:im-ex}
 \end{gather}
 
@@ -187,7 +189,7 @@ considering the following breakdown of parts.
 \begin{itemize}
   \item \ref{sec:grids} Grids. The computational domain the problem is set in.
   \item \ref{sec:spaces} Spaces. The finite element space and type of basis functions.
-  \item \ref{sec:models} Operators. The weak form of the equation and its boundary conditions.
+  \item \ref{sec:operators} Operators. The weak form of the equation and its boundary conditions.
   \item \ref{sec:functions} Functions. Functions defined in the FEM space that store the
   solution and other variables.
   \item \ref{sec:schemes} Schemes. The method of solving the PDE.
@@ -269,7 +271,31 @@ kind of elements we want to use, and by extension their space. In
 particular this is important because the order of elements used can
 dictate the solvability and the efficiency of the method.
 
-Let us look at a simple creation of a Lagrange space in \dune[Fempy].
+Let us consider a simple case of Lagrange elements. Since we have a 2D
+domain with a triangular mesh, we consider shape functions that are 1 on
+each separate node (shown in \ref{fig:lagrange-elements}), and 0 on
+the others. For orders 2 and 3, the shape functions would be quadratic
+and cubic polynomials respectively.
+
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{figures/lagrange-ele2.jpg}
+  \caption{Second order element}
+  \label{fig:lagrange2}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{figures/lagrange-ele3.png}
+  \caption{Third order element}
+  \label{fig:lagrange3}
+\end{subfigure}
+\caption{Node maps of two Lagrange reference elements}
+\label{fig:lagrange-elements}
+\end{figure}
+
+The creation of such a Lagrange space in \dune[Fempy] is done by the
+following code.
 
 ```python, label = 'space'
 space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
@@ -294,11 +320,10 @@ use for compilation. For instance this can be edited to use a discontinuous
 Galerkin space with orthonormal basis functions instead by using
 \pyth{'dgonb'}.
 
-\subsection{Models} \label{sec:models}
+\subsection{Operators} \label{sec:operators}
 
-Let us now consider how models could be implemented.
-Specifically we refer to the weak form of a PDE and its boundary
-conditions.
+Let us now consider how operators could be implemented, in this
+context, referring to the weak form of a PDE and its boundary conditions.
 
 To see this applied to an example, let us consider a
 nonlinear parabolic equation derived in \cite{Kieu}. The origin of
@@ -314,7 +339,7 @@ models.
 where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
 viscosity and permeability. For situations where the Reynolds number
 is greater than ~10, inertia begins to have an effect on the system,
-which is accounted for in the Darcy-Forchheimer equation. In its most
+which isaccounted for in the Darcy-Forchheimer equation. In its most
 general form we have the following.
 
 \begin{equation}
@@ -368,80 +393,96 @@ Then we have the time discretized PDE.
 \label{eqn:forch-time}
 \end{equation}
 
-We note that this is of the form described in (\ref{eqn:elliptic}) (plus
-boundary term).
+We note that this can be reaaranged into the form described in
+(\ref{eqn:rothe}) (plus boundary term).
 
-Now let us implement this numerically. First let us prescribe the
-following values for (\ref{eqn:forch-time}).
+Now let us implement this numerically. \dune[Fempy] uses Unified Form
+Language (UFL) \cite{UFL} to define equations, which accepts equations
+written in a human-readable variational form. To begin with, it is
+necessary to define the variables that are used in the equation.
+
+```python, label = 'forch-variables'
+from ufl import TestFunction, TrialFunction, SpatialCoordinate, Constant, triangle
+from dune.ufl import Space
+ufl_space = Space((grid.dimGrid, grid.dimWorld), 1)
+rho = TrialFunction(ufl_space)
+v = TestFunction(ufl_space)
+x = SpatialCoordinate(ufl_space.cell())
+dt = Constant(triangle)         # time step
+t  = Constant(triangle)         # current time
+```
+
+The trial function $\rho$, the test function $v$ and the
+spatial coordinate $x$ are all defined on the FEM space
+\pyth{ufl_space} with the
+grid as domain, and a range space of dimension 1. Additionally
+$\Delta t$ and $t$ are defined as \pyth{Constant} so that their values
+can be set later on in the program.
+
+Next we will define the initial condition, and set $\rho^n$ equal to
+it since it will be needed in the bilinear form. Specifically we will
+choose $\rho^0 = \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 -
+x_1^3) + 1$, which we do below.
+
+```python, label = 'forch-initial'
+initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+initial_gf = create.function('ufl', grid, 'initial', 5, initial) # TODO: ideally want to cut this line out
+rho_h_n = space.interpolate(initial_gf, name='rho_h')
+```
+
+Now for the equation (\ref{eqn:forch-time}) itself, let us prescribe
+the following value for $K$, and $\phi$.
 \begin{equation}
   K(x) = \frac{2}{1+\sqrt{1+4x}}, \qquad \phi = 0.
 \label{eqn:parameters}
 \end{equation}
 
-We will take an exact solution of
+This results in an implementation of the following form.
+
+```python, label = 'forch-eqn-impl'
+from ufl import as_vector, dx, grad, inner, replace, exp, sqrt, dot, div
+abs_drho = sqrt(inner(grad(rho), grad(rho)))
+K = 2/(1 + sqrt(1 + 4*abs_drho))
+a = (inner((rho - rho_h_n)/dt, v) + inner(K*grad(rho), grad(v)))*dx
+```
+
+We note that we use UFL expressions such as \pyth{sqrt, inner}
+and \pyth{grad} to directly represent the mathematical expressions. This
+is later translated into C++ code for \dune to use.
+
+For the exact solution we will use the following (which is consistent
+with the initial data).
 \begin{equation}
   \rho(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) -
   \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
 \label{eqn:exact}
 \end{equation}
-which leads to initial data $\rho^0 = \frac{1}{2}(x_0^2 + x_1^2) -
-  \frac{1}{3}(x_0^3 - x_1^3) + 1$.
 
-Let us now see how this would be implemented in
-\dune[Fempy]. \Ltodo{explain some of the reason UFL is used as a
-package and its advantages, like automatic differentiation}
-\dune[Fempy] uses Unified Form Language (UFL) \cite{UFL}
-to define models, which accepts equations written in a human-readable
-variational form. The UFL implementation of (\ref{eqn:forch-time}) is
-given below.
+We can use \pyth{initial} to define this without much effort.
+```python, label = 'forch-exact'
+exact = exp(-2*t)*(initial - 1) + 1
+```
 
-```python, label = 'forch-model'
-from ufl import TestFunction, TrialFunction, SpatialCoordinate, Coefficient, Constant, triangle
-from ufl import as_vector, dx, grad, inner, replace, exp, sqrt, dot
-from dune.ufl import Space
-uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
-rho = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
-dt = Constant(triangle)         # time step
-t  = Constant(triangle)         # current time
+To set the right hand side of the equation, i.e. $f$, we put the
+exact solution into the left hand side of the PDE as follows.
+\Ltodo{Would like strong form here but it's not currently working}
 
-initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-initial_gf = create.function('ufl', grid, 'initial', 5, initial)
-rho_h = space.interpolate(initial_gf, name='rho_h')
-rho_h_n = rho_h.copy()
-
-abs_drho = sqrt(inner(grad(rho), grad(rho)))
-K = 2/(1 + sqrt(1 + 4*abs_drho))
-a = (inner((rho - rho_h_n)/dt, v) + inner(K*grad(rho), grad(v)))*dx
-exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
+```python, label = 'forch-rhs'
+exact = as_vector([exp(-2*t)*(initial - 1) + 1])
 b = replace(a, {rho: exact})
+```
 
+Finally we create an operator that takes the rhs and lhs as arguments.
+\Ltodo{Obviously this should be changed to actually be an operator}
+
+```python, label = 'forch-operator'
 model = create.model('elliptic', grid, a == b)
 ```
 
-Let us explain some of the tools used to construct this equation.
-\begin{itemize}
-\item $\rho$ and $v$ are defined as the trial and test functions.
-\item $\Delta t$ and $t$ are defined as \pyth{Constants} so that their values
-can be set later on in the program.
-\item The equation itself uses UFL expressions such as \pyth{sqrt, inner}
-and \pyth{exp} to represent the mathematical expressions. This
-is later translated into C++ code for \dune.
-\item The initial data is assigned a function \pyth{initial_gf} using
-function creation (explained in section \ref{sec:functions}). This is
-used to give the solution function \pyth{rho_h} its initial value.
-\item The pressure from the previous time step $\rho_n$ is set up as a
-discrete function \pyth{rho_h_n} so that its value can be passed into the model
-at each new time step.
-\item Here the right hand side \pyth{b} is defined simply by
-substituting the exact data into the original equation.
-\end{itemize}
-
 \subsection{Functions} \label{sec:functions}
 
-As we saw in the model construction in section \ref{sec:models}, it is
-sometimes necessary to have functions aside from the model themselves
+As we saw in the operator construction in section \ref{sec:operators}, it is
+sometimes necessary to have functions aside from the PDE itself
 that independently store the data for the initial solution and
 previous time step.
 
@@ -458,7 +499,7 @@ rho_h_n = rho_h.copy()
 \end{pweavecode}
 
 For the initial grid function \pyth{initial_gf}, the construction uses
-much the same form as the model does, taking a UFL expression and a
+much the same form as the PDE does, taking a UFL expression and a
 grid. We also note \pyth{'initial'} is a named identifier and \pyth{5}
 refers to the order.
 
@@ -480,6 +521,7 @@ This can be achieved with the following code.
 
 ```python, label = 'error'
 exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
+rho_h = rho_h_n.copy()
 l2error_gf = create.function('ufl', grid, 'error', 5, dot(rho_h-exact_end, rho_h-exact_end))
 h1error_gf = create.function('ufl', grid, 'error', 5, \
                             inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
@@ -493,9 +535,9 @@ itself since the expression is extracted from it automatically.
 
 \subsection{Schemes} \label{sec:schemes}
 
-The last natural part of a FEM is solving it, which in particular
+The last natural part of a FEM is the solving, which in particular
 includes the assembly of the system matrices, and the choice of solver
-used (which are usually exported by \dune). Secondary to this is providing some kind
+used (which are usually exported by \dune). Additional to this is providing some kind
 of data output or plot from which we can analyze the results. To do
 these things it is first of all necessary to define the scheme object.
 
@@ -504,7 +546,7 @@ scheme = create.scheme("h1", space, model, solver='cg')
 ```
 
 The above function creates a simple Galerkin method for $H^1$
-conforming elements, with the space and model passed in. As before
+conforming elements, with the space and equation passed in. As before
 there exist other such premade \dune schemes for different problems.
 For instance \pyth{'dg'} is used for discontinous Galerkin methods,
 \pyth{'stokes'} for Navier-Stokes problems, etc.
@@ -512,9 +554,20 @@ For instance \pyth{'dg'} is used for discontinous Galerkin methods,
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
+\Ltodo{Should add the create.scheme version that skips model/space creation
+(apparently not available on master branch)}
+
 Now let us solve the PDE. Since the problem is time-dependent, we
-solve over a for loop with $t_0 = 0, t_N = 1$ and $\Delta t = 0.05$. We
-also compute the estimated order of convergence (EOC), to test our
+solve over a for loop with $t_0 = 0, t_N = 1$ and $\Delta t = 0.05$.
+
+```python, label = 'forch-pre-solve'
+from math import log
+timeStep = 0.05
+endTime = 1.0
+model.setConstant(dt, timeStep)
+```
+
+We also compute the estimated order of convergence (EOC), to test our
 method.
 
 \begin{equation*}
@@ -525,23 +578,39 @@ method.
 This is calculated by refining the grid and comparing the errors
 ($e_{old}$ and $e_{new}$) to the grid sizes ($h_{old}$ and
 $h_{new}$), where the errors are computed using the error function
-\pyth{l2error_gf} from \ref{eqn:error}.
+\pyth{l2error_gf} from \ref{eqn:error}. In particular for a grid size
+that is being halved at each step, we do the following after each
+solve step.
+
+\renewcommand{\pweavecaption}{Calculating the EOCs}
+\renewcommand{\pweavelabel}{lst:eoc}
+\begin{pweavecode}
+error_old = error                        # set the previous error
+error = sqrt(l2error_gf.integrate()[0])  # integrate the L^2 error function
+eoc = log(error/error_old)/log(0.5)      # do the eoc calculation
+grid.hierarchicalGrid.globalRefine(2)    # refine the grid twice
+\end{pweavecode}
 
 If desired, lines can be added to plot the data visually. The two main ways to do
 this in Fempy are either a quick plot in \pyth{matplotlib}, or writing to a
-VTK file for use in Paraview, both of which are included below. In
-Fempy we have the following code.
+VTK file for use in Paraview, as follows.
 
-```python, label="forch-main", fig=True, caption="Plot of solutions at each level of refinement", width="0.32\\textwidth"
-from math import log
-timeStep = 0.05
-model.setConstant(dt, timeStep)
+\renewcommand{\pweavecaption}{Two methods for plotting data}
+\renewcommand{\pweavelabel}{lst:plot}
+\begin{pweavecode}
+plot(rho_h)
+grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf])
+\end{pweavecode}
+
+Combining these concepts into one solve method in Fempy, we have the
+following program.
+
+
+```python, label='forch-main', fig=True, caption='Plot of solutions at each level of refinement', width='0.32\\textwidth'
 error = 0
-
-for eocLoop in range(1):
+for eocLoop in range(3):
     print('# step:', eocLoop, ', size:', grid.size(0))
     time = 0.0
-    endTime = 1.0
     rho_h.interpolate(initial_gf)
     while time < (endTime + 1e-6):
         model.setConstant(t, time)

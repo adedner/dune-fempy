@@ -293,8 +293,7 @@ class SourceWriter:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
             signature = self.typedName(src) + ' ('
             if src.args:
-                args = [self.typedName(arg) if isinstance(arg, Variable) else arg for arg in src.args]
-                signature += ' ' + ', '.join(args) + ' '
+                signature += ' ' + ', '.join(self.formatArgument(arg) for arg in src.args) + ' '
             signature += ')'
             self.emit(signature, indent)
             if src.content:
@@ -309,8 +308,7 @@ class SourceWriter:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
             signature = ('static ' if src.static else '') + self.typedName(src) + ' ('
             if src.args:
-                args = [self.typedName(arg) if isinstance(arg, Variable) else arg for arg in src.args]
-                signature += ' ' + ', '.join(args) + ' '
+                signature += ' ' + ', '.join(self.formatArgument(arg) for arg in src.args) + ' '
             signature += ')'
             if src.qualifiers:
                 signature += ' ' + ' '.join(src.qualifiers)
@@ -329,8 +327,7 @@ class SourceWriter:
                 self.emit('template< ' + ', '.join(src.targs) + ' >', indent)
             signature = context.name + ' ('
             if src.args:
-                args = [self.typedName(arg) if isinstance(arg, Variable) else arg for arg in src.args]
-                signature += ' ' + ', '.join(args) + ' '
+                signature += ' ' + ', '.join(self.formatArgument(arg) for arg in src.args) + ' '
             signature += ')'
             self.emit(signature, indent)
             if src.init:
@@ -442,6 +439,23 @@ class SourceWriter:
             return obj.cppType + obj.name
         else:
             return obj.cppType + ' ' + obj.name
+
+    def formatArgument(self, arg):
+        if isinstance(arg, Variable):
+            return self.typedName(arg)
+        elif isinstance(arg, Declaration):
+            if arg.static:
+                raise Exception("Arguments cannot be static.")
+            if arg.mutable:
+                raise Exception("Argumenta cannot be mutable.")
+            declaration = self.typedName(arg.obj)
+            if arg.initializer is not None:
+                declaration += ' = ' + ' '.join(formatExpression(arg.initializer))
+            return declaration
+        elif isString(arg):
+            return arg
+        else:
+            raise Exception("Unable to print argument " + repr(arg) + ".")
 
     def pushBlock(self, block, name):
         self.blocks.append((block, name))

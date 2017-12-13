@@ -22,7 +22,7 @@ a -= inner(outer(u('+'), n('-')), grad(v)('-')) * dS
 
 b = v[0] * ds
 
-integrands, _ = compileUFL(a == b, tempVars=True)
+integrands = compileUFL(a - b, tempVars=True)
 
 
 # write model to file
@@ -39,9 +39,9 @@ SourceWriter("myintegrands.hh").emit(code)
 
 from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid
-from dune.models.integrands import create
+from dune.models.integrands import load
 
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = aluConformGrid(domain, dimgrid=2)
 
-integrands = create(grid, integrands)
+integrands = load(grid, integrands).Integrands()

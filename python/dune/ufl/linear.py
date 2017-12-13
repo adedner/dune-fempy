@@ -4,11 +4,12 @@ from ufl.algorithms import expand_indices
 from ufl.algorithms.analysis import extract_arguments
 from ufl.algorithms.apply_derivatives import apply_derivatives
 from ufl.algorithms.apply_algebra_lowering import apply_algebra_lowering
-from ufl.algorithms.apply_restrictions import apply_restrictions
 from ufl.algorithms.transformer import Transformer
 from ufl.constantvalue import IntValue, Zero
 from ufl.differentiation import Grad
 from ufl.restriction import Restricted
+
+from .applyrestrictions import applyRestrictions
 
 from .tensors import conditionalExprTensor, ExprTensor, keys
 
@@ -58,7 +59,7 @@ class MultiLinearExprSplitter(Transformer):
         return {key: value.negative_restricted() for key, value in arg.items()}
 
     def positive_restricted(self, expr, arg):
-        return {key: value.negative_restricted() for key, value in arg.items()}
+        return {key: value.positive_restricted() for key, value in arg.items()}
 
     def product(self, expr, left, right):
         def oneOf(l, r):
@@ -91,6 +92,18 @@ class MultiLinearExprSplitter(Transformer):
             zero = ExprTensor(self._shape(key))
             result[key] = conditionalExprTensor(condition, trueCase.get(key, zero), falseCase.get(key, zero))
         return result
+
+    def max_value(self, expr, left, right):
+        result = dict()
+        if list(left.keys()) != [self.empty] or list(right.keys()) != [self.empty]:
+            raise Exception('Linear arguments may not occur in minimum.')
+        return { self.empty: expr }
+
+    def min_value(self, expr, left, right):
+        result = dict()
+        if list(left.keys()) != [self.empty] or list(right.keys()) != [self.empty]:
+            raise Exception('Linear arguments may not occur in minimum.')
+        return { self.empty: expr }
 
     def terminal(self, expr):
         if len(expr.ufl_shape) > 0:
@@ -164,9 +177,9 @@ def splitForm(form, arguments=None):
     if arguments is None:
         arguments = form.arguments()
 
-    form = apply_restrictions(form)
+    form = applyRestrictions(form)
     form = expand_indices(apply_derivatives(apply_algebra_lowering(form)))
-    form = apply_restrictions(form)
+    form = applyRestrictions(form)
 
     integrals = {}
     for integral in form.integrals():

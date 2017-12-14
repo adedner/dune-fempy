@@ -15,8 +15,6 @@ from dune.source.cplusplus import ConditionalExpression, Declaration, Using, Var
 
 from .applyrestrictions import applyRestrictions
 
-import dune.ufl
-
 def translateIndex(index):
     if isinstance(index, (tuple, MultiIndex)):
         return ''.join([translateIndex(i) for i in index])

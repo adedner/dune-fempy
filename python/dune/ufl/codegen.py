@@ -188,10 +188,6 @@ class CodeGenerator(MultiFunction):
         operand = expr.ufl_operands[0]
         if isinstance(operand, Coefficient) and operand.ufl_element().family() == "Real":
             return self.coefficient(operand)
-        print(type(operand), operand.ufl_element().family())
-        if isinstance(operand, dune.ufl.GridFunction):
-            return self.coefficient(operand)
-        print(type(operand))
         raise Exception('Cannot compute restriction of ' + str(operand))
 
     def product(self, expr, x, y):

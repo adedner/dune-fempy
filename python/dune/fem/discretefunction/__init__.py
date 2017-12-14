@@ -29,7 +29,6 @@ def interpolate(self, func):
     elif gl == 2: # local function
         func = function.localFunction(self.space.grid, "tmp", self.space.order, func)
     else:
-        func = expression2GF(self.space.grid,func,self.space.order)
         try:
             if ufl and isinstance(func, GridFunction):
                 func = func.gf

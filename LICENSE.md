@@ -1,18 +1,13 @@
-Licensing Information
-=====================
+Copyright holders:
+==================
 
-Copyright holders
------------------
+2016          Matthew Collins
+2016--2017    Andreas Dedner
+2017          Robert Klöfkorn
+2016          Lloyd
+2016--2017    Martin Nolte
+2016--2017    lloyd.connellan
 
-| Year       | Name                       |
-|------------|----------------------------|
-| 2016--2017 | Lloyd Connellan            |
-| 2017       | Matthew Collins            |
-| 2016--2017 | Andreas Dedner             |
-| 2016--2017 | Martin Nolte               |
-
-License
--------
 
 The DUNE library, headers and test programs are copyrighted free software. You
 can use, modify and/or redistribute it under the terms of either one of the two

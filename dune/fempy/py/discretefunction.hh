@@ -1,23 +1,30 @@
 #ifndef DUNE_FEMPY_PY_DISCRETEFUNCTION_HH
 #define DUNE_FEMPY_PY_DISCRETEFUNCTION_HH
 
+
+#include <dune/fempy/pybind11/pybind11.hh>
+
+#include <dune/common/typeutilities.hh>
+
+
+#if HAVE_DUNE_ISTL
+#include <dune/istl/bvector.hh>
+#include <dune/python/istl/bvector.hh>
+#endif // #if HAVE_DUNE_ISTL
+
 #include <cstddef>
 
 #include <string>
 #include <type_traits>
 #include <utility>
-
-#include <dune/common/typeutilities.hh>
-
 #include <dune/fem/function/vectorfunction/vectorfunction.hh>
 #include <dune/fem/space/common/interpolate.hh>
-
 #include <dune/fempy/py/common/numpyvector.hh>
 #include <dune/fempy/py/function/grid.hh>
 #include <dune/fempy/py/grid/function.hh>
 #include <dune/fempy/py/grid/restrictprolong.hh>
 #include <dune/fempy/py/space.hh>
-#include <dune/fempy/pybind11/pybind11.hh>
+
 
 namespace Dune
 {
@@ -27,6 +34,50 @@ namespace Dune
 
     namespace detail
     {
+
+#if HAVE_DUNE_ISTL
+      template< class A , class B>
+      inline static const BlockVector<A , B> &getBlockVector (const  BlockVector< A,B > &vector ) noexcept
+      {
+        return vector;
+      }
+
+      template< class A, class B>
+      inline static BlockVector<A , B> &setBlockVector (  BlockVector< A,B > &vector ) noexcept
+      {
+        return vector;
+      }
+
+#endif //#if HAVE_DUNE_ISTL
+
+
+      //create a SFINAE so that if the type is a ISTL blockvector we instead return the self.dofVector.array() instead of just the dofVector in the other cases
+
+      //SFINAE checks whether getBlockVector is a valid function call for ISTL block matrix and also gives
+      //priority
+      // not sure whatthe class... options
+
+
+
+      //if it's of istl blockvector type return the array otherwise do the other stuff
+      template< class DF , class ... options>
+      inline static auto returnDofVector (DF &self, PriorityTag<2> )
+      -> decltype(  getBlockVector(std::declval< DF&>().dofVector().array())   )
+      {
+           return self.dofVector().array();
+      }
+
+
+
+      // I'd like to enable this second one as well
+      template< class DF,class ... options >
+      inline static auto returnDofVector (DF &self, PriorityTag<1> )
+      -> decltype(  std::declval< DF&>().dofVector()   )
+      {
+           return self.dofVector();
+      }
+
+
 
       // registerRestrictProlong
       // -----------------------
@@ -94,6 +145,41 @@ namespace Dune
         registerDiscreteFunctionConstructor( cls, PriorityTag< 42 >() );
       }
 
+      //register method if data method already available
+
+
+
+#if HAVE_DUNE_ISTL
+      template < class DofVector, class... options >
+      inline static auto registerDofVectorBuffer ( pybind11::class_< DofVector, options... > cls, PriorityTag< 2 > )
+       -> void_t< decltype( getBlockVector(std::declval<  DofVector& >().array() ) )  >
+      {
+        //check if BlockVector Is already registered if not register it
+        typedef std::decay_t< decltype( getBlockVector( std::declval< DofVector& >().array() ) ) > BlockVector;
+
+        if( !pybind11::already_registered< BlockVector >() )
+          Python::registerBlockVector< BlockVector >( cls );
+
+        typedef typename DofVector::FieldType Field;
+
+        //try just getting rid of return type so that it works for dimrange2
+        //cls.def( "__getitem__", [] ( const DofVector &self, std::size_t index ) -> Field {
+        cls.def( "__getitem__", [] ( const DofVector &self, std::size_t index ) {
+            if( index < self.array().size() )
+              return getBlockVector(self.array())[index];
+            else
+              throw pybind11::index_error();
+          });
+        cls.def( "__setitem__", [] ( DofVector &self, std::size_t index, Field value ) {
+            if( index < self.array().size() )
+              return setBlockVector(self.array())[index] = value;
+            else
+              throw pybind11::index_error();
+          });
+
+      }
+#endif
+
 
 
       // registerDofVectorBuffer
@@ -101,7 +187,7 @@ namespace Dune
 
       template < class DofVector, class... options >
       inline static auto registerDofVectorBuffer ( pybind11::class_< DofVector, options... > cls, PriorityTag< 1 > )
-        -> std::enable_if_t< std::is_convertible< decltype( std::declval< DofVector >().array().data()[ 0 ] ), typename DofVector::FieldType >::value >
+        -> std::enable_if_t< std::is_convertible< decltype( std::declval< DofVector >().array().data() ), const typename DofVector::FieldType & >::value >
       {
         typedef typename DofVector::FieldType Field;
 
@@ -128,6 +214,14 @@ namespace Dune
             else
               throw pybind11::index_error();
           });
+
+
+
+
+         //need to define method that returns the underlying BlockVector object so I think use .array
+        // this property should be read only
+        cls.def_property_readonly( "array", [] (DofVector &self) {std::cout << &self << " " << &(self.array()) << std::endl; return self.array();} );
+
       }
 
       template< class DofVector, class... options >
@@ -187,6 +281,7 @@ namespace Dune
             Fem::interpolate( gf, self );
           }, "value"_a );
 
+        //put all this that follows behind SFINAE or maybe just the readonly dofVector
         typedef typename DF::DofVectorType DofVector;
         if( !pybind11::already_registered< DofVector >() )
         {
@@ -199,8 +294,10 @@ namespace Dune
           registerDofVectorBuffer( clsDof );
         }
 
-        cls.def_property_readonly( "dofVector", [] ( DF &self ) -> DofVector & { return self.dofVector(); } ); // , pybind11::return_value_policy::reference_internal );
+        cls.def_property_readonly( "dofVector", [] ( DF &self ) { return returnDofVector(self, PriorityTag<2>()); } );
+
       }
+
 
     } // namespace detail
 

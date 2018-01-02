@@ -1,7 +1,7 @@
 from __future__ import division, print_function, unicode_literals
 
-from ..expression import Application, ConstantExpression, ConstructExpression, Expression, InitializerList, LambdaExpression, UnformattedExpression, Variable
-from ..cplusplus import Declaration, ReturnStatement, Using
+from ..expression import Application, ConditionalExpression, ConstantExpression, ConstructExpression, Expression, InitializerList, LambdaExpression, NullPtr, This, UnformattedExpression, Variable
+from ..cplusplus import Declaration, ReturnStatement, SwitchStatement, Using
 
 
 def extractVariablesFromExpression(expr):
@@ -10,6 +10,8 @@ def extractVariablesFromExpression(expr):
             return set.union(*[extractVariablesFromExpression(arg) for arg in expr.args])
         else:
             return set()
+    elif isinstance(expr, ConditionalExpression):
+        return set.union(*[extractVariablesFromExpression(e) for e in (expr.cond, expr.true, expr.false)])
     elif isinstance(expr, ConstantExpression):
         return set()
     elif isinstance(expr, ConstructExpression):
@@ -21,10 +23,14 @@ def extractVariablesFromExpression(expr):
         return set.union(*[extractVariablesFromExpression(arg) for arg in expr.args])
     elif isinstance(expr, LambdaExpression):
         return set(expr.capture)
+    elif isinstance(expr, NullPtr):
+        return set()
+    elif isinstance(expr, This):
+        return set()
     elif isinstance(expr, Variable):
         return {expr}
     elif isinstance(expr, UnformattedExpression):
-        return set()
+        return set(expr.uses) if expr.uses is not None else set()
     else:
         raise Exception("Unknown expression", expr)
 
@@ -42,6 +48,12 @@ def extractVariablesFromStatement(stmt):
         return extractVariablesFromExpression(stmt.initializer) if stmt.initializer is not None else set()
     elif isinstance(stmt, ReturnStatement):
         return extractVariablesFromExpression(stmt.expression);
+    elif isinstance(stmt, SwitchStatement):
+        result = {stmt.var}
+        for case, code in stmt.branches.items():
+            result = result | extractVariablesFromStatements(code.content)
+        result = result | extractVariablesFromStatements(stmt.default.content)
+        return result
     elif isinstance(stmt, Using):
         return set()
     else:

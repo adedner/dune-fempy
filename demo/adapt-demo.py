@@ -37,13 +37,15 @@ for i in range(0,maxLevel):
     dune.fem.adapt(hgrid, [phi])
     dune.fem.loadBalance(hgrid, [phi])
 
-nr = 0
-while 0.1*nr < 2*math.pi:
+vtk = grid.sequencedVTK("adapt", pointdata=[phi], celldata=[levelFunction(grid), partitionFunction(grid)])
+vtk()
+t = 0
+while t < 2*math.pi:
     if grid.comm.rank == 0:
-        print('time:', 0.1*nr)
-    hgrid.mark(lambda e: mark(e, 0.1*nr))
+        print('time:', t)
+    hgrid.mark(lambda e: mark(e, t))
     dune.fem.adapt(hgrid, [phi])
     dune.fem.loadBalance(hgrid, [phi])
-    grid.writeVTK("adapt", pointdata=[phi], celldata=[levelFunction(grid), partitionFunction(grid)], number=nr)
+    vtk()
     print("[" + str(grid.comm.rank), "] Size: " + str(grid.size(0)))
-    nr += 1
+    t += 0.1

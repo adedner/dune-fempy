@@ -14,6 +14,7 @@ include(DuneMacros)
 dune_project()
 dune_enable_all_packages()
 
+add_subdirectory("bin")
 add_subdirectory("cmake/modules")
 add_subdirectory("dune")
 add_subdirectory("python")

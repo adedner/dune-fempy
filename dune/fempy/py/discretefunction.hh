@@ -159,25 +159,17 @@ namespace Dune
         //check if BlockVector Is already registered if not register it
         typedef std::decay_t< decltype( getBlockVector( std::declval< DofVector& >().array() ) ) > BlockVector;
 
+        //it's here that I need to add it's name to the type registery
         if( !pybind11::already_registered< BlockVector >() )
-          Python::registerBlockVector< BlockVector >( cls );
+        {
+            Python::registerBlockVector< BlockVector >( cls );
+
+        }
 
         typedef typename DofVector::FieldType Field;
 
         //try just getting rid of return type so that it works for dimrange2
         //cls.def( "__getitem__", [] ( const DofVector &self, std::size_t index ) -> Field {
-        cls.def( "__getitem__", [] ( const DofVector &self, std::size_t index ) {
-            if( index < self.array().size() )
-              return getBlockVector(self.array())[index];
-            else
-              throw pybind11::index_error();
-          });
-        cls.def( "__setitem__", [] ( DofVector &self, std::size_t index, Field value ) {
-            if( index < self.array().size() )
-              return setBlockVector(self.array())[index] = value;
-            else
-              throw pybind11::index_error();
-          });
 
       }
 #endif
@@ -204,25 +196,21 @@ namespace Dune
             );
           } ); // , pybind11::keep_alive< 0, 1 >() );
 
+
         cls.def( "__getitem__", [] ( const DofVector &self, std::size_t index ) -> Field {
             if( index < self.array().size() )
               return self.array().data()[index];
             else
               throw pybind11::index_error();
           });
+
+
         cls.def( "__setitem__", [] ( DofVector &self, std::size_t index, Field value ) {
             if( index < self.array().size() )
               return self.array().data()[index] = value;
             else
               throw pybind11::index_error();
           });
-
-
-
-
-         //need to define method that returns the underlying BlockVector object so I think use .array
-        // this property should be read only
-        cls.def_property_readonly( "array", [] (DofVector &self) {std::cout << &self << " " << &(self.array()) << std::endl; return self.array();} );
 
       }
 
@@ -284,7 +272,10 @@ namespace Dune
             Fem::interpolate( gf, self );
           }, "value"_a );
 
+
+
         //put all this that follows behind SFINAE or maybe just the readonly dofVector
+        //do I want the buffer protocol if
         typedef typename DF::DofVectorType DofVector;
         if( !pybind11::already_registered< DofVector >() )
         {
@@ -294,10 +285,15 @@ namespace Dune
           clsDof.def( "__len__", [] ( const DofVector &self ) { return self.array().size(); } );
           clsDof.def( "assign", [] ( DofVector &self, const DofVector &other ) { self = other; }, "other"_a );
 
+          //the registration of the actual dofvector also happens inside this
           registerDofVectorBuffer( clsDof );
         }
 
-        cls.def_property_readonly( "dofVector", [] ( DF &self ) { return returnDofVector(self, PriorityTag<2>()); } );
+        //print the array memeory location
+        //blockVector() is the same as dofVector().array()
+        cls.def_property_readonly( "dofVector", [] ( DF &self ) { std::cout << &(self.blockVector()) << std::endl; return self.blockVector(); } );
+
+
 
 
         typedef Dune::Fem::AddLocalContribution<DF> AddLocalContrib;

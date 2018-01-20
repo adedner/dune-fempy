@@ -33,13 +33,14 @@ def testGeometryGridView(grid, prefix):
     geogrid = geometryGridView(df)
     gfnew = create.function("global", geogrid, "expression", 1, expr_global)
 
+    vtk = geogrid.writeVTK(prefix, pointdata=[gfnew])
+    vtk()
+
     dt = 0.01
-    count = 0
     while t < 1:
         t += dt
-        count += 1
         df.interpolate(gf)
-        geogrid.writeVTK(prefix, pointdata=[gfnew], number=count)
+        vtk()
     plot(geogrid)
 
 def testGridView(gridtype):

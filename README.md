@@ -44,11 +44,11 @@ Dependencies
 ------------
 
 dune-fempy depends on the following DUNE modules:
-- dune-common 2.4+
-- dune-geometry 2.4+
-- dune-grid 2.4+
-- dune-corepy 2.4+
-- dune-fem 2.4+
+- dune-common 2.7+
+- dune-geometry 2.7+
+- dune-grid 2.7+
+- dune-corepy 2.7+
+- dune-fem 2.7+
 
 In addition to the dependencies of these DUNE modules, the following software
 packages are required:
@@ -64,15 +64,57 @@ use of dune-fempy:
 - ufl (2016.1.0+)
 
 
+Quick Dive-In Using Docker
+--------------------------
+
+Users who simply want to use the functionality of `dune-fempy` as-is, e.g.,
+for experimenting, can do so using Docker and a web browser.
+
+To run the docker container with the latest release just type
+```
+docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/dune-fem/dune-fempy
+```
+at the command prompt and connect to `localhost:8888` using your favorite web
+browser.
+Log into Jupyter using the password `dune` and have fun.
+The development version can be accessed using the `unstable` tag, i.e.,
+```
+docker run --rm -v dune:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/dune-fem/dune-fempy:unstable
+```
+
+For your convenience, the demo notebooks are provided in the folder
+`dune-fempy`.
+
+With the above command, your notebooks will be kept persistent in a Docker
+volume called `dune`.
+To remove this volume, simply type
+```
+docker volume rm dune
+```
+at the command prompt.
+
+To share python scripts and other files located in the current directory and also
+share the output with the docker container use
+```
+docker run -it -v $PWD:/home/dune/work registry.dune-project.org/dune-fem/dune-fempy bash
+```
+The content of the current directory is then available in the `work`
+directory in the docker volume.
+
+**Note for MAC users:** docker on MAC allocates 2GB to docker by default
+which does not suffice for compiling the Dune shared libraries.
+Please increase the value to at least 3GB.
+
 Installation
 ------------
 
-Follow the installation instructions in [dune-corepy][corepy].
+To download/install `dune-fempy` on your system
+follow the instructions in [dune-python][corepy].
 After building `dune-fempy` add the `python` folder in the build directory
 to your `PYTHON_PATH` or (having set the cmake `PYTHON_INSTALL_LOCATION` flag)
 use the `setup-dunepy.py` script or call `make python_install1` in the
 build directory of dune-fempy to install the `dune-fem` part of the Dune
 python package.
 
-[corepy]: https://gitlab.dune-project.org/staging/dune-corepy
+[corepy]: https://gitlab.dune-project.org/staging/dune-python
 [femlink]: https://gitlab.dune-project.org/dune-fem/dune-fem

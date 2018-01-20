@@ -34,7 +34,7 @@ def interpretUFLNamespace(namespace):
                 raise Exception("Expecting 'constraints' to be a list of DirichletBC instances")
             models = [Model("Model", form, *list(constraints))]
         elif form is None:
-            model = []
+            models = []
         else:
             raise Exception("'F' is not a form")
 

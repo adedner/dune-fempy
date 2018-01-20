@@ -73,6 +73,15 @@ def NamedConstant(domain, name, dimRange=None, count=None):
     return constant
 
 
+def Parameter(domain, parameter, dimRange=None, count=None):
+    if dimRange is None:
+        constant = ufl.Constant(domain, count)
+    else:
+        constant = ufl.VectorConstant(domain, dim=dimRange, count=count)
+    constant.parameter = parameter
+    return constant
+
+
 from ufl.indexed import Indexed
 from ufl.index_combination_utils import create_slice_indices
 from ufl.core.multiindex import MultiIndex
@@ -176,7 +185,9 @@ class CoordWrapper:
         self.glb = e.geometry.position(x)
     def __getitem__(self,i): return self.glb[i]
 def expression2GF(grid,expression,order,name="expr"):
-    from dune.fem.function._functions import localFunction
+    from dune.fem.function import localFunction, uflFunction
+    return uflFunction(grid, name, order, expression)
+
     shape = expression.ufl_shape
     assert len(shape) == 0 or len(shape) == 1,\
             "can only generate grid function from scalar or vector valued expression, got %s" %str(shape)

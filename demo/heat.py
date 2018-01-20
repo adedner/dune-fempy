@@ -14,7 +14,7 @@ deltaT = 0.01
 
 import dune.fem
 dune.fem.parameter.append({"fem.verboserank": 0,
-                           "istl.preconditioning.method": "ilu-0",
+                           "istl.preconditioning.method": "ilu",
                            "istl.preconditioning.iterations": 1,
                            "istl.preconditioning.relaxation": 1.2})
 
@@ -27,17 +27,19 @@ def compute():
 
     # set up initial conditions
     solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
-    grid.writeVTK("heat", pointdata=[solution], number=0)
+    vtk = grid.sequencedVTK("heat", pointdata=[solution])
+    vtk()
 
     # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
     old_solution = solution.copy();
+    old_solution.name = "uOld"
 
     # now define the actual pde to solve:
     #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0
     uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
     u = TrialFunction(uflSpace)
     v = TestFunction(uflSpace)
-    u_n = solution
+    u_n = old_solution
     tau = Constant(triangle)
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
@@ -46,7 +48,6 @@ def compute():
     #model.setConstant(tau,[deltaT])
 
     model = create.model("integrands", grid, a == 0)
-    model.setCoefficient(u_n, old_solution)
     model.setConstant(tau, [deltaT])
 
     # setup structure for olver parameters
@@ -70,6 +71,6 @@ def compute():
     for n in range(1,steps+1):
         old_solution.assign(solution)
         scheme.solve(target=solution)
-        grid.writeVTK("heat", pointdata=[solution], number=n)
+        vtk()
 
 compute()

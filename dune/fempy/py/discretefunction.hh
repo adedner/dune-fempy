@@ -158,19 +158,12 @@ namespace Dune
       {
         //check if BlockVector Is already registered if not register it
         typedef std::decay_t< decltype( getBlockVector( std::declval< DofVector& >().array() ) ) > BlockVector;
-
         //it's here that I need to add it's name to the type registery
         if( !pybind11::already_registered< BlockVector >() )
         {
             Python::registerBlockVector< BlockVector >( cls );
 
         }
-
-        typedef typename DofVector::FieldType Field;
-
-        //try just getting rid of return type so that it works for dimrange2
-        //cls.def( "__getitem__", [] ( const DofVector &self, std::size_t index ) -> Field {
-
       }
 #endif
 
@@ -181,7 +174,7 @@ namespace Dune
 
       template < class DofVector, class... options >
       inline static auto registerDofVectorBuffer ( pybind11::class_< DofVector, options... > cls, PriorityTag< 1 > )
-        -> std::enable_if_t< std::is_convertible< decltype( std::declval< DofVector >().array().data() ), const typename DofVector::FieldType & >::value >
+        -> std::enable_if_t< std::is_convertible< decltype( std::declval< DofVector >().array().data()[0] ), typename DofVector::FieldType  >::value >
       {
         typedef typename DofVector::FieldType Field;
 
@@ -291,10 +284,7 @@ namespace Dune
 
         //print the array memeory location
         //blockVector() is the same as dofVector().array()
-        cls.def_property_readonly( "dofVector", [] ( DF &self ) { std::cout << &(self.blockVector()) << std::endl; return self.blockVector(); } );
-
-
-
+        cls.def_property_readonly( "dofVector", [] ( DF &self ) { return returnDofVector(self, PriorityTag<2>()); } );
 
         typedef Dune::Fem::AddLocalContribution<DF> AddLocalContrib;
         auto clsAddContrib =

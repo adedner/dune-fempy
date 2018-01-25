@@ -63,13 +63,24 @@ namespace Dune
 
       //if it's of istl blockvector type return the array otherwise do the other stuff
       template< class DF , class ... options>
-      inline static auto returnDofVector (DF &self, PriorityTag<2> )
-      -> decltype(  getBlockVector(std::declval< DF&>().dofVector().array())   )
+      inline auto addDofVector(pybind11::class_<DF,options...> cls, PriorityTag<2> )
+      -> decltype( getBlockVector(std::declval<DF&>().dofVector().array()) )
       {
-           return self.dofVector().array();
+        cls.def_property_readonly( "dofVector", [] ( DF &self )
+        -> decltype( getBlockVector(std::declval<DF&>().dofVector().array()) )
+        {
+          return self.dofVector().array();
+        });
       }
-
-
+      template< class DF , class ... options>
+      inline void addDofVector(pybind11::class_<DF,options...> cls, PriorityTag<1> )
+      {
+        cls.def_property_readonly( "dofVector", [] ( DF &self )
+        -> decltype( std::declval<DF&>().dofVector() )
+        {
+          return self.dofVector();
+        });
+      }
 
       // I'd like to enable this second one as well
       template< class DF,class ... options >
@@ -161,8 +172,7 @@ namespace Dune
         //it's here that I need to add it's name to the type registery
         if( !pybind11::already_registered< BlockVector >() )
         {
-            Python::registerBlockVector< BlockVector >( cls );
-
+          Python::registerBlockVector< BlockVector >( cls );
         }
       }
 #endif
@@ -284,8 +294,7 @@ namespace Dune
 
         //print the array memeory location
         //blockVector() is the same as dofVector().array()
-        cls.def_property_readonly( "dofVector", [] ( DF &self ) { return returnDofVector(self, PriorityTag<2>()); } );
-
+        addDofVector(cls, PriorityTag<2>());
         typedef Dune::Fem::AddLocalContribution<DF> AddLocalContrib;
         auto clsAddContrib =
           Dune::Python::insertClass<AddLocalContrib>(module, "AddLocalContribution",

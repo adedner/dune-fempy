@@ -21,7 +21,7 @@ parameter.append( "I", "am fine" )
 print(parameter["hi"])
 try:
     print(parameter["really"])   # <- this gives an error
-except RuntimeError, Argument:
+except RuntimeError as Argument:
     print(Argument)
 
 

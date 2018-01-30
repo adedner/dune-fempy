@@ -2,10 +2,9 @@ from __future__ import print_function
 
 import math
 
-import dune.common
 import dune.fem
 
-from dune.grid import cartesianDomain
+from dune.grid import cartesianDomain, Marker
 from dune.alugrid import aluConformGrid
 from dune.fem.function import levelFunction, partitionFunction
 from dune.fem.space import lagrange
@@ -23,7 +22,7 @@ grid.writeVTK("initial", pointdata=[phi])
 
 maxLevel = 8
 hgrid = grid.hierarchicalGrid
-marker = dune.common.Marker
+marker = Marker
 
 def mark(element, t):
     y = element.geometry.center - [0.5+0.2*math.cos(t), 0.5+0.2*math.sin(t)]

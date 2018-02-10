@@ -46,8 +46,9 @@ class Integrands():
         self._coefficientNames = ['coefficient' + str(i) if n is None else n for i, n in enumerate(self._coefficientNames)]
         if len(self._coefficientNames) != len(self._coefficients):
             raise ValueError("Length of coefficientNames must match length of coefficients")
-        if any(n is not None and re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', n) is None for n in self._coefficientNames):
-            raise ValueError("Coefficient names must be valid C++ identifiers.")
+        invalidCoefficients = [n for n in self._coefficientNames if n is not None and re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', n) is None]
+        if invalidCoefficients:
+            raise ValueError('Coefficient names are not valid C++ identifiers:' + ', '.join(invalidCoefficients) + '.')
 
         self._parameterNames = [None,] * len(self._constants) if parameterNames is None else list(parameterNames)
         if len(self._parameterNames) != len(self._constants):
@@ -164,10 +165,11 @@ class Integrands():
         arg_param = Variable('const Dune::Fem::ParameterReader &', 'parameter')
         args = [Variable('const ' + t + ' &', n) for t, n in zip(self.coefficientTypes, self.coefficientNames)]
         if self._coefficients:
+            init = ['Dune::Fem::ConstLocalFunction< ' + n + ' >( ' + p + ' )' for n, p in zip(self.coefficientTypes, self.coefficientNames)]
             if self.skeleton is None:
-                init = ["coefficients_( " + ", ".join(self.coefficientNames) + " )"]
+                init = ["coefficients_( " + ", ".join(init) + " )"]
             else:
-                init = ['coefficients_{{ ' + coefficientsTupleType + '( ' + ', '.join(self.coefficientNames) + ' ), ' + coefficientsTupleType + '( ' + ', '.join(self.coefficientNames) + ' ) }}']
+                init = ['coefficients_{{ ' + coefficientsTupleType + '( ' + ', '.join(init) + ' ), ' + coefficientsTupleType + '( ' + ', '.join(init) + ' ) }}']
         else:
             init = []
         args.append(Declaration(arg_param, initializer=UnformattedExpression('const ParameterReader &', 'Dune::Fem::Parameter::container()')))

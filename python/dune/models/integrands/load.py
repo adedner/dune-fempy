@@ -149,7 +149,6 @@ class Source(object):
         writer.close()
         return source
 
-
 def load(grid, integrands, renumbering=None, tempVars=True):
     if isinstance(integrands, Equation):
         integrands = integrands.lhs - integrands.rhs

@@ -46,8 +46,9 @@ class Integrands():
         self._coefficientNames = ['coefficient' + str(i) if n is None else n for i, n in enumerate(self._coefficientNames)]
         if len(self._coefficientNames) != len(self._coefficients):
             raise ValueError("Length of coefficientNames must match length of coefficients")
-        if any(n is not None and re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', n) is None for n in self._coefficientNames):
-            raise ValueError("Coefficient names must be valid C++ identifiers.")
+        invalidCoefficients = [n for n in self._coefficientNames if n is not None and re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', n) is None]
+        if invalidCoefficients:
+            raise ValueError('Coefficient names are not valid C++ identifiers:' + ', '.join(invalidCoefficients) + '.')
 
         self._parameterNames = [None,] * len(self._constants) if parameterNames is None else list(parameterNames)
         if len(self._parameterNames) != len(self._constants):
@@ -155,18 +156,20 @@ class Integrands():
         intersection_ = Variable('IntersectionType', 'intersection_')
 
         constants_ = Variable("ConstantTupleType", "constants_")
+        coefficientsTupleType = 'std::tuple< ' + ', '.join('Dune::Fem::ConstLocalFunction< ' + n + ' >' for n in self.coefficientTypes) + ' >'
         if self.skeleton is None:
-            coefficients_ = Variable('std::tuple< ' + ', '.join('Dune::Fem::ConstLocalFunction< ' + n + ' >' for n in self.coefficientTypes) + ' >', 'coefficients_')
+            coefficients_ = Variable(coefficientsTupleType, 'coefficients_')
         else:
-            coefficients_ = Variable('std::array< std::tuple< ' + ', '.join('Dune::Fem::ConstLocalFunction< ' + n + ' >' for n in self.coefficientTypes) + ' >, 2 >', 'coefficients_')
+            coefficients_ = Variable('std::array< ' + coefficientsTupleType + ', 2 >', 'coefficients_')
 
         arg_param = Variable('const Dune::Fem::ParameterReader &', 'parameter')
         args = [Variable('const ' + t + ' &', n) for t, n in zip(self.coefficientTypes, self.coefficientNames)]
         if self._coefficients:
+            init = ['Dune::Fem::ConstLocalFunction< ' + n + ' >( ' + p + ' )' for n, p in zip(self.coefficientTypes, self.coefficientNames)]
             if self.skeleton is None:
-                init = ["coefficients_( " + ", ".join(self.coefficientNames) + " )"]
+                init = ["coefficients_( " + ", ".join(init) + " )"]
             else:
-                init = ['coefficients_( std::tie( ' + ', '.join(self.coefficientNames) + ' ), std::tie( ' + ', '.join(self.coefficientNames) + ' )']
+                init = ['coefficients_{{ ' + coefficientsTupleType + '( ' + ', '.join(init) + ' ), ' + coefficientsTupleType + '( ' + ', '.join(init) + ' ) }}']
         else:
             init = []
         args.append(Declaration(arg_param, initializer=UnformattedExpression('const ParameterReader &', 'Dune::Fem::Parameter::container()')))
@@ -186,7 +189,7 @@ class Integrands():
                 initEntity.append(UnformattedExpression('void', 'std::get< ' + str(i) + ' >( ' + coefficients_.name + ' ).init( entity )', uses=[entity, coefficients_]))
         else:
             for i, c in enumerate(self._coefficients):
-                initEntity.append(UnformattedExpression('void', 'std::get< ' + str(i) + ' >( ' + coefficients_.name + '[ static_cast< std::size_t >( Side::out ) ] ).init( entity )', uses=[entity, coefficients_]))
+                initEntity.append(UnformattedExpression('void', 'std::get< ' + str(i) + ' >( ' + coefficients_.name + '[ static_cast< std::size_t >( Side::in ) ] ).init( entity )', uses=[entity, coefficients_]))
         initEntity.append(self.init)
         initEntity.append(return_(True))
         code.append(initEntity)
@@ -199,7 +202,7 @@ class Integrands():
         else:
             initIntersection.append(assign(insideEntity, UnformattedExpression('EntityType', 'intersection.inside()')))
             for i, c in enumerate(self._coefficients):
-                initIntersection.append(UnformattedExpression('void', 'std::get< ' + str(i) + ' >( ' + coefficients_.name + '[ static_cast< std::size_t >( Side::out ) ] ).init( entity_[ static_cast< std::size_t >( Side::in ) ] )', uses=[coefficients_]))
+                initIntersection.append(UnformattedExpression('void', 'std::get< ' + str(i) + ' >( ' + coefficients_.name + '[ static_cast< std::size_t >( Side::in ) ] ).init( entity_[ static_cast< std::size_t >( Side::in ) ] )', uses=[coefficients_]))
             initIntersection.append('if( intersection.neighbor() )')
             initIntersection.append('{')
             initIntersection.append('  entity_[ static_cast< std::size_t >( Side::out ) ] = intersection.outside();')

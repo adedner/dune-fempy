@@ -64,7 +64,7 @@ namespace Dune
       //if it's of istl blockvector type return the array otherwise do the other stuff
       template< class DF , class ... options>
       inline auto addDofVector(pybind11::class_<DF,options...> cls, PriorityTag<2> )
-      -> decltype( getBlockVector(std::declval<DF&>().dofVector().array()) )
+      -> void_t< decltype(getBlockVector(std::declval<DF&>().dofVector().array())) >
       {
         cls.def_property_readonly( "dofVector", [] ( DF &self )
         -> decltype( getBlockVector(std::declval<DF&>().dofVector().array()) )
@@ -176,8 +176,6 @@ namespace Dune
         }
       }
 #endif
-
-
 
       // registerDofVectorBuffer
       // -----------------------

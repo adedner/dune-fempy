@@ -23,7 +23,7 @@ try:
 except:
     pass
 
-import dune.common
+import dune.grid
 import dune.create as create
 
 
@@ -117,7 +117,7 @@ plotGrid(grid)
 
 # In[7]:
 
-grid = create.grid("ALUCube", (dune.common.reader.dgf,"unitcube-2d.dgf"), dimgrid=2)
+grid = create.grid("ALUCube", (dune.grid.reader.dgf,"unitcube-2d.dgf"), dimgrid=2)
 plotGrid(grid)
 pyplot.close('all')
 
@@ -186,7 +186,7 @@ plotGrid(grid)
 # In[14]:
 
 import math
-marker = dune.common.Marker
+marker = dune.grid.Marker
 
 def mark(element, t):
     y = element.geometry.center - [0.5+0.2*math.cos(t), 0.5+0.2*math.sin(t)]

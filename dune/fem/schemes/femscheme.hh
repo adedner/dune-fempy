@@ -55,8 +55,6 @@
 #include <dune/fem/io/parameter.hh>
 #include <dune/fem/solver/newtoninverseoperator.hh>
 
-#include <dune/fem/schemes/diffusionmodel.hh>
-
 // FemScheme
 //----------
 
@@ -98,11 +96,11 @@ public:
   : model_( model ),
     space_( space ),
     // the elliptic operator (implicit)
-    implicitOperator_( model_, space_ ),
+    implicitOperator_( model_, space_, parameter ),
     // create linear operator (domainSpace,rangeSpace)
     linearOperator_( "assembled elliptic operator", space_, space_ ), // , parameter ),
     estimator_( space_, model ),
-    parameter_(parameter)
+    parameter_( parameter )
   {}
 
   const DifferentiableOperatorType &fullOperator() const
@@ -134,20 +132,31 @@ public:
     int linearIterations;
     int nonlinearIterations;
   };
-  SolverInfo solve ( DiscreteFunctionType &solution ) const
+  SolverInfo solve ( const DiscreteFunctionType &rhs, DiscreteFunctionType &solution ) const
   {
     typedef InverseOperator LinearInverseOperatorType;
     typedef Dune::Fem::NewtonInverseOperator< LinearOperatorType, LinearInverseOperatorType > InverseOperatorType;
     InverseOperatorType invOp( implicitOperator_, parameter_ );
-    DiscreteFunctionType bnd(solution);
-    bnd.clear();
-    implicitOperator_.prepare( bnd );
-    implicitOperator_.prepare( bnd, solution );
-    invOp( bnd, solution );
+    DiscreteFunctionType rhs0 = rhs;
+    implicitOperator_.prepare( rhs0 );
+    implicitOperator_.prepare( rhs0, solution );
+    invOp( rhs0, solution );
     return SolverInfo(invOp.converged(),invOp.linearIterations(),invOp.iterations());
   }
+  SolverInfo solve ( DiscreteFunctionType &solution ) const
+  {
+    DiscreteFunctionType bnd(solution);
+    bnd.clear();
+    return solve(bnd, solution);
+  }
 
-  template <class GridFunction>
+  template< class GridFunction, std::enable_if_t<
+        std::is_same< decltype(
+          std::declval< const DifferentiableOperatorType >().apply(
+              std::declval< const GridFunction& >(), std::declval< LinearOperatorType& >()
+            )
+          ), void >::value, int> i = 0
+    >
   const LinearOperatorType &assemble( const GridFunction &ubar )
   {
     implicitOperator_.apply(ubar, linearOperator_);

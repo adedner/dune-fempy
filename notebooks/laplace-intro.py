@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Solving an Elliptic PDE [(Notebook)][1]
@@ -18,7 +19,7 @@
 # In[1]:
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 import dune.fem
@@ -51,7 +52,7 @@ x = SpatialCoordinate(uflSpace.cell())
 # \begin{equation}
 # \int_{\Omega} uv + \nabla u\cdot\nabla v \ dx =  \int_{\Omega} f v \ dx.
 # \end{equation}
-# We take $f = 9\pi^2\cos(2\pi x_0)\cos(2\pi x_1)$.
+# We take $f = 8\pi^2\cos(2\pi x_0)\cos(2\pi x_1)$.
 #
 # Note that then the exact solution is then
 # $u = \cos(2\pi x_0)\cos(2\pi x_1)$.
@@ -63,7 +64,6 @@ from ufl import cos, as_vector, dx, grad, inner
 f = (8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])
 exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 equation = (inner(grad(u), grad(v)) + inner(u,v)) * dx == f * v[0] * dx
-equation
 
 
 # We create the space and the model.

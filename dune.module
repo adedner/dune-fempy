@@ -1,5 +1,5 @@
 Module: dune-fempy
 Version: 2.6
+Maintainer: a.s.dedner@warwick.ac.uk, nolte.mrtn@gmail.com
 Whitespace-Hook: Yes
-Maintainer: nolte@mathematik.uni-freiburg.de
 Depends: dune-fem (>= 2.6) dune-python (>= 2.6)

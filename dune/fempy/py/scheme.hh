@@ -78,7 +78,9 @@ namespace Dune
 
       // register assemble method if data method is available (and return value is registered)
 #if HAVE_DUNE_ISTL
-      template< class Scheme, class... options >
+      template< class GF, class Scheme, class... options, std::enable_if_t<
+            std::is_same< std::decay_t< decltype(std::declval< Scheme >().assemble( std::declval< const GF& >() )) >,
+                  typename Scheme::LinearOperatorType>::value, int > i = 0 >
       inline static auto registerSchemeAssemble ( pybind11::class_< Scheme, options... > cls, PriorityTag< 2 > )
         -> void_t< decltype( getBCRSMatrix( std::declval< const typename Scheme::LinearOperatorType & >().matrix() ) ) >
       {
@@ -92,16 +94,15 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        cls.def( "assemble", [] ( Scheme &self, const DiscreteFunction &ubar ) {
-            return getBCRSMatrix( self.assemble( ubar ).matrix() );
-          }, pybind11::return_value_policy::reference_internal, "ubar"_a );
-        cls.def( "assemble", [] ( Scheme &self, const VirtualizedGridFunction< GridPart, RangeType > &ubar ) {
+        cls.def( "assemble", [] ( Scheme &self, const GF &ubar ) {
             return getBCRSMatrix( self.assemble( ubar ).matrix() );
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 #endif // #if HAVE_DUNE_ISTL
 
-      template< class Scheme, class... options >
+      template< class GF, class Scheme, class... options, std::enable_if_t<
+            std::is_same< std::decay_t< decltype(std::declval< Scheme >().assemble( std::declval< const GF& >() )) >,
+                  typename Scheme::LinearOperatorType>::value, int > i = 0 >
       inline static auto registerSchemeAssemble ( pybind11::class_< Scheme, options... > cls, PriorityTag< 1 > )
         -> void_t< decltype( std::declval< const typename Scheme::LinearOperatorType & >().matrix().data() ) >
       {
@@ -111,22 +112,24 @@ namespace Dune
 
         using pybind11::operator""_a;
 
-        cls.def( "assemble", [] ( Scheme &self, const DiscreteFunction &ubar ) {
-            return self.assemble( ubar ).matrix().data();
-          }, pybind11::return_value_policy::reference_internal, "ubar"_a );
-        cls.def( "assemble", [] ( Scheme &self, const VirtualizedGridFunction< GridPart, RangeType > &ubar ) {
+        cls.def( "assemble", [] ( Scheme &self, const GF &ubar ) {
             return self.assemble( ubar ).matrix().data();
           }, pybind11::return_value_policy::reference_internal, "ubar"_a );
       }
 
-      template< class Scheme, class... options >
+      template< class GF, class Scheme, class... options >
       inline static void registerSchemeAssemble ( pybind11::class_< Scheme, options... > cls, PriorityTag< 0 > )
-      {}
+      { }
 
       template< class Scheme, class... options >
       inline static void registerSchemeAssemble ( pybind11::class_< Scheme, options... > cls )
       {
-        registerSchemeAssemble( cls, PriorityTag< 42 >() );
+        typedef typename Scheme::DiscreteFunctionType DiscreteFunction;
+        typedef typename DiscreteFunction::RangeType RangeType;
+        typedef typename Scheme::GridPartType GridPart;
+
+        registerSchemeAssemble< DiscreteFunction >( cls, PriorityTag< 42 >() );
+        registerSchemeAssemble< VirtualizedGridFunction< GridPart, RangeType > >( cls, PriorityTag< 42 >() );
       }
 
 
@@ -193,6 +196,15 @@ namespace Dune
 
         registerSchemeConstructor( cls );
 
+        cls.def( "_solve", [] ( Scheme &self, const DiscreteFunction &rhs, DiscreteFunction &solution ) {
+            auto info = self.solve( rhs, solution );
+            // needs pybind 1.9: return pybind11::dict("converged"_a=info.converged, "iterations"_a=info.nonlinearIterations, "linear_iterations"_a=info.linearIterations);
+            return std::map<std::string,std::string> {
+                {"converged",std::to_string(info.converged)},
+                {"iterations",std::to_string(info.nonlinearIterations)},
+                {"linear_iterations",std::to_string(info.linearIterations)}
+              };
+          } );
         cls.def( "_solve", [] ( Scheme &self, DiscreteFunction &solution ) {
             auto info = self.solve( solution );
             // needs pybind 1.9: return pybind11::dict("converged"_a=info.converged, "iterations"_a=info.nonlinearIterations, "linear_iterations"_a=info.linearIterations);

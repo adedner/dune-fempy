@@ -133,7 +133,6 @@ equation = a_im == a_ex
 
 # In[7]:
 
-import dune.common as common
 import dune.fem as fem
 import dune.grid as grid
 import dune.create as create
@@ -169,7 +168,7 @@ scheme = create.scheme("h1", space, model, solver="gmres",
 # In[9]:
 
 def mark(element):
-    marker = common.Marker
+    marker = grid.Marker
     solutionLocal = solution.localFunction(element)
     grad = solutionLocal.jacobian(element.geometry.domain.center)
     if grad[0].infinity_norm > 1.2:

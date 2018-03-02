@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import numpy
 
-import dune.common
+import dune.grid
 import dune.fem
 
 import dune.create as create
@@ -40,7 +40,7 @@ output = alugrid.vtkWriter()
 output.write("grid_construction001")
 
 print("from file 2")
-alugrid = create.grid("ALUConform", (dune.common.reader.dgf,"../data/unitcube-2d.dgf"), dimgrid=2)
+alugrid = create.grid("ALUConform", (dune.grid.reader.dgf,"../data/unitcube-2d.dgf"), dimgrid=2)
 output = alugrid.vtkWriter()
 output.write("grid_construction002")
 

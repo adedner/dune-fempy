@@ -4,8 +4,8 @@ from dune.source.cplusplus import NameSpace, SourceWriter
 
 from .formfiles import compileUFLFile
 
-def compile(inputFileName, outputFileName=None, namespace=None, tempVars=True):
-    code = compileUFLFile(inputFileName, tempVars=tempVars)
+def compile(inputFileName, predefined=None, outputFileName=None, namespace=None, tempVars=True):
+    code = compileUFLFile(inputFileName, predefined=predefined, tempVars=tempVars)
     if namespace is not None:
         for ns in reversed(namespace.split('::')):
             code = NameSpace(ns, code=code)
@@ -26,10 +26,11 @@ def version(package_name):
 
 
 def main():
-    description = 'dune-fempy elliptic model compiler'
+    description = 'dune-fempy integrands model compiler'
 
     parser = ArgumentParser(description=description)
     parser.add_argument('input', help='name of input .ufl file')
+    parser.add_argument('-D', '--define', action='append', default=[], help='define Python variables on the command line')
     parser.add_argument('-o', '--output', help='name of output .hh file')
     parser.add_argument('-n', '--namespace', help='C++ namespace for models in')
     parser.add_argument('--no-tempvars', dest='tempVars', action='store_false', help='do not generate temporary variables')
@@ -41,8 +42,17 @@ def main():
         print(e)
         return 1
 
+    predefined={}
+    for d in args.define:
+        key, value = d.split('=')
+        try:
+            predefined[key] = eval(value)
+        except Exception as e:
+            print("Error evaluating '" + value + "':", e)
+            return 1
+
     try:
-        compile(args.input, outputFileName=args.output, namespace=args.namespace, tempVars=args.tempVars)
+        compile(args.input, predefined=predefined, outputFileName=args.output, namespace=args.namespace, tempVars=args.tempVars)
     except Exception as e:
         if args.debug:
             raise(e)

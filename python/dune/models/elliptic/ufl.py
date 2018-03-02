@@ -159,10 +159,14 @@ def compileUFL(form, *args, **kwargs):
         except AttributeError:
             name = str(coefficient)
         if coefficient.is_cellwise_constant():
+            try:
+                parameter = getattr(coefficient, "parameter")
+            except AttributeError:
+                parameter = None
             if len(coefficient.ufl_shape) == 0:
-                constants[coefficient] = model.addConstant('double', name)
+                constants[coefficient] = model.addConstant('double', name=name, parameter=parameter)
             elif len(coefficient.ufl_shape) == 1:
-                constants[coefficient] = model.addConstant('Dune::FieldVector< double, ' + str(coefficient.ufl_shape[0]) + ' >', name)
+                constants[coefficient] = model.addConstant('Dune::FieldVector< double, ' + str(coefficient.ufl_shape[0]) + ' >', name=name, parameter=parameter)
             else:
                 Exception('Currently, only scalars and vectors are supported as constants')
         else:
@@ -180,12 +184,12 @@ def compileUFL(form, *args, **kwargs):
                 coefficient = Grad(coefficient)
         predefined.update({c: model.constant(i) for c, i in constants.items()})
 
-    predefined = {u: model.arg_u, du: model.arg_du}
+    predefined = {u: model.arg_u, du: model.arg_du, d2u: model.arg_d2u}
     predefined[x] = UnformattedExpression('auto', 'entity().geometry().global( Dune::Fem::coordinate( ' + model.arg_x.name + ' ) )')
     predefineCoefficients(predefined, model.arg_x)
     model.source = generateCode(predefined, source, tempVars=tempVars)
     model.diffusiveFlux = generateCode(predefined, diffusiveFlux, tempVars=tempVars)
-    predefined.update({ubar: model.arg_ubar, dubar: model.arg_dubar})
+    predefined.update({ubar: model.arg_ubar, dubar: model.arg_dubar, d2ubar: model.arg_d2ubar})
     model.linSource = generateCode(predefined, linSource, tempVars=tempVars)
     model.linDiffusiveFlux = generateCode(predefined, linDiffusiveFlux, tempVars=tempVars)
 

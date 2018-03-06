@@ -28,7 +28,7 @@ def init(integrands, *args, **kwargs):
 
     for name, value in kwargs.items():
         try:
-            i = coefficientNames[i]
+            i = coefficientNames[name]
         except KeyError:
             raise ValueError('No such coefficent: ' + name + '.')
 
@@ -57,8 +57,9 @@ def init(integrands, *args, **kwargs):
 
     if hasattr(integrands, '_renumbering'):
         for c, i in integrands._renumbering.items():
-            if args[i] is None and isinstance(c, GridFunction):
-                args[i] = c.gf
+            if isinstance(c, GridFunction):
+                if args[i] is None:
+                    args[i] = c.gf
 
     if any(arg is None for arg in args):
         missing = [name for name, i in coefficientNames.items() if args[i] is None]
@@ -143,6 +144,11 @@ class Source(object):
             writer.emit('cls.def( pybind11::init( [] ( ' + initArgs + ' ) { return new Integrands( ' + ', '.join(coefficientNames) +  ' ); } ), ' + keepAlive + ' );')
         else:
             writer.emit('cls.def( pybind11::init( [] () { return new Integrands(); } ) );')
+
+        for t, n in zip(integrands.constantTypes, integrands.constantNames):
+            te = "Integrands::" + t
+            writer.emit('cls.def_property( "' + n + '", [] ( Integrands &self ) -> ' + te + ' { return self.' + n + '(); }, [] ( Integrands &self, const ' + te + ' &v ) { self.' + n + '() = v; } );')
+
         writer.closePythonModule(name)
 
         source = writer.writer.getvalue()

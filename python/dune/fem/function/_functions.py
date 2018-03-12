@@ -111,6 +111,13 @@ def numpyFunction(space, vec, name="tmp", **unused):
 
     return module("numpy", includes, typeName).DiscreteFunction(space,name,vec).as_ufl()
 
+def addComponents(f,**kwargs):
+    components = kwargs.get("components",None)
+    if not components is None:
+        assert len(components) == len(f)
+        for i,c in enumerate(components):
+            f.__dict__[c] = f[i]
+    return f
 
 def tupleDiscreteFunction(*spaces, **kwargs):
     from dune.fem.discretefunction import module

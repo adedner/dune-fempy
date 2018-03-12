@@ -183,13 +183,66 @@ namespace Dune
         cls.def( "assign", [] ( DF &self, const DF &other ) { self.assign( other ); }, "other"_a );
 
         typedef VirtualizedGridFunction< GridPart, typename Space::RangeType > GridFunction;
-        cls.def( "_interpolate", [] ( DF &self, const GridFunction &gf ) {
-            Fem::interpolate( gf, self );
-          }, "gridFunction"_a );
-        cls.def( "_interpolate", [] ( DF &self, typename Space::RangeType value ) {
-            const auto gf = simpleGridFunction( self.space().gridPart(), [ value ] ( typename DF::DomainType ) { return value; }, 0 );
-            Fem::interpolate( gf, self );
-          }, "value"_a );
+        cls.def( "interpolate", [] ( DF &self, pybind11::object obj ) {
+            static const auto uflExpr = pybind11::module::import( "ufl.core.expr" ).attr( "Expr" );
+
+            // remove GridFunction wrapper
+            if( isinstance( obj, Dune::FemPy::getGridFunctionWrapper() ) )
+              obj = obj.attr( "__impl__" );
+            else if( pybind11::isinstance( obj, uflExpr ) )
+            {
+              static const auto uflFunction = pybind11::module::import( "dune.models.localfunction" ).attr( "UFLFunction" );
+
+              typedef typename DF::GridPartType::GridViewType GridView;
+              obj = uflFunction( static_cast< GridView >( self.gridPart() ), "expr", self.space().order(), obj );
+
+              // pybind11::tuple args( 1 );
+              // args[ 0 ] = static_cast< GridView >( self.gridPart() );   // gridView
+              // args[ 1 ] = std::string( "expr" );                        // name
+              // args[ 2 ] = self.space().order();                         // order
+              // args[ 3 ] = obj;                                          // ufl expression
+              // obj = PyObject_Call( uflFunction.ptr(), args.ptr(), nullptr );
+            }
+
+            try
+            {
+              const GridFunction &gf = pybind11::cast< const GridFunction & >( obj );
+              Fem::interpolate( gf, self );
+              return;
+            }
+            catch( pybind11::cast_error )
+            {}
+
+            try
+            {
+              auto value = pybind11::cast< typename Space::RangeType >( obj );
+              const auto gf = simpleGridFunction( self.space().gridPart(), [ value ] ( typename DF::DomainType ) { return value; }, 0 );
+              Fem::interpolate( gf, self );
+              return;
+            }
+            catch( pybind11::cast_error )
+            {}
+
+            // try to convert f into a local or glocal grid function
+            if( pybind11::isinstance< pybind11::function >( obj ) )
+            {
+              pybind11::function f( obj );
+              static const pybind11::function getargspec( pybind11::module::import( "inspect" ).attr( "getargspec" ) );
+              switch( pybind11::len( getargspec( f )[ pybind11::int_( 0 ) ] ) )
+              {
+              case 1:
+                Fem::interpolate( detail::makePyGlobalGridFunction( self.gridPart(), "", self.space().order(), f, std::integral_constant< int, DF::DiscreteFunctionSpaceType::dimRange >() ), self );
+                return;
+
+              case 2:
+                Fem::interpolate( detail::makePyLocalGridFunction( self.gridPart(), "", self.space().order(), f, std::integral_constant< int, DF::DiscreteFunctionSpaceType::dimRange >() ), self );
+                return;
+              }
+            }
+
+            throw pybind11::value_error( "Only grid function, functions, and constants can be interpolated." );
+          }, "function"_a );
+
 
         typedef typename DF::DofVectorType DofVector;
         if( !pybind11::already_registered< DofVector >() )

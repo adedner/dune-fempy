@@ -1,6 +1,8 @@
 #ifndef DUNE_FEMPY_PY_GRID_FUNCTION_HH
 #define DUNE_FEMPY_PY_GRID_FUNCTION_HH
 
+#include <cassert>
+
 #include <functional>
 #include <string>
 #include <tuple>
@@ -108,6 +110,66 @@ namespace Dune
 
 
 
+      // makeSubDiscreteFunction
+      // -----------------------
+
+      template< class GridFunction, std::size_t i >
+      static pybind11::object makeSubDiscreteFunction ( pybind11::object obj )
+      {
+        GridFunction &gridFunction = pybind11::cast< GridFunction & >( obj );
+        return pybind11::cast( gridFunction.template subDiscreteFunction< i >(), pybind11::return_value_policy::reference_internal, obj );
+      }
+
+
+
+      // registerSubGridFunction
+      // -----------------------
+
+      template< class GridFunction, class... options >
+      inline static auto registerSubGridFunction ( pybind11::handle scope, pybind11::class_< GridFunction, options... > cls, PriorityTag< 1 > )
+        -> std::enable_if_t< std::is_same< typename GridFunction::template SubDiscreteFunction< 0 >::Type &, decltype( std::declval< GridFunction & >().template subDiscreteFunction< 0 >() ) >::value >
+      {
+        std::array< pybind11::object (*) ( pybind11::object ), GridFunction::Sequence::size() > makeSubFunction;
+        Hybrid::forEach( typename GridFunction::Sequence(), [ &makeSubFunction ] ( auto &&i ) {
+            assert( pybind11::already_registered< typename GridFunction::template SubDiscreteFunction< i.value >::Type > );
+            makeSubFunction[ i ] = makeSubDiscreteFunction< GridFunction, i.value >;
+          } );
+        cls.def( "__getitem__", [ makeSubFunction ] ( pybind11::object self, std::size_t c ) {
+            if( c >= makeSubFunction.size() )
+              pybind11::value_error( "Invalid subfunction index: " + std::to_string( c ) + " (must be in [0, " + std::to_string( makeSubFunction.size() ) + "))." );
+            return makeSubFunction[ c ]( self );
+          } );
+      }
+
+      template< class GridFunction, class... options >
+      inline static void registerSubGridFunction ( pybind11::handle scope, pybind11::class_< GridFunction, options... > cls, PriorityTag< 0 > )
+      {
+        typedef typename Dune::Fem::ConstLocalFunction< GridFunction > LocalFunction;
+        typedef typename LocalFunction::EntityType Entity;
+        typedef typename GridFunction::GridPartType GridPartType;
+
+        typedef decltype( makePyLocalGridFunction( std::declval< GridPartType >(), std::declval< std::string >(), std::declval< int >(), std::declval< pybind11::function >(), std::integral_constant< int, 1 >() ) ) ScalarLocalGridFunction;
+        if( !pybind11::already_registered< ScalarLocalGridFunction >() )
+          registerPyLocalGridFunction< GridPartType >( scope, "LocalGridFunction", std::integral_constant< int, 1 >() );
+
+        cls.def( "__getitem__", [] ( const GridFunction &self, std::size_t c ) {
+            return makePyLocalGridFunction( self.gridPart(), self.name() + "_" + std::to_string(c), self.space().order(),
+                pybind11::cpp_function( [ self, c ] ( const Entity &e, const typename Entity::Geometry::LocalCoordinate &x ) {
+                    typename GridFunction::LocalFunctionType::RangeType value;
+                    self.localFunction( e ).evaluate( x, value );
+                    return value[ c ];
+                  } ), std::integral_constant< int, 1 >() );
+          }, pybind11::keep_alive< 0, 1 >() );
+      }
+
+      template< class GridFunction, class... options >
+      inline static void registerSubGridFunction ( pybind11::handle scope, pybind11::class_< GridFunction, options... > cls )
+      {
+        registerSubGridFunction( scope, cls, PriorityTag< 42 >() );
+      }
+
+
+
       // registerGridFunction
       // --------------------
 
@@ -147,18 +209,7 @@ namespace Dune
           }, pybind11::keep_alive< 0, 1 >(), pybind11::keep_alive< 0, 2 >(),
              pybind11::return_value_policy::take_ownership );
 
-        typedef decltype( makePyLocalGridFunction( std::declval< GridPartType >(), std::declval< std::string >(), std::declval< int >(), std::declval< pybind11::function >(), std::integral_constant< int, 1 >() ) ) ScalarLocalGridFunction;
-        if (!pybind11::already_registered<ScalarLocalGridFunction>())
-          registerPyLocalGridFunction<GridPartType>( scope, "LocalGridFunction", std::integral_constant< int, 1 >() );
-
-        cls.def( "__getitem__", [] ( const GridFunction &self, std::size_t c ) {
-            return makePyLocalGridFunction( self.gridPart(), self.name() + "_" + std::to_string(c), self.space().order(),
-                pybind11::cpp_function( [ self, c ] ( const Entity &e, const typename Entity::Geometry::LocalCoordinate &x ) {
-                    typename GridFunction::LocalFunctionType::RangeType value;
-                    self.localFunction( e ).evaluate( x, value );
-                    return value[ c ];
-                  } ), std::integral_constant< int, 1 >() );
-          }, pybind11::keep_alive< 0, 1 >() );
+        registerSubGridFunction( scope, cls );
 
         cls.def( "addToVTKWriter", &Dune::Python::addToVTKWriter< GridFunction >, pybind11::keep_alive< 3, 1 >(), "name"_a, "writer"_a, "dataType"_a );
 

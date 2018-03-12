@@ -329,10 +329,8 @@ def combined(*spaces, **unused):
         else:
             combinedField = space.field
 
-    includes = ["dune/fem/space/combinedspace/tuplespace.hh"]
-    for space in spaces:
-        includes += space._includes
-    typeName = "Dune::Fem::TupleDiscreteFunctionSpace< " + ", ".join([space._typeName for space in spaces]) + " >"
+    includes = sum((space._includes for space in spaces), ["dune/fem/space/combinedspace/tuplespace.hh"])
+    typeName = "Dune::Fem::TupleDiscreteFunctionSpace< " + ", ".join(space._typeName for space in spaces) + " >"
 
     return module(combinedField, combinedStorage, includes, typeName).Space(spaces[0].grid)
 

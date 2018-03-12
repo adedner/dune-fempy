@@ -6,15 +6,11 @@ logger = logging.getLogger(__name__)
 
 
 import dune.grid
+import dune.fem.space
 import dune.models.localfunction
 
 import dune.common.checkconfiguration as checkconfiguration
 from dune.common.hashit import hashIt
-
-try:
-    from dune.ufl import GridFunction
-except:
-    pass
 
 def registerGridFunctions(gridview):
     from dune.generator import builder
@@ -113,3 +109,14 @@ def numpyFunction(space, vec, name="tmp", **unused):
           spaceType + ", Dune::FemPy::NumPyVector< " + field + " > >"
 
     return module("numpy", includes, typeName).DiscreteFunction(space,name,vec).as_ufl()
+
+
+def tupleDiscreteFunction(*spaces, **kwargs):
+    from dune.fem.discretefunction import module
+    tupleSpace = dune.fem.space.combined(*spaces)
+    dfIncludes = (space.storage[1] for space in spaces)
+    dfTypeNames = (space.storage[2] for space in spaces)
+    includes = sum(dfIncludes, ["dune/fem/function/tuplediscretefunction.hh"])
+    typeName = "Dune::Fem::TupleDiscreteFunction< " + ", ".join(dfTypeNames) + " >"
+    name = kwargs.get("name", "")
+    return module(tupleSpace.storage, includes, typeName).DiscreteFunction(tupleSpace, name).as_ufl()

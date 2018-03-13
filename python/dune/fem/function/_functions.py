@@ -78,6 +78,7 @@ def discreteFunction(space, name, expr=None, *args, **kwargs):
         DiscreteFunction: the constructed discrete function
     """
     storage, dfIncludes, dfTypeName, _, _ = space.storage
+    # need to call as_ufl here, because type_casters are not invoked in constructors
     df = dune.fem.discretefunction.module(storage, dfIncludes, dfTypeName).DiscreteFunction(space,name)
     if expr is None:
         df.clear()
@@ -119,4 +120,11 @@ def tupleDiscreteFunction(*spaces, **kwargs):
     includes = sum(dfIncludes, ["dune/fem/function/tuplediscretefunction.hh"])
     typeName = "Dune::Fem::TupleDiscreteFunction< " + ", ".join(dfTypeNames) + " >"
     name = kwargs.get("name", "")
-    return module(tupleSpace.storage, includes, typeName).DiscreteFunction(tupleSpace, name).as_ufl()
+    df = module(tupleSpace.storage, includes, typeName, dynamicAttr=True).DiscreteFunction(tupleSpace, name)
+    components = kwargs.get("components")
+    if components is not None:
+        assert len(components) == len(spaces)
+        for c, n in zip(df.components, components):
+            c.name = n
+            df.__dict__[n] = c
+    return df.as_ufl()

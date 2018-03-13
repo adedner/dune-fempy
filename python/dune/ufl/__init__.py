@@ -82,23 +82,6 @@ def Parameter(domain, parameter, dimRange=None, count=None):
     return constant
 
 
-from ufl.indexed import Indexed
-from ufl.index_combination_utils import create_slice_indices
-from ufl.core.multiindex import MultiIndex
-class GridIndexed(Indexed):
-    def __init__(self,gc,i):
-        component = (i,)
-        shape = gc.ufl_shape
-        all_indices, _, _ = create_slice_indices(component, shape, gc.ufl_free_indices)
-        mi = MultiIndex(all_indices)
-        Indexed.__init__(self,gc,mi)
-        self.__impl__ = gc.gf[i]
-    def __getattr__(self, item):
-        result = getattr(self.__impl__, item)
-        return result
-
-
-
 class GridFunction(ufl.Coefficient):
     """ This class combines a Dune grid function and a ufl Coefficient
         class. Detailed documentation can be accessed by calling
@@ -107,14 +90,14 @@ class GridFunction(ufl.Coefficient):
     """
     def __init__(self, gf):
         try:
-            gf = gf.gf
+            gf = gf.__impl__
         except:
             pass
         self.gf = gf
         self.__impl__ = gf
-        __module__ = self.gf.__module__
-        self.GridFunctionClass = gf.__class__
-        grid = gf.grid
+        __module__ = self.__impl__.__module__
+        self.GridFunctionClass = self.__impl__.__class__
+        grid = self.__impl__.grid
 
         dimRange = gf.dimRange
         uflSpace = Space((grid.dimGrid, grid.dimWorld), dimRange)
@@ -125,11 +108,6 @@ class GridFunction(ufl.Coefficient):
     def as_numpy(self):
         import numpy as np
         return np.array( self.dofVector, copy=False )
-    def __getitem__(self,i):
-        if isinstance(i,int):
-            return GridIndexed(self,i)
-        else:
-            return ufl.Coefficient.__getitem__(self,i)
     def __getattr__(self, item):
         def tocontainer(func):
             @wraps(func)

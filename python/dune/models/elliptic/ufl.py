@@ -13,7 +13,7 @@ from ufl.core.multiindex import FixedIndex, MultiIndex
 from dune.ufl import DirichletBC, GridFunction
 from dune.ufl import codegen
 from dune.ufl.tensors import ExprTensor
-from dune.ufl.linear import splitMultiLinearExpr
+from dune.ufl.multilinear import splitMultiLinearExpr
 
 from dune.source.cplusplus import UnformattedExpression
 from dune.source.cplusplus import Declaration, NameSpace, SwitchStatement, TypeAlias, UnformattedBlock, Variable

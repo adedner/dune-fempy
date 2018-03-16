@@ -19,7 +19,7 @@ from dune.source.algorithm.extractvariables import extractVariablesFromExpressio
 
 from dune.ufl import codegen
 from dune.ufl.gatherderivatives import gatherDerivatives
-from dune.ufl.linear import splitForm
+from dune.ufl.multilinear import splitForm
 import dune.ufl.tensors as tensors
 
 from .model import Integrands

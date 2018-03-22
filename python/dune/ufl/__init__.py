@@ -137,7 +137,7 @@ class GridFunction(ufl.Coefficient):
                 return func(*args, **kwargs)
             return wrapper
         result = getattr(self.__impl__, item)
-        if callable(result):
+        if not isinstance(result, GridFunction) and callable(result):
             # doc = result.func.__doc__
             result = tocontainer(result)
             # result.func.__doc__ = doc
@@ -157,11 +157,6 @@ class GridFunction(ufl.Coefficient):
             return self.gf.localFunction(x.entity).evaluate(x.local)[component[0]]
         else:
             return self.gf.localFunction(x.entity).jacobian(x.local)[component[0]][derivatives[0]]
-    def __getitem__(self,i):
-        if isinstance(i,int):
-            return GridIndexed(self,i)
-        else:
-            return ufl.Coefficient.__getitem__(self,i)
 
 class DirichletBC:
     def __init__(self, functionSpace, value, subDomain):

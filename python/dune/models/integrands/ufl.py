@@ -135,8 +135,7 @@ def generateBinaryLinearizedCode(predefined, testFunctions, trialFunctions, tens
     trialFunctionsOut = [psi('-') for psi in trialFunctions]
 
     if tensorMap is None:
-        # value = construct('RangeValueType', *[0 for i in range(len(testFunctions)), brace=True])
-        value = construct('RangeValueType', *[0 for i in range(len(testFunctions))])
+        value = construct('RangeValueType', *[0 for i in range(len(testFunctions))], brace=True)
         tensorIn = lambda_(args=['const DomainValueType &phiIn'], code=return_(make_pair(value, value)))
         tensorOut = lambda_(args=['const DomainValueType &phiOut'], code=return_(make_pair(value, value)))
         return [return_(make_pair(tensorIn, tensorOut))]
@@ -185,7 +184,7 @@ def compileUFL(form, constants=None, coefficients=None, tempVars=True):
     if coefficients is None and constants is None:
         coefficients = set(form.coefficients())
         constants = [c for c in coefficients if c.is_cellwise_constant()]
-        coefficients = [c for c in coefficients if not c.is_cellwise_constant()]
+        coefficients = sorted((c for c in coefficients if not c.is_cellwise_constant()), key=lambda c: c.count())
     elif coefficients is None or constants is None:
         raise ValueError("Either both, coefficients and constants, or neither of them must be specified.")
 
@@ -214,6 +213,7 @@ def compileUFL(form, constants=None, coefficients=None, tempVars=True):
 
     integrands = Integrands(form.signature(), (d.ufl_shape for d in derivatives_u), (d.ufl_shape for d in derivatives_phi),
                             constants=(fieldVectorType(c) for c in constants), coefficients=(fieldVectorType(c) for c in coefficients),
+                            constantNames=(getattr(c, 'name', None) for c in constants),
                             coefficientNames=(getattr(c, 'name', None) for c in coefficients),
                             parameterNames=(getattr(c, 'parameter', None) for c in constants))
     try:

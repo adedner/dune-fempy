@@ -28,7 +28,7 @@ def init(integrands, *args, **kwargs):
 
     for name, value in kwargs.items():
         try:
-            i = coefficientNames[i]
+            i = coefficientNames[name]
         except KeyError:
             raise ValueError('No such coefficent: ' + name + '.')
 
@@ -57,8 +57,9 @@ def init(integrands, *args, **kwargs):
 
     if hasattr(integrands, '_renumbering'):
         for c, i in integrands._renumbering.items():
-            if args[i] is None and isinstance(c, GridFunction):
-                args[i] = c.gf
+            if isinstance(c, GridFunction):
+                if args[i] is None:
+                    args[i] = c.gf
 
     if any(arg is None for arg in args):
         missing = [name for name, i in coefficientNames.items() if args[i] is None]
@@ -101,7 +102,7 @@ class Source(object):
         if isinstance(self.integrands, Form):
             coefficients = set(self.integrands.coefficients())
             constants = [c for c in coefficients if c.is_cellwise_constant()]
-            coefficients = [c for c in coefficients if not c.is_cellwise_constant()]
+            coefficients = sorted((c for c in coefficients if not c.is_cellwise_constant()), key=lambda c: c.count())
             integrands = compileUFL(self.integrands, constants=constants, coefficients=coefficients, tempVars=self.tempVars)
         else:
             integrands = self.integrands
@@ -143,6 +144,11 @@ class Source(object):
             writer.emit('cls.def( pybind11::init( [] ( ' + initArgs + ' ) { return new Integrands( ' + ', '.join(coefficientNames) +  ' ); } ), ' + keepAlive + ' );')
         else:
             writer.emit('cls.def( pybind11::init( [] () { return new Integrands(); } ) );')
+
+        for t, n in zip(integrands.constantTypes, integrands.constantNames):
+            te = "Integrands::" + t
+            writer.emit('cls.def_property( "' + n + '", [] ( Integrands &self ) -> ' + te + ' { return self.' + n + '(); }, [] ( Integrands &self, const ' + te + ' &v ) { self.' + n + '() = v; } );')
+
         writer.closePythonModule(name)
 
         source = writer.writer.getvalue()
@@ -160,7 +166,7 @@ def load(grid, integrands, renumbering=None, tempVars=True):
         numCoefficients = len(coefficients)
         if renumbering is None:
             renumbering = dict()
-            renumbering.update((c, i) for i, c in enumerate(c for c in coefficients if not c.is_cellwise_constant()))
+            renumbering.update((c, i) for i, c in enumerate(sorted((c for c in coefficients if not c.is_cellwise_constant()), key=lambda c: c.count())))
             renumbering.update((c, i) for i, c in enumerate(c for c in coefficients if c.is_cellwise_constant()))
         coefficientNames = ['coefficient' + str(i) if n is None else n for i, n in enumerate(getattr(c, 'name', None) for c in coefficients if not c.is_cellwise_constant())]
     else:

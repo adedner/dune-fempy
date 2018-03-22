@@ -5,7 +5,7 @@ RUN apt-get update && apt-get dist-upgrade --yes --no-install-recommends
 RUN apt-get install --yes --no-install-recommends \
   ca-certificates wget tar \
   libc6-dev gcc g++ binutils make cmake pkg-config patch \
-  libeigen3-dev \
+  libeigen3-dev libsuitesparse-dev \
   python3-dev python3-setuptools python3-pip python3-wheel \
   python3-pandocfilters \
   python3-numpy python3-scipy python3-matplotlib \

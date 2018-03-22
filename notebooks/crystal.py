@@ -138,11 +138,11 @@ import dune.grid as grid
 import dune.create as create
 order = 1
 domain = grid.cartesianDomain([4,4],[8,8],[3,3])
-grid   = create.view("adaptive", grid="ALUConform",
+grid_view = create.view("adaptive", grid="ALUConform",
                     constructor=domain, dimgrid=dimDomain)
-space = create.space("Lagrange", grid, dimrange=dimRange,
+space = create.space("Lagrange", grid_view, dimrange=dimRange,
                 order=order, storage="fem")
-initial_gf = create.function("global", grid, "initial", order+1, initial)
+initial_gf = create.function("global", grid_view, "initial", order+1, initial)
 solution   = space.interpolate(initial_gf, name="solution")
 solution_n = solution.copy()
 
@@ -151,7 +151,7 @@ solution_n = solution.copy()
 
 # In[8]:
 
-model  = create.model("elliptic", grid, equation, coefficients={un:solution_n} )
+model  = create.model("elliptic", grid_view, equation, coefficients={un:solution_n} )
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-5,
         "fem.solver.newton.linabstol": 1e-8,
@@ -170,7 +170,7 @@ scheme = create.scheme("h1", space, model, solver="gmres",
 def mark(element):
     marker = grid.Marker
     solutionLocal = solution.localFunction(element)
-    grad = solutionLocal.jacobian(element.geometry.domain.center)
+    grad = solutionLocal.jacobian(element.geometry.referenceElement.center)
     if grad[0].infinity_norm > 1.2:
       return marker.refine if element.level < maxLevel else marker.keep
     else:
@@ -182,14 +182,14 @@ def mark(element):
 # In[10]:
 
 maxLevel = 11
-hgrid    = grid.hierarchicalGrid
+hgrid    = grid_view.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(0,maxLevel):
     hgrid.mark(mark)
     fem.adapt(hgrid,[solution])
     fem.loadBalance(hgrid,[solution])
     solution.interpolate(initial_gf)
-    print(grid.size(0),end=" ")
+    print(grid_view.size(0),end=" ")
 print()
 
 
@@ -201,8 +201,8 @@ from numpy import amin, amax, linspace
 from matplotlib import pyplot
 from IPython import display
 
-def matplot(grid, solution, show=range(dimRange)):
-    triangulation = grid.triangulation()
+def matplot(grid_view, solution, show=range(dimRange)):
+    triangulation = grid_view.triangulation()
     subfig = 101+(len(show)+1)*10
     # plot the grid
     pyplot.subplot(subfig)
@@ -228,10 +228,10 @@ def matplot(grid, solution, show=range(dimRange)):
 pyplot.figure()
 
 from dune.fem.function import levelFunction, partitionFunction
-tk = grid.writeVTK("crystal", pointdata=[solution],
-       celldata=[levelFunction(grid), partitionFunction(grid)], number=0)
+tk = grid_view.writeVTK("crystal", pointdata=[solution],
+       celldata=[levelFunction(grid_view), partitionFunction(grid_view)], number=0)
 
-matplot(grid,solution, [0])
+matplot(grid_view,solution, [0])
 
 
 # Some constants needed for the time loop:
@@ -252,7 +252,7 @@ endTime = 0.05
 while t < endTime:
     solution_n.assign(solution)
     scheme.solve(target=solution)
-    print(t,grid.size(0),end="\r")
+    print(t,grid_view.size(0),end="\r")
     t += timeStep
     hgrid.mark(mark)
     fem.adapt(hgrid,[solution])
@@ -265,4 +265,4 @@ print()
 # In[15]:
 
 pyplot.figure()
-matplot(grid, solution)
+matplot(grid_view, solution)

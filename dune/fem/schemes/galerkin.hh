@@ -835,7 +835,8 @@ namespace Dune
 
       SolverInfo solve ( const DiscreteFunctionType &rhs, DiscreteFunctionType &solution ) const
       {
-        Dune::Fem::NewtonInverseOperator< LinearOperatorType, InverseOperator > invOp( fullOperator(), parameter_ );
+        typedef Dune::Fem::NewtonInverseOperator< LinearOperatorType, InverseOperator > NewtonOperator;
+        NewtonOperator invOp( fullOperator(), parameter_ );
         invOp( rhs, solution );
 
         return SolverInfo( invOp.converged(), invOp.linearIterations(), invOp.iterations() );

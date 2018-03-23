@@ -25,5 +25,19 @@ def module(space):
     return module
 
 
-def spaceAdapt(space, marker, *args, **kwargs):
-    module(space).SpaceAdaptation(space).adapt(marker, *args, **kwargs)
+def spaceAdapt(space, marker, dfList):
+    dfs = {}
+    for df in dfList:
+        try:
+            for dfc in df.components:
+                try:
+                    dfs[dfc.space] += [dfc]
+                except KeyError:
+                    dfs[dfc.space] = [dfc]
+        except AttributeError:
+            try:
+                dfs[df.space] += [df]
+            except KeyError:
+                dfs[df.space] = [df]
+    for s,df in dfs.items(): # if we really have different spaces then there is still the problem that the marker doesn't know which space we are on
+        module(s).SpaceAdaptation(s).adapt(marker, df)

@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Grid functions (and some plotting) [(Notebook)][1]
@@ -7,10 +8,11 @@
 #
 # In addition we also show some simple inline plotting functionality.
 
-# In[1]:
+# In[ ]:
+
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or inline # can also use notebook or nbagg')
 except:
     pass
 import math
@@ -26,7 +28,8 @@ grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[4,4]), d
 
 # There are a number of different ways *grid function* can be constructed. We start with the simplest approach using callback to python function:
 
-# In[2]:
+# In[ ]:
+
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(10*x[1]), math.cos(10*x[1])**2]
@@ -37,7 +40,7 @@ plotComponents(gf_gl, gridLines="black")
 plot(gf_gl,gridLines="")
 
 def expr_local(en,x):
-    y = en.geometry.position(x)
+    y = en.geometry.toGlobal(x)
     return [gf_gl.localFunction(en).evaluate(x)[1] - y.two_norm,10]
 gf_loc = create.function("local", grid, "expr_local", 3, expr_local)
 # here we show the solution (first component) overlayed with the grid (default)
@@ -48,7 +51,8 @@ plot(gf_loc[0])
 #
 # This is quite a coarse grid. By changing the `level` argument in the plotting functions one can get a better representation of the functions without changing the grid. Since the data was never interpolate onto a grid the full information of the original function is still available:
 
-# In[3]:
+# In[ ]:
+
 
 plot(gf_loc[0],level=3)
 # of coarse we could refine the grid and plot with the original level
@@ -62,7 +66,8 @@ plot(gf_loc[0],level=3)
 #
 # Finaly, since evaluating these functions requires a callback from C++ to python and no *just in time* compilation is used, this approach can be quite slow compared to some of the others described in the following.
 
-# In[4]:
+# In[ ]:
+
 
 uflSpace = dune.ufl.Space(grid, 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
@@ -84,11 +89,14 @@ funcUFL1 = create.function("ufl", grid, "ufl1", 4, expr,
 #                           coefficients={coeff: funcUFL})
                            coefficients={coeff: coeffFunc})
 plot(funcUFL1)
+# for e in grid.elements:
+#     print( funcUFL1.localFunction(e) )
 
 
 # Finally the grid function can be described proving strings with valid C++ code
 
-# In[5]:
+# In[ ]:
+
 
 func1 = """
 double s = sin(xGlobal[0]);
@@ -120,7 +128,8 @@ plotComponents(func,gridLines="")
 
 # Most of the methods available on the grid functions have been used above - mainly the `localfunction` method. There are a few more of interst are:
 
-# In[6]:
+# In[ ]:
+
 
 print("dimension of range: ",func.dimRange)
 print("underlying grid instance: ",func.grid)
@@ -129,7 +138,8 @@ print("name: ",func.name)
 
 # The following two methods can be used together with the `grid.triangulation( level )` method to obtain a simple numpy vector representation of the solution:
 
-# In[7]:
+# In[ ]:
+
 
 print("return array with values at cell centers: ", func.cellData(0))
 print("return array with values at nodes: ", func.pointData(0))
@@ -137,21 +147,23 @@ print("return array with values at nodes: ", func.pointData(0))
 
 # The following method computes the integral of the function over the domain - a possible usage is to compute the approximation error of a function:
 
-# In[8]:
+# In[ ]:
+
 
 print("value of integral over whole domain: ", func.integrate())
 
 
 # The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:
 
-# In[9]:
+# In[ ]:
+
 
 # first a constant function
-vector_space = create.space("Lagrange", grid, dimrange=grid.dimension, order=2)
+vector_space = create.space("lagrange", grid, dimrange=grid.dimension, order=2)
 constant = vector_space.interpolate([1,1], name="constant")
 uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
 plot(uh,vectors=[0,1],gridLines="")
-scalar_space = create.space("Lagrange", grid, dimrange=1, order=2)
+scalar_space = create.space("lagrange", grid, dimrange=1, order=2)
 vorticity = create.function("local", grid, "global_velocity", 3,
                        lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
 vorticity_h = scalar_space.interpolate(vorticity, name="fh")
@@ -162,7 +174,8 @@ plot(vorticity_h)
 #
 # While discrete functions are grid functions and have the same attributes, they have a few additional methods
 
-# In[10]:
+# In[ ]:
+
 
 print("number of dofs: ", vorticity_h.size)
 print("the underlying space: ", vorticity_h.space)
@@ -191,10 +204,11 @@ plot(copy)
 #
 # [1]: http://eigen.tuxfamily.org/index.php?title=Main_Page
 
-# In[28]:
+# In[ ]:
+
 
 import numpy as np
-spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
+spc = create.space("lagrange", grid, dimrange=1, order=1, storage='eigen')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
 uh_dofs = uh.as_numpy # equivalent to np.array( uh.dofVector, copy=False )
@@ -204,7 +218,8 @@ plot(uh)
 
 # We can also use an existing `numpy` array as basis of a discrete function (over space with `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
 
-# In[29]:
+# In[ ]:
+
 
 # a simple function to check the address of the memory block of a numpy array
 def id(x):

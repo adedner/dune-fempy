@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Grid construction and basic usage [(Notebook)][3]
@@ -9,17 +10,18 @@
 # [2]: https://www.dune-project.org/doxygen/2.5.0/group__DuneGridFormatParser.html#details
 # [3]: _downloads/grid-construction.ipynb
 
-# In[1]:
+# In[ ]:
+
 
 from __future__ import print_function
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -30,7 +32,8 @@ import dune.create as create
 # ### Constructers
 # The following shows a simple routing to visualize a dune grid
 
-# In[2]:
+# In[ ]:
+
 
 from matplotlib import pyplot
 from matplotlib.collections import PolyCollection
@@ -53,7 +56,8 @@ def plotGrid(grid):
 
 # First the simplest approach - this simply results in a cube tesselated with a nicely structured grid:
 
-# In[3]:
+# In[ ]:
+
 
 grid = create.grid("ALUCube", dune.grid.cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 plotGrid(grid)
@@ -63,7 +67,8 @@ plotGrid(grid)
 
 # We now show how describe a simple grid using *numpy* arrays. This approach can then be used to write more complex readers in python to construct grids.
 
-# In[4]:
+# In[ ]:
+
 
 import numpy
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
@@ -75,7 +80,8 @@ plotGrid(grid)
 # The next example uses the [Delauny][1] triangulation method availble in *scipy*.
 # [1]: https://docs.scipy.org/doc/scipy-0.18.1/reference/tutorial/spatial.html
 
-# In[5]:
+# In[ ]:
+
 
 from scipy.spatial import Delaunay
 
@@ -99,7 +105,8 @@ plotGrid(grid)
 # Dune provides options for reading grid descriptions from files. First we show how to use the *dune grid format*:
 # The grid can be directly described using a python string:
 
-# In[6]:
+# In[ ]:
+
 
 dgf = """
 INTERVAL
@@ -115,7 +122,8 @@ plotGrid(grid)
 # or providing a [dgf file][1]
 # [1]: unitcube-2d.dgf
 
-# In[7]:
+# In[ ]:
+
 
 grid = create.grid("ALUCube", (dune.grid.reader.dgf,"unitcube-2d.dgf"), dimgrid=2)
 plotGrid(grid)
@@ -124,7 +132,8 @@ pyplot.close('all')
 
 # We have just described how to *input* a grid, shown some inline visualization, but we also provide *output* methods for grid (and data) into *vtk* files. For simply writting the grid structure for viewing in e.g. *paraview*:
 
-# In[8]:
+# In[ ]:
+
 
 grid.vtkWriter().write("griddemo")
 
@@ -135,7 +144,8 @@ grid.vtkWriter().write("griddemo")
 # ### Basic methods
 # Probably the most fundamental information one wants from any grid is the number of entities of different codimension, e,g,, the number of vertices and elements.
 
-# In[9]:
+# In[ ]:
+
 
 print("Number of elements:",grid.size(0))
 print("Number of vertices:",grid.size(grid.dimension))
@@ -143,14 +153,16 @@ print("Number of vertices:",grid.size(grid.dimension))
 
 # Note that `grid.dimension` give the dimension of the reference elements of the grid while `grid.dimensionworld` returns the dimension of the coordinate space the grid is embedded in.
 
-# In[10]:
+# In[ ]:
+
 
 print(grid.dimension,grid.dimensionworld)
 
 
 # Here is not the place to describe the whole *Dune Grid* interface made available to python. Here is a simple example showing how to iterate over the grid and ascess some simple geometric information for each element:
 
-# In[11]:
+# In[ ]:
+
 
 totalArea = 0
 for element in grid.elements:
@@ -165,14 +177,16 @@ print(totalArea)
 
 # Speaking within the Dune context it is important to note that the grid instance `grid` constructor with the methods above is a *leaf grid view*. So even after refinment the grid instance will always provide a view to the finest level of refinement of the hierarchical grid. The full hierarchy grid can be accessed with
 
-# In[12]:
+# In[ ]:
+
 
 hgrid = grid.hierarchicalGrid
 
 
 # The hierarchical grid can be globally refined
 
-# In[13]:
+# In[ ]:
+
 
 hgrid.globalRefine(3)
 plotGrid(grid)
@@ -183,7 +197,8 @@ plotGrid(grid)
 
 # or single elements can be marked for local refinement or coarsening
 
-# In[14]:
+# In[ ]:
+
 
 import math
 marker = dune.grid.Marker
@@ -203,7 +218,8 @@ plotGrid(grid)
 
 # Note that if data is stored on any entity of the grid then it will be valid anymore after calling `globalRefine` or `adapt` on the hierarchical grid as described above. To make it possible to keep for example discrete functions valid during grid modification, these can be passed into the `adapt` method. Note that this requires a special version of the *leaf grid view*:
 
-# In[15]:
+# In[ ]:
+
 
 import dune.fem
 from dune.fem.space import lagrange
@@ -215,12 +231,14 @@ adaptiveGV = adaptiveLeafGridView(grid)
 
 # First note that the `plotGrid` function defined above is available in the `dune.fem.plotting` module - with some extra arguments...
 
-# In[16]:
+# In[ ]:
+
 
 plot(adaptiveGV)
 
 
-# In[17]:
+# In[ ]:
+
 
 # interpolate some data onto grid
 spc = lagrange(adaptiveGV, dimrange=1, order=1)
@@ -245,7 +263,8 @@ pyplot.close('all')
 #
 # Lets start with the `FilteredGridView`:
 
-# In[18]:
+# In[ ]:
+
 
 from dune.fem.view import filteredGridView
 from dune.fem.space import dgonb
@@ -275,7 +294,8 @@ plot(phi,gridLines="white")
 #
 # Now a simple example demonstrating hwo to use the `GeometryGridView` to produce  a moving domeain.
 
-# In[19]:
+# In[ ]:
+
 
 from dune.fem.view import geometryGridView
 
@@ -284,7 +304,7 @@ def expr_global(x):
     return [1.5*x[0],0.5*(x[0]+1.)*x[1]*math.cos(0.1+2.*math.pi*t)]
 
 gf = create.function("global", grid, "coordinates", 1, expr_global)
-spc = create.space("Lagrange", grid, dimrange=2, order=1)
+spc = create.space("lagrange", grid, dimrange=2, order=1)
 df = spc.interpolate(gf, name="test")
 
 geogrid = geometryGridView(df)

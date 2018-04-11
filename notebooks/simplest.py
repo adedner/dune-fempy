@@ -31,7 +31,7 @@ x = ufl.SpatialCoordinate(space.cell())
 f = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])] )
 
 # elliptic equation
-scheme = galerkin( ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx, space )
+scheme = galerkin( ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx )
 
 solution, info = scheme.solve()
 
@@ -48,7 +48,7 @@ solution.clear()
 un  = space.interpolate(-exact,name="oldSolution")
 tau = NamedConstant(space,name="tau")
 scheme = galerkin( ( inner(u,v)  + tau*inner(grad(u),grad(v)) )*dx
-                   == inner(un+tau*f,v)*dx, space )
+                   == inner(un+tau*f,v)*dx )
 
 # compute until stationary solution reached (same final solution as above)
 t  = 0
@@ -75,7 +75,7 @@ x = ufl.SpatialCoordinate(space.cell())
 phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180./270.) * sin((180./270.) * phi)])
 a = inner(grad(u), grad(v))*dx
-scheme = galerkin([a==0,DirichletBC(space,exact,1)], space)
+scheme = galerkin([a==0,DirichletBC(space,exact,1)])
 solution, _ = scheme.solve()
 plot(solution)
 error = solution - exact

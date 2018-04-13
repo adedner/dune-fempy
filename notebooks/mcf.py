@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Mean Curvature Flow [(Notebook)][1]
@@ -33,11 +34,12 @@
 # $\theta\in[0,1]$ is a discretization parameter.
 # <img src="mcf.gif" style="height:228px;">
 
-# In[1]:
+# In[ ]:
+
 
 from __future__ import print_function
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -46,8 +48,8 @@ import math
 import ufl
 import dune.ufl
 import dune.create as create
+import dune.geometry as geometry
 import dune.fem as fem
-import dune.geometry
 
 # polynomial order of surface approximation
 order = 2
@@ -56,14 +58,15 @@ order = 2
 R0 = 2.
 
 
-# In[2]:
+# In[ ]:
+
 
 # set up reference domain Gamma_0
 grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
 # space on Gamma_0 to describe position of Gamma(t)
-spc = create.space("Lagrange", grid, dimrange=grid.dimWorld, order=order)
+spc = create.space("lagrange", grid, dimrange=grid.dimWorld, order=order)
 # non spherical initial surgface
 positions = spc.interpolate(lambda x: x *
                       (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*
@@ -72,11 +75,12 @@ positions = spc.interpolate(lambda x: x *
 
 # space for discrete solution on Gamma(t)
 surface   = create.view("geometry",positions)
-spc = create.space("Lagrange", surface, dimrange=surface.dimWorld, order=order)
+spc = create.space("lagrange", surface, dimrange=surface.dimWorld, order=order)
 solution  = spc.interpolate(lambda x: x, name="solution")
 
 
-# In[3]:
+# In[ ]:
+
 
 # set up model using theta scheme
 theta = 0.5   # Crank-Nicholson
@@ -97,7 +101,8 @@ model = create.model("elliptic", surface, a == 0)
 scheme = create.scheme("h1", spc, model, solver="cg")
 
 
-# In[4]:
+# In[ ]:
+
 
 from numpy import amin, amax, linspace
 import matplotlib
@@ -118,7 +123,8 @@ def matplot(grid, solution, count):
                        linewidth=0.2, color='black')
 
 
-# In[5]:
+# In[ ]:
+
 
 count   = 0
 t       = 0.
@@ -151,7 +157,8 @@ display.display(pyplot.gcf())
 # \end{align}
 # We can use this to check that our implementation is correct:
 
-# In[6]:
+# In[ ]:
+
 
 # compute an averaged radius of the surface
 def calcRadius(surface):
@@ -159,16 +166,17 @@ def calcRadius(surface):
     R   = 0
     vol = 0
     for e in surface.elements:
-        rule = dune.geometry.quadratureRule(e.type, 4)
+        rule = geometry.quadratureRule(e.type, 4)
         for p in rule:
             geo = e.geometry
             weight = geo.volume * p.weight
-            R   += geo.position(p.position).two_norm * weight
+            R   += geo.toGlobal(p.position).two_norm * weight
             vol += weight
     return R/vol
 
 
-# In[7]:
+# In[ ]:
+
 
 endTime = 0.1
 dt      = 0.02
@@ -216,13 +224,15 @@ for i in range(numberOfLoops):
         dt /= 2.
 
 
-# In[8]:
+# In[ ]:
+
 
 eocs = np.log(errors[0:][:numberOfLoops-1] / errors[1:]) / math.log(2.)
 print(eocs)
 
 
-# In[9]:
+# In[ ]:
+
 
 try:
     import pandas as pd

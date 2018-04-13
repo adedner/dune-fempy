@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Adding new Interface Realizations and C++ Code [(Notebook)][1]
@@ -6,8 +7,9 @@
 
 # In[ ]:
 
+
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -20,6 +22,7 @@ except:
 # We start with a simple example of adding a discrete function space. The C++ implementation of this space is available in this module. We assume here that the
 
 # In[ ]:
+
 
 from dune.common.hashit import hashIt
 from dune.generator.generator import SimpleGenerator
@@ -40,13 +43,17 @@ def p1Bubble(gridview, dimrange, storage=None):
     includes = includes + ["dune/fempy/py/space.hh"]
     # now the module name (also used for the file)
     moduleName = "myspace_" + hashIt(typeName)
+    # note that discrete function spaces should be exported using a
+    # shared_ptr as holder type
     generator = SimpleGenerator("Space", "Dune::FemPy")
-    module = generator.load(includes, typeName, moduleName)
+    module = generator.load(includes, typeName, moduleName,
+                       options=["std::shared_ptr<DuneType>"])
     addAttr(module, module.Space, "double", storage)
     return module.Space(gridview)
 
 
 # In[ ]:
+
 
 import dune.create as create
 import dune.grid as grid
@@ -73,7 +80,7 @@ print("should be one per vertex and one per element: ", grid.size(0)+grid.size(2
 # Finally a short note on how to add the new space to the create mechnism. Let us assume that the method `p1Bubble` is part of a python package under the `dune` namespace package. For simplicity it is contained in the `__init__.py` file of the `dune.myspace` module.
 # To create the space for example using
 # ~~~
-# dune.create.space("bubble",grid,1)
+# dune.create.space("p1Bubble",grid,1)
 # ~~~
 # add the following to the `__init__.py` file of the `dune.myspace` module:
 # ~~~
@@ -87,5 +94,3 @@ print("should be one per vertex and one per element: ", grid.size(0)+grid.size(2
 
 # ### Importing C++ code
 # Now we discuss how to add stand alone C++ code using the `dune.generator` module.
-
-# In[ ]:

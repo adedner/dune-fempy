@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Heat Equation - adding coefficient and constants to the model [(Notebook)][1]
@@ -5,11 +6,12 @@
 # [1]: _downloads/laplace-coefficients.ipynb
 #
 
-# In[1]:
+# In[ ]:
+
 
 from __future__ import print_function
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -28,7 +30,8 @@ dune.fem.parameter.append({"fem.verboserank": 0,
                            "istl.preconditioning.relaxation": 1.2})
 
 
-# In[2]:
+# In[ ]:
+
 
 # Crank Nicholson
 theta = 0.5
@@ -36,14 +39,15 @@ theta = 0.5
 # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 # set up a lagrange scalar space with polynomial order 2 over that grid
-spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("lagrange", grid, dimrange=1, order=2, storage="istl")
 
 # set up initial conditions
 solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
 plot(solution)
 
 
-# In[3]:
+# In[ ]:
+
 
 # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
 old_solution = solution.copy();
@@ -68,7 +72,8 @@ solverParameter={"fem.solver.newton.linabstol": 1e-13,
 scheme = create.scheme("h1", spc, model, parameters=solverParameter)
 
 
-# In[4]:
+# In[ ]:
+
 
 endTime = 0.4
 deltaT = 0.01

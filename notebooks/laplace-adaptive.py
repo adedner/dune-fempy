@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Adaptive Finite Element [(Notebook)][1]
@@ -19,10 +20,11 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[1]:
+# In[ ]:
+
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 import math
@@ -65,12 +67,13 @@ PROJECTION
 """
 grid = create.view("adaptive", "ALUConform", grid.string2dgf(dgf), dimgrid=2)
 grid.hierarchicalGrid.globalRefine(2)
-spc  = create.space( "Lagrange", grid, dimrange=1, order=order )
+spc  = create.space( "lagrange", grid, dimrange=1, order=order )
 
 
 # Next define the model together with the exact solution
 
-# In[2]:
+# In[ ]:
+
 
 from ufl import *
 from dune.ufl import Space, DirichletBC
@@ -109,26 +112,22 @@ def exactJac(x):
     return [dx,dy]
 
 exact_gf = create.function("global", grid, "exact", order+1, exact)
+bnd_u = Coefficient(uflSpace)
 a = inner(grad(u), grad(v)) * dx
-model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,exact_gf,1) )
+model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf})
 
-# In[3]:
+
+# In[ ]:
+
 
 # set up the scheme
-parameters = {"fem.solver.newton.tolerance": 1e-9,
-        "fem.solver.newton.linabstol": 1e-12,
-        "fem.solver.newton.linreduction": 1e-12,
-        "fem.solver.newton.verbose": 0,
-        "fem.solver.newton.linear.verbose": 0}
-laplace = create.scheme("h1", spc, model, parameters=parameters, solver="cg")
+laplace = create.scheme("h1", spc, model)
 uh = spc.interpolate(lambda x: [0], name="solution")
-print("solving...")
 laplace.solve(target=uh)
-print("...done")
 
 # function used for computing approximation error
 def h1error(en,x):
-    y = en.geometry.position(x)
+    y = en.geometry.toGlobal(x)
     val = uh.localFunction(en).evaluate(x) - exact(y)
     jac = uh.localFunction(en).jacobian(x)[0] - exactJac(y)
     return [ sqrt( val[0]*val[0] + jac*jac) ];
@@ -137,11 +136,11 @@ h1error_gf = create.function( "local", grid, "error", order+1, h1error )
 # adaptive loop (mark, estimate, solve)
 count = 0
 tol = 0.1 # use 0 for global refinement
-while count < 20:
+while count < 8:
     error = math.sqrt(h1error_gf.integrate()[0])
     [estimate, marked] = laplace.mark(uh, tol)
-    print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
     plot(uh)
+    print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
     if marked == False or estimate < tol:
         break
     if tol == 0.:
@@ -156,7 +155,8 @@ while count < 20:
 
 # Let's have a look at the center of the domain:
 
-# In[4]:
+# In[ ]:
+
 
 plot(uh, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
 plot(uh, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
@@ -165,7 +165,8 @@ plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
 
 # Finally, let us have a look at the grid levels:
 
-# In[5]:
+# In[ ]:
+
 
 from dune.fem.function import levelFunction
 plot(levelFunction(grid),xlim=(0,1),ylim=(0,1))

@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Parameters [Notebook][2]
@@ -8,8 +9,9 @@
 
 # In[ ]:
 
+
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 from dune.fem import parameter
@@ -21,7 +23,7 @@ parameter.append( "I", "am fine" )
 print(parameter["hi"])
 try:
     print(parameter["really"])   # <- this gives an error
-except RuntimeError as Argument:
+except KeyError as Argument:
     print(Argument)
 
 
@@ -29,7 +31,5 @@ except RuntimeError as Argument:
 
 # In[ ]:
 
+
 print(parameter)
-
-
-# In[ ]:

@@ -6,15 +6,11 @@ logger = logging.getLogger(__name__)
 
 
 import dune.grid
+import dune.fem.space
 import dune.models.localfunction
 
 import dune.common.checkconfiguration as checkconfiguration
 from dune.common.hashit import hashIt
-
-try:
-    from dune.ufl import GridFunction
-except:
-    pass
 
 def registerGridFunctions(gridview):
     from dune.generator import builder
@@ -45,21 +41,20 @@ def localFunction(gridview, name, order, value):
     return module.localGridFunction(gridview,name,order,value).as_ufl()
 
 
-def levelFunction(gridview):
-    @dune.grid.gridFunction(gridview)
+def levelFunction(gridview,name="levels"):
+    @dune.grid.gridFunction(gridview,name=name)
     def levelFunction(e,x):
         return [e.level]
     return levelFunction
-    # return localFunction(gridview, "level", 0, lambda en,_: [en.level])
 
 
-def partitionFunction(gridview):
+def partitionFunction(gridview,name="rank"):
     class Partition(object):
         def __init__(self,rank):
             self.rank = rank
         def __call__(self,en,x):
             return [self.rank]
-    return localFunction(gridview, "rank", 0, Partition(gridview.comm.rank))
+    return localFunction(gridview, name, 0, Partition(gridview.comm.rank))
 
 
 def cppFunction(gridview, name, order, code, *args, **kwargs):
@@ -113,3 +108,28 @@ def numpyFunction(space, vec, name="tmp", **unused):
           spaceType + ", Dune::FemPy::NumPyVector< " + field + " > >"
 
     return module("numpy", includes, typeName).DiscreteFunction(space,name,vec).as_ufl()
+
+
+def tupleDiscreteFunction(*spaces, **kwargs):
+    from dune.fem.discretefunction import module, addAttr
+    try:
+        tupleSpace = spaces[0]
+        spaces = spaces[0].components
+    except AttributeError:
+        tupleSpace = dune.fem.space.tuple(*spaces)
+    dfIncludes = (space.storage[1] for space in spaces)
+    dfTypeNames = (space.storage[2] for space in spaces)
+    includes = sum(dfIncludes, ["dune/fem/function/tuplediscretefunction.hh"])
+    typeName = "Dune::Fem::TupleDiscreteFunction< " + ", ".join(dfTypeNames) + " >"
+    name = kwargs.get("name", "")
+    df = module(tupleSpace.storage, includes, typeName, dynamicAttr=True).DiscreteFunction(tupleSpace, name)
+    # create a discrete function for each space to ensure the DiscreteFunction is registered with pybind11
+    for s in spaces:
+        discreteFunction(s, "")
+    compNames = kwargs.get("components", None)
+    if not compNames is None:
+        components = df.components
+        assert len(compNames) == len(components)
+        for c, n in zip(components, compNames):
+            df.__dict__[n] = c
+    return df.as_ufl()

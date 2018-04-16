@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Different storage backends - using numpy/scipy [(Notebook)][1]
@@ -6,7 +7,7 @@
 #
 # For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Changing the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
 # ~~~
-# spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+# spc = create.space("lagrange", grid, dimrange=1, order=1, storage="istl")
 # ~~~
 # in the above code will switch to the solvers from `dune-istl`, other options are for example `eigen` or `petsc`.
 #
@@ -19,10 +20,11 @@
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
 
-# In[1]:
+# In[ ]:
+
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 from dune.generator import builder
@@ -41,7 +43,7 @@ from ufl import TestFunction, TrialFunction, SpatialCoordinate, ds, dx, inner, g
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
 try:
-    spc = create.space("Lagrange", grid, dimrange=1, order=1, storage='eigen')
+    spc = create.space("lagrange", grid, dimrange=1, order=1, storage='eigen')
 except builder.ConfigurationError:
     exit(1)
 
@@ -75,7 +77,8 @@ uh = create.function("discrete", spc, name="solution")
 #
 # Let's first use the solve method on the scheme directly:
 
-# In[2]:
+# In[ ]:
+
 
 uh,info = scheme.solve(target = uh)
 print("size:", grid.size(0), "newton iterations:", int(info['iterations']))
@@ -84,7 +87,8 @@ plot(uh)
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
 
-# In[3]:
+# In[ ]:
+
 
 # Let's first clear the solution again
 uh.clear()
@@ -116,7 +120,8 @@ plot(uh)
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
-# In[7]:
+# In[ ]:
+
 
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()

@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # DG Schemes [(Notebook)][1]
@@ -17,10 +18,11 @@
 #
 # First, we need to set up a computational grid and a discontinuous ansatz space on it. Here, we use the orthonormal discontinuous space:
 
-# In[1]:
+# In[ ]:
+
 
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 from dune.grid import cartesianDomain
@@ -32,7 +34,7 @@ import dune.create as create
 parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("dgonb", grid, dimrange=1, order=2, storage="istl")
 
 
 # The classical IPDG method for this problem reads
@@ -45,7 +47,8 @@ spc = create.space("DGONB", grid, dimrange=1, order=2, storage="istl")
 #
 # The following code implements this equation in UFL notation:
 
-# In[2]:
+# In[ ]:
+
 
 import math
 from ufl import *
@@ -70,7 +73,8 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 # Next, we compile this into the *integrands*, plug them into the *galerkin* scheme and solve the problem:
 
-# In[3]:
+# In[ ]:
+
 
 model = create.model("integrands", grid, a == b)
 
@@ -82,6 +86,7 @@ uh, _ = scheme.solve()
 
 # The result looks as follows:
 
-# In[4]:
+# In[ ]:
+
 
 plot(uh)

@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # # Spiral Wave [(Notebook)][1]
@@ -60,11 +61,12 @@
 
 # Let's get started by importing some standard python packages, ufl, and some part of the dune-fempy package:
 
-# In[1]:
+# In[ ]:
+
 
 from __future__ import print_function
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 import math
@@ -81,7 +83,8 @@ import dune.create as create
 
 # In our attempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to choose from):
 
-# In[2]:
+# In[ ]:
+
 
 dimRange   = 1
 dt         = 0.25
@@ -103,12 +106,13 @@ initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 
 # Now we set up the reference domain, the Lagrange finite element space (second order), and discrete functions for $(u^n,v^n($, $(u^{n+1},v^{n+1})$:
 
-# In[3]:
+# In[ ]:
+
 
 # domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
 domain = dune.grid.cartesianDomain([0,0],[2.5,2.5],[30,30])
 grid = create.grid("ALUCube", domain, dimgrid=2)
-spc  = create.space( "Lagrange", grid, dimrange=dimRange, order=1 )
+spc  = create.space( "lagrange", grid, dimrange=dimRange, order=1 )
 
 uh   = spc.interpolate( initial_u, name="u" )
 uh_n = uh.copy()
@@ -120,7 +124,8 @@ vh_n = vh.copy()
 # - first we define the standard parts, not involving $f_E,f_I$:
 # - then we add the missing parts with the required _if_ statement directly using C++ code
 
-# In[4]:
+# In[ ]:
+
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), dimRange)
 u   = ufl.TrialFunction(uflSpace)
@@ -141,7 +146,8 @@ a_ex += ufl.conditional(un[0]<ustar, dt/spiral_eps* u[0]*(1-un[0])*(un[0]-ustar)
 equation = a_im == a_ex
 
 
-# In[5]:
+# In[ ]:
+
 
 rhs_gf = create.function("ufl", grid, "rhs", order=2,
                          ufl=ufl.as_vector( [vn[0] + dt*spiral_h(un[0], vn[0]) ]),
@@ -150,12 +156,14 @@ rhs_gf = create.function("ufl", grid, "rhs", order=2,
 
 # The model is now completely implemented and can be created, together with the corresponding scheme:
 
-# In[6]:
+# In[ ]:
+
 
 model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
 
 
-# In[7]:
+# In[ ]:
+
 
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-3,
@@ -169,7 +177,8 @@ scheme = create.scheme("h1", spc, model, ("pardg","cg"),parameters=solverParamet
 
 # To show the solution we make use of the _animate_ module of _matplotlib_:
 
-# In[8]:
+# In[ ]:
+
 
 import matplotlib.pyplot as plt
 from numpy import linspace

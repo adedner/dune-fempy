@@ -36,7 +36,7 @@ for i in range(0,maxLevel):
     dune.fem.adapt(hgrid, [phi])
     dune.fem.loadBalance(hgrid, [phi])
 
-vtk = grid.sequencedVTK("adapt", pointdata=[phi], celldata=[levelFunction(grid), partitionFunction(grid)])
+vtk = grid.sequencedVTK("adapt", pointdata=[phi], celldata=[levelFunction(grid,name="gridLevel"), partitionFunction(grid)])
 vtk()
 t = 0
 while t < 2*math.pi:

@@ -5,15 +5,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+import dune.grid
+import dune.fem.space
 import dune.models.localfunction
 
 import dune.common.checkconfiguration as checkconfiguration
 from dune.common.hashit import hashIt
-
-try:
-    from dune.ufl import GridFunction
-except:
-    pass
 
 def registerGridFunctions(gridview):
     from dune.generator import builder
@@ -34,37 +31,30 @@ def registerGridFunctions(gridview):
 
     return builder.load(moduleName, source, "gridfunctions")
 
-def addUFL(instance):
-    return instance.as_ufl()
-    try:
-        gf = GridFunction(instance)
-        return GridFunction(instance)
-    except NameError:
-        return instance
-
 def globalFunction(gridview, name, order, value):
     module = registerGridFunctions(gridview)
-    return addUFL(module.globalGridFunction(gridview,name,order,value))
+    return module.globalGridFunction(gridview,name,order,value).as_ufl()
 
 
 def localFunction(gridview, name, order, value):
     module = registerGridFunctions(gridview)
-    ret = module.localGridFunction(gridview,name,order,value)
-    ret = addUFL(ret)
-    return ret
+    return module.localGridFunction(gridview,name,order,value).as_ufl()
 
 
-def levelFunction(gridview):
-    return localFunction(gridview, "level", 0, lambda en,_: [en.level])
+def levelFunction(gridview,name="levels"):
+    @dune.grid.gridFunction(gridview,name=name)
+    def levelFunction(e,x):
+        return [e.level]
+    return levelFunction
 
 
-def partitionFunction(gridview):
+def partitionFunction(gridview,name="rank"):
     class Partition(object):
         def __init__(self,rank):
             self.rank = rank
         def __call__(self,en,x):
             return [self.rank]
-    return localFunction(gridview, "rank", 0, Partition(gridview.comm.rank))
+    return localFunction(gridview, name, 0, Partition(gridview.comm.rank))
 
 
 def cppFunction(gridview, name, order, code, *args, **kwargs):
@@ -73,10 +63,7 @@ def cppFunction(gridview, name, order, code, *args, **kwargs):
 
 def uflFunction(gridview, name, order, ufl, *args, **kwargs):
     func = dune.models.localfunction.UFLFunction(gridview, name, order, ufl, *args, **kwargs)
-    if func is not None:
-        return addUFL( func )
-    else:
-        return None
+    return func.as_ufl() if func is not None else None
 
 def discreteFunction(space, name, expr=None, *args, **kwargs):
     """create a discrete function
@@ -95,7 +82,7 @@ def discreteFunction(space, name, expr=None, *args, **kwargs):
         df.clear()
     else:
         df.interpolate(expr)
-    return addUFL(df)
+    return df.as_ufl()
 
 
 def numpyFunction(space, vec, name="tmp", **unused):
@@ -120,4 +107,29 @@ def numpyFunction(space, vec, name="tmp", **unused):
     typeName = "Dune::Fem::VectorDiscreteFunction< " +\
           spaceType + ", Dune::FemPy::NumPyVector< " + field + " > >"
 
-    return addUFL(module("numpy", includes, typeName).DiscreteFunction(space,name,vec))
+    return module("numpy", includes, typeName).DiscreteFunction(space,name,vec).as_ufl()
+
+
+def tupleDiscreteFunction(*spaces, **kwargs):
+    from dune.fem.discretefunction import module, addAttr
+    try:
+        tupleSpace = spaces[0]
+        spaces = spaces[0].components
+    except AttributeError:
+        tupleSpace = dune.fem.space.tuple(*spaces)
+    dfIncludes = (space.storage[1] for space in spaces)
+    dfTypeNames = (space.storage[2] for space in spaces)
+    includes = sum(dfIncludes, ["dune/fem/function/tuplediscretefunction.hh"])
+    typeName = "Dune::Fem::TupleDiscreteFunction< " + ", ".join(dfTypeNames) + " >"
+    name = kwargs.get("name", "")
+    df = module(tupleSpace.storage, includes, typeName, dynamicAttr=True).DiscreteFunction(tupleSpace, name)
+    # create a discrete function for each space to ensure the DiscreteFunction is registered with pybind11
+    for s in spaces:
+        discreteFunction(s, "")
+    compNames = kwargs.get("components", None)
+    if not compNames is None:
+        components = df.components
+        assert len(compNames) == len(components)
+        for c, n in zip(components, compNames):
+            df.__dict__[n] = c
+    return df.as_ufl()

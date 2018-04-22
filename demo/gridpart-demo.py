@@ -33,7 +33,7 @@ def testGeometryGridView(grid, prefix):
     geogrid = geometryGridView(df)
     gfnew = create.function("global", geogrid, "expression", 1, expr_global)
 
-    vtk = geogrid.writeVTK(prefix, pointdata=[gfnew])
+    vtk = geogrid.sequencedVTK(prefix, pointdata=[gfnew])
     vtk()
 
     dt = 0.01

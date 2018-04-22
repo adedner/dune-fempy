@@ -164,11 +164,17 @@ class CodeGenerator(MultiFunction):
     def MaxValue(self, expr, left, right):
         self.using.add(Using(cplusplus.max_))
         return self._makeTmp(cplusplus.max_(left, right))
+    def max_value(self, expr, left, right):
+        self.using.add(Using(cplusplus.max_))
+        return self._makeTmp(cplusplus.max_(left, right))
 
     min_cell_edge_length = _require_predefined
     min_facet_edge_length = _require_predefined
 
-    def minValue(self, expr, left, right):
+    def MinValue(self, expr, left, right):
+        self.using.add(Using(cplusplus.min_))
+        return self._makeTmp(cplusplus.min_(left, right))
+    def min_value(self, expr, left, right):
         self.using.add(Using(cplusplus.min_))
         return self._makeTmp(cplusplus.min_(left, right))
 
@@ -238,6 +244,8 @@ class CodeGenerator(MultiFunction):
         e = [ee for ee in self.coefficients if ee["name"] == name]
         if len(e) > 1:
             raise KeyError('two coefficients provided with same name')
+        if len(e) == 0:
+            raise KeyError('coefficient provided with no name')
         return e[0]["number"]
 
     def _makeTmp(self, cexpr, tempVars=None):

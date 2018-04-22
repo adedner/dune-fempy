@@ -54,7 +54,7 @@ def expr_global(x):
 control = create.function("global", grid, "expr_global", 3, expr_global)
 
 def expr_local(en,x):
-    y = en.geometry.position(x)
+    y = en.geometry.toGlobal(x)
     return func.localFunction(en).evaluate(x) - control.localFunction(en).evaluate(x)
 difference = create.function("local", grid, "difference", 3, expr_local )
 

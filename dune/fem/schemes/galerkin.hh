@@ -792,6 +792,8 @@ namespace Dune
     template< class Integrands, class LinearOperator, class InverseOperator >
     struct GalerkinScheme
     {
+      typedef InverseOperator InverseOperatorType;
+      typedef Integrands ModelType;
       typedef DifferentiableGalerkinOperator< Integrands, LinearOperator > DifferentiableOperatorType;
 
       typedef typename DifferentiableOperatorType::DomainFunctionType DomainFunctionType;
@@ -833,7 +835,8 @@ namespace Dune
 
       SolverInfo solve ( const DiscreteFunctionType &rhs, DiscreteFunctionType &solution ) const
       {
-        Dune::Fem::NewtonInverseOperator< LinearOperatorType, InverseOperator > invOp( fullOperator(), parameter_ );
+        typedef Dune::Fem::NewtonInverseOperator< LinearOperatorType, InverseOperator > NewtonOperator;
+        NewtonOperator invOp( fullOperator(), parameter_ );
         invOp( rhs, solution );
 
         return SolverInfo( invOp.converged(), invOp.linearIterations(), invOp.iterations() );

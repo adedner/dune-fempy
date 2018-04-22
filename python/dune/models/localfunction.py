@@ -16,6 +16,8 @@ from dune.source.cplusplus import assign
 from dune.source.cplusplus import ListWriter, StringWriter, SourceWriter
 from dune.source import BaseModel
 from dune.source.fem import declareFunctionSpace
+import ufl
+from dune.source.cplusplus import maxEdgeLength, UnformattedExpression
 
 # method to add to gridpart.function call
 def generatedFunction(grid, name, order, code, **kwargs):
@@ -75,7 +77,12 @@ def UFLFunction(grid, name, order, expr, **kwargs):
     dimD = grid.dimension
 
     writer = SourceWriter(ListWriter())
-    writer.emit(generateCode({}, ExprTensor((dimR, ), expr), coefficients, False), context=Method('void', 'evaluate'))
+    cellGeometry = UnformattedExpression('auto', 'entity().geometry()')
+    maxCellEdgeLength = ufl.MaxCellEdgeLength(ufl.triangle)
+    predefined = {}
+    predefined[maxCellEdgeLength] = maxEdgeLength(cellGeometry)
+
+    writer.emit(generateCode(predefined, ExprTensor((dimR, ), [expr[int(i)] for i in range(dimR)]), coefficients, False), context=Method('void', 'evaluate'))
     code = '\n'.join(writer.writer.lines)
     evaluate = code.replace("result", "value")
     try:
@@ -141,13 +148,10 @@ def gridFunction(grid, code, coefficients, constants):
 
     base = BaseModel(dimRange, myCodeHash)
     if isinstance(coefficients, dict):
+        eval = base.codeCoefficient(eval, coefficients, constants)
 
-        l = list(coefficients)
-        l.sort()
-        eval = base.codeCoefficient(eval, l, constants)
-
-        jac = base.codeCoefficient(jac, l, constants)
-        hess = base.codeCoefficient(hess, l, constants)
+        jac = base.codeCoefficient(jac, coefficients, constants)
+        hess = base.codeCoefficient(hess, coefficients, constants)
     else:
         base.coefficients.extend(coefficients)
 
@@ -164,6 +168,7 @@ def gridFunction(grid, code, coefficients, constants):
 
     code.append(Include("dune/fempy/py/grid/gridpart.hh"))
     code.append(Include("dune/fempy/py/grid/function.hh"))
+    code.append(Include("dune/fempy/geometry/edgelength.hh"))
 
     struct = Struct(locname, targs=['class GridPart', 'class Range', 'class... Coefficients'])
     struct.append(base.pre(name=locname))

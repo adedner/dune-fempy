@@ -182,7 +182,7 @@ namespace Dune
 
       template < class DofVector, class... options >
       inline static auto registerDofVectorBuffer ( pybind11::class_< DofVector, options... > cls, PriorityTag< 1 > )
-        -> std::enable_if_t< std::is_convertible< decltype( std::declval< DofVector >().array().data()[0] ), typename DofVector::FieldType  >::value >
+        -> std::enable_if_t< std::is_convertible< decltype( std::declval< DofVector & >().array().data()[ 0 ] ), typename DofVector::FieldType >::value >
       {
         typedef typename DofVector::FieldType Field;
 
@@ -213,6 +213,7 @@ namespace Dune
               throw pybind11::index_error();
           });
 
+        cls.def( "__len__", [] ( const DofVector &self ) { return self.array().size(); } );
       }
 
       template< class DofVector, class... options >
@@ -223,6 +224,40 @@ namespace Dune
       inline static void registerDofVectorBuffer ( pybind11::class_< DofVector, options... > cls )
       {
         registerDofVectorBuffer( cls, PriorityTag< 42 >() );
+      }
+
+
+
+      // registerSubDiscreteFunction
+      // ---------------------------
+
+      template< class GridFunction, class... options >
+      inline static auto registerSubDiscreteFunction ( pybind11::class_< GridFunction, options... > cls, PriorityTag< 1 > )
+        -> std::enable_if_t< std::is_same< typename GridFunction::template SubDiscreteFunction< 0 >::Type &, decltype( std::declval< GridFunction & >().template subDiscreteFunction< 0 >() ) >::value >
+      {
+        cls.def_property_readonly( "components", [] ( pybind11::object self ) -> pybind11::tuple {
+            GridFunction &gridFunction = pybind11::cast< GridFunction & >( self );
+            pybind11::tuple components( GridFunction::Sequence::size() );
+            Hybrid::forEach( typename GridFunction::Sequence(), [ self, &gridFunction, &components ] ( auto &&i ) {
+                assert( pybind11::already_registered< typename GridFunction::template SubDiscreteFunction< i.value >::Type > );
+                pybind11::object subFunction = pybind11::cast( &gridFunction.template subDiscreteFunction< i.value >(), pybind11::return_value_policy::reference_internal, self );
+                if( subFunction )
+                  components[ i.value ] = subFunction;
+                else
+                  throw pybind11::error_already_set();
+              } );
+            return components;
+          } );
+      }
+
+      template< class GridFunction, class... options >
+      inline static void registerSubDiscreteFunction ( pybind11::class_< GridFunction, options... > cls, PriorityTag< 0 > )
+      {}
+
+      template< class GridFunction, class... options >
+      inline static void registerSubDiscreteFunction ( pybind11::class_< GridFunction, options... > cls )
+      {
+        registerSubDiscreteFunction( cls, PriorityTag< 42 >() );
       }
 
 
@@ -282,17 +317,18 @@ namespace Dune
         {
           auto clsDof = pybind11::class_< DofVector >( module, "DofVector", pybind11::buffer_protocol() );
 
-          clsDof.def_property_readonly( "size", [] ( DofVector &self ) { return self.array().size(); } );
-          clsDof.def( "__len__", [] ( const DofVector &self ) { return self.array().size(); } );
+          clsDof.def_property_readonly( "size", [] ( DofVector &self ) { return self.size(); } );
           clsDof.def( "assign", [] ( DofVector &self, const DofVector &other ) { self = other; }, "other"_a );
+          clsDof.def( "scalarProduct", [] ( const DofVector &self, const DofVector &other ) { return self*other; }, "other"_a );
 
           //the registration of the actual dofvector also happens inside this
           registerDofVectorBuffer( clsDof );
         }
 
-        //print the array memeory location
-        //blockVector() is the same as dofVector().array()
         addDofVector(cls, PriorityTag<2>());
+
+        registerSubDiscreteFunction( cls );
+
         typedef Dune::Fem::AddLocalContribution<DF> AddLocalContrib;
         auto clsAddContrib =
           Dune::Python::insertClass<AddLocalContrib>(module, "AddLocalContribution",

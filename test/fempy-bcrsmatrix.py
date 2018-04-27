@@ -22,7 +22,7 @@ spc = create.space("Lagrange", view, dimrange=2, order=3, storage='istl')
 #initialise all to 2
 uh = spc.interpolate([2,3], name="solution")
 
-df = uh.dofVector
+df = uh.as_istl
 # print(df, len(df), df[0], df[0][0])
 df[0][0] = 1
 # print(df, len(df), df[0], df[0][0])

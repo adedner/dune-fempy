@@ -5,6 +5,8 @@ import ufl
 import ufl.domain
 import ufl.equation
 
+from dune.deprecate import deprecated
+
 # cell
 # ----
 
@@ -121,10 +123,6 @@ class GridFunction(ufl.Coefficient):
         ufl.Coefficient.__init__(self, uflSpace)
     def copy(self):
         return self.gf.copy().as_ufl(); # GridFunction(self.gf.copy())
-    @property
-    def as_numpy(self):
-        import numpy as np
-        return np.array( self.dofVector, copy=False )
     def __getitem__(self,i):
         if isinstance(i,int):
             return GridIndexed(self,i)

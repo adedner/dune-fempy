@@ -24,9 +24,7 @@ except:
 # In[ ]:
 
 
-from dune.common.hashit import hashIt
-from dune.generator.generator import SimpleGenerator
-from dune.fem.space import addAttr
+from dune.fem.space import module, addStorage
 def p1Bubble(gridview, dimrange, storage=None):
     # set the direct include path - all the include paths from the grid view used also need to be included
     includes = [ "dune/fem/space/p1bubble.hh" ] + gridview._includes
@@ -41,15 +39,9 @@ def p1Bubble(gridview, dimrange, storage=None):
 
     # Now add the information required for the binding - first the file containing the bindings
     includes = includes + ["dune/fempy/py/space.hh"]
-    # now the module name (also used for the file)
-    moduleName = "myspace_" + hashIt(typeName)
-    # note that discrete function spaces should be exported using a
-    # shared_ptr as holder type
-    generator = SimpleGenerator("Space", "Dune::FemPy")
-    module = generator.load(includes, typeName, moduleName,
-                       options=["std::shared_ptr<DuneType>"])
-    addAttr(module, module.Space, "double", storage)
-    return module.Space(gridview)
+    spc = module("double", includes, typeName).Space(gridview)
+    addStorage(spc, storage)
+    return spc
 
 
 # In[ ]:

@@ -17,13 +17,17 @@ v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
 from math import pi,log10
-from ufl import cos, as_vector, dx, grad, inner
+from ufl import cos, sin,as_vector, dx, grad, inner
 f = (8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])
+exact = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1]),x[0]*x[1] ] )
 equation = (inner(grad(u), grad(v)) + inner(u,v)) * dx == f * v[0] * dx
 
 spc = create.space("Lagrange", grid, dimrange=dimRange, order=1)
 
-boundary_cds = [None, 2]
-model = create.model("elliptic", grid, equation, DirichletBC(uflSpace, boundary_cds, 6))
+model = create.model("elliptic", grid, equation,
+        DirichletBC(uflSpace, [None,2], 2),
+        DirichletBC(uflSpace, [x[0]*x[1],None], 4),
+        DirichletBC(uflSpace, [sin(x[0]),cos(x[1])], 6),
+        DirichletBC(uflSpace, exact, 8))
 scheme = create.scheme("h1", spc, model)
 solution, _ = scheme.solve()

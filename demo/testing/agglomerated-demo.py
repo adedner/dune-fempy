@@ -16,7 +16,7 @@ import dune.create as create
 
 from voronoi import triangulated_voronoi
 
-dune.fem.parameter.append("../data/parameter")
+dune.fem.parameter.append("../../data/parameter")
 
 def plot(grid, solution):
     try:
@@ -36,9 +36,8 @@ def plot(grid, solution):
         pass
 
 def error(grid,df, exact):
-    df_coeff = dune.ufl.GridCoefficient(df)
     l2error_gf = create.function("ufl", grid, "error", 5,
-            as_vector([(exact[0]-df_coeff[0])**2]) )
+            as_vector([(exact[0]-df[0])**2]) )
     return math.sqrt( l2error_gf.integrate() )
 
 # http://zderadicka.eu/voronoi-diagrams/
@@ -75,7 +74,16 @@ class Agglomerate:
     def check(self):
      return len(self.ind)==self.N
 
-def solve(grid,agglomerate,model,exact,name,space,scheme,penalty=None):
+parameters = {"linabstol": 1e-8, "reduction": 1e-8,
+        "tolerance": 3e-7,
+        "krylovmethod": "gmres",
+        "maxiterations": 50,
+        "maxlineariterations": 2500,
+        "maxlinesearchiterations":50,
+        "verbose": "true", "linear.verbose": "true"}
+
+def solve(grid,agglomerate,model,exact,name,space,scheme): # ,penalty=None):
+    penalty = None
     print("SOLVING: ",name)
     gf_exact = create.function("ufl",grid,"exact",4,exact)
     if agglomerate:
@@ -85,9 +93,13 @@ def solve(grid,agglomerate,model,exact,name,space,scheme,penalty=None):
         spc = create.space(space, grid, dimrange=1, order=1, storage="istl")
     interpol = spc.interpolate( gf_exact, "exact_"+name )
     if penalty:
-        df,info = create.scheme(scheme, spc, model, penalty).solve(name=name)
+        df,info = create.scheme(scheme, spc, model, penalty,
+                     parameters={"fem.solver.newton." + k: v for k, v in parameters.items()})\
+        .solve(name=name)
     else:
-        df,info = create.scheme(scheme, spc, model).solve(name=name)
+        df,info = create.scheme(scheme, spc, model,
+                     parameters={"fem.solver.newton." + k: v for k, v in parameters.items()})\
+                .solve(name=name)
     print(name+" size:",spc.size,"L2-error:", error(grid,df,exact), error(grid,interpol,exact),\
           info["linear_iterations"], info["iterations"])
     return interpol, df
@@ -101,7 +113,7 @@ def compute(agglomerate):
     else:
         bounding_box = numpy.array([0., 1., 0., 1.]) # [x_min, x_max, y_min, y_max]
         points, triangles = triangulated_voronoi(agglomerate.voronoi_points, bounding_box)
-        grid = create.grid("ALUSimplex", {'vertex':points, 'simplex':triangles}, dimgrid=2)
+        grid = create.grid("ALUSimplex", {'vertices':points, 'simplices':triangles}, dimgrid=2)
 
     uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 1, field="double")
     u = TrialFunction(uflSpace)
@@ -121,15 +133,15 @@ def compute(agglomerate):
         interpol_lag, df_lag = solve(grid,None,       model,exact,"h1","Lagrange","h1")
         interpol_dg,  df_dg  = solve(grid,None,       model,exact,"dgonb","DGONB","dg")
     interpol_adg, df_adg = solve(grid,agglomerate,model,exact,"adg","AgglomeratedDG","dg")
-    interpol_vem, df_vem = solve(grid,agglomerate,model,exact,"vem","AgglomeratedVEM","vem")
+    # interpol_vem, df_vem = interpol_adg, df_adg # solve(grid,agglomerate,model,exact,"vem","AgglomeratedVEM","vem")
 
     if agglomerate.cartesian:
         grid.writeVTK("agglomerate"+agglomerate.suffix,
-            pointdata=[ df_vem, interpol_vem, df_adg, interpol_adg ],
+            pointdata=[ df_adg, interpol_adg ],
             celldata =[ create.function("local",grid,"cells",1,lambda en,x: [agglomerate(en)]) ])
 
-compute(Agglomerate(3,3))
-# compute(Agglomerate(6,6))
+compute(Agglomerate(26))
+compute(Agglomerate(52))
 # compute(Agglomerate(12,12))
 # compute(Agglomerate(24,24))
 # compute(Agglomerate(48,48))

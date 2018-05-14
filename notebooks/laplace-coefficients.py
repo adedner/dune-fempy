@@ -25,7 +25,7 @@ import dune.fem
 from dune.fem.plotting import plotPointData as plot
 
 dune.fem.parameter.append({"fem.verboserank": 0,
-                           "istl.preconditioning.method": "ilu-0",
+                           "istl.preconditioning.method": "ilu",
                            "istl.preconditioning.iterations": 1,
                            "istl.preconditioning.relaxation": 1.2})
 

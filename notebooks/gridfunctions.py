@@ -16,6 +16,7 @@ try:
 except:
     pass
 import math
+from dune.grid import gridFunction
 import dune.fem
 import ufl
 import dune.ufl
@@ -164,8 +165,9 @@ constant = vector_space.interpolate([1,1], name="constant")
 uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
 plot(uh,vectors=[0,1],gridLines="")
 scalar_space = create.space("lagrange", grid, dimrange=1, order=2)
-vorticity = create.function("local", grid, "global_velocity", 3,
-                       lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
+# we can also use the grid function decorators to define the a grid function
+vorticity = gridFunction(scalar_space.grid)(
+            lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
 vorticity_h = scalar_space.interpolate(vorticity, name="fh")
 plot(vorticity_h)
 

@@ -39,7 +39,7 @@ from dune.ufl import Space, DirichletBC
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu-0", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
 
 # In[ ]:

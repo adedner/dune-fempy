@@ -11,17 +11,21 @@ from dune.ufl import Space
 grid = create.grid('ALUConform', dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]))
 space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
 
-uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
-rho = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
+ufl_space = Space((grid.dimGrid, grid.dimWorld), 1)
+rho = TrialFunction(ufl_space)
+v = TestFunction(ufl_space)
+x = SpatialCoordinate(ufl_space.cell())
 dt = Constant(triangle)         # time step
 t  = Constant(triangle)         # current time
 
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-initial_gf = create.function('ufl', grid, 'initial', 5, initial)
-rho_h = space.interpolate(initial_gf, name='rho_h')
+rho_h = space.interpolate(initial, name='rho_h')
 rho_h_n = rho_h.copy()
+
+exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
+l2error_gf = create.function('ufl', grid, 'error', 5, dot(rho_h-exact_end, rho_h-exact_end))
+h1error_gf = create.function('ufl', grid, 'error', 5, \
+                            inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
 
 abs_drho = sqrt(inner(grad(rho), grad(rho)))
 K = 2/(1 + sqrt(1 + 4*abs_drho))
@@ -30,12 +34,6 @@ exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
 b = replace(a, {rho: exact})
 
 model = create.model('elliptic', grid, a == b)
-
-exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
-l2error_gf = create.function('ufl', grid, 'error', 5, dot(rho_h-exact_end, rho_h-exact_end))
-h1error_gf = create.function('ufl', grid, 'error', 5, \
-                            inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
-
 scheme = create.scheme('h1', space, model)
 
 timeStep = 0.05
@@ -46,7 +44,7 @@ for eocLoop in range(5):
     print('# step:', eocLoop, ', size:', grid.size(0))
     time = 0.0
     endTime = 1.0
-    rho_h.interpolate(initial_gf)
+    rho_h.interpolate(initial)
     while time < (endTime + 1e-6):
         model.setConstant(t, time)
         rho_h_n.assign(rho_h)

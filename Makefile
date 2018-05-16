@@ -17,12 +17,33 @@ distclean: clean
 .PRECIOUS: %.tex
 
 %.tex: %.pmd
-	@pweave -f texminted $<
+	@-pweave -f texminted $<
 
 %.py: %.pmd
 	@ptangle $<
 
-%.pdf: %.tex
+crystal.md: crystal.ipynb
+	@jupyter nbconvert --to markdown crystal.ipynb
+
+crystal.tex: crystal.md
+	@pandoc --listings -f markdown -t latex crystal.md -o crystal.tex
+	@python python-highlight.py crystal.tex
+
+mcf.md: mcf.ipynb
+	@jupyter nbconvert --to markdown mcf.ipynb
+
+mcf.tex: mcf.md
+	@pandoc --listings -f markdown -t latex mcf.md -o mcf.tex
+	@python python-highlight.py mcf.tex
+
+battery.md: battery.ipynb
+	@jupyter nbconvert --to markdown battery.ipynb
+
+battery.tex: battery.md
+	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
+	@python python-highlight.py battery.tex
+
+%.pdf: %.tex crystal.tex mcf.tex battery.tex
 	@pdflatex -shell-escape --interaction=nonstopmode $<
 	@bibtex $(AUX)
 	@pdflatex -shell-escape --interaction=nonstopmode $<

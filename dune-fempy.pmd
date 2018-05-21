@@ -110,7 +110,7 @@ Bullet point list of things to mention here:
 
 %<*tag>
 
-\section{Finite Element Methods in Fempy}
+\section{Finite Element Methods in Fempy} \label{sec:fem-in-fempy}
 
 When designing any software package, a natural challenge that arises
 is trying to make the user interface as simple and easy to use as possible.
@@ -195,8 +195,10 @@ following breakdown of parts.
   \item \ref{sec:functions} Functions. Functions defined on the grid that store the
   solution and other variables.
   \item \ref{sec:spaces} Spaces. The finite element space and type of basis functions.
-  \item \ref{sec:operators} Operators. The weak form of the equation and its boundary conditions.
-  \item \ref{sec:schemes} Schemes. The method of solving the PDE.
+  \item \ref{sec:schemes} Schemes. The weak form of the equation, its
+  boundary conditions, and method for solving.
+  \item \ref{sec:solving} Solving. The actual solving process and data
+  output.
 \end{itemize}
 
 We note that there exist even further simplifications that can be made
@@ -386,20 +388,30 @@ This can be achieved with the following code.
 ```python, label = 'error'
 from ufl import as_vector, dot, grad, inner, exp
 exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
-l2error_gf = create.function('ufl', grid, 'error', 5, dot(rho_h-exact_end, rho_h-exact_end))
-h1error_gf = create.function('ufl', grid, 'error', 5, \
+l2error_gf = create.function('ufl', grid, 'l2error', 5, dot(rho_h-exact_end, rho_h-exact_end))
+h1error_gf = create.function('ufl', grid, 'h1error', 5, \
                             inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
 ```
 
 First of all we define the exact solution at the end time $T=1$,
 \pyth{exact_end}. Then in this case we create the error functions on
 the grid in a similar way to before by using UFL and \pyth{rho_h} and \pyth{exact_end}.
-Note that this works even though \pyth{rho_h} is not a UFL expression
-itself since the expression is extracted from it automatically.
 
-\subsection{Operators} \label{sec:operators}
+We note that this works even though \pyth{rho_h} is not a UFL expression
+itself since the expression is extracted from it automatically. In
+particular it is also possible in most cases to just use a UFL
+expression directly. i.e.
 
-Let us now consider how operators could be implemented, which is to
+\renewcommand{\pweavecaption}{Calculating the error without a function}
+\renewcommand{\pweavelabel}{lst:error}
+\begin{pweavecode}
+l2error = dot(rho_h - exact_end, rho_h - exact_end)
+h1error = inner(grad(rho_h - exact_end), grad(rho_h - exact_end))
+\end{pweavecode}
+
+\subsection{Schemes} \label{sec:schemes}
+
+Let us now consider how schemes could be implemented, which is to
 say, the weak form of a PDE and its boundary conditions.
 
 To see this applied to an example, let us consider a
@@ -477,11 +489,12 @@ Now let us implement this numerically. To begin with, it is
 necessary to define the variables that are used in the equation.
 
 ```python, label = 'forch-variables'
-from ufl import TestFunction, TrialFunction, Constant, triangle
+from ufl import TestFunction, TrialFunction, triangle
+from dune.ufl import NamedConstant
 rho = TrialFunction(ufl_space)
 v = TestFunction(ufl_space)
-dt = Constant(triangle)         # time step
-t  = Constant(triangle)         # current time
+dt = NamedConstant(triangle, "dt")    # time step
+t  = NamedConstant(triangle, "t")     # current time
 ```
 
 The trial function $\rho$ and the test function $v$ are defined on the
@@ -528,26 +541,11 @@ exact = as_vector([exp(-2*t)*(initial - 1) + 1])
 b = replace(a, {rho: exact})
 ```
 
-Finally we create an operator (model) that takes the rhs and lhs as arguments.
-
-```python, label = 'forch-operator'
-model = create.model('elliptic', grid, a == b)
-```
-
-Here the \pyth{'elliptic'} identifier refers to a preset elliptic
-operator class in \dune. In section \ref{sec:header} we will discuss
-different ways of defining operators and the benefits of each.
-
-\subsection{Schemes} \label{sec:schemes}
-
-The last natural part of a FEM is the solving, which in particular
-includes the assembly of the system matrices, and the choice of solver
-used (which are usually exported by \dune). Additional to this is providing some kind
-of data output or plot from which we can analyze the results. To do
-these things it is first of all necessary to define the scheme object.
+Having defined the bilinear form and right hand side, we can now set
+up a scheme object which we can use to solve the PDE.
 
 ```python, label = 'forch-scheme'
-scheme = create.scheme("h1", space, model, solver='cg')
+scheme = create.scheme("h1", space, a == b, solver='cg')
 ```
 
 The above function creates a simple Galerkin method for $H^1$
@@ -559,14 +557,22 @@ For instance \pyth{'dg'} is used for discontinous Galerkin methods,
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
-Now let us solve the PDE. Since the problem is time-dependent, we
+Lastly we note that it is possible to explictly define a model object
+to hold the solution, and we investigate the different ways of doing
+this in section \ref{sec:header}.
+
+\subsection{Solving} \label{sec:solving}
+
+The last natural part of a FEM is the solving, which includes
+time loops, mesh refinements, data output and plotting, and so on.
+Let us begin by setting up the time variables. Since the problem is time-dependent, we
 solve over a for loop with $t_0 = 0, t_N = 1$ and $\Delta t = 0.05$.
 
 ```python, label = 'forch-pre-solve'
 from math import log
 timeStep = 0.05
 endTime = 1.0
-model.setConstant(dt, timeStep)
+scheme.model.dt = timeStep
 ```
 
 We also compute the estimated order of convergence (EOC), to test our
@@ -601,7 +607,7 @@ VTK file for use in Paraview, as follows.
 \renewcommand{\pweavelabel}{lst:plot}
 \begin{pweavecode}
 plot(rho_h)
-grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf])
+grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf, h1error_gf])
 \end{pweavecode}
 
 Combining these concepts into one solve method in Fempy, we have the
@@ -614,7 +620,7 @@ for eocLoop in range(3):
     time = 0.0
     rho_h.interpolate(initial)
     while time < (endTime + 1e-6):
-        model.setConstant(t, time)
+        scheme.model.t = time
         rho_h_n.assign(rho_h)
         scheme.solve(target=rho_h)
         time += timeStep
@@ -626,7 +632,8 @@ for eocLoop in range(3):
         eoc = log(error/error_old)/log(0.5)
     print('|rho_h - rho| =', error, ', eoc =', eoc)
     plot(rho_h)
-    grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf], number=eocLoop)
+    grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf,
+    h1error_gf], number=eocLoop)
     grid.hierarchicalGrid.globalRefine(2)
 ```
 
@@ -653,14 +660,15 @@ Now that we have introduced each component of the Fempy structure, let
 us now look more in-depth into some of the features and design decisions
 behind it.
 
-We briefly alluded to different ways of creating operators in
-section \ref{sec:operators}, so let us expand upon this idea here.
-Recall that the general method given for creating an operator is
+We briefly alluded to a way of creating an operator independent of a
+scheme in section \ref{sec:schemes}, so let us expand upon this idea here.
+We can separate the process into two steps as follows.
 
 \renewcommand{\pweavecaption}{A simple elliptic operator}
 \renewcommand{\pweavelabel}{lst:elliptic}
 \begin{pweavecode}
 model = create.model('elliptic', grid, a == b)
+scheme = create.scheme("h1", space, model)
 \end{pweavecode}
 
 where \pyth{a == b} refers to the UFL expression used to represent the
@@ -698,8 +706,9 @@ general expressions. Suppose for
 instance we were to take the case of $m(x, u, \nabla u) = u$ above. In
 \dune, this would be defined under the method \cpp{source}.
 
-\renewcommand{\pweavecaption}{A simple elliptic operator}
-\renewcommand{\pweavelabel}{lst:elliptic}
+\renewcommand{\pweavecaption}{A function in the elliptic operator C++
+class}
+\renewcommand{\pweavelabel}{lst:elliptic-cpp}
 \begin{pweavecode}
 template< class Point >
 void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
@@ -810,9 +819,12 @@ case}
 
 \section{Storage Types and SciPy}
 
-We continue our explanation of different \dune[Fempy] features by
-looking at the different storage backends available. This can be
-achieved as follows.
+We carry on our explanation of different \dune[Fempy] features by
+looking at the different storage backends available.
+We will continue to do so in the context of a worked examples
+that demonstrate the practicality of these features.
+
+We can specify the storage type as follows.
 
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
@@ -827,11 +839,26 @@ it possible to use more sophisticated solvers (either better
 preconditioners or direct solvers). Other possibilites include
 \pyth{'fem'}, \pyth{'eigen'} and \pyth{'petsc'} for the \dune[Fem], Eigen and PETSc packages.
 
-One thing that we can do with certain storage methods (in this case we
-will take \pyth{'fem'}, is integrate SciPy methods into our code. This
+In particular one thing that we can do with certain storage methods is integrate SciPy methods into our code. This
 allows for more complex ways of writing numerical methods without the
-need to explicitly write this on the C++ side. For instance suppose we
-had a system of PDEs of the form
+need to explicitly write this on the C++ side.
+We will show that it is possible to store the degrees of freedom in such a way that
+they can be treated as NumPy vectors and an assembled system matrix
+can be stored in a SciPy sparse matrix.
+
+Since we will be implementing a Newton solver first, let's study a
+truly nonlinear problem - a version of the p-Laplace problem.
+\begin{gather}
+  - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f.
+\end{gather}
+
+We start with the basic setup in the same way as in
+section \ref{sec:fem-in-fempy}.
+
+\input{laplace-la.tex}
+
+One other thing we can do is assemble PDE systems on the python side
+by using SciPy. For instance suppose we had a system of PDEs of the form
 
 \[
 \left( \begin{array}{cc}
@@ -847,11 +874,12 @@ had a system of PDEs of the form
 
 If we have access to the schemes that represent $A, B$ and $C$, this
 is easy to set up. First we can individually assemble the matrices from the schemes
-and combine them into one matrixas follows.
+and combine them into one matrix as follows.
 
 \renewcommand{\pweavecaption}{Assembling matrices}
 \renewcommand{\pweavelabel}{lst:assemble}
 \begin{pweavecode}
+from scipy.sparse import bmat
 A  = scheme_a.assemble(uh)
 B  = scheme_b.assemble(uh)
 BT = B.transpose(copy=True)
@@ -859,29 +887,43 @@ C  = scheme_c.assemble(uh)
 system = bmat([[A, B], [BT, C]])
 \end{pweavecode}
 
-todo:
-\begin{itemize}
-\item talk about how choosing eigen as a storage type allows us to do
-numpy stuff and assemble matrices/ assemble system matrices or schur
-complements
-\item talk about newton solving through scipy
-\item talk about the advantages of other storage backends and also
-solvers
-\end{itemize}
+Then one can construct a RHS using the residuals from the schemes in a
+similar way to below.
 
-It is also possible to store the degrees of freedom in such a way that
-they can be treated as `numpy` vectors and an assembled system matrix
-can be stored in a `sympy` sparse matrix.
+\renewcommand{\pweavecaption}{Assembling the right hand side}
+\renewcommand{\pweavelabel}{lst:rhs}
+\begin{pweavecode}
+import numpy as np
+wh = uh.copy()
+f = uh.copy()
+g = uh.copy()
+uh_coeff = uh.as_numpy
+wh_coeff = wh.as_numpy
+f_coeff = f.as_numpy
+g_coeff = g.as_numpy
+scheme_a(uh, f)
+f_coeff *= -1
+scheme_c(uh, g)
+g_coeff *= -1
+rhs = np.concatenate((f_coeff, g_coeff))
+sol = np.concatenate((uh_coeff, wh_coeff))
+\end{pweavecode}
+
+Finally the system can simply be solved using a CG solver.
+
+\renewcommand{\pweavecaption}{Solving the system using SciPy}
+\renewcommand{\pweavelabel}{lst:scipy-solve}
+\begin{pweavecode}
+from scipy.sparse.linalg import cg
+sol, info = cg(system, rhs)
+\end{pweavecode}
+
+
+\Ltodo{should have something about petsc capabilities}
 
 \section{Adaptive Mesh Refinement}
 
-Having looked at the basic structure of Fempy, and some of its
-underlying C++ infrastructure, we will now take a more in-depth look
-into some of the specific features we have created for solving finite element
-methods. We will continue to do so in the context of worked examples
-that demonstrate the practicality of these features.
-
-To begin with we consider adaptive mesh refinement applied to a model
+For our next example we consider adaptive mesh refinement applied to a model
 for crystal growth. Adaptive mesh refinement is a technique that
 allows for the targeted refinement of the computational domain in
 specific areas where there is greater turbulence or activity, for greater
@@ -896,7 +938,7 @@ evaluates the gradient of the solution at each element and determines
 whether to refine the grid based on a level of tolerance.
 
 \input{crystal.tex}
-\section{Moving Surfaces}
+\section{Moving Meshes}
 Here we look at moving surfaces using a mean curvature flow problem.
 \input{mcf.tex}
 \section{Multi-domain Grids}

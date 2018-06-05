@@ -107,6 +107,18 @@ Bullet point list of things to mention here:
   other packages.
 \end{enumerate}
 
+\Atodo{depending on the journal we would need to describe a bit about the
+technical side:
+(1) generator (2) create mechanism since it is heavily used here.
+The first could be a more technical description taken from the python paper
+the later would be new. If we want to try TOMS then perhaps having the 
+HTTP generator?}
+\Atodo{do we want to add something on parallelism}
+\Atodo{which other features are missing? Should we include an example on
+non variational problems or bounding box dg?}
+\Atodo{the mc flow example makes use of the low level bindings for the dune
+grid for postporcessing - perhaps we should have that feature as an extra
+section?}
 
 %<*tag>
 
@@ -163,14 +175,17 @@ parts and discretization in time. This leads to methods that take the following 
 
 where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
 defined as
-
+\Atodo{should we make the forcing and boundary flux also partially implicit?}
+\Atodo{mention that this is a simple scheme and other higher order schemes
+can be easily implemented along the same lines?}
+\Atodo{giving $\theta$ scheme as example?}
 \begin{gather}
   L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi, \quad \\
   L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + (m_2(x, u, \nabla u) + f^n + \phi^n) \varphi,
 \label{eqn:im-ex}
 \end{gather}
 
-and $D_1 -D_2 = \Delta t D$, $m_1 - m_2 = m$. The last step is to
+and $D_1 -D_2 = D$, $m_1 - m_2 = m$. The last step is to
 solve this system iteratively for $u^{n+1} \in V_h$. This also
 involves potential variation in terms of the solver used and possible
 nonlinearity of the problem.
@@ -276,6 +291,11 @@ For instance in situations where the exact details are
 not necessary, a basic square grid could simply be made with
 \pyth{grid = square()}. However such a design comes at the cost of it
 being unclear how to make small modifications.
+\Atodo{mention \pyth{unitcube}}
+\Atodo{do we want forward references to the more complex cases, e.g.,
+unstructured mesches}
+\Atodo{somewhere we should have a list of available grids and their
+features? Of course then a similar list should be available for spaces etc.}
 
 \subsection{Spaces} \label{sec:spaces}
 
@@ -349,6 +369,13 @@ from ufl import SpatialCoordinate
 ufl_space = Space((grid.dimGrid, grid.dimWorld), 1)
 x = SpatialCoordinate(ufl_space.cell())
 ```
+\Atodo{doesn't Space(grid,1) work - and if it doesn't shouldn't it?}
+\Atodo{should be try to make a discrete space behave like a ufl space so
+       that if (like here) a discrete space is available we can simply
+       write SpatialCoordinate(discreteSpace) and avoid the dune.ufl.Space
+       all together?}
+\Atodo{why are you not using the pweavecode environment here - you are
+later on?}
 
 Here we have created a \pyth{ufl_space} for UFL functions using the dimensions of
 the grid for our domain space, and with the dimension of the range space set to 1 (i.e. scalar
@@ -356,15 +383,18 @@ functions). We also created \pyth{x} as a spatial coordinate to be used as
 a variable in the next equation. So now for $\rho^0 =
 \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$, we would
 have the following code.
+\Atodo{unmotivated use of $\rho$ here}
 
 ```python, label = 'forch-initial'
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 rho_h = space.interpolate(initial, name='rho_h')
 ```
 
-So we have created a function \pyth{rho_h} to contain the solution and
+So we have created a discrete function \pyth{rho_h} over the discrete
+finite element space to contain the solution and
 used an interpolation over the space to assign its initial value to
-the UFL expression \pyth{exact}.
+the UFL expression \pyth{exact}. The name is used later for plotting
+purposes.
 
 Having done this, a copy of this solution for the previous timestep,
 \pyth{rho_h_n}, can be created quite easily.
@@ -375,7 +405,8 @@ rho_h_n = rho_h.copy()
 
 In addition to this, functions that store the exact solution and
 calculate the error will often be necessary to create. Say for
-instance we want to look at the $L^2$ and $H^1$ errors for our computed solution.
+instance we want to look at the $L^2$ and $H^1$ errors for our computed solution
+assuming an exact solution $u$ is known at the final time of the simulation:
 
 \begin{equation}
  L^2\text{ error} = \int_{\Omega} | u - u_h |^2 \diff x, \qquad
@@ -392,6 +423,11 @@ l2error_gf = create.function('ufl', grid, 'l2error', 5, dot(rho_h-exact_end, rho
 h1error_gf = create.function('ufl', grid, 'h1error', 5, \
                             inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
 ```
+\Atodo{the 'ufl' functions are not really needed anymore - do we want to
+show this here or directly go with the code given below?}
+\Atodo{how about actually computing the error - showing the integrate
+function - for the initial projection? Instead of \pyth{exact_end} you would of
+course have to use 'initial'}
 
 First of all we define the exact solution at the end time $T=1$,
 \pyth{exact_end}. Then in this case we create the error functions on
@@ -410,6 +446,9 @@ h1error = inner(grad(rho_h - exact_end), grad(rho_h - exact_end))
 \end{pweavecode}
 
 \subsection{Schemes} \label{sec:schemes}
+
+\Atodo{we need to be a bit more precise about what we mean with
+'schemes' especially the 'solving' part is missing...}
 
 Let us now consider how schemes could be implemented, which is to
 say, the weak form of a PDE and its boundary conditions.
@@ -430,6 +469,11 @@ viscosity and permeability. For situations where the Reynolds number
 is greater than ~10, inertia begins to have an effect on the system,
 which isaccounted for in the Darcy-Forchheimer equation. In its most
 general form we have the following.
+
+\Atodo{I think describing the model here breaks the flow a bit? Would it be
+better to have that a the beginning of the section? Perhaps there is also
+too much detail here. Simply providing the final form without any
+explanation is enough in this case?}
 
 \begin{equation}
   -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
@@ -497,6 +541,8 @@ dt = NamedConstant(triangle, "dt")    # time step
 t  = NamedConstant(triangle, "t")     # current time
 ```
 
+\Atodo{NamedConstant is an extension to ufl which needs explaining...}
+
 The trial function $\rho$ and the test function $v$ are defined on the
 same FEM space as before, \pyth{ufl_space}. Additionally
 $\Delta t$ and $t$ are defined as \pyth{Constant} so that their values
@@ -553,6 +599,8 @@ conforming elements, with the space and equation passed in. As before
 there exist other such premade \dune schemes for different problems.
 For instance \pyth{'dg'} is used for discontinous Galerkin methods,
 \pyth{'stokes'} for Navier-Stokes problems, etc.
+\Atodo{'stokes' is probably not functional at the moment - again perhaps
+simply a forward reference is enough?}
 
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.

@@ -115,7 +115,9 @@ the later would be new. If we want to try TOMS then perhaps having the
 HTTP generator?}
 \Atodo{do we want to add something on parallelism}
 \Atodo{which other features are missing? Should we include an example on
-non variational problems or bounding box dg?}
+non variational problems or bounding box dg? Perhaps we could show r
+adaptivity (also shows off the moving grid capability) and the use of
+dune-femnv?}
 \Atodo{the mc flow example makes use of the low level bindings for the dune
 grid for postporcessing - perhaps we should have that feature as an extra
 section?}

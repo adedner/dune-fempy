@@ -3,8 +3,6 @@ PY = dune-fempy.py
 TEX = dune-fempy.tex
 AUX = dune-fempy.aux
 
-#FIGURES =
-
 .PHONY: all
 all: $(PDF) $(PY)
 
@@ -17,7 +15,7 @@ distclean: clean
 .PRECIOUS: %.tex
 
 %.tex: %.pmd
-	@-pweave -f texminted $<
+	@$(PYTHON_ENV) pweave -f texpweave $<
 
 %.py: %.pmd
 	@ptangle $<
@@ -51,7 +49,7 @@ battery.tex: battery.md
 	@python python-highlight.py battery.tex
 
 %.pdf: %.tex laplace-la.tex crystal.tex mcf.tex battery.tex
-	@pdflatex -shell-escape --interaction=nonstopmode $<
+	@pdflatex --interaction=nonstopmode $<
 	@bibtex $(AUX)
-	@pdflatex -shell-escape --interaction=nonstopmode $<
-	@pdflatex -shell-escape --interaction=nonstopmode $<
+	@pdflatex --interaction=nonstopmode $<
+	@pdflatex --interaction=nonstopmode $<

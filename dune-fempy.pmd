@@ -26,7 +26,6 @@
 \usepackage{xspace}
 \usepackage{a4wide}
 \usepackage{comment}
-\usepackage{minted}
 \usepackage{subcaption}
 
 \newcommand{\dune}[1][]{\textsc{Dune}\ifx&#1&\else\textsc{-{#1}}\fi\xspace}
@@ -262,36 +261,32 @@ the following things.
 With these points in mind, we implement the grid in the following way
 in \dune[Fempy] and plot the result.
 
+\renewcommand{\pweavecaption}{Creating and plotting two simple
+rectangular grids}
+\renewcommand{\pweavelabel}{lst:grid}
 ```python, label="grid", fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
 from dune.fem.plotting import plotPointData as plot
-import dune.create as create
-grid = create.grid('ALUConform', dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4]))
-plot(grid)
-grid2 = create.grid('ALUCube', dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]))
-plot(grid2)
+from dune.grid import structuredGrid
+grid = structuredGrid([0, 0], [1, 1], [4, 4])
+grid.plot()
+grid.hierarchicalGrid.globalRefine(1)
+grid.plot()
+grid.hierarchicalGrid.globalRefine(-1)  # return to original state
 ```
 
-We note that the above grid creation code snippet comes with two
-arguments. The first which we will see throughout this
-example is a keyword for the \dune class we wish to use. In this case
-\pyth{ALUConform} corresponds to a triangular discretization, whilst
-\pyth{ALUCube} corresponds to squares. These \dune classes can come
-from anywhere within a \dune installation and so are intended for
-flexible use.
-
-The second argument is an object describing a rectangular
-domain by specifying two opposite corners $(0,0)$ and $(1,1)$, and the number
-of elements in each direction $(4,4)$ or $(8,8)$. Grids in fempy can
+Here we create a simple square domain by specifying two opposite
+corners $(0,0)$ and $(1,1)$, and the number
+of elements in each direction $(4,4)$. We then refine the grid and
+plot the results, before coarsening it again. We note that grids in Fempy can
 additionally be constructed via gmsh files or \textit{dune grid format} (dgf)
 files when more complexity is required.
 
-We note here once more that from a design standpoint, assumptions
+Conceptually it is worth stating that from a design standpoint, assumptions
 could potentially be made to cut down on the complexity needed.
 For instance in situations where the exact details are
 not necessary, a basic square grid could simply be made with
 \pyth{grid = square()}. However such a design comes at the cost of it
 being unclear how to make small modifications.
-\Atodo{mention \pyth{unitcube}}
 \Atodo{do we want forward references to the more complex cases, e.g.,
 unstructured mesches}
 \Atodo{somewhere we should have a list of available grids and their
@@ -330,11 +325,16 @@ and cubic polynomials respectively.
 The creation of such a Lagrange space in \dune[Fempy] is done by the
 following code.
 
+\renewcommand{\pweavecaption}{Creating a Lagrange space with
+polynomial basis functions}
+\renewcommand{\pweavelabel}{lst:space}
 ```python, label = 'space'
+import dune.create as create
 space = create.space('lagrange', grid, dimrange=1, order=2)
 ```
 
-We comment once again on the arguments of the above function.
+We note that the above space is called with two default
+arguments and two keyword arguments.
 
 \begin{itemize}
   \item \pyth{'lagrange'} indicates that we will use a space with
@@ -345,10 +345,11 @@ We comment once again on the arguments of the above function.
   elements to 2.
 \end{itemize}
 
-Crucially, like before the first argument tells DUNE which class to
-use for compilation. For instance this can be edited to use a discontinuous
-Galerkin space with orthonormal basis functions instead by using
-\pyth{'dgonb'}.
+Of particular note is that the first argument corresponds to a \dune class
+that can come from anywhere within a \dune installation, provided
+python bindings are created for it. For instance we could use a
+discontinuous Galerkin space with orthonormal basis functions instead
+by using \pyth{'dgonb'}.
 
 \subsection{Functions} \label{sec:functions}
 
@@ -363,19 +364,18 @@ equations, which is essentially a human-readable way of writing a
 variational form. In order to use this we must define the UFL space
 and necessary variables as follows.
 
+\renewcommand{\pweavecaption}{Initializing UFL and defining \pyth{x}}
+\renewcommand{\pweavelabel}{lst:forch-uflx}
 ```python, label = 'forch-uflx'
 from dune.ufl import Space
 from ufl import SpatialCoordinate
-ufl_space = Space((grid.dimGrid, grid.dimWorld), 1)
+ufl_space = Space(grid, 1)
 x = SpatialCoordinate(ufl_space.cell())
 ```
-\Atodo{doesn't Space(grid,1) work - and if it doesn't shouldn't it?}
 \Atodo{should be try to make a discrete space behave like a ufl space so
        that if (like here) a discrete space is available we can simply
        write SpatialCoordinate(discreteSpace) and avoid the dune.ufl.Space
        all together?}
-\Atodo{why are you not using the pweavecode environment here - you are
-later on?}
 
 Here we have created a \pyth{ufl_space} for UFL functions using the dimensions of
 the grid for our domain space, and with the dimension of the range space set to 1 (i.e. scalar
@@ -385,6 +385,9 @@ a variable in the next equation. So now for $\rho^0 =
 have the following code.
 \Atodo{unmotivated use of $\rho$ here}
 
+\renewcommand{\pweavecaption}{Interpolating a discrete function from
+intial data}
+\renewcommand{\pweavelabel}{lst:forch-initial}
 ```python, label = 'forch-initial'
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 rho_h = space.interpolate(initial, name='rho_h')
@@ -399,51 +402,36 @@ purposes.
 Having done this, a copy of this solution for the previous timestep,
 \pyth{rho_h_n}, can be created quite easily.
 
+\renewcommand{\pweavecaption}{Copying a discrete function}
+\renewcommand{\pweavelabel}{lst:forch-rho_h_n}
 ```python, label = 'forch-rho_h_n'
 rho_h_n = rho_h.copy()
 ```
 
-In addition to this, functions that store the exact solution and
-calculate the error will often be necessary to create. Say for
-instance we want to look at the $L^2$ and $H^1$ errors for our computed solution
-assuming an exact solution $u$ is known at the final time of the simulation:
+There remains the question of what can we do with functions. Let us
+show an example of computing the $L^2$ norm of the initial function.
+We do this using \pyth{integrate} as follows.
 
-\begin{equation}
- L^2\text{ error} = \int_{\Omega} | u - u_h |^2 \diff x, \qquad
- H^1\text{ error} = \int_{\Omega} | \nabla(u - u_h) |^2 \diff x.
-\label{eqn:error}
-\end{equation}
-
-This can be achieved with the following code.
-
-```python, label = 'error'
-from ufl import as_vector, dot, grad, inner, exp
-exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
-l2error_gf = create.function('ufl', grid, 'l2error', 5, dot(rho_h-exact_end, rho_h-exact_end))
-h1error_gf = create.function('ufl', grid, 'h1error', 5, \
-                            inner(grad(rho_h-exact_end), grad(rho_h-exact_end)))
+\renewcommand{\pweavecaption}{Integrating the initial data}
+\renewcommand{\pweavelabel}{lst:forch-integrate}
+```python, label = 'forch-integrate'
+from dune.fem.function import integrate
+from ufl import sqrt
+norm = sqrt( integrate(grid, initial, 5)[0] )
+print(norm)
 ```
-\Atodo{the 'ufl' functions are not really needed anymore - do we want to
-show this here or directly go with the code given below?}
-\Atodo{how about actually computing the error - showing the integrate
-function - for the initial projection? Instead of \pyth{exact_end} you would of
-course have to use 'initial'}
 
-First of all we define the exact solution at the end time $T=1$,
-\pyth{exact_end}. Then in this case we create the error functions on
-the grid in a similar way to before by using UFL and \pyth{rho_h} and \pyth{exact_end}.
+We can also plot discrete functions fairly easily. The two main ways to do
+this in Fempy are either a quick plot in \pyth{matplotlib}, or writing to a
+VTK file for use in Paraview, as follows.
 
-We note that this works even though \pyth{rho_h} is not a UFL expression
-itself since the expression is extracted from it automatically. In
-particular it is also possible in most cases to just use a UFL
-expression directly. i.e.
-
-\renewcommand{\pweavecaption}{Calculating the error without a function}
-\renewcommand{\pweavelabel}{lst:error}
-\begin{pweavecode}
-l2error = dot(rho_h - exact_end, rho_h - exact_end)
-h1error = inner(grad(rho_h - exact_end), grad(rho_h - exact_end))
-\end{pweavecode}
+\renewcommand{\pweavecaption}{Plotting a function using two different
+methods}
+\renewcommand{\pweavelabel}{lst:forch-plot}
+```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
+plot(initial, grid=grid)
+grid.writeVTK('initial', pointdata={'initial': initial})
+```
 
 \subsection{Schemes} \label{sec:schemes}
 
@@ -532,6 +520,8 @@ We note that this can be reaaranged into the form described in
 Now let us implement this numerically. To begin with, it is
 necessary to define the variables that are used in the equation.
 
+\renewcommand{\pweavecaption}{Setting up UFL variables to be used}
+\renewcommand{\pweavelabel}{lst:forch-variables}
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction, triangle
 from dune.ufl import NamedConstant
@@ -557,8 +547,10 @@ the following value for $K$, and $\phi$.
 
 This results in an implementation of the following form.
 
+\renewcommand{\pweavecaption}{Implementing the bilinear form}
+\renewcommand{\pweavelabel}{lst:forch-rho_h_n}
 ```python, label = 'forch-eqn-impl'
-from ufl import dx, sqrt
+from ufl import dx, grad, inner
 abs_drho = sqrt(inner(grad(rho), grad(rho)))
 K = 2/(1 + sqrt(1 + 4*abs_drho))
 a = (inner((rho - rho_h_n)/dt, v) + inner(K*grad(rho), grad(v)))*dx
@@ -573,7 +565,10 @@ with the initial data).
 \end{equation}
 
 We can use \pyth{initial} to define this without much effort.
+\renewcommand{\pweavecaption}{The exact solution}
+\renewcommand{\pweavelabel}{lst:forch-exact}
 ```python, label = 'forch-exact'
+from ufl import exp
 exact = exp(-2*t)*(initial - 1) + 1
 ```
 
@@ -581,8 +576,10 @@ To set the right hand side of the equation, i.e. $f$, we put the
 exact solution into the left hand side of the PDE as follows.
 %\Ltodo{Would like strong form here but it's not currently working}
 
+\renewcommand{\pweavecaption}{Setting up the right hand side}
+\renewcommand{\pweavelabel}{lst:forch-rhs}
 ```python, label = 'forch-rhs'
-from ufl import replace
+from ufl import as_vector, replace
 exact = as_vector([exp(-2*t)*(initial - 1) + 1])
 b = replace(a, {rho: exact})
 ```
@@ -590,6 +587,8 @@ b = replace(a, {rho: exact})
 Having defined the bilinear form and right hand side, we can now set
 up a scheme object which we can use to solve the PDE.
 
+\renewcommand{\pweavecaption}{Creating an $H^{1}$ scheme}
+\renewcommand{\pweavelabel}{lst:forch-scheme}
 ```python, label = 'forch-scheme'
 scheme = create.scheme("h1", space, a == b, solver='cg')
 ```
@@ -616,14 +615,41 @@ time loops, mesh refinements, data output and plotting, and so on.
 Let us begin by setting up the time variables. Since the problem is time-dependent, we
 solve over a for loop with $t_0 = 0, t_N = 1$ and $\Delta t = 0.05$.
 
+\renewcommand{\pweavecaption}{Setting up time variables before the
+loop}
+\renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
-from math import log
 timeStep = 0.05
 endTime = 1.0
 scheme.model.dt = timeStep
 ```
 
-We also compute the estimated order of convergence (EOC), to test our
+Next we want to have a way of computing the error. Say for
+instance we want to look at the $L^2$ and $H^1$ errors for our computed solution
+assuming an exact solution $u$ is known at the final time of the
+simulation.
+
+\begin{equation}
+ L^2\text{ error} = \int_{\Omega} | u - u_h |^2 \diff x, \qquad
+ H^1\text{ error} = \int_{\Omega} | \nabla(u - u_h) |^2 \diff x.
+\label{eqn:error}
+\end{equation}
+
+This can be achieved with the following code.
+
+```python, label = 'error'
+exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
+l2error_fn = inner(rho_h - exact_end, rho_h - exact_end)
+h1error_fn = inner(grad(rho_h - exact_end), grad(rho_h - exact_end))
+```
+First of all we define the exact solution at the end time $T=1$,
+\pyth{exact_end}. Then we simply write \pyth{l2error_fn} and
+\pyth{h1error_fn} using UFL and previously defined \pyth{rho_h} and \pyth{exact_end}.
+
+We note that this works even though \pyth{rho_h} is not a UFL expression
+itself since the expression is extracted from it automatically.
+
+We also want to compute the estimated order of convergence (EOC), to test our
 method.
 
 \begin{equation*}
@@ -641,27 +667,20 @@ solve step.
 \renewcommand{\pweavecaption}{Calculating the EOCs}
 \renewcommand{\pweavelabel}{lst:eoc}
 \begin{pweavecode}
-error_old = error                        # set the previous error
-error = sqrt(l2error_gf.integrate()[0])  # integrate the L^2 error function
-eoc = log(error/error_old)/log(0.5)      # do the eoc calculation
-grid.hierarchicalGrid.globalRefine(2)    # refine the grid twice
-\end{pweavecode}
-
-If desired, lines can be added to plot the data visually. The two main ways to do
-this in Fempy are either a quick plot in \pyth{matplotlib}, or writing to a
-VTK file for use in Paraview, as follows.
-
-\renewcommand{\pweavecaption}{Two methods for plotting data}
-\renewcommand{\pweavelabel}{lst:plot}
-\begin{pweavecode}
-plot(rho_h)
-grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf, h1error_gf])
+error_old = error                                  # set the previous error
+error = sqrt( integrate(grid, l2error_fn, 5)[0] )  # integrate and sqrt
+eoc = log(error/error_old)/log(0.5)                # do the EOC calculation
+grid.hierarchicalGrid.globalRefine(1)              # refine the grid once
 \end{pweavecode}
 
 Combining these concepts into one solve method in Fempy, we have the
 following program.
 
+\renewcommand{\pweavecaption}{Solving the Forchheimer equation in
+time and refining the grid}
+\renewcommand{\pweavelabel}{lst:forch-main}
 ```python, label='forch-main', fig=True, caption='Plot of solutions at each level of refinement', width='0.32\\textwidth'
+from math import log
 error = 0
 for eocLoop in range(3):
     print('# step:', eocLoop, ', size:', grid.size(0))
@@ -673,16 +692,16 @@ for eocLoop in range(3):
         scheme.solve(target=rho_h)
         time += timeStep
     error_old = error
-    error = sqrt(l2error_gf.integrate()[0])
+    error = sqrt( integrate(grid, l2error_fn, 5)[0] )
     if eocLoop == 0:
         eoc = '-'
     else:
         eoc = log(error/error_old)/log(0.5)
     print('|rho_h - rho| =', error, ', eoc =', eoc)
     plot(rho_h)
-    grid.writeVTK('forchheimer', pointdata=[rho_h, l2error_gf,
-    h1error_gf], number=eocLoop)
-    grid.hierarchicalGrid.globalRefine(2)
+    grid.writeVTK('forchheimer', pointdata={'rho': rho_h, 'l2error':
+                  l2error_fn, 'h1error': h1error_fn}, number=eocLoop)
+    grid.hierarchicalGrid.globalRefine(1)
 ```
 
 We compile a table of the errors and eocs for additional refinement

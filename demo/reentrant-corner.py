@@ -5,20 +5,19 @@ import numpy
 
 from ufl import *
 
-from dune.grid import cartesianDomain
-from dune.fem import parameter
+from dune.grid import cartesianDomain, Marker
+from dune.fem import parameter, adapt
+from dune.fem.function import levelFunction
 from dune.ufl import Space
 
 import dune.create as create
 
 parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
-#vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
-#triangles = numpy.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
-vertices = [(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)]
-triangles = [(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)]
-
-grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles}, dimgrid=2)
+vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
+triangles = numpy.array([(2,1,0), (0,3,2), (4,3,0,), (0,5,4), (6,5,0), (0,7,6)])
+domain = {"vertices": vertices, "simplices": triangles}
+grid   = create.view("adaptive", grid="ALUConform", constructor=domain, dimgrid=2)
 grid.hierarchicalGrid.globalRefine(4)
 
 spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
@@ -36,10 +35,8 @@ model = create.model("elliptic", grid, inner(grad(u), grad(v))*dx == 0, dirichle
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
 scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
-solution, _ = scheme.solve()
-
 fvspc = create.space("finitevolume", grid, dimrange=1, storage="istl")
-estimate = fvspc.interpolate(solution, name="estimate")
+estimate = fvspc.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(uflSpace.cell())
 he = MaxFacetEdgeLength(uflSpace.cell())('+')
@@ -48,7 +45,22 @@ estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(
 estimator_model = create.model("integrands", grid, estimator_ufl == 0)
 estimator = create.operator("galerkin", estimator_model, spc, fvspc)
 
-estimator(solution, estimate)
+tolerance = 0.001
+gridSize = grid.size(0)
+def mark(element):
+    estLocal = estimate(element, element.geometry.referenceElement.center)
+    return Marker.refine if estLocal[0] > tolerance / gridSize else Marker.keep
 
-exact_grid = create.function("ufl", grid, "exact", 2, exact)
-grid.writeVTK("reentrant-corner", pointdata=[solution, exact_grid], celldata=[estimate])
+for i in range(20):
+    solution, _ = scheme.solve()
+    estimator(solution, estimate)
+    grid.writeVTK("reentrant-corner",
+            pointdata={"solution":solution, "exact":exact},
+            celldata=[estimate,levelFunction(grid)], number=i)
+    eta = sum(estimate.dofVector)
+    marked = grid.hierarchicalGrid.mark(mark)
+    print(gridSize, eta, marked)
+    if eta < tolerance or sum(marked)==0:
+        break
+    adapt(grid.hierarchicalGrid,[solution])
+    gridSize = grid.size(0)

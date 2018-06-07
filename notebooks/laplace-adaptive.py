@@ -28,6 +28,7 @@ try:
 except:
     pass
 import math
+import numpy
 import dune.create as create
 from dune.fem.view import adaptiveLeafGridView
 from dune.fem.plotting import plotPointData as plot
@@ -42,32 +43,16 @@ order = 2
 
 # define the grid for this domain (vertices are the origin and 4 equally spaces on the
 # unit sphere starting with (1,0) and ending at # (cos(cornerAngle),sin(cornerAngle))
-vertices = [(0,0)]
-dgf = "VERTEX\n 0 0 \n"
-for i in range(0,5):
-    dgf += str(math.cos(cornerAngle/4*math.pi/180*i)) + " " + str(math.sin(cornerAngle/4*math.pi/180*i)) + "\n"
-dgf += "#\n"
-dgf += """
-SIMPLEX
-  0 1 2
-  0 2 3
-  0 3 4
-  0 4 5
-#
-BOUNDARYDOMAIN
-  default 1
-#
-PROJECTION
-  function p(x) = x / |x|
-  segment  1 2  p
-  segment  2 3  p
-  segment  3 4  p
-  segment  4 5  p
-#
-"""
-grid = create.view("adaptive", "ALUConform", grid.string2dgf(dgf), dimgrid=2)
-grid.hierarchicalGrid.globalRefine(2)
-spc  = create.space( "lagrange", grid, dimrange=1, order=order )
+vertices = numpy.zeros((8,2))
+vertices[0] = [0,0]
+for i in range(0,7):
+    vertices[i+1] = [math.cos(cornerAngle/6*math.pi/180*i),
+                     math.sin(cornerAngle/6*math.pi/180*i)]
+triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
+domain = {"vertices": vertices, "simplices": triangles}
+view = create.view("adaptive", "ALUConform", domain, dimgrid=2)
+view.hierarchicalGrid.globalRefine(2)
+spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 
 # Next define the model together with the exact solution
@@ -77,78 +62,89 @@ spc  = create.space( "lagrange", grid, dimrange=1, order=order )
 
 from ufl import *
 from dune.ufl import Space, DirichletBC
-uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
+uflSpace = Space(view, 1)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 
 # exact solution for this angle
-def exact(x):
-    Phi = cornerAngle / 180 * math.pi
-    r2 = x.two_norm2
-    phi = math.atan2(x[1], x[0])
-    if x[1] < 0:
-        phi += 2*math.pi
-    return [r2**(math.pi/2/Phi) * sin(math.pi/Phi * phi)]
-def exactJac(x):
-    r2 = x.two_norm2
-    phi = math.atan2(x[1], x[0])
-    if x[1] < 0:
-        phi += 2*math.pi
-    r2dx=2.*x[0]
-    r2dy=2.*x[1]
-    if r2 == 0:
-        phidx = 0
-        phidy = 0
-        r2pow = 0
-    else:
-        phidx=-x[1]/r2
-        phidy=x[0]/r2
-        r2pow = r2**(90./cornerAngle-1)
-    dx = r2pow * ( 90./cornerAngle*r2dx * sin(180./cornerAngle * phi)
-                  + r2 * 180./cornerAngle*cos( 180./cornerAngle * phi) * phidx )
-    dy = r2pow * ( 90./cornerAngle*r2dy * sin(180./cornerAngle * phi)
-                  + r2 * 180./cornerAngle*cos( 180./cornerAngle * phi) * phidy )
-    return [dx,dy]
-
-exact_gf = create.function("global", grid, "exact", order+1, exact)
-bnd_u = Coefficient(uflSpace)
+Phi = cornerAngle / 180 * math.pi
+phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*math.pi, 0)
+exact = as_vector([inner(x,x)**(math.pi/2/Phi) * sin(math.pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
-model = create.model("elliptic", grid, a == 0, DirichletBC(uflSpace,bnd_u,1), coefficients={bnd_u: exact_gf})
+
+# set up the scheme
+laplace = create.scheme("h1", spc, [a==0, DirichletBC(uflSpace,exact,1)])
+uh = spc.interpolate(lambda x: [0], name="solution")
+
+
+# Theory tells us that
+# \begin{align*}
+#   \int_\Omega \nabla(u-u_h) \leq \sum_K \eta_K
+# \end{align*}
+# where on each element $K$ of the grid the local estimator is given by
+# \begin{align*}
+#   \eta_K = h_K^2 \int_K |\triangle u_h|^2 +
+#     \frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2
+# \end{align*}
+# Here $[\cdot]$ is the jump in normal direction over the edges of the grid.
+#
+# We compute the elementwise indicator by defininig a bilinear form
+# \begin{align*}
+#   \eta(u,v) = h_K^2 \int_K |\triangle u_h|^2 v +
+#     \sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2 \{v\}
+# \end{align*}
+# where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
+# we have $L[u_h}_{|K} = \eta_K$.
+
+# In[ ]:
+
+
+# energy error
+h1error = inner(grad(uh-exact),grad(uh-exact))
+
+# residual estimator
+fvspc = create.space("finitevolume", view, dimrange=1, storage="istl")
+estimate = fvspc.interpolate([0], name="estimate")
+
+hT = MaxCellEdgeLength(uflSpace.cell())
+he = MaxFacetEdgeLength(uflSpace.cell())('+')
+n = FacetNormal(uflSpace.cell())
+estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
+estimator_model = create.model("integrands", view, estimator_ufl == 0)
+estimator = create.operator("galerkin", estimator_model, spc, fvspc)
+
+# marking strategy (equildistribution)
+tolerance = 0.1
+gridSize = view.size(0)
+def mark(element):
+    estLocal = estimate(element, element.geometry.referenceElement.center)
+    return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
 
 # In[ ]:
 
 
-# set up the scheme
-laplace = create.scheme("h1", spc, model)
-uh = spc.interpolate(lambda x: [0], name="solution")
-laplace.solve(target=uh)
-
-# function used for computing approximation error
-def h1error(en,x):
-    y = en.geometry.toGlobal(x)
-    val = uh.localFunction(en).evaluate(x) - exact(y)
-    jac = uh.localFunction(en).jacobian(x)[0] - exactJac(y)
-    return [ sqrt( val[0]*val[0] + jac*jac) ];
-h1error_gf = create.function( "local", grid, "error", order+1, h1error )
-
-# adaptive loop (mark, estimate, solve)
+# adaptive loop (solve, mark, estimate)
 count = 0
-tol = 0.1 # use 0 for global refinement
-while count < 8:
-    error = math.sqrt(h1error_gf.integrate()[0])
-    [estimate, marked] = laplace.mark(uh, tol)
+while count < 20:
+    laplace.solve(target=uh)
     plot(uh)
-    print(count, ": size=",grid.size(0), "estimate=",estimate,"error=",error)
-    if marked == False or estimate < tol:
+    # compute the actual error and the estimator
+    error = math.sqrt(fem.function.integrate(view,h1error,5)[0])
+    estimator(uh, estimate)
+    eta = sum(estimate.dofVector)
+    print(count, ": size=",gridSize, "estimate=",eta,"error=",error)
+    if eta < tolerance:
         break
-    if tol == 0.:
-        grid.hierarchicalGrid.globalRefine(2)
+    if tolerance == 0.:
+        view.hierarchicalGrid.globalRefine(2)
         uh.interpolate([0])  # initial guess needed
     else:
-        fem.adapt(grid.hierarchicalGrid, [uh])
-        fem.loadBalance(grid.hierarchicalGrid, [uh])
+        marked = view.hierarchicalGrid.mark(mark)
+        fem.adapt(view.hierarchicalGrid, [uh])
+        fem.loadBalance(view.hierarchicalGrid, [uh])
+    gridSize = view.size(0)
     laplace.solve( target=uh )
     count += 1
 
@@ -169,4 +165,4 @@ plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
 
 
 from dune.fem.function import levelFunction
-plot(levelFunction(grid),xlim=(0,1),ylim=(0,1))
+plot(levelFunction(view),xlim=(-0.2,1),ylim=(-0.2,1))

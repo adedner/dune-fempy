@@ -15,7 +15,7 @@ distclean: clean
 .PRECIOUS: %.tex
 
 %.tex: %.pmd
-	@$(PYTHON_ENV) pweave -f texpweave $<
+	@pweave -f texpweave $<
 
 %.py: %.pmd
 	@ptangle $<

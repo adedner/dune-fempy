@@ -20,13 +20,14 @@
 \newcommand*\diff{\mathop{}\!\mathrm{d}}
 
 %<*pre>
-\usepackage{anslistings}
+\usepackage{a4wide}
 \usepackage{amsmath}
 \usepackage{amsfonts}
-\usepackage{xspace}
-\usepackage{a4wide}
+\usepackage{anslistings}
+\usepackage[toc,page]{appendix}
 \usepackage{comment}
 \usepackage{subcaption}
+\usepackage{xspace}
 
 \newcommand{\dune}[1][]{\textsc{Dune}\ifx&#1&\else\textsc{-{#1}}\fi\xspace}
 \newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
@@ -140,7 +141,7 @@ To begin with, the original problem we typically want to apply a finite
 element method to is a continuous PDE in some
 infinite-dimensional space $V$. First let $\Omega \subset \mathbb{R}^d$ be
 a polygonal domain for our problem. We then choose a (conforming)
-finite element space $V_h = \{ v_h : \Omega \to \mathbb{R}^r \}
+finite element space $V_h = \{\varphi_h : \Omega \to \mathbb{R}^r \}
 \subset V$, where dim $V_h = N$. This involves choosing a basis for
 $V_h$, which can vary depending on the problem, but typically involves
 piecewise polynomial functions.
@@ -151,9 +152,9 @@ parabolic PDE of the following general form.
 
 \begin{equation*}
   \begin{array}{ll}
-  \partial_t u + L[u] = f & \mbox{in } \Omega \times [0, T], \\
+  \partial_t u + L[u] = 0 & \mbox{in } \Omega \times [0, T], \\
   u(x, 0) = u^0(x) & \mbox{in } \Omega, \\
-  D \cdot \textbf{n} = \phi(x) & \mbox{on } \Gamma \times [0, T],
+  D \cdot \textbf{n} = g(x) & \mbox{on } \Gamma \times [0, T],
   \end{array}
 \label{eqn:parabolic}
 \end{equation*}
@@ -165,12 +166,16 @@ where the elliptic operator L is defined as
 \label{eqn:elliptic}
 \end{equation*}
 
-and $u^0$ and $\phi$ are the initial and boundary conditions. The
-variational form is then obtained in the usual way via integration by
-parts and discretization in time. This leads to methods that take the following form.
+and $u^0$ and $g$ are the initial and boundary conditions and
+$\textbf{n}$ is the outward pointing normal. The
+variational form is then obtained in the usual way by multiplying by a
+test function $\varphi \in V_h$, integrating by parts and discretizing
+in time. This leads to methods that take the following form.
 
 \begin{equation}
-  \int_{\Omega} u^{n+1} + \Delta t L_I[u^{n+1}] \diff x = \int_{\Omega} u^n + \Delta t L_E[u^n] \diff x.
+  \int_{\Omega} u^{n+1} \varphi + \Delta t L_I[u^{n+1}] \diff x =
+  \int_{\Omega} u^n \varphi + \Delta t L_E[u^n] \diff x + \int_{\Gamma} g(x)
+  \varphi \diff s.
 \label{eqn:rothe}
 \end{equation}
 
@@ -182,7 +187,7 @@ can be easily implemented along the same lines?}
 \Atodo{giving $\theta$ scheme as example?}
 \begin{gather}
   L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi, \quad \\
-  L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + (m_2(x, u, \nabla u) + f^n + \phi^n) \varphi,
+  L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + m_2(x, u, \nabla u) \varphi,
 \label{eqn:im-ex}
 \end{gather}
 
@@ -382,32 +387,31 @@ x = SpatialCoordinate(ufl_space.cell())
 Here we have created a \pyth{ufl_space} for UFL functions using the dimensions of
 the grid for our domain space, and with the dimension of the range space set to 1 (i.e. scalar
 functions). We also created \pyth{x} as a spatial coordinate to be used as
-a variable in the next equation. So now for $\rho^0 =
+a variable in the next equation. So now for initial condition $u =
 \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$, we would
 have the following code.
-\Atodo{unmotivated use of $\rho$ here}
 
 \renewcommand{\pweavecaption}{Interpolating a discrete function from
 intial data}
 \renewcommand{\pweavelabel}{lst:forch-initial}
 ```python, label = 'forch-initial'
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-rho_h = space.interpolate(initial, name='rho_h')
+u_h = space.interpolate(initial, name='u_h')
 ```
 
-So we have created a discrete function \pyth{rho_h} over the discrete
+So we have created a discrete function \pyth{u_h} over the discrete
 finite element space to contain the solution and
 used an interpolation over the space to assign its initial value to
 the UFL expression \pyth{exact}. The name is used later for plotting
 purposes.
 
 Having done this, a copy of this solution for the previous timestep,
-\pyth{rho_h_n}, can be created quite easily.
+\pyth{u_h_n}, can be created quite easily.
 
 \renewcommand{\pweavecaption}{Copying a discrete function}
-\renewcommand{\pweavelabel}{lst:forch-rho_h_n}
-```python, label = 'forch-rho_h_n'
-rho_h_n = rho_h.copy()
+\renewcommand{\pweavelabel}{lst:forch-u_h_n}
+```python, label = 'forch-u_h_n'
+u_h_n = u_h.copy()
 ```
 
 There remains the question of what can we do with functions. Let us
@@ -437,87 +441,27 @@ grid.writeVTK('initial', pointdata={'initial': initial})
 
 \subsection{Schemes} \label{sec:schemes}
 
-\Atodo{we need to be a bit more precise about what we mean with
-'schemes' especially the 'solving' part is missing...}
-
-Let us now consider how schemes could be implemented, which is to
-say, the weak form of a PDE and its boundary conditions.
+In \dune[Fempy], we define schemes as the object containing the
+bilinear form of the PDE, its boundary conditions and the method used
+to approximate the inverse e.g. the iterative linear solver to use.
+Specifically, for an operator $L: V_h \to V_h^{*}$, schemes have two
+main functions.
+\begin{enumerate}
+\item Apply the operator. That is to calculate $w_h = L[v_h]$ given some $v_h \in V_h$.
+\item Solve the PDE. That is to compute the solution $u_h$ to $L[u_h] = v_h$ given some $v_h \in
+V_h^{*}$, by using a solve method. By default $v_h = 0$.
+\end{enumerate}
 
 To see this applied to an example, let us consider a
-nonlinear parabolic equation derived in \cite{Kieu}. The origin of
-this equation stems from Darcy's law, an equation that describes flow
-through porous media, and is applied regularly to groundwater flow
-models.
+nonlinear parabolic equation derived in \cite{Kieu}. A full derivation
+of this equation is described in appendix \ref{sec:forch}, but for now
+we shall just present it in the form described in (\ref{eqn:rothe}).
 
-\begin{equation}
-  -\nabla p = \frac{\mu}{\kappa} v,
-\label{eqn:darcy}
+\begin{equation} \label{eqn:forch-roche}
+  \int_{\Omega} u^{n+1} v + \Delta t K(x) \nabla u^{n+1} \cdot
+  \nabla v \diff x = \int_{\Omega} u^n v + \Delta t f
+  v \diff x.
 \end{equation}
-
-where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
-viscosity and permeability. For situations where the Reynolds number
-is greater than ~10, inertia begins to have an effect on the system,
-which isaccounted for in the Darcy-Forchheimer equation. In its most
-general form we have the following.
-
-\Atodo{I think describing the model here breaks the flow a bit? Would it be
-better to have that a the beginning of the section? Perhaps there is also
-too much detail here. Simply providing the final form without any
-explanation is enough in this case?}
-
-\begin{equation}
-  -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
-\label{eqn:darcy-forch}
-\end{equation}
-
-where $a_i$ and $\alpha_i$ are obtained empirically. Through some
-manipulations, we can simplify this to an equation for just the
-pressure $\rho$.
-
-\begin{equation}
-  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f,
-\label{eqn:forch}
-\end{equation}
-
-where the function $K: \mathbb{R}^{+} \to \mathbb{R}^{+}$ is dependent
-on the $a_i$ and $\alpha_i$ above. Adding in boundary data and initial
-values gives us the \textbf{boundary value problem}.
-
-\begin{equation}
-  \begin{array}{ll}
-  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
-  } \Omega \times [0, T], \\
-  \rho(x, 0) = \rho^{0}(x) & \mbox{in } \Omega, \\
-  K(|\nabla \rho|) \nabla \rho \cdot \textbf{n} + \phi(x) = 0 & \mbox{on }
-  \Gamma \times [0, T],
-  \end{array}
-\label{eqn:forch-bvp}
-\end{equation}
-
-where $\rho^0$ and $\phi$ are initial and boundary data given. Thus
-the \textbf{weak form} or variational formulation follows.
-
-\begin{equation}
-  (\rho_t, v_h) + (K(|\nabla \rho|) \nabla \rho, \nabla v_h) = - <
-  \phi, v_h> + (f, v_h), \quad v_h \in V_h,
-\label{eqn:forch-weak}
-\end{equation}
-
-with $\rho(x, 0) = \rho^{0}(x)$. Finally it remains to discretize the
-equation in time using a backward Euler method. Let the time domain $I
-= [0,T]$ be divided into $N$ intervals $t_0 = 0 < t_1 < \dots < t_N = T$
-such that $\Delta t = t_n - t_{n-1}$ and $\rho^{n} = \rho(x, t_n)$.
-Then we have the time discretized PDE.
-
-\begin{equation}
-  \left(\frac{\rho^{n+1} - \rho^{n}}{\Delta t}, v_h \right) +
-  (K(|\nabla \rho^{n+1}|) \nabla \rho^{n+1},
-  \nabla v_h) = - < \phi, v_h > + (f, v_h), \quad v_h \in V_h.
-\label{eqn:forch-time}
-\end{equation}
-
-We note that this can be reaaranged into the form described in
-(\ref{eqn:rothe}) (plus boundary term).
 
 Now let us implement this numerically. To begin with, it is
 necessary to define the variables that are used in the equation.
@@ -527,41 +471,40 @@ necessary to define the variables that are used in the equation.
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction, triangle
 from dune.ufl import NamedConstant
-rho = TrialFunction(ufl_space)
+u = TrialFunction(ufl_space)
 v = TestFunction(ufl_space)
 dt = NamedConstant(triangle, "dt")    # time step
 t  = NamedConstant(triangle, "t")     # current time
 ```
 
-\Atodo{NamedConstant is an extension to ufl which needs explaining...}
-
-The trial function $\rho$ and the test function $v$ are defined on the
+The trial function $u$ and the test function $v$ are defined on the
 same FEM space as before, \pyth{ufl_space}. Additionally
-$\Delta t$ and $t$ are defined as \pyth{Constant} so that their values
-can be set later on in the program.
+$\Delta t$ and $t$ are defined as \pyth{NamedConstant}, which is
+simply a UFL \pyth{Constant} variable that can be given a name so it can be
+called by the model and modified later on.
 
-Now for the equation (\ref{eqn:forch-time}) itself, let us prescribe
-the following value for $K$, and $\phi$.
+Now for the equation (\ref{eqn:forch-roche}) itself, let us prescribe
+the following value for $K$.
 \begin{equation}
-  K(x) = \frac{2}{1+\sqrt{1+4x}}, \qquad \phi = 0.
+  K(x) = \frac{2}{1+\sqrt{1+4x}}.
 \label{eqn:parameters}
 \end{equation}
 
 This results in an implementation of the following form.
 
 \renewcommand{\pweavecaption}{Implementing the bilinear form}
-\renewcommand{\pweavelabel}{lst:forch-rho_h_n}
+\renewcommand{\pweavelabel}{lst:forch-eqn-impl}
 ```python, label = 'forch-eqn-impl'
 from ufl import dx, grad, inner
-abs_drho = sqrt(inner(grad(rho), grad(rho)))
-K = 2/(1 + sqrt(1 + 4*abs_drho))
-a = (inner((rho - rho_h_n)/dt, v) + inner(K*grad(rho), grad(v)))*dx
+abs_du = sqrt(inner(grad(u), grad(u)))
+K = 2/(1 + sqrt(1 + 4*abs_du))
+a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
 ```
 
 For the exact solution we will use the following (which is consistent
 with the initial data).
 \begin{equation}
-  \rho(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) -
+  u(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) -
   \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
 \label{eqn:exact}
 \end{equation}
@@ -583,7 +526,7 @@ exact solution into the left hand side of the PDE as follows.
 ```python, label = 'forch-rhs'
 from ufl import as_vector, replace
 exact = as_vector([exp(-2*t)*(initial - 1) + 1])
-b = replace(a, {rho: exact})
+b = replace(a, {u: exact})
 ```
 
 Having defined the bilinear form and right hand side, we can now set
@@ -639,17 +582,20 @@ simulation.
 
 This can be achieved with the following code.
 
+\renewcommand{\pweavecaption}{Writing expressions for the error
+computed at the final time}
+\renewcommand{\pweavelabel}{lst:forch-error}
 ```python, label = 'error'
 exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
-l2error_fn = inner(rho_h - exact_end, rho_h - exact_end)
-h1error_fn = inner(grad(rho_h - exact_end), grad(rho_h - exact_end))
+l2error_fn = inner(u_h - exact_end, u_h - exact_end)
+h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
-First of all we define the exact solution at the end time $T=1$,
-\pyth{exact_end}. Then we simply write \pyth{l2error_fn} and
-\pyth{h1error_fn} using UFL and previously defined \pyth{rho_h} and \pyth{exact_end}.
 
-We note that this works even though \pyth{rho_h} is not a UFL expression
-itself since the expression is extracted from it automatically.
+First of all we define the exact solution at the end time $T=1$,
+\pyth{exact_end}. Then we simply write expressions in UFL to calculate
+the $L^2$ and $H^1$ errors. We note that this works even though
+\pyth{u_h} is a discrete function and not a UFL term itself,
+since the expression is extracted from it automatically.
 
 We also want to compute the estimated order of convergence (EOC), to test our
 method.
@@ -662,7 +608,7 @@ method.
 This is calculated by refining the grid and comparing the errors
 ($e_{old}$ and $e_{new}$) to the grid sizes ($h_{old}$ and
 $h_{new}$), where the errors are computed using the error function
-\pyth{l2error_gf} from \ref{eqn:error}. In particular for a grid size
+\pyth{l2error_fn} from \ref{lst:forch-error}. In particular for a grid size
 that is being halved at each step, we do the following after each
 solve step.
 
@@ -687,11 +633,11 @@ error = 0
 for eocLoop in range(3):
     print('# step:', eocLoop, ', size:', grid.size(0))
     time = 0.0
-    rho_h.interpolate(initial)
+    u_h.interpolate(initial)
     while time < (endTime + 1e-6):
         scheme.model.t = time
-        rho_h_n.assign(rho_h)
-        scheme.solve(target=rho_h)
+        u_h_n.assign(u_h)
+        scheme.solve(target=u_h)
         time += timeStep
     error_old = error
     error = sqrt( integrate(grid, l2error_fn, 5)[0] )
@@ -699,9 +645,9 @@ for eocLoop in range(3):
         eoc = '-'
     else:
         eoc = log(error/error_old)/log(0.5)
-    print('|rho_h - rho| =', error, ', eoc =', eoc)
-    plot(rho_h)
-    grid.writeVTK('forchheimer', pointdata={'rho': rho_h, 'l2error':
+    print('|u_h - u| =', error, ', eoc =', eoc)
+    plot(u_h)
+    grid.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
                   l2error_fn, 'h1error': h1error_fn}, number=eocLoop)
     grid.hierarchicalGrid.globalRefine(1)
 ```
@@ -987,7 +933,6 @@ from scipy.sparse.linalg import cg
 sol, info = cg(system, rhs)
 \end{pweavecode}
 
-
 \Ltodo{should have something about petsc capabilities}
 
 \section{Adaptive Mesh Refinement}
@@ -1014,11 +959,87 @@ Here we look at moving surfaces using a mean curvature flow problem.
 Here we look at multi-domain grids using this battery problem.
 \input{battery.tex}
 %</tag>
-\section{Code (placeholder)}
-
-\inputpython{../../dune-fempy/demo/forchheimer.py}{}{lst:forch-file}
 
 \bibliographystyle{abbrvnat}
 \bibliography{dune-fempy}
+
+%<*append>
+
+\begin{appendices}
+
+\section{Derivation of Forchheimer model} \label{sec:forch}
+The origin of this equation stems from Darcy's law, an equation that
+describes flow through porous media, and is applied regularly to
+groundwater flow models.
+
+\begin{equation}
+  -\nabla p = \frac{\mu}{\kappa} v,
+\label{eqn:darcy}
+\end{equation}
+
+where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
+viscosity and permeability. For situations where the Reynolds number
+is greater than \~10, inertia begins to have an effect on the system,
+which is accounted for in the Darcy-Forchheimer equation. In its most
+general form we have the following.
+
+\begin{equation}
+  -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
+\label{eqn:darcy-forch}
+\end{equation}
+
+where $a_i$ and $\alpha_i$ are obtained empirically. Through some
+manipulations, we can simplify this to an equation for just the
+pressure $\rho$.
+
+\begin{equation}
+  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f,
+\label{eqn:forch}
+\end{equation}
+
+where the function $K: \mathbb{R}^{+} \to \mathbb{R}^{+}$ is dependent
+on the $a_i$ and $\alpha_i$ above. Adding in boundary data and initial
+values gives us the \textbf{boundary value problem}.
+
+\begin{equation}
+  \begin{array}{ll}
+  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
+  } \Omega \times [0, T], \\
+  \rho(x, 0) = \rho^{0}(x) & \mbox{in } \Omega, \\
+  K(|\nabla \rho|) \nabla \rho \cdot \textbf{n} + g(x) = 0 & \mbox{on }
+  \Gamma \times [0, T],
+  \end{array}
+\label{eqn:forch-bvp}
+\end{equation}
+
+where $\rho^0$ and $g$ are initial and boundary data given. Thus
+the \textbf{weak form} or variational formulation follows.
+
+\begin{equation}
+  (\rho_t, \varphi_h) + (K(|\nabla \rho|) \nabla \rho, \nabla \varphi_h) = - <
+  g, \varphi_h> + (f, \varphi_h), \quad \varphi_h \in V_h,
+\label{eqn:forch-weak}
+\end{equation}
+
+with $\rho(x, 0) = \rho^{0}(x)$. Finally it remains to discretize the
+equation in time using a backward Euler method. Let the time domain $I
+= [0,T]$ be divided into $N$ intervals $t_0 = 0 < t_1 < \dots < t_N = T$
+such that $\Delta t = t_n - t_{n-1}$ and $\rho^{n} = \rho(x, t_n)$.
+Then we have the time discretized PDE.
+
+\begin{equation}
+  \left(\frac{\rho^{n+1} - \rho^{n}}{\Delta t}, \varphi_h \right) +
+  (K(|\nabla \rho^{n+1}|) \nabla \rho^{n+1},
+  \nabla \varphi_h) = - < g, \varphi_h > + (f, \varphi_h), \quad
+  \varphi_h \in V_h.
+\label{eqn:forch-time}
+\end{equation}
+
+We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
+we replace $\rho$ with $u$ for brevity.
+
+\end{appendices}
+
+%</append>
 
 \end{document}

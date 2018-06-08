@@ -937,8 +937,8 @@ sol, info = cg(system, rhs)
 
 \section{Adaptive Mesh Refinement}
 
-For our next example we consider adaptive mesh refinement applied to a model
-for crystal growth. Adaptive mesh refinement is a technique that
+We shall now consider the implementation of adaptive mesh refinement
+in \dune[Fempy]. Adaptive mesh refinement is a technique that
 allows for the targeted refinement of the computational domain in
 specific areas where there is greater turbulence or activity, for greater
 precision. In problems where uniform refinement of a mesh is not
@@ -950,6 +950,14 @@ additional mesh points to the grid at areas of small scale activity.
 It does so based on a marking procedure that
 evaluates the gradient of the solution at each element and determines
 whether to refine the grid based on a level of tolerance.
+
+In this section we present two examples which use adaptive grid
+refinement in slightly different ways.
+
+\input{laplace-adaptive.tex}
+
+We shall now look at a model for crystallization on the surface of a
+liquid.
 
 \input{crystal.tex}
 \section{Moving Meshes}

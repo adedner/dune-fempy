@@ -11,14 +11,18 @@ with fileinput.FileInput(filename, inplace=True, backup='.bak') as file:
     for line in file:
         # remove pre-existing highlighting
         line = line.replace('[language=Python]', '')
+        # add pythonstyle highlighting if not already done
         if not 'style' in line:
-            # add pythonstyle highlighting if not already done
             line = line.replace('begin{lstlisting}', 'begin{lstlisting}[style=pythonstyle]')
-        if not 'battery.png' in line and filename != 'laplace-la.tex':
-            # rescale images to fit pagewidth
-            line = line.replace('includegraphics{', 'includegraphics[width=\\textwidth]{')
+        # rescale images to fit pagewidth
+        if filename != 'laplace-la.tex':
+            line = line.replace('includegraphics{', 'includegraphics[width=\\textwidth, height=7cm, keepaspectratio]{')
         elif filename == 'laplace-la.tex':
             line = line.replace('includegraphics{', 'includegraphics[width=0.5\\textwidth]{')
-        print(line, end='')
+        # remove empty captions
+        if 'caption{png}' in line:
+            pass
+        else:
+            print (line, end='')
 
 print('added lstlisting tags')

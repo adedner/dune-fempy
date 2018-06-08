@@ -20,6 +20,13 @@ distclean: clean
 %.py: %.pmd
 	@ptangle $<
 
+laplace-adaptive.md: laplace-adaptive.ipynb
+	@jupyter nbconvert --to markdown laplace-adaptive.ipynb
+
+laplace-adaptive.tex: laplace-adaptive.md
+	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
+	@python python-highlight.py laplace-adaptive.tex
+
 laplace-la.md: laplace-la.ipynb
 	@jupyter nbconvert --to markdown laplace-la.ipynb
 
@@ -48,7 +55,7 @@ battery.tex: battery.md
 	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
 	@python python-highlight.py battery.tex
 
-%.pdf: %.tex laplace-la.tex crystal.tex mcf.tex battery.tex
+%.pdf: %.tex laplace-adaptive.tex laplace-la.tex crystal.tex mcf.tex battery.tex
 	@pdflatex --interaction=nonstopmode $<
 	@bibtex $(AUX)
 	@pdflatex --interaction=nonstopmode $<

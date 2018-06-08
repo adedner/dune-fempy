@@ -4,16 +4,16 @@
 # # Adaptive Finite Element [(Notebook)][1]
 #
 # [1]: _downloads/laplace-adaptive.ipynb
-# We study the classic _reentrand corner_ problem:
+# We study the classic _re-entrant corner_ problem:
 # \begin{align*}
 #   -\Delta u &= f && \text{in } \Omega \\
 #           u &= g && \text{on } \partial\Omega
 # \end{align*}
 # where the domain is given using polar coordinates
 # \begin{gather}
-#   \Omega = \{ (r,\varphi)\colon r\in(0,1) \varphi\in(0,\Phi) \}~.
+#   \Omega = \{ (r,\varphi)\colon r\in(0,1), \varphi\in(0,\Phi) \}~.
 # \end{gather}
-# For $g$ we take the trace of the function u, given by
+# For $g$ we take the trace of the function $u$, given by
 # \begin{gather}
 #   u(r,\varphi) = r^{\frac{\pi}{\Phi}} \sin\big(\frac{\pi}{\Phi} \varphi \big)
 # \end{gather}
@@ -24,7 +24,7 @@
 
 
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
 except:
     pass
 import math
@@ -41,8 +41,8 @@ cornerAngle = 320.
 # use a second order space
 order = 2
 
-# define the grid for this domain (vertices are the origin and 4 equally spaces on the
-# unit sphere starting with (1,0) and ending at # (cos(cornerAngle),sin(cornerAngle))
+# define the grid for this domain (vertices are the origin and 4 equally spaced points on the
+# unit sphere starting with (1,0) and ending at # (cos(cornerAngle), sin(cornerAngle))
 vertices = numpy.zeros((8,2))
 vertices[0] = [0,0]
 for i in range(0,7):
@@ -55,7 +55,7 @@ view.hierarchicalGrid.globalRefine(2)
 spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 
-# Next define the model together with the exact solution
+# Next define the model together with the exact solution.
 
 # In[ ]:
 
@@ -89,19 +89,19 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # \end{align*}
 # Here $[\cdot]$ is the jump in normal direction over the edges of the grid.
 #
-# We compute the elementwise indicator by defininig a bilinear form
+# We compute the elementwise indicator by defining a bilinear form
 # \begin{align*}
 #   \eta(u,v) = h_K^2 \int_K |\triangle u_h|^2 v +
 #     \sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2 \{v\}
 # \end{align*}
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
-# we have $L[u_h}_{|K} = \eta_K$.
+# we have $L[u_h]|_{K} = \eta_K$.
 
 # In[ ]:
 
 
 # energy error
-h1error = inner(grad(uh-exact),grad(uh-exact))
+h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
 fvspc = create.space("finitevolume", view, dimrange=1, storage="istl")
@@ -110,16 +110,53 @@ estimate = fvspc.interpolate([0], name="estimate")
 hT = MaxCellEdgeLength(uflSpace.cell())
 he = MaxFacetEdgeLength(uflSpace.cell())('+')
 n = FacetNormal(uflSpace.cell())
-estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
+estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx                 + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
 estimator_model = create.model("integrands", view, estimator_ufl == 0)
 estimator = create.operator("galerkin", estimator_model, spc, fvspc)
 
-# marking strategy (equildistribution)
+# marking strategy (equidistribution)
 tolerance = 0.1
 gridSize = view.size(0)
 def mark(element):
     estLocal = estimate(element, element.geometry.referenceElement.center)
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
+
+
+# Let us create a function `matplot` for plotting the figures side by side in matplotlib.
+
+# In[ ]:
+
+
+import matplotlib
+from matplotlib import pyplot
+from numpy import amin, amax, linspace, linalg
+from matplotlib.collections import PolyCollection
+matplotlib.rcParams.update({'font.size': 10})
+matplotlib.rcParams['figure.figsize'] = [12, 5]
+
+fig = pyplot.figure()
+def matplot(grid, solution, count, xlim=None, ylim=None):
+    pyplot.subplot(131 + count%3)
+    polys = grid.polygons()
+    for p in polys:
+        coll = PolyCollection(p,facecolor='none',edgecolor="black",linewidth=0.5,zorder=2)
+        pyplot.gca().add_collection(coll)
+    triangulation = view.triangulation()
+    data = uh.pointData()
+    data = data[:,0]
+    minData = amin(data)
+    maxData = amax(data)
+    clim = [minData, maxData]
+    levels = linspace(clim[0], clim[1], 256, endpoint=True)
+    pyplot.tricontourf(triangulation, data, levels=levels, extend="both")
+    fig.gca().set_aspect('equal')
+    if xlim:
+        fig.gca().set_xlim(xlim)
+    if ylim:
+        fig.gca().set_ylim(ylim)
+    if count%3 == 2:
+        pyplot.show()
+        pyplot.close('all')
 
 
 # In[ ]:
@@ -129,12 +166,14 @@ def mark(element):
 count = 0
 while count < 20:
     laplace.solve(target=uh)
-    plot(uh)
+    matplot(view, uh, count)
+    if count%3 == 2:
+        fig = pyplot.figure()
     # compute the actual error and the estimator
-    error = math.sqrt(fem.function.integrate(view,h1error,5)[0])
+    error = math.sqrt(fem.function.integrate(view, h1error, 5)[0])
     estimator(uh, estimate)
     eta = sum(estimate.dofVector)
-    print(count, ": size=",gridSize, "estimate=",eta,"error=",error)
+    print(count, ": size=", gridSize, "estimate=", eta, "error=", error)
     if eta < tolerance:
         break
     if tolerance == 0.:
@@ -154,9 +193,10 @@ while count < 20:
 # In[ ]:
 
 
-plot(uh, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
-plot(uh, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
-plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
+fig = pyplot.figure()
+matplot(view, uh, 0, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
+matplot(view, uh, 1, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
+matplot(view, uh, 2, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
 
 
 # Finally, let us have a look at the grid levels:
@@ -165,4 +205,4 @@ plot(uh, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
 
 
 from dune.fem.function import levelFunction
-plot(levelFunction(view),xlim=(-0.2,1),ylim=(-0.2,1))
+plot(levelFunction(view), xlim=(-0.2,1), ylim=(-0.2,1))

@@ -20,15 +20,16 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[ ]:
+# In[1]:
 
 
 try:
-    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 import math
 import numpy
+import matplotlib.pyplot as pyplot
 import dune.create as create
 from dune.fem.view import adaptiveLeafGridView
 from dune.fem.plotting import plotPointData as plot
@@ -57,7 +58,7 @@ spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 # Next define the model together with the exact solution.
 
-# In[ ]:
+# In[2]:
 
 
 from ufl import *
@@ -97,7 +98,7 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
 
-# In[ ]:
+# In[3]:
 
 
 # energy error
@@ -124,51 +125,19 @@ def mark(element):
 
 # Let us create a function `matplot` for plotting the figures side by side in matplotlib.
 
-# In[ ]:
-
-
-import matplotlib
-from matplotlib import pyplot
-from numpy import amin, amax, linspace, linalg
-from matplotlib.collections import PolyCollection
-matplotlib.rcParams.update({'font.size': 10})
-matplotlib.rcParams['figure.figsize'] = [12, 5]
-
-fig = pyplot.figure()
-def matplot(grid, solution, count, xlim=None, ylim=None):
-    pyplot.subplot(131 + count%3)
-    polys = grid.polygons()
-    for p in polys:
-        coll = PolyCollection(p,facecolor='none',edgecolor="black",linewidth=0.5,zorder=2)
-        pyplot.gca().add_collection(coll)
-    triangulation = view.triangulation()
-    data = uh.pointData()
-    data = data[:,0]
-    minData = amin(data)
-    maxData = amax(data)
-    clim = [minData, maxData]
-    levels = linspace(clim[0], clim[1], 256, endpoint=True)
-    pyplot.tricontourf(triangulation, data, levels=levels, extend="both")
-    fig.gca().set_aspect('equal')
-    if xlim:
-        fig.gca().set_xlim(xlim)
-    if ylim:
-        fig.gca().set_ylim(ylim)
-    if count%3 == 2:
-        pyplot.show()
-        pyplot.close('all')
-
-
-# In[ ]:
+# In[4]:
 
 
 # adaptive loop (solve, mark, estimate)
+fig = pyplot.figure(figsize=(10,10))
 count = 0
 while count < 20:
     laplace.solve(target=uh)
-    matplot(view, uh, count)
-    if count%3 == 2:
-        fig = pyplot.figure()
+    if count%3 == 0:
+        pyplot.show()
+        pyplot.close('all')
+        fig = pyplot.figure(figsize=(10,10))
+    plot(uh,figure=(fig,131+count%3), colorbar=False)
     # compute the actual error and the estimator
     error = math.sqrt(fem.function.integrate(view, h1error, 5)[0])
     estimator(uh, estimate)
@@ -186,17 +155,21 @@ while count < 20:
     gridSize = view.size(0)
     laplace.solve( target=uh )
     count += 1
+pyplot.show()
+pyplot.close('all')
 
 
 # Let's have a look at the center of the domain:
 
-# In[ ]:
+# In[9]:
 
 
-fig = pyplot.figure()
-matplot(view, uh, 0, xlim=(-0.5,0.5), ylim=(-0.5,0.5))
-matplot(view, uh, 1, xlim=(-0.25,0.25), ylim=(-0.25,0.25))
-matplot(view, uh, 2, xlim=(-0.125,0.125), ylim=(-0.125,0.125))
+fig = pyplot.figure(figsize=(15,15))
+plot(uh, figure=(fig,131+0), xlim=(-0.5,0.5), ylim=(-0.5,0.5),colorbar={"shrink":0.3})
+plot(uh, figure=(fig,131+1), xlim=(-0.25,0.25), ylim=(-0.25,0.25),colorbar={"shrink":0.3})
+plot(uh, figure=(fig,131+2), xlim=(-0.125,0.125), ylim=(-0.125,0.125),colorbar={"shrink":0.3})
+pyplot.show()
+pyplot.close('all')
 
 
 # Finally, let us have a look at the grid levels:

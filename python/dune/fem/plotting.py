@@ -10,8 +10,8 @@ except:
 
 from dune.plotting import block
 
-def _plotPointData(fig,grid,solution, level=0, gridLines="black", vectors=None,
-        xlim=None, ylim=None, clim=None, cmap=None, colorbar=True):
+def _plotPointData(fig, grid, solution, level=0, gridLines="black", vectors=None,
+        xlim=None, ylim=None, clim=None, cmap=None, colorbar=True, triplot=False):
 
     if not gridLines == "":
         polys = grid.polygons()
@@ -44,7 +44,13 @@ def _plotPointData(fig,grid,solution, level=0, gridLines="black", vectors=None,
             if clim == None:
                 clim = [minData, maxData]
             levels = linspace(clim[0], clim[1], 256, endpoint=True)
-            pyplot.tricontourf(triangulation, data, cmap=cmap, levels=levels, extend="both")
+            if triplot == True:
+                pyplot.triplot(triangulation, antialiased=True, linewidth=0.2, color='black')
+            else:
+                try:
+                    pyplot.tricontourf(triangulation, data, cmap=cmap, levels=levels, extend="both")
+                except:
+                    pyplot.tricontourf(triangulation, data, cmap=cmap, extend="both")
             if colorbar:
                 # having extend not 'both' does not seem to work (needs fixing)...
                 if clim[0] > minData and clim[1] < maxData:
@@ -57,9 +63,16 @@ def _plotPointData(fig,grid,solution, level=0, gridLines="black", vectors=None,
                     extend = 'neither'
                 v = linspace(clim[0], clim[1], 10, endpoint=True)
                 norm = matplotlib.colors.Normalize(vmin=clim[0], vmax=clim[1])
-                cbar = pyplot.colorbar(orientation="vertical",shrink=1.0,
-                          extend=extend, norm=norm, ticks=v)
-                cbar.ax.tick_params(labelsize=18)
+                if not isinstance(colorbar,dict):
+                    colorbar = {}
+                colorbar.setdefault("orientation","vertical")
+                colorbar.setdefault("shrink",1.0)
+                colorbar.setdefault("extend",extend)
+                colorbar.setdefault("norm",norm)
+                colorbar.setdefault("ticks",v)
+                cbar = pyplot.colorbar(**colorbar)
+                # cbar = pyplot.colorbar(orientation="vertical",shrink=1.0, extend=extend, norm=norm, ticks=v)
+                cbar.ax.tick_params(labelsize=10)
 
     fig.gca().set_aspect('equal')
     fig.gca().autoscale()
@@ -70,15 +83,17 @@ def _plotPointData(fig,grid,solution, level=0, gridLines="black", vectors=None,
 
 from ufl.core.expr import Expr
 from dune.ufl import expression2GF
-def plotPointData(solution, level=0, gridLines="black", vectors=False,
-        xlim=None, ylim=None, clim=None, cmap=None, **kwargs):
+def plotPointData(solution, figure=None,
+        level=0, gridLines="black", vectors=False,
+        xlim=None, ylim=None, clim=None, cmap=None,
+        colorbar=True, grid=None, triplot=False):
     try:
         grid = solution.grid
     except AttributeError:
         if isinstance(solution, Expr):
-            grid = kwargs.get("grid",None)
+            grid = kwargs.get("grid", None)
             assert grid, "need to provide a named grid argument to plot a ufl expression directly"
-            solution = expression2GF(grid,solution,1)
+            solution = expression2GF(grid, solution, 1)
         else:
             grid = solution
             solution = None
@@ -86,12 +101,24 @@ def plotPointData(solution, level=0, gridLines="black", vectors=False,
         print("inline plotting so far only available for 2d grids")
         return
 
-    fig = pyplot.figure()
-    _plotPointData(fig,grid,solution,level,gridLines,vectors,xlim,ylim,clim,cmap,True)
+    if figure is None:
+        figure = pyplot.figure()
+        newFig = True
+    else:
+        try:
+            subPlot = figure[1]
+            figure = figure[0]
+            pyplot.subplot(subPlot)
+        except:
+            pass
+        newFig = False
+    _plotPointData(figure, grid, solution, level, gridLines,
+                    vectors, xlim, ylim, clim, cmap, colorbar, triplot)
 
-    pyplot.show(block=block)
+    if newFig:
+        pyplot.show(block=block)
     # display(fig)
-    # return fig
+    # return figure
 
 def plotComponents(solution, level=0, show=None, gridLines="black",
         xlim=None, ylim=None, clim=None, cmap=None, **kwargs):

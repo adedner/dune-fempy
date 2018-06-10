@@ -14,7 +14,7 @@
 
 from __future__ import print_function
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -181,9 +181,9 @@ def mark(element):
     solutionLocal = solution.localFunction(element)
     grad = solutionLocal.jacobian(element.geometry.referenceElement.center)
     if grad[0].infinity_norm > 1.2:
-      return Marker.refine if element.level < maxLevel else Marker.keep
+        return Marker.refine if element.level < maxLevel else Marker.keep
     else:
-      return Marker.coarsen
+        return Marker.coarsen
 
 
 # We do the initial refinement of the grid.
@@ -203,47 +203,21 @@ for i in range(0,maxLevel):
 print()
 
 
-# We define a method for matplotlib output.
+# Let us start by plotting the initial state of the material, which is just a small circle in the centre.
 
 # In[ ]:
 
 
-from numpy import amin, amax, linspace
-from matplotlib import pyplot
-from IPython import display
-
-def matplot(grid, solution, show=range(dimRange)):
-    triangulation = grid.triangulation()
-    subfig = 101+(len(show)+1)*10
-    # plot the grid
-    pyplot.subplot(subfig)
-    pyplot.gca().set_aspect('equal')
-    pyplot.gca().locator_params(tight=True, nbins=3)
-    pyplot.triplot(triangulation, antialiased=True, linewidth=0.2, color='black')
-    # add the data
-    for p in show:
-        pyplot.subplot(subfig+p+1)
-        pyplot.gca().set_aspect('equal')
-        pyplot.gca().locator_params(tight=True, nbins=3)
-        data = solution.pointData()
-        levels = linspace(amin(data[:,p]), amax(data[:,p]), 256)
-        pyplot.tricontourf(triangulation, data[:,p], cmap=pyplot.cm.rainbow, levels=levels)
-
-    # pyplot.show()
-    display.clear_output(wait=True)
-    display.display(pyplot.gcf())
-
-
-# In[ ]:
-
-
-pyplot.figure()
-
+from dune.fem.plotting import plotComponents as plotComponents
+import matplotlib.pyplot as pyplot
 from dune.fem.function import levelFunction, partitionFunction
+import matplotlib
 vtk = grid.sequencedVTK("crystal", pointdata=[solution],
        celldata=[levelFunction(grid), partitionFunction(grid)])
 
-matplot(grid,solution, [0])
+matplotlib.rcParams.update({'font.size': 10})
+matplotlib.rcParams['figure.figsize'] = [10, 5]
+plotComponents(solution, cmap=pyplot.cm.rainbow, show=[0])
 
 
 # Some constants needed for the time loop:
@@ -277,5 +251,4 @@ print()
 # In[ ]:
 
 
-pyplot.figure()
-matplot(grid, solution)
+plotComponents(solution, cmap=pyplot.cm.rainbow)

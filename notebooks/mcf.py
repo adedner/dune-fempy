@@ -39,7 +39,7 @@
 
 from __future__ import print_function
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -50,6 +50,9 @@ import dune.ufl
 import dune.create as create
 import dune.geometry as geometry
 import dune.fem as fem
+from dune.fem.plotting import plotPointData as plot
+import matplotlib.pyplot as pyplot
+from IPython import display
 
 # polynomial order of surface approximation
 order = 2
@@ -104,37 +107,14 @@ scheme = create.scheme("h1", spc, model, solver="cg")
 # In[ ]:
 
 
-from numpy import amin, amax, linspace
-import matplotlib
-from matplotlib import pyplot
-from IPython import display
-matplotlib.rcParams.update({'font.size': 6})
-
-def matplot(grid, solution, count):
-    triangulation = grid.triangulation()
-    p = count%3
-    if p == 0:
-        display.display(pyplot.gcf())
-        pyplot.figure()
-    pyplot.subplot(131+p)
-    pyplot.gca().set_aspect('equal')
-    pyplot.gca().locator_params(tight=True, nbins=4)
-    pyplot.triplot(triangulation, antialiased=True,
-                       linewidth=0.2, color='black')
-
-
-# In[ ]:
-
-
 count   = 0
 t       = 0.
 endTime = 0.05
 dt      = 0.005
-fig     = 0
 model.setConstant(tau,dt)
 
-matplot(surface,solution,fig)
-fig += 1
+fig = pyplot.figure(figsize=(10,10))
+plot(solution, figure=(fig, 131+count%3), colorbar=False, gridLines="", triplot=True)
 
 while t < endTime:
     scheme.solve(target=solution)
@@ -144,9 +124,9 @@ while t < endTime:
     if count % 4 == 0:
         # surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
         # surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
-        matplot(surface,solution,fig)
-        fig += 1
-display.display(pyplot.gcf())
+        plot(solution, figure=(fig, 131+count%3), colorbar=False, gridLines="", triplot=True)
+pyplot.show()
+pyplot.close('all')
 
 
 # In case we start with a spherical initial surface, i.e., $\Gamma(0)=R_0\;S^2$, the solution

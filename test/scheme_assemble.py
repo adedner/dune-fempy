@@ -86,6 +86,7 @@ def test(space):
 
     if test_petsc:
         import petsc4py
+        from petsc4py import PETSc
         petsc4py.init(sys.argv)
         petscSpace  = create.space(space, grid, dimrange=1, order=1, storage='petsc')
         petscScheme = create.scheme("galerkin", petscSpace, model)
@@ -101,6 +102,20 @@ def test(space):
         end= time.clock()
         # print( "petsc:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
+
+        ksp = PETSc.KSP()
+        ksp.create(PETSc.COMM_WORLD)
+        ksp.setType("cg")
+        ksp.getPC().setType("icc")
+        petsc_h.clear()
+        res = petsc_h.copy()
+        petscScheme(petsc_h, res)
+        petsc_mat = petscScheme.assemble(petsc_h)
+        ksp.setOperators(petsc_mat,petsc_mat)
+        ksp.setFromOptions()
+        ksp.solve(res.as_petsc, petsc_h.as_petsc)
+
+
         # print("****************************",flush=True)
         # print(petsc_mat.size, petsc_mat.getSize(), petsc_mat.getSizes())
         # print(petsc_mat.getType())

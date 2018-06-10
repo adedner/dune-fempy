@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# # Different storage backends - using numpy/scipy [(Notebook)][1]
+# # Different storage backends - using numpy/scipy and petsc4py [(Notebook)][1]
 #
 # [1]: _downloads/laplace-la.ipynb
 #
@@ -11,16 +11,17 @@
 # ~~~
 # in the above code will switch to the solvers from `dune-istl`, other options are for example `eigen` or `petsc`.
 #
-# It is also possible to store the degrees of freedom in such a way that they can be treated as `numpy` vectors and an assembled system matrix can be stored in a `sympy` sparse matrix.
+# Using the internal `fem` storage structure or the `eigen` matrix/vector strorage
+# it is also possible to directly treate them as`numpy` vectors and an assembled system matrix can be stored in a `sympy` sparse matrix.
 #
-# __Note__: at the moment we can only export `Eigen` matrices to python so to get the following example to run, the `Eigen` package must be available and `dune-py` must have been configured with `Eigen`.
+# __Note__: to use `eigen` matrices the `Eigen` package must be available and `dune-py` must have been configured with `Eigen`.
 #
 # Since we will be implementing a Newton solver first, let's study a truelly non linear problem - a version of the p-Laplace problem:
 # \begin{gather}
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
 
-# In[ ]:
+# In[1]:
 
 
 try:
@@ -42,10 +43,7 @@ from ufl import TestFunction, TrialFunction, SpatialCoordinate, ds, dx, inner, g
 
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
-try:
-    spc = create.space("lagrange", grid, dimrange=1, order=1, storage='eigen')
-except builder.ConfigurationError:
-    exit(1)
+spc = create.space("lagrange", grid, dimrange=1, order=1, storage='fem')
 
 d = 0.001
 p = 1.7
@@ -58,9 +56,7 @@ x = SpatialCoordinate(uflSpace.cell())
 rhs = (x[0] + x[1]) * v[0]
 a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
 b = rhs * dx + 10*rhs * ds
-model = create.model("elliptic", grid, a==b)
-
-scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
+scheme = create.scheme("h1", spc, a==b,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
         "fem.solver.newton.verbose": 1,
         "fem.solver.newton.linear.verbose": 0})
@@ -77,7 +73,7 @@ uh = create.function("discrete", spc, name="solution")
 #
 # Let's first use the solve method on the scheme directly:
 
-# In[ ]:
+# In[2]:
 
 
 uh,info = scheme.solve(target = uh)
@@ -87,7 +83,7 @@ plot(uh)
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
 
-# In[ ]:
+# In[3]:
 
 
 # Let's first clear the solution again
@@ -120,7 +116,7 @@ plot(uh)
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
-# In[ ]:
+# In[4]:
 
 
 # let's first set the solution back to zero - since it already contains the right values
@@ -156,3 +152,70 @@ sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
             inner_M=Df(sol_coeff))
 
 plot(uh)
+
+
+# We can also use the package `petsc4py` to solve the problem.
+#
+# __Note__: make sure that `dune` has been configured using the same version of `petsc` used for `petsc4py`
+#
+# The first step is to change the storage in the space. Since also requires setting up the scheme and siscrete functions again to use the new storage structure.
+#
+# We can directly use the `petsc` solvers by invoking `solve` on the scheme as before.
+
+# In[8]:
+
+
+try:
+    import petsc4py, sys
+    from petsc4py import PETSc
+    petsc4py.init(sys.argv)
+    spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
+    scheme = create.scheme("h1", spc, a==b)
+
+    # first we will use the petsc solver available in the `dune-fem` package
+    uh,_ = scheme.solve()
+    plot(uh)
+except ImportError:
+    print("petsc4py could not be imported")
+    petsc4py = False
+
+
+# Next we will implement the Newton loop in Python using `petsc4py` to solve the linear systems
+# Need to auxiliary function and set `uh` back to zero.
+# We can access the `petsc` vectors by calling `as_petsc` on the discrete function. Note that this property will only be available if the discrete function is an element of a space with storage `petsc`.
+# The method `assemble` on the scheme now returns the sparse `petsc` matrix and so we can direclty use the `ksp` class from `petsc4py`:
+
+# In[9]:
+
+
+if petsc4py:
+    uh.clear()
+    res = uh.copy()
+
+    sol_coeff = uh.as_petsc
+    res_coeff = res.as_petsc
+
+    ksp = PETSc.KSP()
+    ksp.create(PETSc.COMM_WORLD)
+    # use conjugate gradients method
+    ksp.setType("cg")
+    # and incomplete Cholesky
+    ksp.getPC().setType("icc")
+
+    n = 0
+    while True:
+        scheme(uh, res)
+        absF = math.sqrt( res_coeff.dot(res_coeff) )
+        print("iterations ("+str(n)+")",absF)
+        if absF < 1e-10:
+            break
+        matrix = scheme.assemble(uh)
+        ksp.setOperators(matrix)
+        ksp.setFromOptions()
+        ksp.solve(res_coeff, res_coeff)
+        sol_coeff -= res_coeff
+        n += 1
+    plot(uh)
+
+
+# At the moment `dune-fem` does not offer the possibility to use an existing user managed `petsc` vector as dof storage for a discrete function. Therefore we can not yet use `petsc`'s non-linear solvers (the `snes` classes) directly. This is work in progress

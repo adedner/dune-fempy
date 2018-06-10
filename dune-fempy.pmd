@@ -238,7 +238,19 @@ decision that must be made without a clear \textit{right} answer.
 With that in mind, for the remainder of this section we shall
 demonstrate in more detail how each of these concepts are implemented
 in the context of a worked example, the FEM applied to
-the Forchheimer equation \cite{Kieu}.
+the Forchheimer equation, a scalar,
+nonlinear parabolic equation derived in \cite{Kieu}. A full derivation
+of this equation is described in appendix \ref{sec:forch}, but for the
+following the final form (\ref{eqn:rothe}) suffices:
+
+\begin{equation} \label{eqn:forch-roche}
+  \int_{\Omega} u^{n+1} v + \Delta t K(x) \nabla u^{n+1} \cdot
+  \nabla v \diff x = \int_{\Omega} u^n v + \Delta t f
+  v \diff x.
+\end{equation}
+
+
+
 
 \subsection{Grids} \label{sec:grids}
 
@@ -452,18 +464,8 @@ main functions.
 V_h^{*}$, by using a solve method. By default $v_h = 0$.
 \end{enumerate}
 
-To see this applied to an example, let us consider a
-nonlinear parabolic equation derived in \cite{Kieu}. A full derivation
-of this equation is described in appendix \ref{sec:forch}, but for now
-we shall just present it in the form described in (\ref{eqn:rothe}).
-
-\begin{equation} \label{eqn:forch-roche}
-  \int_{\Omega} u^{n+1} v + \Delta t K(x) \nabla u^{n+1} \cdot
-  \nabla v \diff x = \int_{\Omega} u^n v + \Delta t f
-  v \diff x.
-\end{equation}
-
-Now let us implement this numerically. To begin with, it is
+Recall the parabolic equation \eqref{eqn:forch-roche} which we will focus
+on in the following. To begin with, it is
 necessary to define the variables that are used in the equation.
 
 \renewcommand{\pweavecaption}{Setting up UFL variables to be used}
@@ -866,6 +868,7 @@ truly nonlinear problem - a version of the p-Laplace problem.
 \begin{gather}
   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f.
 \end{gather}
+
 
 We start with the basic setup in the same way as in
 section \ref{sec:fem-in-fempy}.

@@ -3,7 +3,7 @@ from __future__ import print_function, division
 import numpy as np
 from ufl import as_vector, inner, grad, sin, cos, pi, dx, atan_2, conditional
 from math import sqrt, pi
-from dune.ufl import DirichletBC
+from dune.ufl import DirichletBC, NamedConstant
 
 import dune.create as create
 from dune.grid import structuredGrid
@@ -24,17 +24,9 @@ grid  = structuredGrid([0, 0], [1, 1], [16, 16])
 space = lagrange(grid, dimrange=1, order=1)
 
 # ufl
-u = space.uflTrialFunction()
-v = space.uflTestFunction()
-x = space.uflSpatialCoordinate()
-
-from dune.ufl import Space
-from ufl import TrialFunction, TestFunction, SpatialCoordinate
-uflSpace = Space(2, 1)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
-
+u = ufl.TrialFunction(space)
+v = ufl.TestFunction(space)
+x = ufl.SpatialCoordinate(space.cell())
 
 f = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])] )
 
@@ -55,7 +47,7 @@ print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)
 # heat equation
 solution.clear()
 un  = space.interpolate(-exact,name="oldSolution")
-tau = space.uflNamedConstant(name="tau")
+tau = NamedConstant(space,name="tau")
 scheme = h1(space,
         ( inner(u,v)  + tau*inner(grad(u),grad(v)) )*dx == inner(un+tau*f,v)*dx )
 
@@ -78,13 +70,13 @@ triangles = np.array([(0,1,2), (0,2,3), (0,3,4), (0,4,5), (0,5,6), (0,6,7)])
 grid = create.grid("ALUConform", {"vertices": vertices, "simplices": triangles}, dimgrid=2)
 grid.hierarchicalGrid.globalRefine(4)
 space = lagrange(grid, dimrange=1, order=1)
-u = space.uflTrialFunction()
-v = space.uflTestFunction()
-x = space.uflSpatialCoordinate()
+u = ufl.TrialFunction(space)
+v = ufl.TestFunction(space)
+x = ufl.SpatialCoordinate(space.cell())
 phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180./270.) * sin((180./270.) * phi)])
 a = inner(grad(u), grad(v))*dx
-scheme = h1(space, [a==0,DirichletBC(space.uflSpace(),exact,1)])
+scheme = h1(space, [a==0,DirichletBC(space,exact,1)])
 solution, _ = scheme.solve()
 plot(solution)
 error = solution - exact

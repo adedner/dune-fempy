@@ -17,6 +17,7 @@ except:
 
 import math
 from ufl import *
+from dune.ufl import NamedConstant
 
 from dune.grid import cartesianDomain
 
@@ -54,9 +55,9 @@ old_solution = solution.copy();
 
 # now define the actual pde to solve:
 #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0
-u = spc.uflTrialFunction()
-v = spc.uflTestFunction()
-tau = spc.uflNamedConstant(name="tau")
+u = TrialFunction(spc)
+v = TestFunction(spc)
+tau = NamedConstant(spc,name="tau")
 a = (inner(u - old_solution, v) +    tau * inner(grad(theta*u + (1-theta)*old_solution), grad(v)) ) * dx
 
 # now generate the model code and compile

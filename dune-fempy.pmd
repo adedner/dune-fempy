@@ -983,9 +983,9 @@ described in \cite{Muthing}.
 \bibliographystyle{abbrvnat}
 \bibliography{dune-fempy}
 
-%<*append>
-
 \begin{appendices}
+
+%<*append>
 
 \section{Derivation of Forchheimer model} \label{sec:forch}
 The origin of this equation stems from Darcy's law, an equation that
@@ -1058,8 +1058,101 @@ Then we have the time discretized PDE.
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
-\end{appendices}
+\section{List of Fempy modules}
+
+\subsection{Grids}
+
+\begin{center}
+  \captionof{table}{Grids}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_grid}
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \captionof{table}{Gridviews}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_view}
+  \end{tabular}
+\end{center}
+
+\subsection{Spaces}
+
+\begin{center}
+  \captionof{table}{Spaces}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_space}
+  \end{tabular}
+\end{center}
+
+\subsection{Function}
+
+\begin{center}
+  \captionof{table}{Grid Functions}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_function}
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \captionof{table}{Discrete Functions}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_discretefunction}
+  \end{tabular}
+\end{center}
+
+\subsection{Schemes}
+
+\begin{center}
+  \captionof{table}{Schemes}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_scheme}
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \captionof{table}{Models}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_model}
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \captionof{table}{Operators}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_operator}
+  \end{tabular}
+\end{center}
+
+\subsection{Solving}
+
+\begin{center}
+  \captionof{table}{Solvers}
+  \begin{tabular}{l | l | l | l}
+    \hline
+    Class & Module & Description & kwargs \\ \hline
+    \input{tables/features_solver}
+  \end{tabular}
+\end{center}
 
 %</append>
+
+\end{appendices}
 
 \end{document}

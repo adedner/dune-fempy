@@ -1,0 +1,6 @@
+'adaptive' & dune.fem & - & - \\
+'eigen' & dune.fem & - & - \\
+'fem' & dune.fem & - & - \\
+'istl' & dune.fem & - & - \\
+'petsc' & dune.fem & - & - \\
+'petscadapt' & dune.fem & - & - \\

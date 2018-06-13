@@ -2,6 +2,7 @@ PDF = dune-fempy.pdf
 PY = dune-fempy.py
 TEX = dune-fempy.tex
 AUX = dune-fempy.aux
+TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 
 .PHONY: all
 all: $(PDF) $(PY)
@@ -55,7 +56,7 @@ battery.tex: battery.md
 	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
 	@python python-highlight.py battery.tex
 
-%.pdf: %.tex laplace-adaptive.tex laplace-la.tex crystal.tex mcf.tex battery.tex
+%.pdf: %.tex laplace-adaptive.tex laplace-la.tex crystal.tex mcf.tex battery.tex $(TABLE)
 	@pdflatex --interaction=nonstopmode $<
 	@bibtex $(AUX)
 	@pdflatex --interaction=nonstopmode $<

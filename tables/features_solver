@@ -1,0 +1,8 @@
+'eigen' & dune.fem & - & - \\
+'fem' & dune.fem & - & - \\
+'femoem' & dune.fem & - & - \\
+'istl' & dune.fem & - & - \\
+'pardg' & dune.fem & - & - \\
+'petsc' & dune.fem & - & - \\
+'suitesparse' & dune.fem & - & - \\
+'viennacl' & dune.fem & - & - \\

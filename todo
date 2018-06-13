@@ -1,0 +1,31 @@
+Things to do:
+
+  Introduction - most important, might take up to a week, dune-python stuff? parallelism? what else should I put here?
+
+  Header file - C++ section?
+
+  List of features (grids, spaces etc) - how should this be done? just a list or some details?
+
+  Elliptic equation - shouldn't take long, does this need changing?
+
+  Touch up notebooks a bit - labels for images, some other stuff maybea
+
+  make remark in mcf example that scheme is isoparametric with arbitrary order perhaps show in plot
+  (level=2) perhaps use order=3 instead of 2
+
+  add a gmsh example
+
+  appendix with 'create' table
+
+  appendix with grid construction
+
+  get stokes example working again
+
+  use Forchheimer example 'everywhere'?
+
+  give as much modelling detail as possible in advanced examples
+
+Might not have time:
+
+  Extra sections - e.g. r-adaptivity, nonvariational stuff
+

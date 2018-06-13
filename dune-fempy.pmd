@@ -690,17 +690,18 @@ scheme = create.scheme("h1", space, model)
 
 where \pyth{a == b} refers to the UFL expression used to represent the
 bilinear form, and \pyth{'elliptic'} refers to the elliptic operator
-class in \dune. The purpose of this class is to represent the standard
+class in \dune. The purpose of this class is to have a set list of
+virtualized methods that represent the standard
 structure of what we consider of what we consider is necessary for an
-elliptic PDE model, by having a set list of virtualized methods. This
-is then implemented in \dune[Fempy] by translating the UFL input into a \dune class compatible
-format.
+elliptic PDE model. This is then implemented in \dune[Fempy] by
+translating the UFL input into a \dune class compatible format.
 
 We note that this is a different approach to similar packages, which
 in general do not create a virtual class and instead use the UFL form
 directly. In fact such an approach is also available in \dune[Fempy],
-using the \pyth{'integrands'} identifier. Each version comes with its
-own advantages and disadvantages, which is what we would like to
+using the \pyth{'integrands'} identifier. The choice between
+\pyth{'elliptic'} and \pyth{'integrands'} operators each lead to
+separate advantages and disadvantages, which is what we would like to
 discuss in this section.
 
 First let us consider the default elliptic model. In mathematical
@@ -718,8 +719,8 @@ integration by parts (ignoring boundary terms for now), we arrive at
   v \diff x.
 \]
 
-Now the elliptic model class in Fempy has methods that represent these
-general expressions. Suppose for
+Now the elliptic operator class in Fempy has methods that represent
+the above form in general terms. Suppose for
 instance we were to take the case of $m(x, u, \nabla u) = u$ above. In
 \dune, this would be defined under the method \cpp{source}.
 
@@ -742,9 +743,9 @@ default way of expressing bilinear forms in \dune[Fempy]. Generally this
 class is then used to create a shared object file that is exported to
 python using Pybind11 for use in python scripts and notebooks.
 
-We would like to highlight however, that an alternate way to use this
-C++ class exists in the form of header files. That is, it is possible
-to generate a C++ header file (e.g. \cpp{'operator.hh'}) that can be
+In addition to this automatic creation of a shared library object, it is
+also possible to generate an operator class separately as a header file.
+That is, it is possible to generate a C++ file (e.g. \cpp{'operator.hh'}) that can be
 used flexibly in both Fempy and regular \dune code. This can be done
 simply by adding in an additional argument to the previous method.
 
@@ -755,7 +756,8 @@ model = create.model('elliptic', grid, a == b, header='operator.hh')
 \end{pweavecode}
 
 Such a file can then be edited manually in C++, and then used in place
-of a UFL expression in Fempy. This ability to create header files falls in line with
+of a UFL expression in Fempy. This choice of default shared library
+generation or usable header files falls in line with
 attempts we have made to improve extensibility of the code, since in
 particular it allows for the user to write in more complex features that do
 not necessarily have python bindings written for them.
@@ -905,6 +907,8 @@ C  = scheme_c.assemble(uh)
 system = bmat([[A, B], [BT, C]])
 \end{pweavecode}
 
+Suppose now schemes \pyth{scheme_a} and \pyth{scheme_c}
+correspond to operators $L_a$ and $L_c$.
 Then one can construct a RHS using the residuals from the schemes in a
 similar way to below.
 
@@ -919,9 +923,9 @@ uh_coeff = uh.as_numpy
 wh_coeff = wh.as_numpy
 f_coeff = f.as_numpy
 g_coeff = g.as_numpy
-scheme_a(uh, f)
+scheme_a(uh, f)  # calculate L_a(uh) = f
 f_coeff *= -1
-scheme_c(uh, g)
+scheme_c(uh, g)  # calculate L_c(uh) = g
 g_coeff *= -1
 rhs = np.concatenate((f_coeff, g_coeff))
 sol = np.concatenate((uh_coeff, wh_coeff))
@@ -964,10 +968,17 @@ liquid.
 
 \input{crystal.tex}
 \section{Moving Meshes}
+\Ltodo{Need more of an intro here}
 Here we look at moving surfaces using a mean curvature flow problem.
 \input{mcf.tex}
-\section{Multi-domain Grids}
-Here we look at multi-domain grids using this battery problem.
+\section{Partitioned Grids}
+
+As another application of grid techniques, we look at a problem where
+ we want to divide the grid into three regions. We do this using an
+\pyth{'adaptive'} grid that allows for grid filters to be applied. We
+note that another way of creating multi-domain grids in \dune is
+described in \cite{Muthing}.
+
 \input{battery.tex}
 %</tag>
 

@@ -940,8 +940,6 @@ from scipy.sparse.linalg import cg
 sol, info = cg(system, rhs)
 \end{pweavecode}
 
-\Ltodo{should have something about petsc capabilities}
-
 \section{Adaptive Mesh Refinement}
 
 We shall now consider the implementation of adaptive mesh refinement

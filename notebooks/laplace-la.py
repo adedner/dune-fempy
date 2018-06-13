@@ -25,7 +25,7 @@
 
 
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
 except:
     pass
 from dune.generator import builder
@@ -48,10 +48,9 @@ spc = create.space("lagrange", grid, dimrange=1, order=1, storage='fem')
 d = 0.001
 p = 1.7
 
-uflSpace = Space(spc)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
+u = TrialFunction(spc)
+v = TestFunction(spc)
+x = SpatialCoordinate(spc.cell())
 
 rhs = (x[0] + x[1]) * v[0]
 a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds

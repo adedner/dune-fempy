@@ -24,7 +24,7 @@
 
 
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
 except:
     pass
 import math

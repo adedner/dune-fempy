@@ -18,7 +18,7 @@ dimRange = 2
 grid = create.grid("ALUConform", "../data/mixed.dgf", dimgrid=2)
 
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, conditional
-uflSpace = dune.ufl.Space(dimDomain, dimRange)
+uflSpace = Space(dimDomain, dimRange)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())

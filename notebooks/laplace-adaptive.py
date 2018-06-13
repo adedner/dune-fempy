@@ -20,11 +20,11 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[1]:
+# In[ ]:
 
 
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
 except:
     pass
 import math
@@ -58,15 +58,14 @@ spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 # Next define the model together with the exact solution.
 
-# In[2]:
+# In[ ]:
 
 
 from ufl import *
-from dune.ufl import Space, DirichletBC
-uflSpace = Space(view, 1)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
+from dune.ufl import DirichletBC
+u = TrialFunction(spc)
+v = TestFunction(spc)
+x = SpatialCoordinate(spc.cell())
 
 # exact solution for this angle
 Phi = cornerAngle / 180 * math.pi
@@ -75,7 +74,7 @@ exact = as_vector([inner(x,x)**(math.pi/2/Phi) * sin(math.pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
-laplace = create.scheme("h1", spc, [a==0, DirichletBC(uflSpace,exact,1)])
+laplace = create.scheme("h1", spc, [a==0, DirichletBC(spc,exact,1)])
 uh = spc.interpolate(lambda x: [0], name="solution")
 
 
@@ -98,7 +97,7 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
 
-# In[3]:
+# In[ ]:
 
 
 # energy error
@@ -108,9 +107,9 @@ h1error = inner(grad(uh - exact), grad(uh - exact))
 fvspc = create.space("finitevolume", view, dimrange=1, storage="istl")
 estimate = fvspc.interpolate([0], name="estimate")
 
-hT = MaxCellEdgeLength(uflSpace.cell())
-he = MaxFacetEdgeLength(uflSpace.cell())('+')
-n = FacetNormal(uflSpace.cell())
+hT = MaxCellEdgeLength(spc.cell())
+he = MaxFacetEdgeLength(spc.cell())('+')
+n = FacetNormal(spc.cell())
 estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx                 + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
 estimator_model = create.model("integrands", view, estimator_ufl == 0)
 estimator = create.operator("galerkin", estimator_model, spc, fvspc)
@@ -123,9 +122,7 @@ def mark(element):
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
 
-# Let us create a function `matplot` for plotting the figures side by side in matplotlib.
-
-# In[4]:
+# In[ ]:
 
 
 # adaptive loop (solve, mark, estimate)
@@ -161,7 +158,7 @@ pyplot.close('all')
 
 # Let's have a look at the center of the domain:
 
-# In[9]:
+# In[ ]:
 
 
 fig = pyplot.figure(figsize=(15,15))

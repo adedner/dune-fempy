@@ -88,13 +88,11 @@ solution  = spc.interpolate(lambda x: x, name="solution")
 # set up model using theta scheme
 theta = 0.5   # Crank-Nicholson
 
-uflSpace = dune.ufl.Space((surface.dimGrid, surface.dimWorld),
-                           surface.dimWorld)
-u = ufl.TrialFunction(uflSpace)
-v = ufl.TestFunction(uflSpace)
-x = ufl.SpatialCoordinate(uflSpace.cell())
+u = ufl.TrialFunction(spc)
+v = ufl.TestFunction(spc)
+x = ufl.SpatialCoordinate(spc.cell())
 I = ufl.Identity(3)
-tau = ufl.Constant(uflSpace.cell())
+tau = ufl.Constant(spc.cell())
 
 a = (ufl.inner(u - x, v) + tau * ufl.inner(
           theta*ufl.grad(u) + (1-theta)*I, ufl.grad(v)

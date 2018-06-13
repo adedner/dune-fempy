@@ -21,7 +21,7 @@
 #   - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f
 # \end{gather}
 
-# In[1]:
+# In[ ]:
 
 
 try:
@@ -73,17 +73,17 @@ uh = create.function("discrete", spc, name="solution")
 #
 # Let's first use the solve method on the scheme directly:
 
-# In[2]:
+# In[ ]:
 
 
 uh,info = scheme.solve(target = uh)
-print("size:", grid.size(0), "newton iterations:", int(info['iterations']))
+print(info)
 plot(uh)
 
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
 
-# In[3]:
+# In[ ]:
 
 
 # Let's first clear the solution again
@@ -116,7 +116,7 @@ plot(uh)
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
-# In[4]:
+# In[ ]:
 
 
 # let's first set the solution back to zero - since it already contains the right values
@@ -162,7 +162,7 @@ plot(uh)
 #
 # We can directly use the `petsc` solvers by invoking `solve` on the scheme as before.
 
-# In[8]:
+# In[ ]:
 
 
 try:
@@ -170,10 +170,11 @@ try:
     from petsc4py import PETSc
     petsc4py.init(sys.argv)
     spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
-    scheme = create.scheme("h1", spc, a==b)
-
-    # first we will use the petsc solver available in the `dune-fem` package
-    uh,_ = scheme.solve()
+    scheme = create.scheme("h1", spc, a==b,
+                            parameters={"petsc.preconditioning.method":"sor"})
+    # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
+    uh, info = scheme.solve()
+    print(info)
     plot(uh)
 except ImportError:
     print("petsc4py could not be imported")
@@ -185,7 +186,7 @@ except ImportError:
 # We can access the `petsc` vectors by calling `as_petsc` on the discrete function. Note that this property will only be available if the discrete function is an element of a space with storage `petsc`.
 # The method `assemble` on the scheme now returns the sparse `petsc` matrix and so we can direclty use the `ksp` class from `petsc4py`:
 
-# In[9]:
+# In[ ]:
 
 
 if petsc4py:
@@ -218,4 +219,34 @@ if petsc4py:
     plot(uh)
 
 
-# At the moment `dune-fem` does not offer the possibility to use an existing user managed `petsc` vector as dof storage for a discrete function. Therefore we can not yet use `petsc`'s non-linear solvers (the `snes` classes) directly. This is work in progress
+# Finally we weill use `petsc`'s non-linear solvers (the `snes` classes) directly:
+
+# In[ ]:
+
+
+if petsc4py:
+    uh.clear()
+    def f(snes, X, F):
+        inDF = spc.petscFunction(X)
+        outDF = spc.petscFunction(F)
+        scheme(inDF,outDF)
+    def Df(snes, x, m, b):
+        inDF = spc.petscFunction(x)
+        matrix = scheme.assemble(inDF)
+        m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
+        b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
+        return PETSc. Mat. Structure.SAME_NONZERO_PATTERN
+
+    snes = PETSc.SNES().create()
+    snes.setMonitor(lambda snes,i,r:print(i,r,flush=True))
+    snes.setFunction(f, res_coeff)
+    # snes.setUseMF(True)
+    snes.setJacobian(Df,matrix,matrix)
+    snes.getKSP().setType("cg")
+    snes.setFromOptions()
+    snes.solve(None, sol_coeff)
+    plot(uh)
+
+
+# __Note__:
+# The method `as_numpy, as_petsc` returning the`dof` vector either as a `numpy` or a `petsc` do not lead to a copy of the data and the same is true fr the `numpyFunction` and the `petscFunction` methods on the space. In the `numpy` case we can use `Python`'s buffer protocol to use the same underlying storage. In the case of `petsc` the underlying `Vec` can be shared. In the case of matrices the situation is not yet as clear: `scheme.assemble` returns a copy of the data in the `scipy` case while the `Mat` structure is shared between `c++` and  `Python` in the `petsc` case. But at the time of writting it is not possible to pass in the `Mat` structure to the `scheme.assemble` method from the outside. That is why it is necessary to copy the data when using the `snes` non linear solver as seen above.

@@ -249,9 +249,6 @@ following the final form (\ref{eqn:rothe}) suffices:
   v \diff x.
 \end{equation}
 
-
-
-
 \subsection{Grids} \label{sec:grids}
 
 The first aspect of FEMs that we consider is probably the most
@@ -263,6 +260,7 @@ triangulated 2D domains and more complex surfaces and meshes.
 
 For now we will look at a simple example. Let us suppose we
 have a domain of the following form.
+
 \begin{equation*}
   \Omega = \{ (x,y) \in \mathbb{R}^2 : 0 \leq x \leq 1, 0 \leq y \leq 1\}.
 \label{eqn:domain}
@@ -1058,9 +1056,35 @@ Then we have the time discretized PDE.
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
-\section{List of Fempy modules}
+\section{List of Dune-Python modules}
+
+Here we list the different modules that are available to Dune-Python
+and Fempy at the time of writing. We will divide them by component
+into different sections that reflect the structure we have previously
+introduced.
 
 \subsection{Grids}
+
+Grids by default take the following form.
+
+\renewcommand{\pweavecaption}{The default form for grid creation}
+\renewcommand{\pweavelabel}{lst:default-grid}
+\begin{pweavecode}
+grid = create.grid('class-name', constructor, dimgrid=a, dimworld=b)
+\end{pweavecode}
+
+Where in particular we have the following arguments.
+
+\begin{enumerate}
+\item 'class-name': One of the strings from the table below.
+\item constructor: Either a dgf \textit{dune grid format} file, a
+gmesh file, or a preset object as shown in section \ref{sec:grids}.
+\item dimgrid (optional): The dimension of the grid.
+\item dimworld (optional): The dimension of the space the grid is in.
+\end{enumerate}
+
+The table below shows a list of possible classes to use to construct
+grid objects.
 
 \begin{center}
   \captionof{table}{Grids}

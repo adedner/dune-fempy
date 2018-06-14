@@ -672,6 +672,7 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 %\Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
 
 \section{Header Files and Usage in C++} \label{sec:header}
+\Atodo{move section much further back}
 
 Now that we have introduced each component of the Fempy structure, let
 us now look more in-depth into some of the features and design decisions
@@ -968,6 +969,8 @@ liquid.
 \Ltodo{Need more of an intro here}
 Here we look at moving surfaces using a mean curvature flow problem.
 \input{mcf.tex}
+\Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
+
 \section{Partitioned Grids}
 
 As another application of grid techniques, we look at a problem where

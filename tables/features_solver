@@ -1,8 +1,6 @@
-'eigen' & dune.fem & - & - \\
-'fem' & dune.fem & - & - \\
-'femoem' & dune.fem & - & - \\
-'istl' & dune.fem & - & - \\
-'pardg' & dune.fem & - & - \\
-'petsc' & dune.fem & - & - \\
-'suitesparse' & dune.fem & - & - \\
-'viennacl' & dune.fem & - & - \\
+'bicgstab' & Biconjugate gradient method \\ \hline
+'cg' & Conjugate gradient method (for symmetric problems only) \\ \hline
+'fem' & Default Krylov inverse solver from DUNE-Fem \\ \hline
+'gmres' & Generalized minimal residual method \\ \hline
+'minres' & Minimal residual method \\ \hline
+'superlu' & Solve method from SuperLU package \\ \hline

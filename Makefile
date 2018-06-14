@@ -56,7 +56,7 @@ battery.tex: battery.md
 	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
 	@python python-highlight.py battery.tex
 
-%.pdf: %.tex laplace-adaptive.tex laplace-la.tex crystal.tex mcf.tex battery.tex $(TABLE)
+%.pdf: %.tex %.pmd $(TABLE)
 	@pdflatex --interaction=nonstopmode $<
 	@bibtex $(AUX)
 	@pdflatex --interaction=nonstopmode $<

@@ -1,9 +1,14 @@
-'adaptive' & dune.fem & - & - \\
-'alu' & dune.alugrid & - & - \\
-'aluconform' & dune.alugrid & - & - \\
-'alucube' & dune.alugrid & - & - \\
-'alusimplex' & dune.alugrid & - & - \\
-'filtered' & dune.fem & - & - \\
-'geometry' & dune.fem & - & - \\
-'oned' & dune.grid & - & - \\
-'yasp' & dune.grid & - & - \\
+'adaptive' & dune.fem & Adaptive grid view \\ \hline
+'alu' & dune.alugrid & Basic ALUGrid view \\ \hline
+'aluconform' & dune.alugrid & Confirming ALUGrid view \\ \hline
+'alucube' & dune.alugrid & ALUGrid view with cube simplices \\ \hline
+'alusimplex' & dune.alugrid & Nonconforming ALUGrid view \\ \hline
+'filtered' & dune.fem & \begin{tabular}{@{}l@{}}
+  Filtered grid view for separated domains \\
+  usage: subGrid = filteredGridView(grid, filter, domainID) \end{tabular} \\ \hline
+'geometry' & dune.fem & \begin{tabular}{@{}l@{}}
+  Convert a coordinate function into a grid view \\
+  usage: geometry = create.view("geometry", function) \end{tabular} \\ \hline
+'oned' & dune.grid & One-dimensional grid \\ \hline
+'yasp' & dune.grid & Yaspgrid \\ \hline
+

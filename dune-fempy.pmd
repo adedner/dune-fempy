@@ -294,9 +294,11 @@ grid.hierarchicalGrid.globalRefine(-1)  # return to original state
 Here we create a simple square domain by specifying two opposite
 corners $(0,0)$ and $(1,1)$, and the number
 of elements in each direction $(4,4)$. We then refine the grid and
-plot the results, before coarsening it again. We note that grids in Fempy can
+plot the results, before coarsening it again. We note that this is a
+simplfied example and in general grids in Fempy can
 additionally be constructed via gmsh files or \textit{dune grid format} (dgf)
-files when more complexity is required.
+files when more complexity is required. A list of more complicated
+grids and other modules is given in \ref{sec:modules}.
 
 Conceptually it is worth stating that from a design standpoint, assumptions
 could potentially be made to cut down on the complexity needed.
@@ -853,8 +855,7 @@ As before we assemble the space, but now with the additional argument
 that specifies the usage of \dune[Istl] as a linear algebra backend. Changing the
 \pyth{storage} argument in the construction of the space makes
 it possible to use more sophisticated solvers (either better
-preconditioners or direct solvers). Other possibilites include
-\pyth{'fem'}, \pyth{'eigen'} and \pyth{'petsc'} for the \dune[Fem], Eigen and PETSc packages.
+preconditioners or direct solvers). Other possibilites are shown here \ref{tab:discrete-functions}.
 
 In particular one thing that we can do with certain storage methods is integrate SciPy methods into our code. This
 allows for more complex ways of writing numerical methods without the
@@ -1056,14 +1057,14 @@ Then we have the time discretized PDE.
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
-\section{List of Dune-Python modules}
+\section{List of Dune-Python modules} \label{sec:modules}
 
 Here we list the different modules that are available to Dune-Python
 and Fempy at the time of writing. We will divide them by component
 into different sections that reflect the structure we have previously
 introduced.
 
-\subsection{Grids}
+\subsection{Grids} \label{sec:grid-list}
 
 Grids by default take the following form.
 
@@ -1076,11 +1077,12 @@ grid = create.grid('class-name', constructor, dimgrid=a, dimworld=b)
 Where in particular we have the following arguments.
 
 \begin{enumerate}
-\item 'class-name': One of the strings from the table below.
-\item constructor: Either a dgf \textit{dune grid format} file, a
-gmesh file, or a preset object as shown in section \ref{sec:grids}.
-\item dimgrid (optional): The dimension of the grid.
-\item dimworld (optional): The dimension of the space the grid is in.
+\item \pyth{'class-name'}: One of the strings from the table below.
+\item \pyth{constructor}: Either a dgf \textit{dune grid format} file, a
+gmesh file, or a preset object similar to what is demonstrated in
+section \ref{sec:grids}.
+\item \pyth{dimgrid} (optional): The dimension of the grid.
+\item \pyth{dimworld} (optional): The dimension of the space the grid is in.
 \end{enumerate}
 
 The table below shows a list of possible classes to use to construct
@@ -1088,92 +1090,188 @@ grid objects.
 
 \begin{center}
   \captionof{table}{Grids}
-  \begin{tabular}{l | l | l | l}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description \\ \hline \hline
     \input{tables/features_grid}
   \end{tabular}
 \end{center}
 
+Grids can also be constructed in the grid view format.
+
 \begin{center}
   \captionof{table}{Gridviews}
-  \begin{tabular}{l | l | l | l}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description \\ \hline \hline
     \input{tables/features_view}
   \end{tabular}
 \end{center}
 
-\subsection{Spaces}
+\subsection{Spaces} \label{sec:space-list}
+
+Now we move on to spaces. By default, they take the form
+
+\renewcommand{\pweavecaption}{The default form for space creation}
+\renewcommand{\pweavelabel}{lst:default-space}
+\begin{pweavecode}
+space = create.space('class-name', grid, dimgrid=a, order=b,
+storage='type', field='double')
+\end{pweavecode}
+
+where we have the following arguments.
+
+\begin{enumerate}
+\item \pyth{'class-name'}: A string from the table below.
+\item \pyth{grid}: A grid object from above.
+\item \pyth{dimgrid} (optional): The dimension of the grid (deduced
+from the grid by default).
+\item \pyth{order} (optional): The polynomial order of the basis
+functions.
+\item \pyth{storage} (optional): \pyth{'fem'} by default. Specifies
+the storage used for discrete functions (as shown in
+\item \pyth{field} (optional): The field of the range space
+(\pyth{'double'} or \pyth{'complex'}).
+\ref{tab:discrete-functions}).
+\end{enumerate}
 
 \begin{center}
   \captionof{table}{Spaces}
   \begin{tabular}{l | l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description & kwargs \\ \hline \hline
     \input{tables/features_space}
   \end{tabular}
 \end{center}
 
 \subsection{Function}
 
+Functions can be constructed in a variety of ways, though the explicit
+way to make a grid function is
+
+\renewcommand{\pweavecaption}{The default form for function creation}
+\renewcommand{\pweavelabel}{lst:default-function}
+\begin{pweavecode}
+create.function('class-name', grid, 'function-name', order,
+constructor)
+\end{pweavecode}
+
+with the following arguments.
+
+\begin{enumerate}
+\item \pyth{'class-name'}: A string from the table below.
+\item \pyth{grid}: A grid object from \ref{sec:grid-list}.
+\item \pyth{'function-name'}: A string for the name of the created
+function.
+\item \pyth{order}: The order of the function.
+\item \pyth{constructor}: An object described in the table below used
+to construct the function.
+\end{enumerate}
+
+For the below table we list the available constructors as they
+describe each functions purpose.
+
 \begin{center}
   \captionof{table}{Grid Functions}
   \begin{tabular}{l | l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Constructor & kwargs \\ \hline \hline
     \input{tables/features_function}
   \end{tabular}
 \end{center}
 
-\begin{center}
+Discrete functions are typically made using the
+\pyth{space.interpolate()} syntax, using the storage type for the
+space by default. The following possibilities are available.
+
+\begin{minipage}{\linewidth}
+  \centering
   \captionof{table}{Discrete Functions}
-  \begin{tabular}{l | l | l | l}
+  \label{tab:discrete-functions}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description \\ \hline \hline
     \input{tables/features_discretefunction}
   \end{tabular}
-\end{center}
+\end{minipage}
 
 \subsection{Schemes}
+
+As discussed in section \ref{sec:schemes}, schemes can be constructed
+directly with a UFL form and contain the method for solving the PDE.
+Addtionally as shown in section \ref{sec:header}, it is also possible to create
+models and operators that store the operator separately. We review
+this below.
+
+\renewcommand{\pweavecaption}{The default form for scheme creation}
+\renewcommand{\pweavelabel}{lst:default-scheme}
+\begin{pweavecode}
+scheme = create.scheme('class-name', space, equation, parameters=dict,
+solver='solver-name')
+\end{pweavecode}
+
+\begin{enumerate}
+\item \pyth{'class name'}: A string from the table below.
+\item \pyth{space}: A space object from \ref{sec:space-list}.
+\item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
+object from \ref{tab:models}.
+\item \pyth{parameters} (optional): A dictionary of \dune parameters that can be used
+to specify things like the solver behaviour, e.g.
+\pyth|{'fem.solver.newton.tolerance': 1e-3}|
+\item \pyth{solver} (optional): \pyth{'fem'} by default. Used to
+specify the solver used, from \ref{tab:solvers}.
+\end{enumerate}
 
 \begin{center}
   \captionof{table}{Schemes}
   \begin{tabular}{l | l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description & kwargs \\ \hline \hline
     \input{tables/features_scheme}
   \end{tabular}
 \end{center}
 
-\begin{center}
+Now we consider the models that can be constructed independently of
+the scheme.
+
+\begin{minipage}{\linewidth}
+  \centering
   \captionof{table}{Models}
-  \begin{tabular}{l | l | l | l}
+  \label{tab:models}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description \\ \hline \hline
     \input{tables/features_model}
   \end{tabular}
-\end{center}
+\end{minipage}
+
+Finally we look at operators that can be constructed and applied
+without needing to assemble a scheme object.
 
 \begin{center}
   \captionof{table}{Operators}
-  \begin{tabular}{l | l | l | l}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Module & Description\\ \hline \hline
     \input{tables/features_operator}
   \end{tabular}
 \end{center}
 
 \subsection{Solving}
 
-\begin{center}
+Finally we list the possible solving methods available that can be
+selected during scheme creation above.
+
+\begin{minipage}{\linewidth}
+  \centering
   \captionof{table}{Solvers}
-  \begin{tabular}{l | l | l | l}
+  \label{tab:solvers}
+  \begin{tabular}{l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline
+    Class & Description\\ \hline \hline
     \input{tables/features_solver}
   \end{tabular}
-\end{center}
+\end{minipage}
 
 %</append>
 

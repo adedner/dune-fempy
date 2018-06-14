@@ -1,9 +1,9 @@
-'burgers' & dune.fem & Scheme for Burgers' equation & - \\
-'dg' & dune.fem & Scheme for discontinuous Galerkin methods & - \\
-'dggalerkin' & dune.fem & Nonvirtualized scheme for dG methods & - \\
-'galerkin' & dune.fem & Nonvirtualized scheme generator using UFL input & - \\
-'h1' & dune.fem & Scheme for elliptic problems & - \\
-'h1galerkin' & dune.fem & Nonvirtualized scheme for elliptic problems & - \\
-'linearized' & dune.fem & ? & - \\
-'nv' & dune.femnv & Scheme for nonvariational methods & 'penalty': float \\
-'stokes' & dune.fem & Scheme for Stokes equation & - \\
+'burgers' & dune.fem & Scheme for Burgers' equation & - \\ \hline
+'dg' & dune.fem & Scheme for discontinuous Galerkin methods & - \\ \hline
+'dggalerkin' & dune.fem & Nonvirtualized scheme for dG methods & - \\ \hline
+'galerkin' & dune.fem & Nonvirtualized scheme generator using UFL input & - \\ \hline
+'h1' & dune.fem & Scheme for elliptic problems & - \\ \hline
+'h1galerkin' & dune.fem & Nonvirtualized scheme for elliptic problems & - \\ \hline
+'linearized' & dune.fem & ? & - \\ \hline
+'nv' & dune.femnv & Scheme for nonvariational methods & 'penalty': float \\ \hline
+'stokes' & dune.fem & Scheme for Stokes equation & - \\ \hline

@@ -1,6 +1,6 @@
-'adaptive' & dune.fem & - & - \\
-'eigen' & dune.fem & - & - \\
-'fem' & dune.fem & - & - \\
-'istl' & dune.fem & - & - \\
-'petsc' & dune.fem & - & - \\
-'petscadapt' & dune.fem & - & - \\
+'adaptive' & dune.fem & An adaptive function \\ \hline
+'eigen' & dune.fem & Function from the eigen package \\ \hline
+'fem' & dune.fem & The default DUNE-Fem function \\ \hline
+'istl' & dune.fem & Function from DUNE-Istl \\ \hline
+'petsc' & dune.fem & Function from the PETSc package \\ \hline
+'petscadapt' & dune.fem & An adaptive function using PETSc \\ \hline

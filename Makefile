@@ -1,6 +1,6 @@
 PDF = dune-fempy.pdf
 PY = dune-fempy.py
-TEX = dune-fempy.tex
+TEX = dune-fempy.tex battery.tex laplace-adaptive.tex laplace-la.tex crystal.tex mcf.tex
 AUX = dune-fempy.aux
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 
@@ -26,37 +26,37 @@ laplace-adaptive.md: laplace-adaptive.ipynb
 
 laplace-adaptive.tex: laplace-adaptive.md
 	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
-	@python python-highlight.py laplace-adaptive.tex
+	@python pandoc-formatting.py laplace-adaptive.tex
 
 laplace-la.md: laplace-la.ipynb
 	@jupyter nbconvert --to markdown laplace-la.ipynb
 
 laplace-la.tex: laplace-la.md
 	@pandoc --listings -f markdown -t latex laplace-la.md -o laplace-la.tex
-	@python python-highlight.py laplace-la.tex
+	@python pandoc-formatting.py laplace-la.tex
 
 crystal.md: crystal.ipynb
 	@jupyter nbconvert --to markdown crystal.ipynb
 
 crystal.tex: crystal.md
 	@pandoc --listings -f markdown -t latex crystal.md -o crystal.tex --biblatex --bibliography=dune-fempy.bib
-	@python python-highlight.py crystal.tex
+	@python pandoc-formatting.py crystal.tex
 
 mcf.md: mcf.ipynb
 	@jupyter nbconvert --to markdown mcf.ipynb
 
 mcf.tex: mcf.md
 	@pandoc --listings -f markdown -t latex mcf.md -o mcf.tex
-	@python python-highlight.py mcf.tex
+	@python pandoc-formatting.py mcf.tex
 
 battery.md: battery.ipynb
 	@jupyter nbconvert --to markdown battery.ipynb
 
 battery.tex: battery.md
 	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
-	@python python-highlight.py battery.tex
+	@python pandoc-formatting.py battery.tex
 
-%.pdf: %.tex %.pmd $(TABLE)
+$(PDF): $(TEX) dune-fempy.pmd $(TABLE)
 	@pdflatex --interaction=nonstopmode $<
 	@bibtex $(AUX)
 	@pdflatex --interaction=nonstopmode $<

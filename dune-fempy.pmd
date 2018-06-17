@@ -93,6 +93,8 @@ In this paper we present the new \dune[Fempy] module...
 \keywords{..., \dune}
 \end{abstract}
 
+\tableofcontents
+
 \section{Introduction}
 
 Bullet point list of things to mention here:
@@ -111,7 +113,7 @@ Bullet point list of things to mention here:
 technical side:
 (1) generator (2) create mechanism since it is heavily used here.
 The first could be a more technical description taken from the python paper
-the later would be new. If we want to try TOMS then perhaps having the 
+the later would be new. If we want to try TOMS then perhaps having the
 HTTP generator?}
 \Atodo{do we want to add something on parallelism}
 \Atodo{which other features are missing? Should we include an example on
@@ -174,16 +176,13 @@ in time. This leads to methods that take the following form.
 
 \begin{equation}
   \int_{\Omega} u^{n+1} \varphi + \Delta t L_I[u^{n+1}] \diff x =
-  \int_{\Omega} u^n \varphi + \Delta t L_E[u^n] \diff x + \int_{\Gamma} g(x)
+  \int_{\Omega} u^n \varphi + \Delta t L_E[u^n] \diff x + \Delta t \int_{\Gamma} g(x)
   \varphi \diff s.
 \label{eqn:rothe}
 \end{equation}
 
 where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
 defined as
-\Atodo{should we make the forcing and boundary flux also partially implicit?}
-\Atodo{mention that this is a simple scheme and other higher order schemes
-can be easily implemented along the same lines?}
 \Atodo{giving $\theta$ scheme as example?}
 \begin{gather}
   L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi, \quad \\
@@ -194,7 +193,9 @@ can be easily implemented along the same lines?}
 and $D_1 -D_2 = D$, $m_1 - m_2 = m$. The last step is to
 solve this system iteratively for $u^{n+1} \in V_h$. This also
 involves potential variation in terms of the solver used and possible
-nonlinearity of the problem.
+nonlinearity of the problem. We also note that this is a simple scheme
+for demonstration, and higher order schemes can be easily implemented
+along the same lines.
 
 %In the case where $D(u(x), x)$ and $m(u(x), x)$ are nonlinear,
 %Newton's method is used to solve the system. Denoting the general PDE
@@ -380,26 +381,20 @@ values it can take, its value at the previous timestep and so on.
 Let us consider how the initial solution could be defined.
 In \dune[Fempy], Unified Form Language (UFL) \cite{UFL} is used to define
 equations, which is essentially a human-readable way of writing a
-variational form. In order to use this we must define the UFL space
-and necessary variables as follows.
+variational form. In order to use this we must begin by defining the
+variables in the following way.
 
-\renewcommand{\pweavecaption}{Initializing UFL and defining \pyth{x}}
+\renewcommand{\pweavecaption}{Creating an \pyth{x} variable in UFL}
 \renewcommand{\pweavelabel}{lst:forch-uflx}
 ```python, label = 'forch-uflx'
-from dune.ufl import Space
 from ufl import SpatialCoordinate
-ufl_space = Space(grid, 1)
-x = SpatialCoordinate(ufl_space.cell())
+x = SpatialCoordinate(space)
 ```
-\Atodo{should be try to make a discrete space behave like a ufl space so
-       that if (like here) a discrete space is available we can simply
-       write SpatialCoordinate(discreteSpace) and avoid the dune.ufl.Space
-       all together?}
 
-Here we have created a \pyth{ufl_space} for UFL functions using the dimensions of
-the grid for our domain space, and with the dimension of the range space set to 1 (i.e. scalar
-functions). We also created \pyth{x} as a spatial coordinate to be used as
-a variable in the next equation. So now for initial condition $u =
+Here we create \pyth{x} as a spatial coordinate from UFL by using the
+\pyth{space} object from the previous section. The \pyth{space} gives
+UFL the dimensions of the grid and the range space, so it knows
+\pyth{x} is two dimensional. So now for initial condition $u =
 \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$, we would
 have the following code.
 
@@ -473,14 +468,14 @@ necessary to define the variables that are used in the equation.
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction, triangle
 from dune.ufl import NamedConstant
-u = TrialFunction(ufl_space)
-v = TestFunction(ufl_space)
+u = TrialFunction(space)
+v = TestFunction(space)
 dt = NamedConstant(triangle, "dt")    # time step
 t  = NamedConstant(triangle, "t")     # current time
 ```
 
 The trial function $u$ and the test function $v$ are defined on the
-same FEM space as before, \pyth{ufl_space}. Additionally
+same \pyth{space} as before. Additionally
 $\Delta t$ and $t$ are defined as \pyth{NamedConstant}, which is
 simply a UFL \pyth{Constant} variable that can be given a name so it can be
 called by the model and modified later on.
@@ -542,11 +537,8 @@ scheme = create.scheme("h1", space, a == b, solver='cg')
 
 The above function creates a simple Galerkin method for $H^1$
 conforming elements, with the space and equation passed in. As before
-there exist other such premade \dune schemes for different problems.
-For instance \pyth{'dg'} is used for discontinous Galerkin methods,
-\pyth{'stokes'} for Navier-Stokes problems, etc.
-\Atodo{'stokes' is probably not functional at the moment - again perhaps
-simply a forward reference is enough?}
+there exist other such premade \dune schemes for different problems
+(see \ref{sec:scheme-list})
 
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
@@ -671,12 +663,155 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 
 %\Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
 
-\section{Header Files and Usage in C++} \label{sec:header}
-\Atodo{move section much further back}
+\section{Storage Types and SciPy}
 
-Now that we have introduced each component of the Fempy structure, let
-us now look more in-depth into some of the features and design decisions
-behind it.
+We carry on our explanation of different \dune[Fempy] features by
+looking at the different storage backends available.
+We will continue to do so in the context of a worked examples
+that demonstrate the practicality of these features.
+
+We can specify the storage type as follows.
+
+\renewcommand{\pweavecaption}{Accessing different storage types}
+\renewcommand{\pweavelabel}{lst:storage}
+\begin{pweavecode}
+space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
+\end{pweavecode}
+
+As before we assemble the space, but now with the additional argument
+that specifies the usage of \dune[Istl] as a linear algebra backend. Changing the
+\pyth{storage} argument in the construction of the space makes
+it possible to use more sophisticated solvers (either better
+preconditioners or direct solvers). Other possibilites are shown here \ref{tab:discrete-functions}.
+
+In particular one thing that we can do with certain storage methods is integrate SciPy methods into our code. This
+allows for more complex ways of writing numerical methods without the
+need to explicitly write this on the C++ side.
+We will show that it is possible to store the degrees of freedom in such a way that
+they can be treated as NumPy vectors and an assembled system matrix
+can be stored in a SciPy sparse matrix.
+
+Since we will be implementing a Newton solver first, let's study a
+truly nonlinear problem - a version of the p-Laplace problem.
+\begin{gather}
+  - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f.
+\end{gather}
+
+
+We start with the basic setup in the same way as in
+section \ref{sec:fem-in-fempy}.
+
+\input{laplace-la.tex}
+
+One other thing we can do is assemble PDE systems on the python side
+by using SciPy. For instance suppose we had a system of PDEs of the form
+
+\[
+\left( \begin{array}{cc}
+  A & B \\
+  B^T & C \end{array} \right)
+  \left( \begin{array}{c}
+  \textbf{u} \\
+  \textbf{w} \end{array} \right)
+  = \left( \begin{array}{c}
+  \textbf{f} \\
+  \textbf{g} \end{array} \right).
+\]
+
+If we have access to the schemes that represent $A, B$ and $C$, this
+is easy to set up. First we can individually assemble the matrices from the schemes
+and combine them into one matrix as follows.
+
+\renewcommand{\pweavecaption}{Assembling matrices}
+\renewcommand{\pweavelabel}{lst:assemble}
+\begin{pweavecode}
+from scipy.sparse import bmat
+A  = scheme_a.assemble(uh)
+B  = scheme_b.assemble(uh)
+BT = B.transpose(copy=True)
+C  = scheme_c.assemble(uh)
+system = bmat([[A, B], [BT, C]])
+\end{pweavecode}
+
+Suppose now schemes \pyth{scheme_a} and \pyth{scheme_c}
+correspond to operators $L_a$ and $L_c$.
+Then one can construct a RHS using the residuals from the schemes in a
+similar way to below.
+
+\renewcommand{\pweavecaption}{Assembling the right hand side}
+\renewcommand{\pweavelabel}{lst:rhs}
+\begin{pweavecode}
+import numpy as np
+wh = uh.copy()
+f = uh.copy()
+g = uh.copy()
+uh_coeff = uh.as_numpy
+wh_coeff = wh.as_numpy
+f_coeff = f.as_numpy
+g_coeff = g.as_numpy
+scheme_a(uh, f)  # calculate L_a(uh) = f
+f_coeff *= -1
+scheme_c(uh, g)  # calculate L_c(uh) = g
+g_coeff *= -1
+rhs = np.concatenate((f_coeff, g_coeff))
+sol = np.concatenate((uh_coeff, wh_coeff))
+\end{pweavecode}
+
+Finally the system can simply be solved using a CG solver.
+
+\renewcommand{\pweavecaption}{Solving the system using SciPy}
+\renewcommand{\pweavelabel}{lst:scipy-solve}
+\begin{pweavecode}
+from scipy.sparse.linalg import cg
+sol, info = cg(system, rhs)
+\end{pweavecode}
+
+\section{Adaptive Mesh Refinement}
+
+We shall now consider the implementation of adaptive mesh refinement
+in \dune[Fempy]. Adaptive mesh refinement is a technique that
+allows for the targeted refinement of the computational domain in
+specific areas where there is greater turbulence or activity, for greater
+precision. In problems where uniform refinement of a mesh is not
+required, this allows for more precision of the results at less
+computational cost.
+
+The method considered here uses so-called h-adaptivity that adds
+additional mesh points to the grid at areas of small scale activity.
+It does so based on a marking procedure that
+evaluates the gradient of the solution at each element and determines
+whether to refine the grid based on a level of tolerance.
+
+In this section we present two examples which use adaptive grid
+refinement in slightly different ways.
+
+\input{laplace-adaptive.tex}
+
+We shall now look at a model for crystallization on the surface of a
+liquid.
+
+\input{crystal.tex}
+\section{Moving Meshes}
+\Ltodo{Need more of an intro here}
+Here we look at moving surfaces using a mean curvature flow problem.
+\input{mcf.tex}
+\Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
+
+\section{Partitioned Grids}
+
+As another application of grid techniques, we look at a problem where
+ we want to divide the grid into three regions. We do this using an
+\pyth{'adaptive'} grid that allows for grid filters to be applied. We
+note that another way of creating multi-domain grids in \dune is
+described in \cite{Muthing}.
+
+\input{battery.tex}
+
+\section{Header Files and Usage in C++} \label{sec:header}
+
+After having looked at various features available to the python
+interface, let us now consider a feature more aimed at C++
+integration and code extensibility.
 
 We briefly alluded to a way of creating an operator independent of a
 scheme in section \ref{sec:schemes}, so let us expand upon this idea here.
@@ -837,149 +972,6 @@ defined only on the skeleton (the edges) of the mesh.
 \Ltodo{efficiency comparison? this requires writing a test
 case}
 
-\section{Storage Types and SciPy}
-
-We carry on our explanation of different \dune[Fempy] features by
-looking at the different storage backends available.
-We will continue to do so in the context of a worked examples
-that demonstrate the practicality of these features.
-
-We can specify the storage type as follows.
-
-\renewcommand{\pweavecaption}{Accessing different storage types}
-\renewcommand{\pweavelabel}{lst:storage}
-\begin{pweavecode}
-space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
-\end{pweavecode}
-
-As before we assemble the space, but now with the additional argument
-that specifies the usage of \dune[Istl] as a linear algebra backend. Changing the
-\pyth{storage} argument in the construction of the space makes
-it possible to use more sophisticated solvers (either better
-preconditioners or direct solvers). Other possibilites are shown here \ref{tab:discrete-functions}.
-
-In particular one thing that we can do with certain storage methods is integrate SciPy methods into our code. This
-allows for more complex ways of writing numerical methods without the
-need to explicitly write this on the C++ side.
-We will show that it is possible to store the degrees of freedom in such a way that
-they can be treated as NumPy vectors and an assembled system matrix
-can be stored in a SciPy sparse matrix.
-
-Since we will be implementing a Newton solver first, let's study a
-truly nonlinear problem - a version of the p-Laplace problem.
-\begin{gather}
-  - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f.
-\end{gather}
-
-
-We start with the basic setup in the same way as in
-section \ref{sec:fem-in-fempy}.
-
-\input{laplace-la.tex}
-
-One other thing we can do is assemble PDE systems on the python side
-by using SciPy. For instance suppose we had a system of PDEs of the form
-
-\[
-\left( \begin{array}{cc}
-  A & B \\
-  B^T & C \end{array} \right)
-  \left( \begin{array}{c}
-  \textbf{u} \\
-  \textbf{w} \end{array} \right)
-  = \left( \begin{array}{c}
-  \textbf{f} \\
-  \textbf{g} \end{array} \right).
-\]
-
-If we have access to the schemes that represent $A, B$ and $C$, this
-is easy to set up. First we can individually assemble the matrices from the schemes
-and combine them into one matrix as follows.
-
-\renewcommand{\pweavecaption}{Assembling matrices}
-\renewcommand{\pweavelabel}{lst:assemble}
-\begin{pweavecode}
-from scipy.sparse import bmat
-A  = scheme_a.assemble(uh)
-B  = scheme_b.assemble(uh)
-BT = B.transpose(copy=True)
-C  = scheme_c.assemble(uh)
-system = bmat([[A, B], [BT, C]])
-\end{pweavecode}
-
-Suppose now schemes \pyth{scheme_a} and \pyth{scheme_c}
-correspond to operators $L_a$ and $L_c$.
-Then one can construct a RHS using the residuals from the schemes in a
-similar way to below.
-
-\renewcommand{\pweavecaption}{Assembling the right hand side}
-\renewcommand{\pweavelabel}{lst:rhs}
-\begin{pweavecode}
-import numpy as np
-wh = uh.copy()
-f = uh.copy()
-g = uh.copy()
-uh_coeff = uh.as_numpy
-wh_coeff = wh.as_numpy
-f_coeff = f.as_numpy
-g_coeff = g.as_numpy
-scheme_a(uh, f)  # calculate L_a(uh) = f
-f_coeff *= -1
-scheme_c(uh, g)  # calculate L_c(uh) = g
-g_coeff *= -1
-rhs = np.concatenate((f_coeff, g_coeff))
-sol = np.concatenate((uh_coeff, wh_coeff))
-\end{pweavecode}
-
-Finally the system can simply be solved using a CG solver.
-
-\renewcommand{\pweavecaption}{Solving the system using SciPy}
-\renewcommand{\pweavelabel}{lst:scipy-solve}
-\begin{pweavecode}
-from scipy.sparse.linalg import cg
-sol, info = cg(system, rhs)
-\end{pweavecode}
-
-\section{Adaptive Mesh Refinement}
-
-We shall now consider the implementation of adaptive mesh refinement
-in \dune[Fempy]. Adaptive mesh refinement is a technique that
-allows for the targeted refinement of the computational domain in
-specific areas where there is greater turbulence or activity, for greater
-precision. In problems where uniform refinement of a mesh is not
-required, this allows for more precision of the results at less
-computational cost.
-
-The method considered here uses so-called h-adaptivity that adds
-additional mesh points to the grid at areas of small scale activity.
-It does so based on a marking procedure that
-evaluates the gradient of the solution at each element and determines
-whether to refine the grid based on a level of tolerance.
-
-In this section we present two examples which use adaptive grid
-refinement in slightly different ways.
-
-\input{laplace-adaptive.tex}
-
-We shall now look at a model for crystallization on the surface of a
-liquid.
-
-\input{crystal.tex}
-\section{Moving Meshes}
-\Ltodo{Need more of an intro here}
-Here we look at moving surfaces using a mean curvature flow problem.
-\input{mcf.tex}
-\Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
-
-\section{Partitioned Grids}
-
-As another application of grid techniques, we look at a problem where
- we want to divide the grid into three regions. We do this using an
-\pyth{'adaptive'} grid that allows for grid filters to be applied. We
-note that another way of creating multi-domain grids in \dune is
-described in \cite{Muthing}.
-
-\input{battery.tex}
 %</tag>
 
 \bibliographystyle{abbrvnat}
@@ -1198,7 +1190,7 @@ space by default. The following possibilities are available.
   \end{tabular}
 \end{minipage}
 
-\subsection{Schemes}
+\subsection{Schemes} \label{sec:scheme-list}
 
 As discussed in section \ref{sec:schemes}, schemes can be constructed
 directly with a UFL form and contain the method for solving the PDE.
@@ -1225,14 +1217,16 @@ to specify things like the solver behaviour, e.g.
 specify the solver used, from \ref{tab:solvers}.
 \end{enumerate}
 
-\begin{center}
+\begin{minipage}{\linewidth}
+  \centering
   \captionof{table}{Schemes}
+  \label{tab:schemes}
   \begin{tabular}{l | l | l | l}
     \hline
     Class & Module & Description & kwargs \\ \hline \hline
     \input{tables/features_scheme}
   \end{tabular}
-\end{center}
+\end{minipage}
 
 Now we consider the models that can be constructed independently of
 the scheme.

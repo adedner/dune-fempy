@@ -4,18 +4,14 @@ Things to do:
 
   Header file - C++ section?
 
-  List of features (grids, spaces etc) - how should this be done? just a list or some details?
-
   Elliptic equation - shouldn't take long, does this need changing?
 
-  Touch up notebooks a bit - labels for images, some other stuff maybea
+  Touch up notebooks a bit - some more detail to mcf
 
   make remark in mcf example that scheme is isoparametric with arbitrary order perhaps show in plot
   (level=2) perhaps use order=3 instead of 2
 
   add a gmsh example
-
-  appendix with 'create' table
 
   appendix with grid construction
 

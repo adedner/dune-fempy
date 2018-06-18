@@ -97,10 +97,17 @@ In this paper we present the new \dune[Fempy] module...
 
 \section{Introduction}
 
+Finite element methods (FEM) are one of the most widely used numerical
+methods for solving partial differental equations. They have been used
+for a wide range of engineering and scientific problems, with the first
+applications in computing originating in 1956 \cite{Turner}. There has also been a
+wide array of literature analyzing FEMs and their uses \cite{Khoei} \cite{Babuska}.
+
+
+
 Bullet point list of things to mention here:
 
 \begin{enumerate}
-  \item Remark on the importance of FEMs and their varied uses.
   \item Existing FEM software packages, both c++ libraries and the
   trend towards python packages and where there is a niche for fempy.
   \item Corepy/Python and overview of the features it has introduced,

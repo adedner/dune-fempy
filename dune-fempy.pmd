@@ -296,7 +296,7 @@ grid = structuredGrid([0, 0], [1, 1], [4, 4])
 grid.plot()
 grid.hierarchicalGrid.globalRefine(1)
 grid.plot()
-grid.hierarchicalGrid.globalRefine(-1)  # return to original state
+grid.hierarchicalGrid.globalRefine(-1)  # return grid to original state
 ```
 
 Here we create a simple square domain by specifying two opposite
@@ -558,16 +558,14 @@ this in section \ref{sec:header}.
 
 The last natural part of a FEM is the solving, which includes
 time loops, mesh refinements, data output and plotting, and so on.
-Let us begin by setting up the time variables. Since the problem is time-dependent, we
-solve over a for loop with $t_0 = 0, t_N = 1$ and $\Delta t = 0.05$.
+Let us begin by setting up the timestep, $\Delta t = 0.05$, by
+assigning it in the model.
 
 \renewcommand{\pweavecaption}{Setting up time variables before the
 loop}
 \renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
-timeStep = 0.05
-endTime = 1.0
-scheme.model.dt = timeStep
+scheme.model.dt = 0.05
 ```
 
 Next we want to have a way of computing the error. Say for
@@ -622,6 +620,23 @@ eoc = log(error/error_old)/log(0.5)                # do the EOC calculation
 grid.hierarchicalGrid.globalRefine(1)              # refine the grid once
 \end{pweavecode}
 
+Finally we write the following method for solving the problem over the
+time range. Since the problem is time-dependent, we
+solve over a for loop with $t_0 = 0, t_N = 1$ and
+
+\renewcommand{\pweavecaption}{Evolve method for solving in time}
+\renewcommand{\pweavelabel}{lst:forch-evolve}
+```python, label='forch-evolve'
+def evolve(scheme, u_h, u_h_n):
+    time = 0
+    endTime = 1.0
+    while time < (endTime + 1e-6):
+        scheme.model.t = time
+        u_h_n.assign(u_h)
+        scheme.solve(target=u_h)
+        time += scheme.model.dt
+```
+
 Combining these concepts into one solve method in Fempy, we have the
 following program.
 
@@ -633,13 +648,8 @@ from math import log
 error = 0
 for eocLoop in range(3):
     print('# step:', eocLoop, ', size:', grid.size(0))
-    time = 0.0
     u_h.interpolate(initial)
-    while time < (endTime + 1e-6):
-        scheme.model.t = time
-        u_h_n.assign(u_h)
-        scheme.solve(target=u_h)
-        time += timeStep
+    evolve(scheme, u_h, u_h_n)
     error_old = error
     error = sqrt( integrate(grid, l2error_fn, 5)[0] )
     if eocLoop == 0:
@@ -691,24 +701,62 @@ that specifies the usage of \dune[Istl] as a linear algebra backend. Changing th
 it possible to use more sophisticated solvers (either better
 preconditioners or direct solvers). Other possibilites are shown here \ref{tab:discrete-functions}.
 
-In particular one thing that we can do with certain storage methods is integrate SciPy methods into our code. This
+In particular one thing that we can do with certain storage methods is
+integrate SciPy methods into our code. This
 allows for more complex ways of writing numerical methods without the
 need to explicitly write this on the C++ side.
 We will show that it is possible to store the degrees of freedom in such a way that
 they can be treated as NumPy vectors and an assembled system matrix
 can be stored in a SciPy sparse matrix.
 
-Since we will be implementing a Newton solver first, let's study a
-truly nonlinear problem - a version of the p-Laplace problem.
-\begin{gather}
-  - \frac{d}{2}\nabla\cdot |\nabla u|^{p-2}\nabla u + u = f.
-\end{gather}
+We present these methods once again via the Forchheimer example from \ref{sec:fem-in-fempy}.
 
+In the following we implement a simple Newton solver: given an initial guess $u^0$ (here taken to be zero) solve for $n\geq 0$.
+\begin{align*}
+   u^{n+1} = u^n - DS(u^n)(S(u^n)-g)
+\end{align*}
+Where $g$ is a discrete function containing the boundary values in the Dirichlet nodes and zero otherwise.
 
-We start with the basic setup in the same way as in
-section \ref{sec:fem-in-fempy}.
+Usually this would be automatically taken care of in Fempy by `scheme.solve`, however this time we will use the call operator on the `scheme` to compute $S(u^n)$ as well as `scheme.assemble` to get a copy of the system matrix in form of a SciPy sparse row matrix. Note that this method is not available for all storage types.
 
-\input{laplace-la.tex}
+\renewcommand{\pweavecaption}{Creating a class to hold a different
+solve method}
+\renewcommand{\pweavelabel}{lst:forch-newton}
+```python, label='forch-newton', fig=True, caption='Plot of solution for python-side Newton scheme', width='0.5\\textwidth'
+import numpy as np
+from scipy.sparse.linalg import spsolve
+class Scheme:
+  def __init__(self, scheme):
+      self.model = scheme.model
+
+  def solve(self, target=None):
+      u_h = target
+      # create a copy of u_h for the residual
+      res = u_h.copy()
+
+      # create numpy vectors to store u_h and res
+      sol_coeff = u_h.as_numpy
+      res_coeff = res.as_numpy
+      n = 0
+
+      while True:
+          scheme(u_h, res)
+          absF = math.sqrt( np.dot(res_coeff,res_coeff) )
+          if absF < 1e-10:
+              break
+          matrix = scheme.assemble(u_h)
+          sol_coeff -= spsolve(matrix, res_coeff)
+          n += 1
+
+scheme_cls = Scheme(scheme)
+
+grid.hierarchicalGrid.globalRefine(-2)  # return grid to original state
+u_h.interpolate(initial)
+evolve(scheme_cls, u_h, u_h_n)
+plot(u_h)
+```
+
+%\input{laplace-la.tex}
 
 One other thing we can do is assemble PDE systems on the python side
 by using SciPy. For instance suppose we had a system of PDEs of the form

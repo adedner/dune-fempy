@@ -756,6 +756,65 @@ evolve(scheme_cls, u_h, u_h_n)
 plot(u_h)
 ```
 
+We can redo the above computation using a Newton-Krylov solver from
+SciPy. We do this by constructing a class \pyth{Df} containing the
+derivative of the operator. This would normally be done within DUNE,
+but here we do it purely through python.
+
+\renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with
+SciPy}
+\renewcommand{\pweavelabel}{lst:forch-df}
+```python, label='forch-df', fig=True, caption='Plot of solution with Df operator', width='0.5\\textwidth'
+from scipy.optimize import newton_krylov
+from scipy.sparse.linalg import LinearOperator
+
+def f(x_coeff):
+    res = u_h.copy()
+    res_coeff = res.as_numpy
+    x = space.numpyFunction(x_coeff, "tmp")
+    scheme(x, res)
+    return res_coeff
+
+# class for the derivative DS of S
+class Df(LinearOperator):
+    def __init__(self, x_coeff):
+        self.shape = (x_coeff.shape[0], x_coeff.shape[0])
+        self.dtype = x_coeff.dtype
+        # the following converts a given numpy array
+        # into a discrete function over the given space
+        x = space.numpyFunction(x_coeff, "tmp")
+        # store the assembled matrix
+        self.jac = scheme.assemble(x)
+    # reassemble the matrix DF(u) given a DoF vector for u
+    def update(self, x_coeff, f):
+        x = space.numpyFunction(x_coeff, "tmp")
+        # Note: the following does produce a copy of the matrix
+        # and each call here will reproduce the full matrix
+        # structure - no reuse possible in this version
+        self.jac = scheme.assemble(x)
+    # compute DS(u)^{-1}x for a given DoF vector x
+    def _matvec(self, x_coeff):
+        return spsolve(self.jac, x_coeff)
+
+class Scheme2:
+    def __init__(self, scheme):
+        self.scheme = scheme
+        self.model = scheme.model
+
+    def solve(self, target=None):
+        u_h = target
+        sol_coeff = u_h.as_numpy
+        # call the newton krylov solver from scipy
+        sol_coeff[:] = newton_krylov(f, sol_coeff,
+                    verbose=0, f_tol=1e-8,
+                    inner_M=Df(sol_coeff))
+
+scheme2_cls = Scheme2(scheme)
+u_h.interpolate(initial)
+evolve(scheme2_cls, u_h, u_h_n)
+plot(u_h)
+```
+
 %\input{laplace-la.tex}
 
 One other thing we can do is assemble PDE systems on the python side

@@ -1,6 +1,6 @@
 PDF = dune-fempy.pdf
 PY = dune-fempy.py
-TEX = dune-fempy.tex battery.tex laplace-adaptive.tex laplace-la.tex crystal.tex mcf.tex
+TEX = dune-fempy.tex battery.tex laplace-adaptive.tex crystal.tex mcf.tex
 AUX = dune-fempy.aux
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 
@@ -27,13 +27,6 @@ laplace-adaptive.md: laplace-adaptive.ipynb
 laplace-adaptive.tex: laplace-adaptive.md
 	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
 	@python pandoc-formatting.py laplace-adaptive.tex
-
-laplace-la.md: laplace-la.ipynb
-	@jupyter nbconvert --to markdown laplace-la.ipynb
-
-laplace-la.tex: laplace-la.md
-	@pandoc --listings -f markdown -t latex laplace-la.md -o laplace-la.tex
-	@python pandoc-formatting.py laplace-la.tex
 
 crystal.md: crystal.ipynb
 	@jupyter nbconvert --to markdown crystal.ipynb

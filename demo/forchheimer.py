@@ -13,10 +13,9 @@ from dune.ufl import NamedConstant, Space
 grid = structuredGrid([0, 0], [1, 1], [4, 4])
 space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
 
-ufl_space = Space(grid, 1)
-u = TrialFunction(ufl_space)
-v = TestFunction(ufl_space)
-x = SpatialCoordinate(ufl_space.cell())
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space.cell())
 dt = NamedConstant(triangle, "dt")    # time step
 t  = NamedConstant(triangle, "t")     # current time
 
@@ -36,20 +35,22 @@ b = replace(a, {u: exact})
 
 scheme = create.scheme("h1", space, a == b, solver='cg')
 
-timeStep = 0.05
-scheme.model.dt = timeStep
-l2error = 0
-h1error = 0
-for eocLoop in range(3):
-    print('# step:', eocLoop, ', size:', grid.size(0))
-    time = 0.0
+def evolve(scheme, u_h, u_h_n):
+    time = 0
     endTime = 1.0
-    u_h.interpolate(initial)
     while time < (endTime + 1e-6):
         scheme.model.t = time
         u_h_n.assign(u_h)
         scheme.solve(target=u_h)
-        time += timeStep
+        time += scheme.model.dt
+
+scheme.model.dt = 0.05
+l2error = 0
+h1error = 0
+for eocLoop in range(3):
+    print('# step:', eocLoop, ', size:', grid.size(0))
+    u_h.interpolate(initial)
+    evolve(scheme, u_h, u_h_n)
     l2error_old = l2error
     h1error_old = h1error
     l2error = sqrt( integrate(grid, l2error_fn, 5)[0] )

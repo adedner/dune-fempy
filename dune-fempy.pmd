@@ -19,10 +19,6 @@
 \hypersetup{pdfborderstyle={/S/U/W 1}}
 \newcommand*\diff{\mathop{}\!\mathrm{d}}
 
-% remarks
-\usepackage{amsthm}
-\newtheorem*{remark}{Remark}
-
 %<*pre>
 \usepackage{a4wide}
 \usepackage{amsmath}
@@ -1289,6 +1285,14 @@ double calcRadius( const Surface &surface )
   return R/vol;
 }
 \end{pweavecode}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth, height=7cm,
+keepaspectratio]{figures/mcf-comparison.png}
+\caption{Comparison of time taken between the two calcRadius methods}
+\end{figure}
+
 
 %</tag>
 

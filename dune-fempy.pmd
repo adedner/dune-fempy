@@ -19,6 +19,10 @@
 \hypersetup{pdfborderstyle={/S/U/W 1}}
 \newcommand*\diff{\mathop{}\!\mathrm{d}}
 
+% remarks
+\usepackage{amsthm}
+\newtheorem*{remark}{Remark}
+
 %<*pre>
 \usepackage{a4wide}
 \usepackage{amsmath}
@@ -680,14 +684,15 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 
 %\Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
 
-\section{Storage Types and SciPy}
+\section{Alternate Solve Methods}
 
 We carry on our explanation of different \dune[Fempy] features by
-looking at the different storage backends available.
+looking at the different methods of solving the PDE, which is
+facilitated by the different storage backends for spaces.
 We will continue to do so in the context of a worked examples
 that demonstrate the practicality of these features.
 
-We can specify the storage type as follows.
+We can specify alternate storage types as follows.
 
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
@@ -730,21 +735,20 @@ class Scheme:
       self.model = scheme.model
 
   def solve(self, target=None):
-      u_h = target
-      # create a copy of u_h for the residual
-      res = u_h.copy()
+      # create a copy of target for the residual
+      res = target.copy()
 
-      # create numpy vectors to store u_h and res
-      sol_coeff = u_h.as_numpy
+      # create numpy vectors to store target and res
+      sol_coeff = target.as_numpy
       res_coeff = res.as_numpy
-      n = 0
 
+      n = 0
       while True:
-          scheme(u_h, res)
+          scheme(target, res)
           absF = math.sqrt( np.dot(res_coeff,res_coeff) )
           if absF < 1e-10:
               break
-          matrix = scheme.assemble(u_h)
+          matrix = scheme.assemble(target)
           sol_coeff -= spsolve(matrix, res_coeff)
           n += 1
 
@@ -802,8 +806,7 @@ class Scheme2:
         self.model = scheme.model
 
     def solve(self, target=None):
-        u_h = target
-        sol_coeff = u_h.as_numpy
+        sol_coeff = target.as_numpy
         # call the newton krylov solver from scipy
         sol_coeff[:] = newton_krylov(f, sol_coeff,
                     verbose=0, f_tol=1e-8,
@@ -857,12 +860,6 @@ define a Newton scheme and solve}
 \renewcommand{\pweavelabel}{lst:forch-petsc-ksp}
 ```python, label='forch-petsc-ksp', fig=True, caption='Plot of solution using PETSc and a Krylov method', width='0.5\\textwidth'
 from petsc4py import PETSc
-u_h.interpolate(initial)
-res = u_h.copy()
-
-sol_coeff = u_h.as_petsc
-res_coeff = res.as_petsc
-
 ksp = PETSc.KSP()
 ksp.create(PETSc.COMM_WORLD)
 # use conjugate gradients method
@@ -870,18 +867,31 @@ ksp.setType("cg")
 # and incomplete Cholesky
 ksp.getPC().setType("icc")
 
-n = 0
-while True:
-    scheme(u_h, res)
-    absF = math.sqrt( res_coeff.dot(res_coeff) )
-    if absF < 1e-10:
-        break
-    matrix = scheme.assemble(u_h)
-    ksp.setOperators(matrix)
-    ksp.setFromOptions()
-    ksp.solve(res_coeff, res_coeff)
-    sol_coeff -= res_coeff
-    n += 1
+class Scheme3:
+  def __init__(self, scheme):
+      self.model = scheme.model
+
+  def solve(self, target=None):
+      res = target.copy()
+      sol_coeff = target.as_petsc
+      res_coeff = res.as_petsc
+
+      n = 0
+      while True:
+          scheme(target, res)
+          absF = math.sqrt( res_coeff.dot(res_coeff) )
+          if absF < 1e-10:
+              break
+          matrix = scheme.assemble(target)
+          ksp.setOperators(matrix)
+          ksp.setFromOptions()
+          ksp.solve(res_coeff, res_coeff)
+          sol_coeff -= res_coeff
+          n += 1
+
+u_h.interpolate(initial)
+scheme3_cls = Scheme3(scheme)
+evolve(scheme3_cls, u_h, u_h_n)
 plot(u_h)
 ```
 
@@ -892,7 +902,6 @@ classes) directly.
 solvers (SNES) directly}
 \renewcommand{\pweavelabel}{lst:forch-petsc-snes}
 ```python, label='forch-petsc-snes', fig=True, caption='Plot of solution using SNES', width='0.5\\textwidth'
-u_h.interpolate(initial)
 def f(snes, X, F):
     inDF = space.petscFunction(X)
     outDF = space.petscFunction(F)
@@ -904,18 +913,33 @@ def Df(snes, x, m, b):
     b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
     return PETSc. Mat. Structure.SAME_NONZERO_PATTERN
 
-snes = PETSc.SNES().create()
-snes.setMonitor(lambda snes,i,r:print(i,r,flush=True))
-snes.setFunction(f, res_coeff)
-# snes.setUseMF(True)
-snes.setJacobian(Df,matrix,matrix)
-snes.getKSP().setType("cg")
-snes.setFromOptions()
-snes.solve(None, sol_coeff)
+class Scheme4:
+    def __init__(self, scheme):
+        self.scheme = scheme
+        self.model = scheme.model
+
+    def solve(self, target=None):
+        res = target.copy()
+        sol_coeff = target.as_petsc
+        res_coeff = res.as_petsc
+
+        snes = PETSc.SNES().create()
+        snes.setMonitor(lambda snes, i, r:print())
+        snes.setFunction(f, res_coeff)
+        # snes.setUseMF(True)
+        matrix = self.scheme.assemble(target)
+        snes.setJacobian(Df, matrix, matrix)
+        snes.getKSP().setType("cg")
+        snes.setFromOptions()
+        snes.solve(None, sol_coeff)
+
+u_h.interpolate(initial)
+scheme4_cls = Scheme4(scheme)
+evolve(scheme4_cls, u_h, u_h_n)
 plot(u_h)
 ```
 
-\begin{remark}
+%\begin{remark}
 The method \pyth{as_numpy}, \pyth{as_petsc} (returning the DoF vector either as
 a \pyth{numpy} or a \pyth{petsc} vector) do not lead to a copy of the data and
 the same is true for the \pyth{numpyFunction} and the \pyth{petscFunction}
@@ -931,8 +955,9 @@ is not possible to pass in the \pyth{Mat} structure to the
 \pyth{scheme.assemble} method from the outside. That is why it is necessary
 to copy the data when using the \pyth{snes} nonlinear solver as seen
 above.
-\end{remark}
+%\end{remark}
 
+\iffalse
 One other thing we can do is assemble PDE systems on the python side
 by using SciPy. For instance suppose we had a system of PDEs of the form
 
@@ -995,52 +1020,12 @@ Finally the system can simply be solved using a CG solver.
 from scipy.sparse.linalg import cg
 sol, info = cg(system, rhs)
 \end{pweavecode}
+\fi
 
-\section{Adaptive Mesh Refinement}
-
-We shall now consider the implementation of adaptive mesh refinement
-in \dune[Fempy]. Adaptive mesh refinement is a technique that
-allows for the targeted refinement of the computational domain in
-specific areas where there is greater turbulence or activity, for greater
-precision. In problems where uniform refinement of a mesh is not
-required, this allows for more precision of the results at less
-computational cost.
-
-The method considered here uses so-called h-adaptivity that adds
-additional mesh points to the grid at areas of small scale activity.
-It does so based on a marking procedure that
-evaluates the gradient of the solution at each element and determines
-whether to refine the grid based on a level of tolerance.
-
-In this section we present two examples which use adaptive grid
-refinement in slightly different ways.
-
-\input{laplace-adaptive.tex}
-
-We shall now look at a model for crystallization on the surface of a
-liquid.
-
-\input{crystal.tex}
-\section{Moving Meshes}
-\Ltodo{Need more of an intro here}
-Here we look at moving surfaces using a mean curvature flow problem.
-\input{mcf.tex}
-\Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
-
-\section{Partitioned Grids}
-
-As another application of grid techniques, we look at a problem where
- we want to divide the grid into three regions. We do this using an
-\pyth{'adaptive'} grid that allows for grid filters to be applied. We
-note that another way of creating multi-domain grids in \dune is
-described in \cite{Muthing}.
-
-\input{battery.tex}
-
-\section{Header Files and Usage in C++} \label{sec:header}
+\section{C++ Code Integration} \label{sec:header}
 
 After having looked at various features available to the python
-interface, let us now consider a feature more aimed at C++
+interface, let us now consider features more aimed at C++
 integration and code extensibility.
 
 We briefly alluded to a way of creating an operator independent of a
@@ -1109,7 +1094,7 @@ default way of expressing bilinear forms in \dune[Fempy]. Generally this
 class is then used to create a shared object file that is exported to
 python using Pybind11 for use in python scripts and notebooks.
 
-In addition to this automatic creation of a shared library object, it is
+However in addition to this automatic creation of a shared library object, it is
 also possible to generate an operator class separately as a header file.
 That is, it is possible to generate a C++ file (e.g. \cpp{'operator.hh'}) that can be
 used flexibly in both Fempy and regular \dune code. This can be done
@@ -1129,7 +1114,7 @@ particular it allows for the user to write in more complex features that do
 not necessarily have python bindings written for them.
 
 Another possibility provided for by the modular design of
-\dune[python] (cite here) and the elliptic class structure is the creation of alternate
+\dune[python]  and the elliptic class structure is the creation of alternate
 operators. This approach involves the writing of additional C++
 classes (one example would be a discontinuous Galerkin elliptic operator) based on
 the elliptic operator class except with extra modifications that one
@@ -1138,7 +1123,7 @@ Whilst this approach is more in-depth than simply editing
 an elliptic header file, it allows one to change the functions
 themselves beyond what the default elliptic operator accepts.
 
-An example of this approach is the nonvariational operator designed
+An example of this approach is the \textit{nonvariational} operator designed
 for the \dune[femnv] module. This comes from the desire to write
 bilinear forms that can accept a Hessian operator as follows.
 
@@ -1199,8 +1184,111 @@ scheme = create.model("integrands", space, a == b)
 Here we take the nonvariational equation from before and add a term
 defined only on the skeleton (the edges) of the mesh.
 
-\Ltodo{efficiency comparison? this requires writing a test
-case}
+\section{Adaptive Mesh Refinement}
+
+We shall now consider the implementation of adaptive mesh refinement
+in \dune[Fempy]. Adaptive mesh refinement is a technique that
+allows for the targeted refinement of the computational domain in
+specific areas where there is greater turbulence or activity, for greater
+precision. In problems where uniform refinement of a mesh is not
+required, this allows for more precision of the results at less
+computational cost.
+
+The method considered here uses so-called h-adaptivity that adds
+additional mesh points to the grid at areas of small scale activity.
+It does so based on a marking procedure that
+evaluates the gradient of the solution at each element and determines
+whether to refine the grid based on a level of tolerance.
+
+In this section we present two examples which use adaptive grid
+refinement in slightly different ways.
+
+\input{laplace-adaptive.tex}
+
+We shall now look at a model for crystallization on the surface of a
+liquid.
+
+\input{crystal.tex}
+\section{Moving Meshes} \label{sec:mcf}
+\Ltodo{Need more of an intro here}
+Here we look at moving surfaces using a mean curvature flow problem.
+\input{mcf.tex}
+\Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
+
+\section{Partitioned Grids}
+
+As another application of grid techniques, we look at a problem where
+ we want to divide the grid into three regions. We do this using an
+\pyth{'adaptive'} grid that allows for grid filters to be applied. We
+note that another way of creating multi-domain grids in \dune is
+described in \cite{Muthing}.
+
+\input{battery.tex}
+
+
+\section{Translating Python Code to C++}
+
+One more thing we want to talk about is moving sections of python code
+over to C++ for efficiency. A key aspect of the design of Fempy has
+been the similarity between the python code and the C++ code, to the
+point where translating between the two is relatively painless. In
+particular this allows for rapid prototyping in python with its ease
+of use, before the final code is ported to C++ for efficiency in
+large-scale computation.
+
+Here we will demonstrate this translation process, and additionally
+provide comparisons for the difference in effiency timewise. We will
+examine the function used for calculating the averaged radius of a
+surface used in section \ref{sec:mcf}.
+
+\renewcommand{\pweavecaption}{A pythonic function for calculating the
+radius of a surface}
+\renewcommand{\pweavelabel}{lst:calcR}
+\begin{pweavecode}
+def calcRadius(surface):
+    # compute R = int_x |x| / int_x 1
+    R   = 0
+    vol = 0
+    for e in surface.elements:
+        rule = geometry.quadratureRule(e.type, 4)
+        for p in rule:
+            geo = e.geometry
+            weight = geo.volume * p.weight
+            R   += geo.toGlobal(p.position).two_norm * weight
+            vol += weight
+    return R/vol
+\end{pweavecode}
+
+As a relatively simple example, this code is not particularly slow in
+python, however the existence of callbacks inside a looped statement
+will affect it. Now let us look at a C++ translation of the above
+code.
+
+\renewcommand{\pweavecaption}{The C++ version of the calcRadius
+function}
+\renewcommand{\pweavelabel}{lst:calcR-cpp}
+\begin{pweavecode}
+#include <dune/geometry/quadraturerules.hh>
+
+template< class Surface >
+double calcRadius( const Surface &surface )
+{
+  double R = 0.;
+  double vol = 0.;
+  for( const auto &entity : elements( surface ) )
+  {
+    const auto& rule = Dune::QuadratureRules<double, 2>::rule(entity.type(), 4);
+    for ( const auto &p : rule )
+    {
+      const auto geo = entity.geometry();
+      const double weight = geo.volume() * p.weight();
+      R   += geo.global(p.position()).two_norm() * weight;
+      vol += weight;
+    }
+  }
+  return R/vol;
+}
+\end{pweavecode}
 
 %</tag>
 

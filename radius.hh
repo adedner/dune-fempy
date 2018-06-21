@@ -7,10 +7,10 @@ double calcRadius( const Surface &surface )
   double vol = 0.;
   for( const auto &entity : elements( surface ) )
   {
+    const auto geo = entity.geometry();
     const auto& rule = Dune::QuadratureRules<double, 2>::rule(entity.type(), 4);
     for ( const auto &p : rule )
     {
-      const auto geo = entity.geometry();
       const double weight = geo.volume() * p.weight();
       R   += geo.global(p.position()).two_norm() * weight;
       vol += weight;

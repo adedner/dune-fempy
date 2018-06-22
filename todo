@@ -4,8 +4,6 @@ Things to do:
 
   Header file - C++ section?
 
-  Elliptic equation - shouldn't take long, does this need changing?
-
   Touch up notebooks a bit - some more detail to mcf
 
   make remark in mcf example that scheme is isoparametric with arbitrary order perhaps show in plot
@@ -16,8 +14,6 @@ Things to do:
   appendix with grid construction
 
   get stokes example working again
-
-  use Forchheimer example 'everywhere'?
 
   give as much modelling detail as possible in advanced examples
 

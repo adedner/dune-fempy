@@ -97,19 +97,58 @@ In this paper we present the new \dune[Fempy] module...
 
 \section{Introduction}
 
-Finite element methods (FEM) are one of the most widely used numerical
+Finite element methods (FEM) are one of the most popular numerical
 methods for solving partial differental equations. They have been used
-for a wide range of engineering and scientific problems, with the first
-applications in computing originating in 1956 \cite{Turner}. There has also been a
-wide array of literature analyzing FEMs and their uses \cite{Khoei} \cite{Babuska}.
+for a broad range of engineering and scientific problems, with the first
+computational applications originating as early as 1956 \cite{Turner}. Over the
+years there has been an extensive amount of literature analyzing FEMs
+in general and their uses \cite{Khoei} \cite{Babuska}.
 
+In addition to the development of the theory of FEMs over the years,
+the landscape of FEM software itself undergone much change.
+As a multidisciplinary method involving many different techniques, the
+scope for which direction to develop features is very high, often
+leading to numerous competing packages that offer slightly different
+flavours of FEM. One preventative measure to this has been the
+development of large modular software libraries that offer many
+optional extensions in one place, thus forgoing the need to install
+different packages for different problems. Such examples include
+include \dune (\cite{Dune-Grid}), deal.II (\cite{dealII}), FreeFem++
+(\cite{FreeFem}) and Elmer (\cite{Elmer}). These large packages are
+typically written in languages such as C++ and Fortran that are
+efficient for large-scale computations.
 
+In recent years however there has been a trend towards packages that
+favour usability, especially given the rise in popularity of python as
+a programming language. Such packages ideally look to lower the
+learning curve for new developers and non-computer focused
+researchers, without compromising the functionality and efficiency of
+traditional packages. In particular FEniCS (\cite{FEniCS}) and Firedrake
+(\cite{Firedrake}) are examples of this. Integral to this approach has
+been using a simplfied interface attached to a backend with lower
+level code, which is typically achieved by an automatic code
+generation tool like SWIG or Cython. Nonetheless there are potential
+weaknesses in this approach. In particular this generated code is not
+suited to direct editing, so should a binding not exist for a feature
+on the python side, editing these generated files to add the feature
+on the C++ side is not an option. Furthermore, user interactibility with the
+C++ interface is not prioritized, which means porting code over to C++
+for efficiency reasons or the writing of additional features are not
+viable.
+
+\dune[Python] (\cite{Dune-Py}) is a \dune module aimed towards
+introducing a python interface to \dune, and \dune[Fempy] is
+specifically aimed at \dune[Fem] (\cite{Dune-Fem}) and
+FEMs. The aim of these packages is to bring the usability and speedier
+writing of code to \dune and its large array of existing modules,
+whilst preserving the features available to a C++ developer. In
+particular the structure and functionality is designed to be analagous
+in many ways to \dune code, making it less difficult to port code to
+C++ if desired.
 
 Bullet point list of things to mention here:
 
 \begin{enumerate}
-  \item Existing FEM software packages, both c++ libraries and the
-  trend towards python packages and where there is a niche for fempy.
   \item Corepy/Python and overview of the features it has introduced,
   such as creation of .cache for efficiency of repeat usage.
   \item Usage of more recent pybind11 and C++11 features compared to
@@ -1226,11 +1265,11 @@ described in \cite{Muthing}.
 
 One more thing we want to talk about is moving sections of python code
 over to C++ for efficiency. A key aspect of the design of Fempy has
-been the similarity between the python code and the C++ code, to the
-point where translating between the two is relatively painless. In
-particular this allows for rapid prototyping in python with its ease
-of use, before the final code is ported to C++ for efficiency in
-large-scale computation.
+been about keeping the structure of the C++ code in the python code's
+design, to the point where translating between the two is relatively painless. In
+particular this allows for rapid prototyping of methods in python with
+its relative ease of use, after which code can be ported to C++ for
+efficiency if necessary in large-scale computation.
 
 Here we will demonstrate this translation process, and additionally
 provide comparisons for the difference in effiency timewise. We will
@@ -1257,7 +1296,7 @@ def calcRadius(surface):
 
 As a relatively simple example, this code is not particularly slow in
 python, however the existence of callbacks inside a looped statement
-will affect it. Now let us look at a C++ translation of the above
+are not insignificant. Now let us look at a C++ translation of the above
 code.
 
 \renewcommand{\pweavecaption}{The C++ version of the calcRadius
@@ -1286,13 +1325,35 @@ double calcRadius( const Surface &surface )
 }
 \end{pweavecode}
 
+We note that we take advantage of C++11 features such as \cpp{auto}
+and range based for loops to keep a similar structure to the python
+code.
+
+Supposing we save the above as \cpp{radius.hh}, we can then call it
+in a python script and use it like a regular function as follows.
+
+\renewcommand{\pweavecaption}{Calling our C++ function using algorithm}
+\renewcommand{\pweavelabel}{lst:calcR-algorithm}
+\begin{pweavecode}
+from dune.generator import algorithm
+calcRadius = algorithm.load('calcRadius', 'radius.hh', surface)
+\end{pweavecode}
+
+Doing this, we can quite easily swap between the two versions and
+compare the runtime of the solve method. We show these results in
+figure \ref{fig:mcf-comparison}.
+
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\textwidth, height=7cm,
+\includegraphics[width=\textwidth, height=8cm,
 keepaspectratio]{figures/mcf-comparison.png}
 \caption{Comparison of time taken between the two calcRadius methods}
+\label{fig:mcf-comparison}
 \end{figure}
 
+What we see is that the C++ version is roughly 18\% faster. On a small
+scale this is not a significant change, but it shows that it can be
+worth the extra coding time for longer running simulations.
 
 %</tag>
 

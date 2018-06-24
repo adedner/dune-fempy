@@ -1,0 +1,5 @@
+1) At the moment the namespace is fixed by the filename and it also be good
+   to be able to remove tmpVars for example.
+2) headerguard has to be added
+3) actually include forchheimer.ufl in forchheimer.py (also explain that
+   one could include forchheimer.hh but doesn't need to be done)

@@ -1,8 +1,5 @@
-1) need to be able to set namespace or Model name within the ufl file,
-   i.e., add a 'namespace = "Forchheimer" into the forchheimer.ufl file.
-   This could be used both for the namespace and the headerguard
-2) the Model class needs methods to set the constants without knowing the
-   'numbers' required for the get method. These already exists for the
-   integrands model and need to be also made available for DiffusionModel
+1) At the moment the namespace is fixed by the filename and it also be good
+   to be able to remove tmpVars for example.
+2) headerguard has to be added
 3) actually include forchheimer.ufl in forchheimer.py (also explain that
-   one could include forchheimer.hh)
+   one could include forchheimer.hh but doesn't need to be done)

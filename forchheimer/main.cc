@@ -3,6 +3,7 @@
 // iostream includes
 #include <iostream>
 #include <complex>
+#include <ctime>
 
 #include <dune/grid/yaspgrid.hh>
 
@@ -21,6 +22,7 @@
 
 // include generated model
 #include <forchheimer/forchheimer.hh>
+
 
 template <class GridPart>
 struct Initial : public Dune::Fem::BindableGridFunction< GridPart, Dune::Dim<1> >
@@ -45,8 +47,8 @@ try
   for( int i = 1; i < argc; ++i )
     Dune::Fem::Parameter::append( argv[ i ] );
   Dune::Fem::Parameter::append( "parameter" );
-  typedef Dune::YaspGrid<2> HGridType ;
 
+  typedef Dune::YaspGrid<2> HGridType ;
   const std::string gridkey = Dune::Fem::IOInterface::defaultGridKey( HGridType::dimension );
   const std::string gridfile = Dune::Fem::Parameter::getValue< std::string >( gridkey );
   Dune::GridPtr< HGridType > gridPtr( gridfile );
@@ -61,7 +63,7 @@ try
 
   Dune::Fem::interpolate(Initial<decltype(gridPart)>(gridPart),solution);
 
-  Model<decltype(gridPart),typename decltype(previous)::LocalFunctionType> model( previous.localFunction() );
+  forchheimer::Model<decltype(gridPart),typename decltype(previous)::LocalFunctionType> model( previous.localFunction() );
 
   typedef FemScheme< DifferentiableEllipticOperator<
           Dune::Fem::SparseRowLinearOperator<decltype(solution),decltype(solution)>,decltype(model)>,
@@ -74,13 +76,17 @@ try
 
   Dune::Fem::GridTimeProvider< HGridType > timeProvider( grid );
   double timeStep = 0.05;
-  model.template constant<0>() = timeStep;    // model.dt
+  model.dt() = timeStep;
+
+  auto start = std::clock();
   for( timeProvider.init( timeStep ); timeProvider.time() < 1.0; timeProvider.next( timeStep ) )
   {
     previous.assign(solution);
-    model.template constant<1>() = timeProvider.time();    // model.t
+    model.t() = timeProvider.time();
     scheme.solve( solution );
   }
+  std::cout << double(std::clock() - start) / CLOCKS_PER_SEC << std::endl;
+
   dataOutput.writeData( 1 );
 
   return 0;

@@ -1,0 +1,10 @@
+fem.verboserank: 0
+fem.solver.newton.verbose: 1
+fem.solver.newton.linear.verbose: 1
+krylovmethod: cg
+
+fem.io.macroGridFile_2d: unitcube-2d.dgf
+
+fem.prefix: .
+fem.io.savecount: 1
+fem.io.outputformat: vtk-cell

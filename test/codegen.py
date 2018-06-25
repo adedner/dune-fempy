@@ -1,3 +1,5 @@
+use_codegen = True
+
 import time
 from dune.grid import structuredGrid
 from dune.fem import parameter
@@ -10,8 +12,11 @@ parameter.append({"fem.verboserank": -1})
 
 grid = structuredGrid([0, 0], [1, 1], [400, 400])
 
-space = create.space('lagrange', grid, dimrange=1, order=2,
-                     interiorQuadratureOrders=[5], skeletonQuadratureOrders=[5] )
+if use_codegen:
+    space = create.space('lagrange', grid, dimrange=1, order=2,
+                         interiorQuadratureOrders=[5], skeletonQuadratureOrders=[5] )
+else:
+    space = create.space('lagrange', grid, dimrange=1, order=2)
 
 x = SpatialCoordinate(space)
 

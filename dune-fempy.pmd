@@ -104,7 +104,7 @@ computational applications originating as early as 1956 \cite{Turner}. Over the
 years there has been an extensive amount of literature analyzing FEMs
 in general and their uses \cite{Khoei} \cite{Babuska}.
 
-In addition to the development of the theory of FEMs over the years,
+Just as the development of the theory of FEMs over the years,
 the landscape of FEM software itself undergone much change.
 As a multidisciplinary method involving many different techniques, the
 scope for which direction to develop features is very high, often
@@ -166,9 +166,6 @@ HTTP generator?}
 non variational problems or bounding box dg? Perhaps we could show r
 adaptivity (also shows off the moving grid capability) and the use of
 dune-femnv?}
-\Atodo{the mc flow example makes use of the low level bindings for the dune
-grid for postporcessing - perhaps we should have that feature as an extra
-section?}
 
 %<*tag>
 
@@ -974,8 +971,7 @@ evolve(scheme4_cls, u_h, u_h_n)
 plot(u_h)
 ```
 
-%\begin{remark}
-The method \pyth{as_numpy}, \pyth{as_petsc} (returning the DoF vector either as
+\textbf{Remark.} The method \pyth{as_numpy}, \pyth{as_petsc} (returning the DoF vector either as
 a \pyth{numpy} or a \pyth{petsc} vector) do not lead to a copy of the data and
 the same is true for the \pyth{numpyFunction} and the \pyth{petscFunction}
 methods on the space. In the \pyth{numpy} case we can use python's buffer
@@ -990,7 +986,6 @@ is not possible to pass in the \pyth{Mat} structure to the
 \pyth{scheme.assemble} method from the outside. That is why it is necessary
 to copy the data when using the \pyth{snes} nonlinear solver as seen
 above.
-%\end{remark}
 
 \iffalse
 One other thing we can do is assemble PDE systems on the python side
@@ -1057,9 +1052,9 @@ sol, info = cg(system, rhs)
 \end{pweavecode}
 \fi
 
-\section{C++ Code Integration} \label{sec:header}
+\section{C++ Model Generation} \label{sec:header}
 
-After having looked at various features available to the python
+After having looked at the basics of the python
 interface, let us now consider features more aimed at C++
 integration and code extensibility.
 
@@ -1089,6 +1084,8 @@ using the \pyth{'integrands'} identifier. The choice between
 \pyth{'elliptic'} and \pyth{'integrands'} operators each lead to
 separate advantages and disadvantages, which is what we would like to
 discuss in this section.
+
+\subsection{Elliptic Models}
 
 First let us consider the default elliptic model. In mathematical
 terms, we consider the following operator.
@@ -1128,25 +1125,6 @@ Together these form the elliptic operator class which is the
 default way of expressing bilinear forms in \dune[Fempy]. Generally this
 class is then used to create a shared object file that is exported to
 python using Pybind11 for use in python scripts and notebooks.
-
-However in addition to this automatic creation of a shared library object, it is
-also possible to generate an operator class separately as a header file.
-That is, it is possible to generate a C++ file (e.g. \cpp{'operator.hh'}) that can be
-used flexibly in both Fempy and regular \dune code. This can be done
-simply by adding in an additional argument to the previous method.
-
-\renewcommand{\pweavecaption}{Header file generation}
-\renewcommand{\pweavelabel}{lst:header}
-\begin{pweavecode}
-model = create.model('elliptic', grid, a == b, header='operator.hh')
-\end{pweavecode}
-
-Such a file can then be edited manually in C++, and then used in place
-of a UFL expression in Fempy. This choice of default shared library
-generation or usable header files falls in line with
-attempts we have made to improve extensibility of the code, since in
-particular it allows for the user to write in more complex features that do
-not necessarily have python bindings written for them.
 
 Another possibility provided for by the modular design of
 \dune[python]  and the elliptic class structure is the creation of alternate
@@ -1199,6 +1177,8 @@ model = create.model("nvdg", grid, a == b)
 Thus it becomes possible to write schemes that expect different
 arguments from the operator.
 
+\subsection{Integrands Models}
+
 We note however that as mentioned before, there exists another way of
 constructing operators, by using \pyth{'integrands'}. This method
 bypasses the virtual methods used in the elliptic operator class and
@@ -1218,6 +1198,73 @@ scheme = create.model("integrands", space, a == b)
 
 Here we take the nonvariational equation from before and add a term
 defined only on the skeleton (the edges) of the mesh.
+
+\subsection{C++ Models}
+
+In addition to the automatic creation of a shared library object that
+is done when \pyth{create} is called, it is
+possible to generate a model class separately as a header file.
+That is, it is possible to generate a C++ file (e.g. \cpp{'operator.hh'}) that can be
+used flexibly in both Fempy and regular \dune code. We can do this by
+writing a pure UFL file and calling cmake on it.
+
+Let us examine what this file looks like for the Forchheimer model.
+
+\renewcommand{\pweavecaption}{UFL file used for C++ header file generation}
+\renewcommand{\pweavelabel}{lst:header}
+\begin{pweavecode}
+space = Space(2, 1)
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space.cell())
+dt = NamedConstant(triangle, "dt")    # time step
+t  = NamedConstant(triangle, "t")     # current time
+u_h_n = NamedCoefficient(space,"previous")
+
+initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+abs_du = sqrt(inner(grad(u), grad(u)))
+K = 2/(1 + sqrt(1 + 4*abs_du))
+a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
+exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
+b = replace(a, {u: exact})
+
+F = a - b
+\end{pweavecode}
+
+Once the corresponding \cpp{forchheimer.hh} file has been generated,
+it can then be edited manually in C++, and then used in place
+of a UFL expression in Fempy. This choice of default shared library
+generation or usable header files falls in line with
+attempts we have made to improve extensibility of the code, since in
+particular it allows for the user to write in more complex features in
+C++ that do not necessarily have python bindings written for them.
+
+Additionally we must ask the question of efficiency between using the
+full \dune[Fempy] interface to run problems and simply using it to just generate a
+model file to be used in C++. To look at this problem we constructed
+an identical Forchheimer example in C++ which can be found in section
+\ref{sec:forch-cpp}. We compare the runtime of the two solve-steps
+below.
+
+\begin{center}
+  \captionof{table}{Runtimes for Forchheimer solve time}
+  \begin{tabular}{l | l}
+    \hline
+     & Runtime (s) \\ \hline
+    C++ & 78.3 \\
+    Python & 83.0
+  \end{tabular}
+\end{center}
+
+Thus we see there is not a sizable difference between the \dune[Fem] and
+\dune[Fempy] versions.
+
+\textbf{Remark.} We remark that both versions use preprocessing, which relatively
+speaking is negligible for long-running simulations. We also note that
+the most \textit{costly} aspect of pure python code are generally
+callbacks, and in this example this amounts to just the solve call. An additional example
+that taxes the two versions differently can be found in section
+\ref{sec:mcf-comparison}.
 
 \section{Adaptive Mesh Refinement}
 
@@ -1261,7 +1308,7 @@ described in \cite{Muthing}.
 \input{battery.tex}
 
 
-\section{Translating Python Code to C++}
+\section{Translating Python Code to C++} \label{sec:mcf-comparison}
 
 One more thing we want to talk about is moving sections of python code
 over to C++ for efficiency. A key aspect of the design of Fempy has
@@ -1434,6 +1481,13 @@ Then we have the time discretized PDE.
 
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
+
+\section{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
+
+Here we present the C++ version of the Forchheimer example from
+section \ref{sec:fem-in-fempy}, specifically using \dune[FEM].
+
+\inputcpp{../../dune-fempy/forchheimer/main.cc}{}{lst:forch-cpp}
 
 \section{List of Dune-Python modules} \label{sec:modules}
 

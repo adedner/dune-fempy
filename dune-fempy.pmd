@@ -123,8 +123,11 @@ favour usability, especially given the rise in popularity of python as
 a programming language. Such packages ideally look to lower the
 learning curve for new developers and non-computer focused
 researchers, without compromising the functionality and efficiency of
-traditional packages. In particular FEniCS (\cite{FEniCS}) and Firedrake
-(\cite{Firedrake}) are examples of this. Integral to this approach has
+traditional packages. An additional benefit to using python is the
+facilitating of rapid prototyping, which allows one to quickly
+construct new models and test their viability without having to write
+an intricate program. In particular FEniCS (\cite{FEniCS}) and Firedrake
+(\cite{Firedrake}) are examples of this kind of software. Integral to this approach has
 been using a simplfied interface attached to a backend with lower
 level code, which is typically achieved by an automatic code
 generation tool like SWIG or Cython. Nonetheless there are potential
@@ -136,24 +139,26 @@ C++ interface is not prioritized, which means porting code over to C++
 for efficiency reasons or the writing of additional features are not
 viable.
 
-\dune[Python] (\cite{Dune-Py}) is a \dune module aimed towards
-introducing a python interface to \dune, and \dune[Fempy] is
-specifically aimed at \dune[Fem] (\cite{Dune-Fem}) and
-FEMs. The aim of these packages is to bring the usability and speedier
+In this paper we introduce \dune[Fempy], a \dune module that is an
+extension to \dune[Python] (\cite{Dune-Py}) specifically aimed at
+bringing \dune[Fem] (\cite{Dune-Fem}) and FEM features to a python
+interface. The aim of both of these packages is to bring the usability and speedier
 writing of code to \dune and its large array of existing modules,
 whilst preserving the features available to a C++ developer. In
 particular the structure and functionality is designed to be analagous
 in many ways to \dune code, making it less difficult to port code to
-C++ if desired.
+C++ if desired. Additionally we make use of features such as library
+caching to reduce the runtime of repeated computations, and
+integration with modern C++11/C++14 and pybind11 \cite{Pybind11} features.
 
-Bullet point list of things to mention here:
-
-\begin{enumerate}
-  \item Corepy/Python and overview of the features it has introduced,
-  such as creation of .cache for efficiency of repeat usage.
-  \item Usage of more recent pybind11 and C++11 features compared to
-  other packages.
-\end{enumerate}
+The structure of the paper is as follows. In section
+\ref{sec:fem-in-fempy} we introduce the interface for a simple
+FEM step-by-step. In sections \ref{sec:solve} and \ref{sec:header} we
+look more in-depth at this example and some of the design flexibility
+available. In sections \ref{sec:crystal}, \ref{sec:mcf} and \ref{sec:battery} we
+look at additional features in the context of more complex examples.
+Finally we discuss the comparison to C++ code in section
+\ref{sec:mcf-comparison}.
 
 \Atodo{depending on the journal we would need to describe a bit about the
 technical side:
@@ -716,7 +721,7 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 
 %\Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
 
-\section{Alternate Solve Methods}
+\section{Alternate Solve Methods} \label{sec:solve}
 
 We carry on our explanation of different \dune[Fempy] features by
 looking at the different methods of solving the PDE, which is
@@ -1266,7 +1271,7 @@ callbacks, and in this example this amounts to just the solve call. An additiona
 that taxes the two versions differently can be found in section
 \ref{sec:mcf-comparison}.
 
-\section{Adaptive Mesh Refinement}
+\section{Adaptive Mesh Refinement} \label{sec:crystal}
 
 We shall now consider the implementation of adaptive mesh refinement
 in \dune[Fempy]. Adaptive mesh refinement is a technique that
@@ -1297,7 +1302,7 @@ Here we look at moving surfaces using a mean curvature flow problem.
 \input{mcf.tex}
 \Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
 
-\section{Partitioned Grids}
+\section{Partitioned Grids} \label{sec:battery}
 
 As another application of grid techniques, we look at a problem where
  we want to divide the grid into three regions. We do this using an

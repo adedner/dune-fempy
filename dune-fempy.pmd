@@ -466,7 +466,7 @@ Having done this, a copy of this solution for the previous timestep,
 \renewcommand{\pweavecaption}{Copying a discrete function}
 \renewcommand{\pweavelabel}{lst:forch-u_h_n}
 ```python, label = 'forch-u_h_n'
-u_h_n = u_h.copy()
+u_h_n = u_h.copy(name="previous")
 ```
 
 There remains the question of what can we do with functions. Let us
@@ -580,7 +580,7 @@ up a scheme object which we can use to solve the PDE.
 \renewcommand{\pweavecaption}{Creating an $H^{1}$ scheme}
 \renewcommand{\pweavelabel}{lst:forch-scheme}
 ```python, label = 'forch-scheme'
-scheme = create.scheme("h1", space, a == b, solver='cg')
+scheme = create.scheme("galerkin", a == b, solver='cg')
 ```
 
 The above function creates a simple Galerkin method for $H^1$
@@ -630,6 +630,9 @@ exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
 l2error_fn = inner(u_h - exact_end, u_h - exact_end)
 h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
+\todoA{there must be a way to get 'exact_end' from 'exact' - possibly using
+       replace. Using that you can also replace the final time reached and
+       avoid the 1e-6 in the for loop}
 
 First of all we define the exact solution at the end time $T=1$,
 \pyth{exact_end}. Then we simply write expressions in UFL to calculate
@@ -720,6 +723,15 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 \end{center}
 
 %\Ltodo{Add example 2, rerun for smaller timestep to fix last eoc}
+\Atodo{somewhere (perhaps here) we need a section on the difference in the
+    usage of ufl compared to 'fenics'. Mostly the fact that we are not
+    using a 'discrete version' of the function space. While being able to
+    use the dune-fem discrete function space is nice it hides that fact a
+    bit. So we need to make clear that the actual space is only fixed at
+    the point where the scheme/operator is set up before that only the
+    dimensions are used. Other than that there are some features missing
+    (e.g. scalar spaces, product spaces) and at least one non standard construction
+    (NamedCoefficients).}
 
 \section{Alternate Solve Methods} \label{sec:solve}
 
@@ -773,7 +785,7 @@ class Scheme:
 
   def solve(self, target=None):
       # create a copy of target for the residual
-      res = target.copy()
+      res = target.copy(name="residual")
 
       # create numpy vectors to store target and res
       sol_coeff = target.as_numpy
@@ -785,7 +797,7 @@ class Scheme:
           absF = math.sqrt( np.dot(res_coeff,res_coeff) )
           if absF < 1e-10:
               break
-          matrix = scheme.assemble(target)
+          matrix = scheme.assemble(target).as_numpy
           sol_coeff -= spsolve(matrix, res_coeff)
           n += 1
 
@@ -810,7 +822,7 @@ from scipy.optimize import newton_krylov
 from scipy.sparse.linalg import LinearOperator
 
 def f(x_coeff):
-    res = u_h.copy()
+    res = u_h.copy(name="residual")
     res_coeff = res.as_numpy
     x = space.numpyFunction(x_coeff, "tmp")
     scheme(x, res)
@@ -825,14 +837,14 @@ class Df(LinearOperator):
         # into a discrete function over the given space
         x = space.numpyFunction(x_coeff, "tmp")
         # store the assembled matrix
-        self.jac = scheme.assemble(x)
+        self.jac = scheme.assemble(x).as_numpy
     # reassemble the matrix DF(u) given a DoF vector for u
     def update(self, x_coeff, f):
         x = space.numpyFunction(x_coeff, "tmp")
         # Note: the following does produce a copy of the matrix
         # and each call here will reproduce the full matrix
         # structure - no reuse possible in this version
-        self.jac = scheme.assemble(x)
+        self.jac = scheme.assemble(x).as_numpy
     # compute DS(u)^{-1}x for a given DoF vector x
     def _matvec(self, x_coeff):
         return spsolve(self.jac, x_coeff)
@@ -873,11 +885,11 @@ scheme as before.
 import petsc4py, sys
 petsc4py.init(sys.argv)
 space = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc')
-scheme = create.scheme("h1", space, a == b,
+scheme = create.scheme("galerkin", a == b,
                         parameters={"petsc.preconditioning.method":"sor"})
 # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
 u_h = space.interpolate(initial, name='u_h')
-u_h_n = u_h.copy()
+u_h_n = u_h.copy(name="previous")
 scheme.model.dt = 0.05
 evolve(scheme, u_h, u_h_n)
 plot(u_h)
@@ -909,7 +921,7 @@ class Scheme3:
       self.model = scheme.model
 
   def solve(self, target=None):
-      res = target.copy()
+      res = target.copy(name="residual")
       sol_coeff = target.as_petsc
       res_coeff = res.as_petsc
 
@@ -919,7 +931,7 @@ class Scheme3:
           absF = math.sqrt( res_coeff.dot(res_coeff) )
           if absF < 1e-10:
               break
-          matrix = scheme.assemble(target)
+          matrix = scheme.assemble(target).as_petsc
           ksp.setOperators(matrix)
           ksp.setFromOptions()
           ksp.solve(res_coeff, res_coeff)
@@ -945,10 +957,10 @@ def f(snes, X, F):
     scheme(inDF,outDF)
 def Df(snes, x, m, b):
     inDF = space.petscFunction(x)
-    matrix = scheme.assemble(inDF)
+    matrix = scheme.assemble(inDF).as_petsc
     m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
     b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
-    return PETSc. Mat. Structure.SAME_NONZERO_PATTERN
+    return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
 
 class Scheme4:
     def __init__(self, scheme):
@@ -956,7 +968,7 @@ class Scheme4:
         self.model = scheme.model
 
     def solve(self, target=None):
-        res = target.copy()
+        res = target.copy(name="residual")
         sol_coeff = target.as_petsc
         res_coeff = res.as_petsc
 
@@ -964,7 +976,7 @@ class Scheme4:
         snes.setMonitor(lambda snes, i, r:print())
         snes.setFunction(f, res_coeff)
         # snes.setUseMF(True)
-        matrix = self.scheme.assemble(target)
+        matrix = self.scheme.assemble(target).as_petsc
         snes.setJacobian(Df, matrix, matrix)
         snes.getKSP().setType("cg")
         snes.setFromOptions()
@@ -1016,10 +1028,10 @@ and combine them into one matrix as follows.
 \renewcommand{\pweavelabel}{lst:assemble}
 \begin{pweavecode}
 from scipy.sparse import bmat
-A  = scheme_a.assemble(uh)
-B  = scheme_b.assemble(uh)
+A  = scheme_a.assemble(uh).as_numpy
+B  = scheme_b.assemble(uh).as_numpy
 BT = B.transpose(copy=True)
-C  = scheme_c.assemble(uh)
+C  = scheme_c.assemble(uh).as_numpy
 system = bmat([[A, B], [BT, C]])
 \end{pweavecode}
 
@@ -1071,7 +1083,7 @@ We can separate the process into two steps as follows.
 \renewcommand{\pweavelabel}{lst:elliptic}
 \begin{pweavecode}
 model = create.model('elliptic', grid, a == b)
-scheme = create.scheme("h1", space, model)
+scheme = create.scheme("galerkin", model)
 \end{pweavecode}
 
 where \pyth{a == b} refers to the UFL expression used to represent the
@@ -1643,9 +1655,16 @@ this below.
 \renewcommand{\pweavecaption}{The default form for scheme creation}
 \renewcommand{\pweavelabel}{lst:default-scheme}
 \begin{pweavecode}
-scheme = create.scheme('class-name', space, equation, parameters=dict,
+scheme = create.scheme('class-name', equation, space, parameters=dict,
 solver='solver-name')
 \end{pweavecode}
+\todoA{mention that parameter is optional, mention the 'solver' parameter
+as well (optional) and that space can be left out as well, if the
+trial/test function were initialized with a dune-fempy discrete function
+space. A bit more information on a 'solver' and 'parameters' arguments
+needs to be added. We have to avoid that people complain how slow the code
+is just because they are using the non preconditioned gmres provided by the
+default}
 
 \begin{enumerate}
 \item \pyth{'class name'}: A string from the table below.

@@ -6,6 +6,10 @@ Things to do:
 
   Touch up notebooks a bit - some more detail to mcf
 
+  Remove all the 'create.model' commands where the equation can be passed
+  to the scheme/operator directly. Also use the df space in the forms and
+  remove argument from scheme/operator construction
+
   make remark in mcf example that scheme is isoparametric with arbitrary order perhaps show in plot
   (level=2) perhaps use order=3 instead of 2
 
@@ -13,7 +17,11 @@ Things to do:
 
   appendix with grid construction
 
-  get stokes example working again
+  get stokes example working again.
+  I suggest to remove all scheme from dune.fempy for now except 
+  h1,dg,galerkin. Add a use of dg scheme to the 'scheme/operator' section
+  discussed Tue 26/6 on paper to show the idea of having 'non code
+  generated' schemes.
 
   give as much modelling detail as possible in advanced examples
 

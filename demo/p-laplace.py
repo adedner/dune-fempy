@@ -23,7 +23,7 @@ a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u
 #b = sin(2*math.pi*x[0])*sin(2*math.pi*x[1]) * v[0] * dx
 b = rhs * dx + 10*rhs * ds
 
-model = create.model("elliptic", grid, a==b)
+model = create.model("integrands", grid, a==b)
 
-scheme = create.scheme("galerkin", spc, model,("pardg","gmres"))
+scheme = create.scheme("galerkin", model, spc)
 grid.writeVTK("p-laplace", pointdata=[scheme.solve(name="solution")[0]])

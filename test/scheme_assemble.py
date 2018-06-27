@@ -9,7 +9,7 @@ from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, ds, dx, inner, grad
 
 test_fem   = True
-test_eigen = True
+test_eigen = False # not working at the moment
 test_istl  = True
 test_petsc = True
 testLoop = 10
@@ -40,7 +40,7 @@ def test(space):
         # femScheme.solve(target = fem_h)
         start= time.clock()
         for i in range(testLoop):
-            fem_mat = femScheme.assemble(fem_h)
+            fem_mat = femScheme.assemble(fem_h).as_numpy
         end= time.clock()
         # print( "fem:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
@@ -57,7 +57,7 @@ def test(space):
         # eigenScheme.solve(target = eigen_h)
         start= time.clock()
         for i in range(testLoop):
-           eigen_mat = eigenScheme.assemble(eigen_h)
+           eigen_mat = eigenScheme.assemble(eigen_h).as_numpy
         end= time.clock()
         # print( "eigen:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
@@ -74,7 +74,7 @@ def test(space):
         # istlScheme.solve(target = istl_h)
         start= time.clock()
         for i in range(testLoop):
-           istl_mat = istlScheme.assemble(istl_h)
+           istl_mat = istlScheme.assemble(istl_h).as_istl
         end= time.clock()
         # print( "istl:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
@@ -93,30 +93,30 @@ def test(space):
         petsc_h     = create.function("discrete", petscSpace, name="petsc")
         petsc_dofs  = petsc_h.as_petsc
         # petscScheme.solve(target = petsc_h)
-        petsc_mat = petscScheme.assemble(petsc_h)
+        petsc_mat = petscScheme.assemble(petsc_h).as_petsc
         rptr, cind, vals = petsc_mat.getValuesCSR()
         petsc_coo = scipy.sparse.csr_matrix((vals,cind,rptr)).tocoo()
         start= time.clock()
         for i in range(testLoop):
-            petsc_mat = petscScheme.assemble(petsc_h)
+            petsc_mat = petscScheme.assemble(petsc_h).as_petsc
         end= time.clock()
-        # print( "petsc:", (end-start)/testLoop, flush=True )
+        print( "petsc:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
 
         ksp = PETSc.KSP()
         ksp.create(PETSc.COMM_WORLD)
         ksp.setType("cg")
-        ksp.getPC().setType("icc")
+        # ksp.getPC().setType("icc")
         petsc_h.clear()
         res = petsc_h.copy()
         petscScheme(petsc_h, res)
-        petsc_mat = petscScheme.assemble(petsc_h)
+        petsc_mat = petscScheme.assemble(petsc_h).as_petsc
         ksp.setOperators(petsc_mat,petsc_mat)
         ksp.setFromOptions()
         ksp.solve(res.as_petsc, petsc_h.as_petsc)
 
 
-        # print("****************************",flush=True)
+        print("****************************",flush=True)
         # print(petsc_mat.size, petsc_mat.getSize(), petsc_mat.getSizes())
         # print(petsc_mat.getType())
         # print(type(petsc_mat))

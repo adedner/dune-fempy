@@ -32,7 +32,7 @@ b = replace(a, {u: exact})
 
 solverParam = {"fem.solver.newton.verbose": 0,
                "fem.solver.newton.linear.verbose": 0}
-scheme = create.scheme("h1", space, a == b, solver='cg', parameters = solverParam)
+scheme = create.scheme("h1", a == b, solver='cg', parameters = solverParam)
 
 scheme.model.dt = 0.05
 

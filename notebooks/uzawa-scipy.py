@@ -30,11 +30,13 @@ divModel    = -div(u)*q[0] * dx
 massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
-mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
+# can also use 'operator' everywhere
+mainOp      = create.scheme("galerkin",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
+# mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
 gradOp      = create.operator("h1",gradModel,spcP,spcU)
-divOp       = create.operator("h1",divModel,spcU,spcP)
-massOp      = create.operator("h1",massModel,spcP)
-preconOp    = create.operator("h1",preconModel,spcP)
+divOp       = create.operator("galerkin",divModel,spcU,spcP)
+massOp      = create.scheme("galerkin",spcP,massModel==0)
+preconOp    = create.scheme("h1",spcP,preconModel==0)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -52,11 +54,11 @@ r      = numpy.copy(rhs_p)
 d      = numpy.copy(rhs_p)
 precon = numpy.copy(rhs_p)
 xi     = numpy.copy(rhs_u)
-A      = mainOp.assemble(velocity)._backend
-G      = gradOp.assemble(pressure)._backend
-D      = divOp.assemble(velocity)._backend
-M      = massOp.assemble(pressure)._backend
-P      = preconOp.assemble(pressure)._backend
+A      = mainOp.assemble(velocity).as_numpy
+G      = gradOp.assemble(pressure).as_numpy
+D      = divOp.assemble(velocity).as_numpy
+M      = massOp.assemble(pressure).as_numpy
+P      = preconOp.assemble(pressure).as_numpy
 def Ainv(rhs,target): target[:] = linalg.spsolve(A,rhs)
 def Minv(rhs,target): target[:] = linalg.spsolve(M,rhs)
 def Pinv(rhs,target): target[:] = linalg.spsolve(P,rhs)

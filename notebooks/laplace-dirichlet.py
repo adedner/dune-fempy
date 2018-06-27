@@ -71,7 +71,7 @@ a = inner(grad(u), grad(v))*dx
 
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
-scheme = create.scheme("h1", spc, [a==0,DirichletBC(uflSpace,exact,1)],
+scheme = create.scheme("galerkin", [a==0,DirichletBC(uflSpace,exact,1)], spc,
                 parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 solution, _ = scheme.solve()

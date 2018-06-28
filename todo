@@ -25,6 +25,11 @@ Things to do:
 
   give as much modelling detail as possible in advanced examples
 
+  add something on compile time (possibly in section with the
+  virtualization approach)
+
+Remove import try/except in mcf (around pandas) - not needed for paper
+
 Might not have time:
 
   Extra sections - e.g. r-adaptivity, nonvariational stuff

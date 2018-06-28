@@ -885,7 +885,7 @@ scheme as before.
 import petsc4py, sys
 petsc4py.init(sys.argv)
 space = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc')
-scheme = create.scheme("galerkin", a == b,
+scheme = create.scheme("galerkin", a == b, space=space,
                         parameters={"petsc.preconditioning.method":"sor"})
 # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
 u_h = space.interpolate(initial, name='u_h')
@@ -894,6 +894,8 @@ scheme.model.dt = 0.05
 evolve(scheme, u_h, u_h_n)
 plot(u_h)
 ```
+\todoA{make a remark on why the space is passed in here (overwrite the
+original space used to construct the form}
 
 Next we will implement the Newton loop in Python using \pyth{petsc4py}
 to solve the linear systems.

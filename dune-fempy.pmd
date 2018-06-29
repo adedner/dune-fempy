@@ -630,7 +630,7 @@ exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
 l2error_fn = inner(u_h - exact_end, u_h - exact_end)
 h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
-\todoA{there must be a way to get 'exact_end' from 'exact' - possibly using
+\Atodo{there must be a way to get 'exact\_end' from 'exact' - possibly using
        replace. Using that you can also replace the final time reached and
        avoid the 1e-6 in the for loop}
 
@@ -894,7 +894,7 @@ scheme.model.dt = 0.05
 evolve(scheme, u_h, u_h_n)
 plot(u_h)
 ```
-\todoA{make a remark on why the space is passed in here (overwrite the
+\Atodo{make a remark on why the space is passed in here (overwrite the
 original space used to construct the form}
 
 Next we will implement the Newton loop in Python using \pyth{petsc4py}
@@ -1660,7 +1660,7 @@ this below.
 scheme = create.scheme('class-name', equation, space, parameters=dict,
 solver='solver-name')
 \end{pweavecode}
-\todoA{mention that parameter is optional, mention the 'solver' parameter
+\Atodo{mention that parameter is optional, mention the 'solver' parameter
 as well (optional) and that space can be left out as well, if the
 trial/test function were initialized with a dune-fempy discrete function
 space. A bit more information on a 'solver' and 'parameters' arguments

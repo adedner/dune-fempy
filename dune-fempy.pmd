@@ -24,8 +24,6 @@
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{anslistings}
-\usepackage[toc,page]{appendix}
-\usepackage{comment}
 \usepackage{subcaption}
 \usepackage{xspace}
 
@@ -1426,7 +1424,7 @@ worth the extra coding time for longer running simulations.
 \bibliographystyle{abbrvnat}
 \bibliography{dune-fempy}
 
-\begin{appendices}
+\begin{appendix}
 
 %<*append>
 
@@ -1735,6 +1733,6 @@ selected during scheme creation above.
 
 %</append>
 
-\end{appendices}
+\end{appendix}
 
 \end{document}

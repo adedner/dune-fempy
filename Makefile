@@ -1,3 +1,6 @@
+SHELL := /bin/bash
+PATH := bin:$(PATH)
+
 PDF = dune-fempy.pdf
 PY = dune-fempy.py
 TEX = dune-fempy.tex battery.tex laplace-adaptive.tex crystal.tex mcf.tex
@@ -26,28 +29,28 @@ laplace-adaptive.md: laplace-adaptive.ipynb
 
 laplace-adaptive.tex: laplace-adaptive.md
 	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
-	@python pandoc-formatting.py laplace-adaptive.tex
+	@python3 pandoc-formatting.py laplace-adaptive.tex
 
 crystal.md: crystal.ipynb
 	@jupyter nbconvert --to markdown crystal.ipynb
 
 crystal.tex: crystal.md
 	@pandoc --listings -f markdown -t latex crystal.md -o crystal.tex --biblatex --bibliography=dune-fempy.bib
-	@python pandoc-formatting.py crystal.tex
+	@python3 pandoc-formatting.py crystal.tex
 
 mcf.md: mcf.ipynb
 	@jupyter nbconvert --to markdown mcf.ipynb
 
 mcf.tex: mcf.md
 	@pandoc --listings -f markdown -t latex mcf.md -o mcf.tex
-	@python pandoc-formatting.py mcf.tex
+	@python3 pandoc-formatting.py mcf.tex
 
 battery.md: battery.ipynb
 	@jupyter nbconvert --to markdown battery.ipynb
 
 battery.tex: battery.md
 	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
-	@python pandoc-formatting.py battery.tex
+	@python3 pandoc-formatting.py battery.tex
 
 $(PDF): $(TEX) dune-fempy.pmd $(TABLE)
 	@pdflatex --interaction=nonstopmode $<

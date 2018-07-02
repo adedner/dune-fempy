@@ -14,7 +14,7 @@
 
 from __future__ import print_function
 try:
-    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -158,7 +158,7 @@ equation = a_im == a_ex
 # In[ ]:
 
 
-model  = create.model("elliptic", grid, equation, coefficients={un:solution_n} )
+model  = create.model("integrands", grid, equation, coefficients={un:solution_n} )
 solverParameters = {
         "fem.solver.newton.tolerance": 1e-5,
         "fem.solver.newton.linabstol": 1e-8,
@@ -166,7 +166,7 @@ solverParameters = {
         "fem.solver.newton.verbose": 0,
         "fem.solver.newton.linear.verbose": 0
     }
-scheme = create.scheme("h1", space, model, solver="gmres",
+scheme = create.scheme("galerkin", model, space, solver="gmres",
         parameters=solverParameters)
 
 

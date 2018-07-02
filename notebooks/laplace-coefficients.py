@@ -61,7 +61,7 @@ tau = NamedConstant(spc,name="tau")
 a = (inner(u - old_solution, v) +    tau * inner(grad(theta*u + (1-theta)*old_solution), grad(v)) ) * dx
 
 # now generate the model code and compile
-model = create.model("elliptic", grid, a == 0)
+model = create.model("integrands", grid, a == 0)
 
 # setup structure for olver parameters
 solverParameter={"fem.solver.newton.linabstol": 1e-13,
@@ -70,7 +70,7 @@ solverParameter={"fem.solver.newton.linabstol": 1e-13,
                  "fem.solver.newton.verbose": "true",
                  "fem.solver.newton.linear.verbose": "false"}
 # create the solver using a standard fem scheme
-scheme = create.scheme("h1", spc, model, parameters=solverParameter)
+scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
 
 
 # In[ ]:

@@ -30,10 +30,10 @@ x = SpatialCoordinate(uflSpace.cell())
 phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*math.pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 
-model = create.model("elliptic", grid, inner(grad(u), grad(v))*dx == 0, dirichlet={1: exact})
+model = create.model("h1", grid, inner(grad(u), grad(v))*dx == 0, dirichlet={1: exact})
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
-scheme = create.scheme("h1", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 fvspc = create.space("finitevolume", grid, dimrange=1, storage="istl")
 estimate = fvspc.interpolate([0], name="estimate")

@@ -18,7 +18,7 @@
 #
 # First, we need to set up a computational grid and a discontinuous ansatz space on it. Here, we use the orthonormal discontinuous space:
 
-# In[1]:
+# In[ ]:
 
 
 try:
@@ -47,7 +47,7 @@ spc = create.space("dgonb", grid, dimrange=1, order=2, storage="istl")
 #
 # The following code implements this equation in UFL notation:
 
-# In[2]:
+# In[ ]:
 
 
 import math
@@ -73,20 +73,20 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 # Next, we compile this into the *integrands*, plug them into the *galerkin* scheme and solve the problem:
 
-# In[3]:
+# In[ ]:
 
 
 model = create.model("integrands", grid, a == b)
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
-scheme = create.scheme("galerkin", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 uh, _ = scheme.solve()
 
 
 # The result looks as follows:
 
-# In[4]:
+# In[ ]:
 
 
 plot(uh)

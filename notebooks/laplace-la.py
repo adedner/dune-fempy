@@ -25,7 +25,7 @@
 
 
 try:
-    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 from dune.generator import builder
@@ -55,7 +55,7 @@ x = SpatialCoordinate(spc.cell())
 rhs = (x[0] + x[1]) * v[0]
 a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
 b = rhs * dx + 10*rhs * ds
-scheme = create.scheme("h1", spc, a==b,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
+scheme = create.scheme("galerkin", a==b, spc,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
         "fem.solver.newton.linreduction": 1e-10,
         "fem.solver.newton.verbose": 1,
         "fem.solver.newton.linear.verbose": 0})
@@ -106,7 +106,7 @@ while True:
     print("iterations ("+str(n)+")",absF)
     if absF < 1e-10:
         break
-    matrix = scheme.assemble(uh)
+    matrix = scheme.assemble(uh).as_numpy
     sol_coeff -= scipy.sparse.linalg.spsolve(matrix, res_coeff)
     n += 1
 
@@ -133,14 +133,14 @@ class Df(scipy.sparse.linalg.LinearOperator):
         # into a discrete function over the given space
         x = spc.numpyFunction(x_coeff, "tmp")
         # store the assembled matrix
-        self.jac = scheme.assemble(x)
+        self.jac = scheme.assemble(x).as_numpy
     # reassemble the matrix DF(u) gmiven a dof vector for u
     def update(self,x_coeff,f):
         x = spc.numpyFunction(x_coeff, "tmp")
         # Note: the following does produce a copy of the matrix
         # and each call here will reproduce the full matrix
         # structure - no reuse possible in this version
-        self.jac = scheme.assemble(x)
+        self.jac = scheme.assemble(x).as_numpy
     # compute DS(u)^{-1}x for a given dof vector x
     def _matvec(self,x_coeff):
         return scipy.sparse.linalg.spsolve(self.jac, x_coeff)
@@ -169,7 +169,7 @@ try:
     from petsc4py import PETSc
     petsc4py.init(sys.argv)
     spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
-    scheme = create.scheme("h1", spc, a==b,
+    scheme = create.scheme("galerkin", a==b, spc,
                             parameters={"petsc.preconditioning.method":"sor"})
     # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
     uh, info = scheme.solve()
@@ -209,7 +209,7 @@ if petsc4py:
         print("iterations ("+str(n)+")",absF)
         if absF < 1e-10:
             break
-        matrix = scheme.assemble(uh)
+        matrix = scheme.assemble(uh).as_petsc
         ksp.setOperators(matrix)
         ksp.setFromOptions()
         ksp.solve(res_coeff, res_coeff)
@@ -231,7 +231,7 @@ if petsc4py:
         scheme(inDF,outDF)
     def Df(snes, x, m, b):
         inDF = spc.petscFunction(x)
-        matrix = scheme.assemble(inDF)
+        matrix = scheme.assemble(inDF).as_petsc
         m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
         b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
         return PETSc. Mat. Structure.SAME_NONZERO_PATTERN

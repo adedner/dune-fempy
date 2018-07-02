@@ -30,6 +30,8 @@ Things to do:
 
 Remove import try/except in mcf (around pandas) - not needed for paper
 
+Mention compilation times for the different parts of a dune-fempy script
+
 Might not have time:
 
   Extra sections - e.g. r-adaptivity, nonvariational stuff

@@ -1,4 +1,4 @@
-use_codegen = False
+use_codegen = True
 
 import time
 from dune.grid import structuredGrid
@@ -17,7 +17,8 @@ dimR      = 3
 quadOrder = 2*order+3
 if use_codegen:
     space = create.space('lagrange', grid, dimrange=dimR, order=order,
-                         interiorQuadratureOrders=[quadOrder], skeletonQuadratureOrders=[quadOrder] )
+                         interiorQuadratureOrders=[quadOrder],\
+                         skeletonQuadratureOrders=[quadOrder] )
 else:
     space = create.space('lagrange', grid, dimrange=dimR, order=order)
 
@@ -57,7 +58,6 @@ while t < 1.0:
     # scheme.solve(target=u_h)
     scheme.assemble(u_h_n)
     t += scheme.model.dt
-    print(t)
 print("time loop:",time.time()-start)
 
 grid.writeVTK('forchheimer', pointdata=[u_h])

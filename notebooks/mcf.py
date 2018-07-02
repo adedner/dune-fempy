@@ -39,7 +39,7 @@
 
 from __future__ import print_function
 try:
-    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -99,7 +99,7 @@ a = (ufl.inner(u - x, v) + tau * ufl.inner(
     )) * ufl.dx
 model = create.model("elliptic", surface, a == 0)
 
-scheme = create.scheme("h1", spc, model, solver="cg")
+scheme = create.scheme("h1", model, spc, solver="cg")
 
 
 # In[ ]:

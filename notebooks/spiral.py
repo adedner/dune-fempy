@@ -76,7 +76,7 @@ import ufl
 
 import dune.ufl
 import dune.grid
-import dune.models.elliptic
+import dune.models.integrands
 import dune.fem
 import dune.create as create
 
@@ -159,7 +159,7 @@ rhs_gf = create.function("ufl", grid, "rhs", order=2,
 # In[ ]:
 
 
-model = create.model("elliptic", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
+model = create.model("integrands", grid,  equation,  coefficients={un: uh_n, vn: vh_n} )
 
 
 # In[ ]:
@@ -172,7 +172,7 @@ solverParameters = {
         "fem.solver.newton.verbose": 0,
         "fem.solver.newton.linear.verbose": 0
     }
-scheme = create.scheme("h1", spc, model, ("pardg","cg"),parameters=solverParameters)
+scheme = create.scheme("galerkin", model, spc, solver="cg",parameters=solverParameters)
 
 
 # To show the solution we make use of the _animate_ module of _matplotlib_:

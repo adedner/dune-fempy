@@ -76,7 +76,7 @@ equation = (inner(grad(u), grad(v)) + inner(u,v)) * dx == f * v[0] * dx
 
 
 spc = create.space("lagrange", grid, dimrange=1, order=1)
-model = create.model("elliptic", grid, equation)
+model = create.model("integrands", grid, equation)
 
 
 # We create the scheme and set parameters for the solver.
@@ -84,7 +84,7 @@ model = create.model("elliptic", grid, equation)
 # In[ ]:
 
 
-scheme = create.scheme("h1", spc, model)
+scheme = create.scheme("galerkin", model, spc)
 
 
 # We create a grid function for our exact solution.
@@ -128,7 +128,7 @@ for i in range(levels):
 
 spc = create.space("lagrange", grid, dimrange=1, order=2)
 # create the scheme but change some of the default parameters..
-scheme = create.scheme("h1", spc, model,       parameters=       {"fem.solver.newton.tolerance": 1e-9,
+scheme = create.scheme("galerkin", model, spc,        parameters=       {"fem.solver.newton.tolerance": 1e-9,
         "fem.solver.newton.linabstol": 1e-12,
         "fem.solver.newton.linreduction": 1e-12,
         "fem.solver.newton.verbose": 1,

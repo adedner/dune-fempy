@@ -6,6 +6,7 @@
 #include <ctime>
 
 #include <dune/grid/yaspgrid.hh>
+#include <dune/grid/io/file/dgfparser/dgfyasp.hh>
 
 #include <dune/fempy/grid/gridpartadapter.hh>
 #include <dune/fem/space/lagrange.hh>

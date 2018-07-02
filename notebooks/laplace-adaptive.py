@@ -20,11 +20,11 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[ ]:
+# In[1]:
 
 
 try:
-    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 import math
@@ -51,14 +51,14 @@ for i in range(0,7):
                      math.sin(cornerAngle/6*math.pi/180*i)]
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-view = create.view("adaptive", "ALUConform", domain, dimgrid=2)
+view = create.view("adaptive", "ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
 spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 
 # Next define the model together with the exact solution.
 
-# In[ ]:
+# In[2]:
 
 
 from ufl import *
@@ -74,7 +74,7 @@ exact = as_vector([inner(x,x)**(math.pi/2/Phi) * sin(math.pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
-laplace = create.scheme("h1", spc, [a==0, DirichletBC(spc,exact,1)])
+laplace = create.scheme("galerkin", [a==0, DirichletBC(spc,exact,1)], spc)
 uh = spc.interpolate(lambda x: [0], name="solution")
 
 
@@ -97,22 +97,21 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
 
-# In[ ]:
+# In[3]:
 
 
 # energy error
 h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
-fvspc = create.space("finitevolume", view, dimrange=1, storage="istl")
+fvspc = create.space("finitevolume", view, dimrange=1)
 estimate = fvspc.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(spc.cell())
 he = MaxFacetEdgeLength(spc.cell())('+')
 n = FacetNormal(spc.cell())
 estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx                 + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
-estimator_model = create.model("integrands", view, estimator_ufl == 0)
-estimator = create.operator("galerkin", estimator_model, spc, fvspc)
+estimator = create.operator("galerkin", estimator_ufl, spc, fvspc)
 
 # marking strategy (equidistribution)
 tolerance = 0.1
@@ -122,7 +121,7 @@ def mark(element):
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
 
-# In[ ]:
+# In[4]:
 
 
 # adaptive loop (solve, mark, estimate)
@@ -158,7 +157,7 @@ pyplot.close('all')
 
 # Let's have a look at the center of the domain:
 
-# In[ ]:
+# In[5]:
 
 
 fig = pyplot.figure(figsize=(15,15))

@@ -32,4 +32,4 @@ scheme = create.scheme("galerkin", space, model)
 solution, _ = scheme.solve()
 grid.writeVTK("l2projection", pointdata=[solution])
 
-scheme.assemble(solution).store("l2projection.mm", "matrixmarket")
+scheme.assemble(solution).as_istl.store("l2projection.mm", "matrixmarket")

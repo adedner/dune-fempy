@@ -13,7 +13,7 @@ parameter.append({"fem.verboserank": -1})
 grid = structuredGrid([0, 0], [1, 1], [40, 40])
 
 order     = 4
-dimR      = 3
+dimR      = 5
 quadOrder = 2*order+3
 if use_codegen:
     space = create.space('lagrange', grid, dimrange=dimR, order=order,

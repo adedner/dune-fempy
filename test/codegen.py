@@ -15,12 +15,13 @@ grid = structuredGrid([0, 0], [1, 1], [40, 40])
 order     = 4
 dimR      = 5
 quadOrder = 2*order+3
+spaceName = "lagrange"
 if use_codegen:
-    space = create.space('lagrange', grid, dimrange=dimR, order=order,
+    space = create.space(spaceName, grid, dimrange=dimR, order=order,
                          interiorQuadratureOrders=[quadOrder],\
                          skeletonQuadratureOrders=[quadOrder] )
 else:
-    space = create.space('lagrange', grid, dimrange=dimR, order=order)
+    space = create.space(spaceName, grid, dimrange=dimR, order=order)
 
 x = SpatialCoordinate(space)
 

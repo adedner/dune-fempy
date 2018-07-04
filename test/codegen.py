@@ -18,7 +18,7 @@ quadOrder = 2*order+3
 spaceName = "lagrange"
 if use_codegen:
     space = create.space(spaceName, grid, dimrange=dimR, order=order,
-                         interiorQuadratureOrders=[quadOrder],\
+                         interiorQuadratureOrders=[quadOrder, 2*order],\
                          skeletonQuadratureOrders=[quadOrder] )
 else:
     space = create.space(spaceName, grid, dimrange=dimR, order=order)
@@ -37,7 +37,8 @@ t  = NamedConstant(triangle, "t")     # current time
 
 abs_du = sqrt(inner(grad(u), grad(u)))
 K = 2/(1 + sqrt(1 + 4*abs_du))
-a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
+# a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
+a = (inner((u)/dt, v) + inner(u, v))*dx
 exact = as_vector( [exp(-2*t)*(initial - 1) + 1,]*dimR )
 b = replace(a, {u: exact})
 

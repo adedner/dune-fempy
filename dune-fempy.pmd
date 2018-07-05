@@ -628,9 +628,9 @@ exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
 l2error_fn = inner(u_h - exact_end, u_h - exact_end)
 h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
-\Atodo{there must be a way to get 'exact_end' from 'exact' - possibly using
-       replace. Using that you can also replace the final time reached and
-       avoid the 1e-6 in the for loop}
+%\Atodo{there must be a way to get 'exact_end' from 'exact' - possibly using
+%       replace. Using that you can also replace the final time reached and
+%       avoid the 1e-6 in the for loop}
 
 First of all we define the exact solution at the end time $T=1$,
 \pyth{exact_end}. Then we simply write expressions in UFL to calculate

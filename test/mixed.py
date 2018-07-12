@@ -10,7 +10,6 @@ dune.fem.parameter.append( {"fem.verboserank": 0} )
 
 newtonParameter = {"linabstol": 1e-6, "linreduction": 1e-6, "tolerance": 1e-5,\
                 "verbose": "true", "linear.verbose": "true",\
-                "krylovmethod": "cg"\
                 }
 
 dimDomain = 2
@@ -27,25 +26,26 @@ from math import pi,log,sqrt
 from ufl import cos, sin,as_vector, dx, ds, grad, inner
 exact = as_vector( [sin(3*pi*x[0])*x[1]*x[1], x[0]*x[0]*cos(3.*pi*x[1])] )
 laplace = lambda u : grad(grad(u))[0,0]+grad(grad(u))[1,1]
-f = as_vector([ laplace(exact[0])+exact[0],laplace(exact[1])+exact[1] ])
+f = as_vector([ -laplace(exact[0])+exact[0], -laplace(exact[1])+exact[1] ])
 left = conditional(x[0]<1e-5,1,0)
-equation = inner(grad(u), grad(v)) * dx + inner(u,v) * dx + inner(f,v) * dx \
+equation = inner(grad(u), grad(v)) * dx + inner(u,v) * dx - inner(f,v) * dx \
         + 3*pi*x[1]**2*v[0] * left*ds == 0
 
-spc = create.space("dgonb", grid, dimrange=dimRange, order=1)
+# spc = create.space("dgonb", grid, dimrange=dimRange, order=1)
+spc = create.space("lagrange", grid, dimrange=dimRange, order=1)
 
-model = create.model("elliptic", grid, equation)
-#        DirichletBC(uflSpace, [None,x[0]**2], 2),             # bottom
-#        DirichletBC(uflSpace, [exact[0],None], 3),            # top
-#        DirichletBC(uflSpace, [None,None], 4),                # left
-#        DirichletBC(uflSpace, exact, 1))                      # right
-scheme = create.scheme("dg", spc, model, penalty=10,
-                parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+model = create.model("elliptic", grid, equation,
+        DirichletBC(uflSpace, [None,x[0]**2], 2),             # bottom
+        DirichletBC(uflSpace, [exact[0],None], 3),            # top
+        DirichletBC(uflSpace, [None,None], 4),                # left
+        DirichletBC(uflSpace, exact, 1))                # right
+parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()}
+
+scheme = create.scheme("h1", model, spc, parameters=parameters)
+# scheme = create.scheme("dg", model, spc, penalty=10,parameters=parameters)
 solution, _ = scheme.solve()
 l2errA = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
 grid.hierarchicalGrid.globalRefine(2)
-scheme = create.scheme("dg", spc, model, penalty=10,
-                parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 solution, _ = scheme.solve()
 l2errB = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
 l2eoc = log(l2errA/l2errB)/log(2.)

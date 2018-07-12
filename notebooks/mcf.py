@@ -85,6 +85,29 @@ solution  = spc.interpolate(lambda x: x, name="solution")
 # In[ ]:
 
 
+try:
+    from mayavi import mlab
+    from mayavi.tools.notebook import display as display3d
+    import numpy
+    mlab.init_notebook()
+    def show3d():
+        t = surface.tesselate(level=2)
+        x = t[0][:,0]
+        y = t[0][:,1]
+        z = t[0][:,2]
+        v = solution.pointData(level=2)
+        v = numpy.sum(numpy.abs(v)**2,axis=1)**(1./2)
+        mlab.figure(bgcolor = (1,1,1))
+        s = mlab.triangular_mesh(x,y,z, t[1], scalars=v)
+        display3d(s)
+except ImportError:
+    def show3d():
+        pass
+
+
+# In[ ]:
+
+
 # set up model using theta scheme
 theta = 0.5   # Crank-Nicholson
 
@@ -107,22 +130,24 @@ scheme = create.scheme("h1", model, spc, solver="cg")
 
 count   = 0
 t       = 0.
-endTime = 0.05
+endTime = 0.1
 dt      = 0.005
 model.setConstant(tau,dt)
 
-fig = pyplot.figure(figsize=(10,10))
-plot(solution, figure=(fig, 131+count%3), colorbar=False, gridLines="", triplot=True)
+fig = pyplot.figure(figsize=(15,15))
+plot(solution, figure=(fig, 131), colorbar=False, gridLines="", triplot=True)
+show3d()
 
 while t < endTime:
     scheme.solve(target=solution)
     t     += dt
     count += 1
     positions.dofVector.assign(solution.dofVector)
-    if count % 4 == 0:
+    if count % 10 == 0:
         # surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
         # surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
-        plot(solution, figure=(fig, 131+count%3), colorbar=False, gridLines="", triplot=True)
+        plot(solution, figure=(fig, 131+count/10), colorbar=False, gridLines="", triplot=True)
+        show3d()
 pyplot.show()
 pyplot.close('all')
 

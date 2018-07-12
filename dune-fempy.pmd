@@ -95,6 +95,8 @@ In this paper we present the new \dune[Fempy] module...
 
 \section{Introduction}
 
+%<*intro>
+
 Finite element methods (FEM) are one of the most popular numerical
 methods for solving partial differental equations. They have been used
 for a broad range of engineering and scientific problems, with the first
@@ -148,6 +150,8 @@ in many ways to \dune code, making it less difficult to port code to
 C++ if desired. Additionally we make use of features such as library
 caching to reduce the runtime of repeated computations, and
 integration with modern C++11/C++14 and pybind11 \cite{Pybind11} features.
+
+%</intro>
 
 The structure of the paper is as follows. In section
 \ref{sec:fem-in-fempy} we introduce the interface for a simple
@@ -1428,7 +1432,7 @@ worth the extra coding time for longer running simulations.
 
 %<*append>
 
-\section{Derivation of Forchheimer model} \label{sec:forch}
+\chapter{Derivation of Forchheimer model} \label{sec:forch}
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
 groundwater flow models.
@@ -1499,21 +1503,21 @@ Then we have the time discretized PDE.
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
-\section{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
+\chapter{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
 
 Here we present the C++ version of the Forchheimer example from
 section \ref{sec:fem-in-fempy}, specifically using \dune[FEM].
 
 \inputcpp{../../dune-fempy/forchheimer/main.cc}{}{lst:forch-cpp}
 
-\section{List of Dune-Python modules} \label{sec:modules}
+\chapter{List of Dune-Python modules} \label{sec:modules}
 
 Here we list the different modules that are available to Dune-Python
 and Fempy at the time of writing. We will divide them by component
 into different sections that reflect the structure we have previously
 introduced.
 
-\subsection{Grids} \label{sec:grid-list}
+\section{Grids} \label{sec:grid-list}
 
 Grids by default take the following form.
 
@@ -1557,7 +1561,7 @@ Grids can also be constructed in the grid view format.
   \end{tabular}
 \end{center}
 
-\subsection{Spaces} \label{sec:space-list}
+\section{Spaces} \label{sec:space-list}
 
 Now we move on to spaces. By default, they take the form
 
@@ -1593,7 +1597,7 @@ the storage used for discrete functions (as shown in
   \end{tabular}
 \end{center}
 
-\subsection{Function}
+\section{Function}
 
 Functions can be constructed in a variety of ways, though the explicit
 way to make a grid function is
@@ -1644,7 +1648,7 @@ space by default. The following possibilities are available.
   \end{tabular}
 \end{minipage}
 
-\subsection{Schemes} \label{sec:scheme-list}
+\section{Schemes} \label{sec:scheme-list}
 
 As discussed in section \ref{sec:schemes}, schemes can be constructed
 directly with a UFL form and contain the method for solving the PDE.
@@ -1715,7 +1719,7 @@ without needing to assemble a scheme object.
   \end{tabular}
 \end{center}
 
-\subsection{Solving}
+\section{Solving}
 
 Finally we list the possible solving methods available that can be
 selected during scheme creation above.

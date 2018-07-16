@@ -35,9 +35,9 @@ equation = inner(grad(u), grad(v)) * dx + inner(u,v) * dx - inner(f,v) * dx \
 spc = create.space("lagrange", grid, dimrange=dimRange, order=1)
 
 model = create.model("elliptic", grid, equation,
-        DirichletBC(uflSpace, [None,x[0]**2], 2),             # bottom
-        DirichletBC(uflSpace, [exact[0],None], 3),            # top
-        DirichletBC(uflSpace, [None,None], 4),                # left
+        DirichletBC(uflSpace, [None,x[0]**2], 2),       # bottom
+        DirichletBC(uflSpace, [exact[0],None], 3),      # top
+        DirichletBC(uflSpace, [None,None], 4),          # left
         DirichletBC(uflSpace, exact, 1))                # right
 parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()}
 

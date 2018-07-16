@@ -6,10 +6,10 @@ from dune.ufl import DirichletBC, Space
 
 ## simple example of mixed BCs (u[0] with zero Neumann, u[1] with Dirichlet = 2)
 dune.fem.parameter.append("parameter")
-dune.fem.parameter.append( {"fem.verboserank": 0} )
+dune.fem.parameter.append( {"fem.verboserank": -1} )
 
 newtonParameter = {"linabstol": 1e-6, "linreduction": 1e-6, "tolerance": 1e-5,\
-                "verbose": "true", "linear.verbose": "true",\
+                "verbose": "false", "linear.verbose": "false",\
                 }
 
 dimDomain = 2
@@ -50,7 +50,7 @@ solution, _ = scheme.solve()
 l2errB = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
 l2eoc = log(l2errA/l2errB)/log(2.)
 
-print(l2errA,l2errB,l2eoc)
+# print(l2errA,l2errB,l2eoc)
 grid.writeVTK("mixed", pointdata={"solution":solution, "exact":exact})
 
 assert abs(l2eoc - (spc.order+1)) < 0.3

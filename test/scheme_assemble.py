@@ -34,7 +34,7 @@ model = create.model("integrands", grid, a==b)
 def test(space):
     if test_fem:
         femSpace  = create.space(space, grid, dimrange=1, order=1, storage='fem')
-        femScheme = create.scheme("galerkin", femSpace, model)
+        femScheme = create.scheme("galerkin", model, femSpace)
         fem_h     = create.function("discrete", femSpace, name="fem")
         fem_dofs  = fem_h.as_numpy
         # femScheme.solve(target = fem_h)
@@ -51,7 +51,7 @@ def test(space):
 
     if test_eigen:
         eigenSpace  = create.space(space, grid, dimrange=1, order=1, storage='eigen')
-        eigenScheme = create.scheme("galerkin", eigenSpace, model)
+        eigenScheme = create.scheme("galerkin", model, eigenSpace)
         eigen_h     = create.function("discrete", eigenSpace, name="eigen")
         eigen_dofs  = eigen_h.as_numpy
         # eigenScheme.solve(target = eigen_h)
@@ -68,7 +68,7 @@ def test(space):
 
     if test_istl:
         istlSpace  = create.space(space, grid, dimrange=1, order=1, storage='istl')
-        istlScheme = create.scheme("galerkin", istlSpace, model)
+        istlScheme = create.scheme("galerkin", model, istlSpace)
         istl_h     = create.function("discrete", istlSpace, name="istl")
         istl_dofs  = istl_h.as_istl
         # istlScheme.solve(target = istl_h)
@@ -89,7 +89,7 @@ def test(space):
         from petsc4py import PETSc
         petsc4py.init(sys.argv)
         petscSpace  = create.space(space, grid, dimrange=1, order=1, storage='petsc')
-        petscScheme = create.scheme("galerkin", petscSpace, model)
+        petscScheme = create.scheme("galerkin", model, petscSpace)
         petsc_h     = create.function("discrete", petscSpace, name="petsc")
         petsc_dofs  = petsc_h.as_petsc
         # petscScheme.solve(target = petsc_h)

@@ -39,7 +39,7 @@ a += mu*hT * div(grad(u[0]-exact[0])) * div(grad(v[0])) * dx
 s  = mu/heInv * inner( jump(grad(u[0])), jump(grad(v[0])) ) * dS
 s += mu/hF * inner( u-exact, v ) * ds
 model  = create.model("integrands", grid, a+s == 0)
-scheme = create.scheme("galerkin", spc, model, solver="cg",
+scheme = create.scheme("galerkin", model, spc, solver="cg",
         parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 solA, _ = scheme.solve(name="solA")
 
@@ -49,7 +49,7 @@ a  = div(grad(u[0]-exact[0])) * div(grad(v[0])) * dx
 s  = mu*heInv * inner( jump(grad(u[0])), jump(grad(v[0])) ) * dS
 s += mu/hF**3 * inner( u-exact, v ) * ds
 model  = create.model("integrands", grid, a+s == 0)
-scheme = create.scheme("galerkin", spc, model, solver="cg",
+scheme = create.scheme("galerkin", model, spc, solver="cg",
         parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 solB, _ = scheme.solve(name="solB")
 

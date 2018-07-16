@@ -32,7 +32,7 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 model = create.model("integrands", grid, a == b)
 
 newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
-scheme = create.scheme("galerkin", spc, model, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 solution, _ = scheme.solve()
 grid.writeVTK("dg-laplace", celldata=[solution])

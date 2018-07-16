@@ -28,7 +28,7 @@ b = inner(as_vector([f, f]), v) * dx
 
 model = create.model("integrands", grid, a == b)
 
-scheme = create.scheme("galerkin", space, model)
+scheme = create.scheme("galerkin", model, space)
 solution, _ = scheme.solve()
 grid.writeVTK("l2projection", pointdata=[solution])
 

@@ -61,7 +61,7 @@ def compute():
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
     # scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
 
-    scheme = create.scheme("galerkin", spc, model, parameters=solverParameter)
+    scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
 
     # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
     # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)

@@ -48,7 +48,7 @@ def compute():
     #model.setConstant(tau,[deltaT])
 
     model = create.model("integrands", grid, a == 0)
-    model.setConstant(tau, [deltaT])
+    model.setConstant(tau, deltaT)
 
     # setup structure for olver parameters
     solverParameter={"fem.solver.newton.linabstol": 1e-13,

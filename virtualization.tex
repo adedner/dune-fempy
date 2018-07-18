@@ -1,0 +1,92 @@
+% the following assumes that 'operator', 'scheme', 'ufl->model' has already
+% been explained.
+
+One design decision made for the \dune Python bindings was to avoid
+introducing a virtual layer when exporting classes from C++ to Python or
+vice versa. Such a layer would introduce additional code maintenance
+and more importantly perhaps lead to loss in performance when a C++ object
+is passed through Python back into C++. In this case code optimization
+steps like inlining or loop unrolling could not be utilized to their
+potential. Take as an example a discrete function which is constructed
+using \pyth{df = space.interpolate([0],name="df")}. The call to
+\pyth{interpolate} calls back to the corresponding \dune[fem] function and
+returns the discrete function instance. To store the solution to a PDE
+problem in \pyth{df} the \pyth{solve} method on a \pyth{scheme} is 
+called. While executing \pyth{scheme.solve(target=df)} the discrete
+function instance is passed back to a \dune[fem] function. If \pyth{df}
+were virtualized (i.e. type erased) in either of the two step, i.e., when
+passed to or from Python, then the \pyth{solve} method could not work with
+the same efficiency as when used in a pure C++ environment. The number of
+degrees of freedom, local structure etc. of the discrete function would
+only be know as dynamic properties making code optimization by the compiler
+or the \dune developer implementing the \pyth{solve} method more difficult
+or even impossible. Note that virtualizing the discrete function for
+example would almost certainly also require virtualization of the
+underlying discrete function spaces (with mapper and basis function set),
+and the underlying grid view (with its iterators). The cumulative effect
+of this would be quite severe.
+
+To avoid this issue, no type erasure is carried out
+when an object is passed into Python. So in the above example the call to
+\pyth{interplate} returns an object which still contains the full type
+information of the underlying \dune[fem] function. This approach leads to
+compilation overhead the first time a new type of discrete function is sued
+since a new Python module needs to be generated. But this overhead occurs only
+the first time the discrete function is used during the development of a
+project and is thus negligible. Since no type erasure has occurred the
+any \dune object can now be passed back to The \pyth{solve} method on the scheme is 
+exported in such a way that the target argument has to be of the discrete
+function type defined by the \pyth{storage} argument provided during the
+space construction. Consequently a scheme over a given space (i.e. a
+Lagrange space of a fixed order using an \pyth{istl} storage)
+will only accept one type of discrete function as \pyth{target} argument
+for its solve method. As described before the advantage of this is that the
+full static type information is available at the cost of more compilation
+requirements when changes e.g. to the storage backend are made.
+
+There are a few exceptions to the above rule, where Python objects
+passed as arguments to C++ functions undergo type erasure,
+if there type does not match the exact type of the arguments of that
+function.
+
+An example is the \pyth{__call__} method on an \pyth{operator}.
+When calling \pyth{op(arg,dest}) then destination parameter has to be of the
+correct discrete function type but for the argument parameter it can make
+sense to allow for a wide range of grid functions, i.e., an exact solution
+given by a UFL expression or a different type of discrete function. In many
+cases the implementation of the operator does not require the argument even
+to be discrete since only evaluation of \pyth{arg} at quadrature points is
+required; in this case any grid function is valid argument.
+On the C++ side the operator call is simply implemented as a template
+method on the operator class with the following signature
+\cpp{template <class GF> Operator::operator()(const GF &arg,
+              typename Operator::DiscreteFunction &dest);}
+It is not possible to export a template method to Python without
+fixing all its argument. Since often a optimized version of such a method
+is implemented for the case that \pyth{arg} is of the same type as
+\pyth{dest}, the method will always be exported to Python with
+\cpp{GF=Operator::DiscreteFunction}. In addition a second version is
+exported where \cpp{GF=VirtualizedGridFunction<...>} which is a
+type erased implementation of a grid function. Any grid function exported
+to Python (i.e. UFL expressions, discrete function etc.) will implicitly
+convert to a \cpp{VirtualizedGridFunction} so that \pyth{op(arg,dest}} can
+be used in Python even in the case that \pyth{arg} is not of the same type
+as \cpp{dest}. Optimal code is still produced in the case where both
+parameters are of the same type.
+
+A second use of type erasure when objects are passed back to C++ occurs
+when a \pyth{operator} or \pyth{scheme} is constructed from a given model.
+Since the development of a new model can involve repeated changes to the
+model (e.g. its underlying UFL form) we aimed to avoid that each change to
+the model would lead to a recompilation of the \pyth{operator} or
+\pyth{scheme}. To this end the model is virtualized when it is passed to
+the constructor of the \pyth{operator} or \pyth{scheme} class.
+Consequently, these classes only depend on some type information like the
+underlying type of the grid view and the range dimension of the model but
+not on the actual details of the bilinear form. The consequence of this
+approach is that evaluating some part of the form introduces a virtual
+function call.
+% explain that tests have shown that this is negligible and refer to
+% performance tests in later section. Mention virtualization parameter to
+% disable type erasure if required.
+% Also need to add the virtualization of the coefficients in the model

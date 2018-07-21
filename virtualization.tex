@@ -11,14 +11,14 @@ potential. Take as an example a discrete function which is constructed
 using \pyth{df = space.interpolate([0],name="df")}. The call to
 \pyth{interpolate} calls back to the corresponding \dune[fem] function and
 returns the discrete function instance. To store the solution to a PDE
-problem in \pyth{df} the \pyth{solve} method on a \pyth{scheme} is 
+problem in \pyth{df} the \pyth{solve} method on a \pyth{scheme} is
 called. While executing \pyth{scheme.solve(target=df)} the discrete
 function instance is passed back to a \dune[fem] function. If \pyth{df}
 were virtualized (i.e. type erased) in either of the two step, i.e., when
 passed to or from Python, then the \pyth{solve} method could not work with
 the same efficiency as when used in a pure C++ environment. The number of
 degrees of freedom, local structure etc. of the discrete function would
-only be know as dynamic properties making code optimization by the compiler
+only be known as dynamic properties making code optimization by the compiler
 or the \dune developer implementing the \pyth{solve} method more difficult
 or even impossible. Note that virtualizing the discrete function for
 example would almost certainly also require virtualization of the
@@ -28,13 +28,13 @@ of this would be quite severe.
 
 To avoid this issue, no type erasure is carried out
 when an object is passed into Python. So in the above example the call to
-\pyth{interplate} returns an object which still contains the full type
+\pyth{interpolate} returns an object which still contains the full type
 information of the underlying \dune[fem] function. This approach leads to
-compilation overhead the first time a new type of discrete function is sued
+compilation overhead the first time a new type of discrete function is used
 since a new Python module needs to be generated. But this overhead occurs only
 the first time the discrete function is used during the development of a
-project and is thus negligible. Since no type erasure has occurred the
-any \dune object can now be passed back to The \pyth{solve} method on the scheme is 
+project and is thus negligible. Since no type erasure has occurred,
+any \dune object can now be passed back to it. The \pyth{solve} method on the scheme is
 exported in such a way that the target argument has to be of the discrete
 function type defined by the \pyth{storage} argument provided during the
 space construction. Consequently a scheme over a given space (i.e. a
@@ -46,7 +46,7 @@ requirements when changes e.g. to the storage backend are made.
 
 There are a few exceptions to the above rule, where Python objects
 passed as arguments to C++ functions undergo type erasure,
-if there type does not match the exact type of the arguments of that
+if their type does not match the exact type of the arguments of that
 function.
 
 An example is the \pyth{__call__} method on an \pyth{operator}.
@@ -56,13 +56,13 @@ sense to allow for a wide range of grid functions, i.e., an exact solution
 given by a UFL expression or a different type of discrete function. In many
 cases the implementation of the operator does not require the argument even
 to be discrete since only evaluation of \pyth{arg} at quadrature points is
-required; in this case any grid function is valid argument.
+required; in this case any grid function is a valid argument.
 On the C++ side the operator call is simply implemented as a template
 method on the operator class with the following signature
 \cpp{template <class GF> Operator::operator()(const GF &arg,
               typename Operator::DiscreteFunction &dest);}
 It is not possible to export a template method to Python without
-fixing all its argument. Since often a optimized version of such a method
+fixing all its arguments. Since often a optimized version of such a method
 is implemented for the case that \pyth{arg} is of the same type as
 \pyth{dest}, the method will always be exported to Python with
 \cpp{GF=Operator::DiscreteFunction}. In addition a second version is

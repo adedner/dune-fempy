@@ -33,7 +33,7 @@ a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
 exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
 b = replace(a, {u: exact})
 
-scheme = create.scheme("h1", space, a == b, solver='cg')
+scheme = create.scheme("h1", a == b, space, solver='cg')
 
 def evolve(scheme, u_h, u_h_n):
     time = 0

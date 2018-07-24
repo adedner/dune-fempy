@@ -12,6 +12,14 @@ istl.preconditioning.relaxation: 1.2
 istl.gmres.restart: 50
 # enable simple Jacobi preconditioning (for non istl inverse operators)
 fem.preconditioning: false
+## petsc
+# iterative solver cg, bicg, bicgstab, gmres
+petsc.kspsolver.method: cg
+petsc.gmresrestart: 10
+# preconditioner none, asm, sor, jacobi, hypre, ilu-n, lu, icc ml superlu mumps
+petsc.preconditioning.method: ml
+petsc.preconditioning.iterations: 1
+
 
 fem.solver.newton.verbose: false
 fem.solver.newton.linear.verbose: false

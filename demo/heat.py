@@ -48,7 +48,7 @@ def compute():
     #model.setConstant(tau,[deltaT])
 
     model = create.model("integrands", grid, a == 0)
-    model.setConstant(tau, [deltaT])
+    model.setConstant(tau, deltaT)
 
     # setup structure for olver parameters
     solverParameter={"fem.solver.newton.linabstol": 1e-13,
@@ -61,7 +61,7 @@ def compute():
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
     # scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
 
-    scheme = create.scheme("galerkin", spc, model, parameters=solverParameter)
+    scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
 
     # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
     # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)

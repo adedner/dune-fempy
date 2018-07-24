@@ -10,7 +10,7 @@ from dune.grid import structuredGrid
 from dune.fem.space import lagrange
 from dune.fem.plotting import plotPointData as plot
 from dune.fem.function import integrate
-from dune.fem.scheme import h1
+from dune.fem.scheme import galerkin
 
 import ufl
 
@@ -31,8 +31,7 @@ x = ufl.SpatialCoordinate(space.cell())
 f = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])] )
 
 # elliptic equation
-scheme = h1(space,
-          ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx )
+scheme = galerkin( ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx )
 
 solution, info = scheme.solve()
 
@@ -42,14 +41,14 @@ exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 error = solution - exact
 print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )
 print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )
-
+plot(error,grid=grid)
 
 # heat equation
 solution.clear()
 un  = space.interpolate(-exact,name="oldSolution")
 tau = NamedConstant(space,name="tau")
-scheme = h1(space,
-        ( inner(u,v)  + tau*inner(grad(u),grad(v)) )*dx == inner(un+tau*f,v)*dx )
+scheme = galerkin( ( inner(u,v)  + tau*inner(grad(u),grad(v)) )*dx
+                   == inner(un+tau*f,v)*dx )
 
 # compute until stationary solution reached (same final solution as above)
 t  = 0
@@ -76,10 +75,10 @@ x = ufl.SpatialCoordinate(space.cell())
 phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180./270.) * sin((180./270.) * phi)])
 a = inner(grad(u), grad(v))*dx
-scheme = h1(space, [a==0,DirichletBC(space,exact,1)])
+scheme = galerkin([a==0,DirichletBC(space,exact,1)])
 solution, _ = scheme.solve()
 plot(solution)
 error = solution - exact
 print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )
 # problem with division by zero in the following
-# print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )
+print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )

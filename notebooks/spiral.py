@@ -203,7 +203,7 @@ def animate(count):
         vh_n.assign(vh)
         _,info = scheme.solve(target=uh)
         vh.interpolate( rhs_gf )
-        # print("Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
+        print("Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
         iterations += int( info["linear_iterations"] )
         t     += dt
     data = uh.pointData(1)
@@ -212,3 +212,5 @@ def animate(count):
     nextstep += stepsize
 
 animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
+for f in range(25):
+    animate(f)

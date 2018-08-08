@@ -147,8 +147,8 @@ writing of code to \dune and its large array of existing modules,
 whilst preserving the features available to a C++ developer. In
 particular the structure and functionality is designed to be analagous
 in many ways to \dune code, making it less difficult to port code to
-C++ if desired. Additionally we make use of features such as library
-caching to reduce the runtime of repeated computations, and
+C++ if necessary. Additionally, attempts to increase usability have been
+made, such as library caching to reduce the runtime of repeated computations, and
 integration with modern C++11/C++14 and pybind11 \cite{Pybind11} features.
 
 %</intro>
@@ -233,7 +233,6 @@ in time. This leads to methods that take the following form.
 
 where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
 defined as
-\Atodo{giving $\theta$ scheme as example?}
 \begin{gather}
   L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi, \quad \\
   L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + m_2(x, u, \nabla u) \varphi,
@@ -632,9 +631,9 @@ exact_end = as_vector( [exp(-2)*(initial - 1) + 1] )
 l2error_fn = inner(u_h - exact_end, u_h - exact_end)
 h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
-%\Atodo{there must be a way to get 'exact_end' from 'exact' - possibly using
-%       replace. Using that you can also replace the final time reached and
-%       avoid the 1e-6 in the for loop}
+\Atodo{there must be a way to get exact_end from exact - possibly using
+       replace. Using that you can also replace the final time reached and
+       avoid the small time addition in the for loop}
 
 First of all we define the exact solution at the end time $T=1$,
 \pyth{exact_end}. Then we simply write expressions in UFL to calculate
@@ -1073,7 +1072,7 @@ sol, info = cg(system, rhs)
 \end{pweavecode}
 \fi
 
-\section{C++ Model Generation} \label{sec:header}
+\section{Model Generation} \label{sec:header}
 
 After having looked at the basics of the python
 interface, let us now consider features more aimed at C++
@@ -1662,17 +1661,13 @@ this below.
 scheme = create.scheme('class-name', equation, space, parameters=dict,
 solver='solver-name')
 \end{pweavecode}
-\Atodo{mention that parameter is optional, mention the 'solver' parameter
-as well (optional) and that space can be left out as well, if the
-trial/test function were initialized with a dune-fempy discrete function
-space. A bit more information on a 'solver' and 'parameters' arguments
-needs to be added. We have to avoid that people complain how slow the code
-is just because they are using the non preconditioned gmres provided by the
-default}
 
 \begin{enumerate}
 \item \pyth{'class name'}: A string from the table below.
-\item \pyth{space}: A space object from \ref{sec:space-list}.
+\item \pyth{space}: A space object from \ref{sec:space-list}. (This is
+optional if the trial/test UFL functions are initialized with a
+\dune[Fempy] discrete function space, as in code listing
+\ref{lst:forch-variables}.)
 \item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
 object from \ref{tab:models}.
 \item \pyth{parameters} (optional): A dictionary of \dune parameters that can be used
@@ -1692,6 +1687,21 @@ specify the solver used, from \ref{tab:solvers}.
     \input{tables/features_scheme}
   \end{tabular}
 \end{minipage}
+
+\textbf{Remark.} We note that preconditioning is available via
+parameters that can be set independently of the scheme. Available
+options for methods include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel,
+jacobi} and {amg-ilu-0}. They are set using the following syntax.
+
+\renewcommand{\pweavecaption}{How preconditioning is set via
+parameters}
+\renewcommand{\pweavelabel}{lst:preconditioning}
+\begin{pweavecode}
+from dune.fem import parameter
+parameter.append({"istl.preconditioning.method": "ilu",
+                  "istl.preconditioning.iterations": 1,
+                  "istl.preconditioning.relaxation": 1.2})
+\end{pweavecode}
 
 Now we consider the models that can be constructed independently of
 the scheme.

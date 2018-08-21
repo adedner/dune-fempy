@@ -50,11 +50,11 @@
 \newcommand{\Mtodo}[1]{\todo[inline]{{\bf\color{green}Martin:} #1}}
 
 \newcommand{\autocite}{\cite}
+%</pre>
 \newcommand{\pweavecaption}{}
 \newcommand{\pweavelabel}{}
 \lstnewenvironment{pweavecode}[1][]{\lstset{escapechar=`,moredelim=[il][]{\#tex},style=pythonstyle, title={\codetitlestyle{Python code }},belowcaptionskip=\belowtitleskip, caption=\pweavecaption,label=\pweavelabel}}{}
 \lstnewenvironment{pweaveout}[1][]{\lstset{style=gencodestyle, title={\codetitlestyle{Output}}, belowcaptionskip=\belowtitleskip}}{}
-%</pre>
 
 \begin{document}
 
@@ -1219,7 +1219,7 @@ scheme = create.model("integrands", space, a == b)
 Here we take the nonvariational equation from before and add a term
 defined only on the skeleton (the edges) of the mesh.
 
-\subsection{C++ Models}
+\subsection{C++ Models} \label{sec:cpp-models}
 
 In addition to the automatic creation of a shared library object that
 is done when \pyth{create} is called, it is
@@ -1505,7 +1505,8 @@ we replace $\rho$ with $u$ for brevity.
 \chapter{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
 
 Here we present the C++ version of the Forchheimer example from
-section \ref{sec:fem-in-fempy}, specifically using \dune[FEM].
+section \ref{sec:fem-in-fempy} using \dune[FEM], that we compare to
+the python version in section \ref{sec:cpp-models}.
 
 \inputcpp{../../dune-fempy/forchheimer/main.cc}{}{lst:forch-cpp}
 

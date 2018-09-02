@@ -4,11 +4,10 @@ PATH := bin:$(PATH)
 PDF = dune-fempy.pdf
 PY = dune-fempy.py
 TEX = dune-fempy.tex battery.tex laplace-adaptive.tex crystal.tex mcf.tex
-AUX = dune-fempy.aux
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 
 .PHONY: all
-all: $(PDF) $(PY)
+all: $(PDF) $(PY) dune-fempy.ipynb
 
 .PHONY: clean distclean
 clean:
@@ -21,7 +20,7 @@ distclean: clean
 %.tex: %.pmd
 	@pweave -f texpweave $<
 
-%.py: %.pmd
+$(PY): dune-fempy.pmd
 	@ptangle $<
 
 laplace-adaptive.md: laplace-adaptive.ipynb
@@ -54,6 +53,9 @@ battery.tex: battery.md
 
 $(PDF): $(TEX) dune-fempy.pmd $(TABLE)
 	@pdflatex --interaction=nonstopmode $<
-	@bibtex $(AUX)
+	@bibtex dune-fempy.aux
 	@pdflatex --interaction=nonstopmode $<
 	@pdflatex --interaction=nonstopmode $<
+
+dune-fempy.ipynb: $(PY)
+	@python3 py2ipynb.py $(PY) dune-fempy.ipynb

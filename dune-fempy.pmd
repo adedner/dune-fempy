@@ -97,12 +97,12 @@ In this paper we present the new \dune[Fempy] module...
 
 %<*intro>
 
-Finite element methods (FEM) are one of the most popular numerical
-methods for solving partial differental equations. They have been used
+Among the different numerical methods for solving partial differential
+equations, finite element methods are one of the most popular. They have been used
 for a broad range of engineering and scientific problems, with the first
-computational applications originating as early as 1956 \cite{Turner}. Over the
+computational applications originating as early as 1956 in \cite{Turner}. Over the
 years there has been an extensive amount of literature analyzing FEMs
-in general and their uses \cite{Khoei} \cite{Babuska}.
+in general and their uses (see \cite{Khoei} and \cite{Babuska}).
 
 Just as the development of the theory of FEMs over the years,
 the landscape of FEM software itself undergone much change.
@@ -130,7 +130,16 @@ an intricate program. In particular FEniCS (\cite{FEniCS}) and Firedrake
 (\cite{Firedrake}) are examples of this kind of software. Integral to this approach has
 been using a simplfied interface attached to a backend with lower
 level code, which is typically achieved by an automatic code
-generation tool like SWIG or Cython. Nonetheless there are potential
+generation tool like SWIG or Cython. The use of Unified Form Language
+(UFL) allows one to write variational equations directly, for instance
+for Poisson's equation we have
+\renewcommand{\pweavecaption}{Poisson's equation in UFL}
+\renewcommand{\pweavelabel}{lst:poisson}
+\begin{pweavecode}
+a = inner(grad(u), grad(v))*dx
+b = inner(f, v)*dx
+\end{pweavecode}
+Nonetheless there are potential
 weaknesses in this approach. In particular this generated code is not
 suited to direct editing, so should a binding not exist for a feature
 on the python side, editing these generated files to add the feature
@@ -149,7 +158,7 @@ particular the structure and functionality is designed to be analagous
 in many ways to \dune code, making it less difficult to port code to
 C++ if necessary. Additionally, attempts to increase usability have been
 made, such as library caching to reduce the runtime of repeated computations, and
-integration with modern C++11/C++14 and pybind11 \cite{Pybind11} features.
+integration with modern C++11/C++14 and pybind11 (see \cite{Pybind11}) features.
 
 %</intro>
 
@@ -177,6 +186,13 @@ dune-femnv?}
 %<*tag>
 
 \section{Finite Element Methods in Fempy} \label{sec:fem-in-fempy}
+```python, label="fem-in-fempy", echo=False
+# <markdowncell>
+# ## Finite Element Methods in Fempy
+# In this section we introduce the basic components of a finite
+# element method when applied to the Forchheimer problem.
+# <codecell>
+```
 
 When designing any software package, a natural challenge that arises
 is trying to make the user interface as simple and easy to use as possible.
@@ -735,6 +751,13 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
     (NamedCoefficients).}
 
 \section{Alternate Solve Methods} \label{sec:solve}
+```python, label="solve-methods", echo=False
+# <markdowncell>
+# ## Alternate Solve Methods
+# Here we look at different ways of solving PDEs using external
+# packages and python functionality.
+# <codecell>
+```
 
 We carry on our explanation of different \dune[Fempy] features by
 looking at the different methods of solving the PDE, which is

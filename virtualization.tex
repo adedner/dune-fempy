@@ -50,35 +50,36 @@ if their type does not match the exact type of the arguments of that
 function.
 
 An example is the \pyth{__call__} method on an \pyth{operator}.
-When calling \pyth{op(arg,dest}) then destination parameter has to be of the
-correct discrete function type but for the argument parameter it can make
-sense to allow for a wide range of grid functions, i.e., an exact solution
+When calling \pyth{op(arg,dest}) then the destination parameter
+(\pyth{dest}) has to be of the correct discrete function type but for
+the argument parameter (\pyth{arg}) it can make
+sense to allow for a wide range of grid functions, e.g. an exact solution
 given by a UFL expression or a different type of discrete function. In many
-cases the implementation of the operator does not require the argument even
-to be discrete since only evaluation of \pyth{arg} at quadrature points is
+cases the implementation of the operator does not require the argument to even
+be discrete since only the evaluation of \pyth{arg} at quadrature points is
 required; in this case any grid function is a valid argument.
 On the C++ side the operator call is simply implemented as a template
 method on the operator class with the following signature
 \cpp{template <class GF> Operator::operator()(const GF &arg,
               typename Operator::DiscreteFunction &dest);}
 It is not possible to export a template method to Python without
-fixing all its arguments. Since often a optimized version of such a method
-is implemented for the case that \pyth{arg} is of the same type as
+fixing all its arguments. Since an optimized version of such a method
+is often implemented for the case that \pyth{arg} is of the same type as
 \pyth{dest}, the method will always be exported to Python with
 \cpp{GF=Operator::DiscreteFunction}. In addition a second version is
-exported where \cpp{GF=VirtualizedGridFunction<...>} which is a
+exported where \cpp{GF=VirtualizedGridFunction<...>}, which is a
 type erased implementation of a grid function. Any grid function exported
-to Python (i.e. UFL expressions, discrete function etc.) will implicitly
+to Python (e.g. UFL expressions, discrete function etc.) will implicitly
 convert to a \cpp{VirtualizedGridFunction} so that \pyth{op(arg,dest}} can
 be used in Python even in the case that \pyth{arg} is not of the same type
 as \cpp{dest}. Optimal code is still produced in the case where both
 parameters are of the same type.
 
-A second use of type erasure when objects are passed back to C++ occurs
-when a \pyth{operator} or \pyth{scheme} is constructed from a given model.
-Since the development of a new model can involve repeated changes to the
-model (e.g. its underlying UFL form) we aimed to avoid that each change to
-the model would lead to a recompilation of the \pyth{operator} or
+A second use of type erasure where objects are passed back to C++ occurs
+when an \pyth{operator} or \pyth{scheme} is constructed from a given model.
+Since the development of a new model can involve repeated changes
+being made to it (e.g. its underlying UFL form) we aimed to avoid the
+situation of each change requiring a recompilation of the \pyth{operator} or
 \pyth{scheme}. To this end the model is virtualized when it is passed to
 the constructor of the \pyth{operator} or \pyth{scheme} class.
 Consequently, these classes only depend on some type information like the

@@ -1335,10 +1335,10 @@ liquid.
 
 \input{crystal.tex}
 \section{Moving Meshes} \label{sec:mcf}
-\Ltodo{Need more of an intro here}
+
+
 Here we look at moving surfaces using a mean curvature flow problem.
 \input{mcf.tex}
-\Atodo{use \pyth{order=3} and show subsampling (could also be used somewhere else}
 
 \section{Partitioned Grids} \label{sec:battery}
 

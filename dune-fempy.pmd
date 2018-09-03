@@ -1336,8 +1336,75 @@ liquid.
 \input{crystal.tex}
 \section{Moving Meshes} \label{sec:mcf}
 
+In this section we will consider an example where the grid itself
+changes over time subject to PDEs. Specifically we refer to a
+\textit{geometric evolution equation}, which describes the motion of a
+hypersurface by prescribing its velocity geometrically. In
+\dune[Fempy], it is possible to accomplish this through the following
+process
+\begin{enumerate}
+\item Create an interpolated function that describes the initial
+surface, i.e.
+\renewcommand{\pweavecaption}{The initial function describing the
+surface}
+\renewcommand{\pweavelabel}{lst:mcf1}
+\begin{pweavecode}
+positions = space.interpolate(lambda x: some_function(x), name="position")
+\end{pweavecode}
+\item Create a surface using this function
+\renewcommand{\pweavecaption}{The surface created from
+\pyth{positions}}
+\renewcommand{\pweavelabel}{lst:mcf2}
+\begin{pweavecode}
+surface = create.view("geometry", positions)
+\end{pweavecode}
+\item Create the scheme that describes the surface evolution and solve
+it in the usual way.
+\item Update the surface using the computed solution.
+\renewcommand{\pweavecaption}{Reassigning the surface points using the
+solution}
+\renewcommand{\pweavelabel}{lst:mcf3}
+\begin{pweavecode}
+positions.dofVector.assign(solution.dofVector)
+\end{pweavecode}
+\end{enumerate}
+With this process the surface (and by extension the mesh) can be
+changed over time. We will now demonstrate this in a mean curvature flow
+example.
 
-Here we look at moving surfaces using a mean curvature flow problem.
+\subsection{Mean Curvature Flow}
+
+Mean curvature flow is a specific example of a geometric evolution
+equation where the evolution is governed by the mean curvature $H$.
+One real-life example of this is in how soap films change over time,
+although it can also be applied to image processing (e.g.
+\cite{Malladi}).
+Assume we can define a reference surface $\Gamma_0$ such that
+we can write the evolving surface $\Gamma(t)$ in the form
+\begin{gather}
+  \Gamma(t) = X(t,\Gamma_0)
+\end{gather}
+It is now possible to show that the vector valued function $X=X(t,x)$ with $x\in\Gamma_0$ satisfies:
+\begin{gather}
+  \frac{\partial}{\partial_t}X = - H(X)\nu(X)
+\end{gather}
+where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
+
+We will solve this using a finite element approach based on the
+following time discrete approximation from \cite[Eqn 4.16]{Charlie}
+(with a $\theta$-scheme applied):
+\begin{gather}
+  \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
+    \tau \int_{\Gamma^n} \big(
+    \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
+    \colon\nabla_{\Gamma^n}\varphi
+  =0~.
+\end{gather}
+Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
+$\Gamma^n:=\Gamma(t^{n})$,
+$I$ is the identity matrix, $\tau$ is the time step and
+$\theta\in[0,1]$ is a discretization parameter.
+
 \input{mcf.tex}
 
 \section{Partitioned Grids} \label{sec:battery}

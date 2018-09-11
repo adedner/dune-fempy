@@ -1,11 +1,7 @@
-'cpp' & dune.fem & A c++ string, e.g. "value[ 0 ] = 2;" & \begin{tabular}{@{}l@{}}
-  coefficients: dict, assigning \\
-  functions to UFL coefficients \end{tabular} \\ \hline
-'global' & dune.fem & A python function or lambda & - \\ \hline
-'levels' & dune.fem & - & - \\ \hline
-'local' & dune.fem & A python function or lambda & - \\ \hline
-'numpy' & dune.fem & A numpy expression & - \\ \hline
-'partitions' & dune.fem & - & - \\ \hline
-'ufl' & dune.fem & A UFL expression & \begin{tabular}{@{}l@{}}
-  coefficients: dict, assigning \\
-  functions to UFL coefficients \end{tabular} \\ \hline
+'cpp' & dune.fem & A c++ string, e.g. "value[ 0 ] = 2;" \\ \hline
+'global' & dune.fem & A python function or lambda \\ \hline
+'levels' & dune.fem & - \\ \hline
+'local' & dune.fem & A python function or lambda \\ \hline
+'numpy' & dune.fem & A numpy expression \\ \hline
+'partitions' & dune.fem & - \\ \hline
+'ufl' & dune.fem & A UFL expression \\ \hline

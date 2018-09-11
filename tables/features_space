@@ -1,20 +1,18 @@
 'bdm' & dune.fem & \begin{tabular}{@{}l@{}} Space for Brezzi-Douglas Marini \\
-                    elements \end{tabular} & - \\ \hline
+                    elements \end{tabular} \\ \hline
 'combined' & dune.fem & \begin{tabular}{@{}l@{}} Discrete function space formed \\
-from a tuple of DF spaces \end{tabular} & - \\ \hline
-'dglagrange' & dune.fem & DG space for Lagrange elements & - \\ \hline
+from a tuple of DF spaces \end{tabular} \\ \hline
+'dglagrange' & dune.fem & DG space for Lagrange elements \\ \hline
 'dglegendre' & dune.fem & \begin{tabular}{@{}l@{}}
   DG space with elementwise Legendre \\
-  tensor product basis function \end{tabular}
- & \begin{tabular}{@{}l@{}} hierarchical: if true, sort shape \\
-                      functions via polynomial order \end{tabular} \\ \hline
-'dglegendrehp' & dune.fem & 'dglegendre' with hp-adaption & - \\ \hline
+  tensor product basis function \end{tabular} \\ \hline
+'dglegendrehp' & dune.fem & 'dglegendre' with hp-adaption \\ \hline
 'dgonb' & dune.fem & \begin{tabular}{@{}l@{}} DG space with elementwise \\
-  orthonormal basis functions \end{tabular} & - \\ \hline
-'dgonbhp' & dune.fem & 'dgonb' with hp-adaptation & - \\ \hline
-'finitevolume' & dune.fem & Space for the finite volume method & - \\ \hline
-'lagrange' & dune.fem & Space for Lagrange elements  & - \\ \hline
-'p1bubble' & dune.fem & P1 space with bubble elements & - \\ \hline
+  orthonormal basis functions \end{tabular} \\ \hline
+'dgonbhp' & dune.fem & 'dgonb' with hp-adaptation  \\ \hline
+'finitevolume' & dune.fem & Space for the finite volume method \\ \hline
+'lagrange' & dune.fem & Space for Lagrange elements \\ \hline
+'p1bubble' & dune.fem & P1 space with bubble elements \\ \hline
 'product' & dune.fem & \begin{tabular}{@{}l@{}} Discrete function space formed \\
-from a tuple of DF spaces \end{tabular} & - \\ \hline
-'rannacherturek' & dune.fem & Space for Rannacher-Turek elements & - \\
+from a tuple of DF spaces \end{tabular} \\ \hline
+'rannacherturek' & dune.fem & Space for Rannacher-Turek elements \\

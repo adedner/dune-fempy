@@ -298,7 +298,7 @@ following breakdown of parts.
 \begin{itemize}
   \item \ref{sec:grids} Grid. The computational domain $\Omega$ the problem is set in.
   \item \ref{sec:spaces} Space. The finite element space $V_h$ and type of basis functions.
-  \item \ref{sec:functions} Functions. Functions defined on the grid that store the
+  \item \ref{sec:functions} Grid functions. Functions defined on the grid that store the
   solution $u_h$ and other variables.
   \item \ref{sec:schemes} Scheme. The weak form of the equation, its
   boundary conditions, and method for solving.
@@ -452,15 +452,15 @@ installation, provided python bindings are created for it. For instance we could
 discontinuous Galerkin space with orthonormal basis functions instead
 by using \pyth{'dgonb'}.
 
-\subsection{Functions} \label{sec:functions}
+\subsection{Grid Functions} \label{sec:functions}
 
 Having defined the computational domain and function space, we look
 towards functions that we may need to define, e.g. for containing the
 solution. In particular we want to be able to store what initial
 values it can take, its value at the previous timestep and so on.
 
-Let us consider how the initial solution could be defined.
-In \dune[Fempy], Unified Form Language (UFL) \cite{UFL} is used to define
+Let us begin by just considering a function for the initial condition.
+In \dune[Fempy], we use Unified Form Language (UFL) \cite{UFL} to define
 equations, which is essentially a human-readable way of writing a
 variational form. In order to use this we must begin by defining the
 variables in the following way.
@@ -479,11 +479,47 @@ UFL the dimensions of the grid and the range space, so it knows
 \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$, we would
 have the following code.
 
-\renewcommand{\pweavecaption}{Interpolating a discrete function from
-intial data}
+\renewcommand{\pweavecaption}{Creating a grid function using UFL}
 \renewcommand{\pweavelabel}{lst:forch-initial}
 ```python, label = 'forch-initial'
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+```
+
+Now this function can be used in a variety of ways. Let us first
+show how we would compute the $L^2$ norm of the initial function.
+We do this using \pyth{integrate} as follows.
+
+\renewcommand{\pweavecaption}{Integrating the initial data}
+\renewcommand{\pweavelabel}{lst:forch-integrate}
+```python, label = 'forch-integrate'
+from dune.fem.function import integrate
+from ufl import sqrt
+norm = sqrt( integrate(grid, initial, 5)[0] )
+print(norm)
+```
+
+We can also plot functions fairly easily. The two main ways to do
+this in Fempy are either a quick plot in \pyth{matplotlib}
+(see \cite{Matplotlib}), or writing to a
+VTK file for use in Paraview (see \cite{Paraview}), as follows.
+
+\renewcommand{\pweavecaption}{Plotting a function using two different
+methods}
+\renewcommand{\pweavelabel}{lst:forch-plot}
+```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
+from dune.fem.plotting import plotPointData as plot
+plot(initial, grid=grid)
+grid.writeVTK('initial', pointdata={'initial': initial})
+```
+
+Note that so far we have simply called the UFL expression \pyth{initial}
+directly, but it is equally possible to do the above with a discrete
+function. A discrete function can be created through interpolation as
+shown below.
+
+\renewcommand{\pweavecaption}{}
+\renewcommand{\pweavelabel}{lst:forch-uh}
+```python, label = 'forch-uh'
 u_h = space.interpolate(initial, name='u_h')
 ```
 
@@ -501,36 +537,6 @@ Having done this, a copy of this solution for the previous timestep,
 ```python, label = 'forch-u_h_n'
 u_h_n = u_h.copy(name="previous")
 ```
-
-There remains the question of what can we do with functions. Let us
-show an example of computing the $L^2$ norm of the initial function.
-We do this using \pyth{integrate} as follows.
-
-\renewcommand{\pweavecaption}{Integrating the initial data}
-\renewcommand{\pweavelabel}{lst:forch-integrate}
-```python, label = 'forch-integrate'
-from dune.fem.function import integrate
-from ufl import sqrt
-norm = sqrt( integrate(grid, initial, 5)[0] )
-print(norm)
-```
-
-We can also plot discrete functions fairly easily. The two main ways to do
-this in Fempy are either a quick plot in \pyth{matplotlib}
-(see \cite{Matplotlib}), or writing to a
-VTK file for use in Paraview (see \cite{Paraview}), as follows.
-
-\renewcommand{\pweavecaption}{Plotting a function using two different
-methods}
-\renewcommand{\pweavelabel}{lst:forch-plot}
-```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
-from dune.fem.plotting import plotPointData as plot
-plot(initial, grid=grid)
-grid.writeVTK('initial', pointdata={'initial': initial})
-```
-
-Note that \pyth{initial} here calls the UFL expression directly,
-although calling functions is equally possible.
 
 \subsection{Schemes} \label{sec:schemes}
 
@@ -1442,14 +1448,18 @@ As another application of grid techniques, we look at a problem where
  we want to divide the grid into three regions. We do this using an
 \pyth{'adaptive'} grid that allows for grid filters to be applied. We
 note that another way of creating multi-domain grids in \dune is
-described in \cite{Muthing}.
+described in \cite{Muthing} (though Fempy bindings are not yet
+available).
 
 \input{battery.tex}
 
 
 \section{Translating Python Code to C++} \label{sec:mcf-comparison}
 
-One more thing we want to talk about is moving sections of python code
+Having looked at some of the functionality available for solving
+various FEM problems, we now shift our focus towards more in-depth
+features that concern efficiency and C++ development. Here we consider
+the idea of moving sections of python code
 over to C++ for efficiency. A key aspect of the design of Fempy has
 been about keeping the structure of the C++ code in the python code's
 design, to the point where translating between the two is relatively painless. In
@@ -1541,6 +1551,104 @@ What we see is that the C++ version is roughly 18\% faster. On a small
 scale this is not a significant change, but it shows that it can be
 worth the extra coding time for longer running simulations.
 
+\section{Virtualization}
+
+One final topic we want to discuss is virtualization and the
+rationalities behind various design decisions. In the development of the
+python bindings for \dune[Python], one decision that was made was to
+avoid introducing a virtual layer when exporting classes from C++ to Python or
+vice versa. Such a layer would introduce additional code maintenance
+and more importantly perhaps lead to loss in performance when a C++ object
+is passed through Python back into C++. In this case code optimization
+steps like inlining or loop unrolling could not be utilized to their
+full potential.
+
+Take as an example a discrete function which is constructed
+using \pyth{df = space.interpolate([0], name="df")}. The call to
+\pyth{interpolate} goes back to the corresponding function in \dune[fem] and
+returns an instance of the discrete function. To store the solution to a PDE
+problem in \pyth{df}, the \pyth{solve} method on a \pyth{scheme} is
+called. While executing \pyth{scheme.solve(target=df)} the discrete
+function instance is passed back to another \dune[fem] function. If \pyth{df}
+were virtualized (i.e. type erased) in either of the two steps, i.e. when
+passed to or from Python, then the \pyth{solve} method could not work with
+the same efficiency as when used in a pure C++ environment. The number of
+degrees of freedom, local structure, etc. of the discrete function would
+only be known as dynamic properties, making code optimization by the compiler
+or the \dune developer implementing the \pyth{solve} method more difficult
+or even impossible. Note that virtualizing the discrete function for
+example, would almost certainly also require virtualization of the
+underlying discrete function spaces (with mapper and basis function set),
+and the underlying grid view (with its iterators). The cumulative effect
+of this would be quite severe of performance.
+
+To avoid this issue, no type erasure is carried out
+when an object is passed into Python. So in the above example the call to
+\pyth{interpolate} returns an object which still contains the full type
+information of the underlying \dune[fem] function. This approach leads to
+compilation overhead the first time a new type of discrete function is used
+since a new Python module needs to be generated. But this overhead occurs only
+the first time the discrete function is used during the development of a
+project and is thus negligible. Since no type erasure has occurred,
+any \dune object can now be passed back to it. The \pyth{solve} method on the scheme is
+exported in such a way that the target argument has to be of the same discrete
+function type that was defined by the \pyth{storage} argument provided during the
+space construction. Consequently a scheme over a given space (e.g. a
+Lagrange space of a fixed order using an \pyth{istl} storage)
+will only accept one type of discrete function as \pyth{target} argument
+for its solve method. As described before the advantage of this is that the
+full static type information is available at the cost of more compilation
+requirements when changes (e.g. to the storage backend) are made.
+
+There are a few exceptions to the above rule, where Python objects
+passed as arguments to C++ functions undergo type erasure
+if their type does not match the exact type of the arguments of that
+function.
+
+An example is the \pyth{__call__} method on an \pyth{operator}.
+When calling \pyth{op(arg,dest)}, the destination parameter
+(\pyth{dest}) has to be of the correct discrete function type, but for
+the argument parameter (\pyth{arg}) it can make
+sense to allow for a wide range of grid functions, e.g. an exact solution
+given by a UFL expression or a different type of discrete function. In many
+cases the implementation of the operator does not require the argument to even
+be discrete since only the evaluation of \pyth{arg} at quadrature points is
+required; in this case any grid function is a valid argument.
+On the C++ side the operator call is simply implemented as a template
+method on the operator class with the signature
+\begin{lstlisting}[style=cppstyle]
+template <class GF> Operator::operator()(const GF &arg, typename Operator::DiscreteFunction &dest);
+\end{lstlisting}
+We note that it is not possible to export a template method to Python without
+fixing all of its arguments. Since an optimized version of such a method
+is often implemented for the case that \pyth{arg} is of the same type as
+\pyth{dest}, the default method that will always be exported to Python
+has \cpp{GF=Operator::DiscreteFunction}. In addition, a second version is
+exported where \cpp{GF=VirtualizedGridFunction<...>}, which is a
+type erased implementation of a grid function. Any grid function exported
+to Python (e.g. UFL expressions, discrete function etc.) will implicitly
+convert to a \cpp{VirtualizedGridFunction} so that \pyth{op(arg,dest)} can
+be used in Python even in the case that \pyth{arg} is not of the same type
+as \cpp{dest}. Optimal code is still produced in the case where both
+parameters are of the same type.
+
+A second use of type erasure where objects are passed back to C++ occurs
+when an \pyth{operator} or \pyth{scheme} is constructed from a given model.
+Since the development of a new model can involve repeated changes
+being made to it (e.g. its underlying UFL form) we aimed to avoid the
+situation of each change requiring a recompilation of the \pyth{operator} or
+\pyth{scheme}. To this end the model is virtualized when it is passed to
+the constructor of the \pyth{operator} or \pyth{scheme} class.
+Consequently, these classes only depend on some type information like the
+underlying type of the grid view and the range dimension of the model but
+not on the actual details of the bilinear form. The consequence of this
+approach is that evaluating some part of the form introduces a virtual
+function call.
+% explain that tests have shown that this is negligible and refer to
+% performance tests in later section. Mention virtualization parameter to
+% disable type erasure if required.
+% Also need to add the virtualization of the coefficients in the model
+
 %</tag>
 
 \bibliographystyle{abbrvnat}
@@ -1631,8 +1739,8 @@ the python version in section \ref{sec:cpp-models}.
 
 \chapter{List of Dune-Python modules} \label{sec:modules}
 
-Here we list the different modules that are available to Dune-Python
-and Fempy at the time of writing. We will divide them by component
+Here we list the different modules that are available to \dune[Python]
+and \dune[Fempy] at the time of writing. We will divide thddm by component
 into different sections that reflect the structure we have previously
 introduced.
 
@@ -1709,9 +1817,9 @@ the storage used for discrete functions (as shown in
 
 \begin{center}
   \captionof{table}{Spaces}
-  \begin{tabular}{l | l | l | l}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline \hline
+    Class & Module & Description \\ \hline \hline
     \input{tables/features_space}
   \end{tabular}
 \end{center}
@@ -1756,7 +1864,7 @@ Discrete functions are typically made using the
 \pyth{space.interpolate()} syntax, using the storage type for the
 space by default. The following possibilities are available.
 
-\begin{minipage}{\linewidth}
+\begin{table}[ht!]
   \centering
   \captionof{table}{Discrete Functions}
   \label{tab:discrete-functions}
@@ -1765,7 +1873,7 @@ space by default. The following possibilities are available.
     Class & Module & Description \\ \hline \hline
     \input{tables/features_discretefunction}
   \end{tabular}
-\end{minipage}
+\end{table}
 
 \section{Schemes} \label{sec:scheme-list}
 
@@ -1797,21 +1905,23 @@ to specify things like the solver behaviour, e.g.
 specify the solver used, from \ref{tab:solvers}.
 \end{enumerate}
 
-\begin{minipage}{\linewidth}
+We list the possible schemes in table \ref{tab:schemes}.
+
+\begin{table}[ht!]
   \centering
-  \captionof{table}{Schemes}
+  \caption{Schemes}
   \label{tab:schemes}
-  \begin{tabular}{l | l | l | l}
+  \begin{tabular}{l | l | l}
     \hline
-    Class & Module & Description & kwargs \\ \hline \hline
+    Class & Module & Description \\ \hline \hline
     \input{tables/features_scheme}
   \end{tabular}
-\end{minipage}
+\end{table}
 
 \textbf{Remark.} We note that preconditioning is available via
 parameters that can be set independently of the scheme. Available
-options for methods include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel,
-jacobi} and {amg-ilu-0}. They are set using the following syntax.
+options for methods include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi}
+and \pyth{amg-ilu-0}. They are set using the following syntax.
 
 \renewcommand{\pweavecaption}{How preconditioning is set via
 parameters}
@@ -1826,44 +1936,45 @@ parameter.append({"istl.preconditioning.method": "ilu",
 Now we consider the models that can be constructed independently of
 the scheme.
 
-\begin{minipage}{\linewidth}
+\begin{table}[ht!]
   \centering
-  \captionof{table}{Models}
+  \caption{Models}
   \label{tab:models}
   \begin{tabular}{l | l | l}
     \hline
     Class & Module & Description \\ \hline \hline
     \input{tables/features_model}
   \end{tabular}
-\end{minipage}
+\end{table}
 
-Finally we look at operators that can be constructed and applied
-without needing to assemble a scheme object.
+There is also the possibility of constructing an operator that can be
+applied without requiring a solve method.
 
-\begin{center}
-  \captionof{table}{Operators}
+\begin{table}[ht!]
+  \centering
+  \caption{Operators}
   \begin{tabular}{l | l | l}
     \hline
     Class & Module & Description\\ \hline \hline
     \input{tables/features_operator}
   \end{tabular}
-\end{center}
+\end{table}
 
 \section{Solving}
 
 Finally we list the possible solving methods available that can be
 selected during scheme creation above.
 
-\begin{minipage}{\linewidth}
+\begin{table}[ht!]
   \centering
-  \captionof{table}{Solvers}
+  \caption{Solvers}
   \label{tab:solvers}
   \begin{tabular}{l | l}
     \hline
     Class & Description\\ \hline \hline
     \input{tables/features_solver}
   \end{tabular}
-\end{minipage}
+\end{table}
 
 %</append>
 

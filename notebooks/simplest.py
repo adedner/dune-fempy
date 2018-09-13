@@ -56,11 +56,11 @@ dt = 0.01
 scheme.model.tau = dt
 dist = integrate(grid,error**2,order=5)[0]
 while dist > 0.01:
-    info = scheme.solve(target=solution)
+    _, info = scheme.solve(target=solution)
     t += dt
     un.assign(solution)
     dist = integrate(grid,error**2,order=5)[0]
-    print(t,dist)
+    print(t,dist,info)
 plot(solution)
 
 # complicated domain with boundary conditions

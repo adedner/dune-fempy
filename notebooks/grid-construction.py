@@ -35,6 +35,7 @@ import dune.create as create
 # In[ ]:
 
 
+from dune.plotting import block
 from matplotlib import pyplot
 from matplotlib.collections import PolyCollection
 from numpy import amin, amax, linspace
@@ -51,7 +52,7 @@ def plotGrid(grid):
         pyplot.gca().add_collection(coll)
     fig.gca().set_aspect('equal')
     fig.gca().autoscale()
-    pyplot.show(block=False)
+    pyplot.show(block=block)
 
 
 # First the simplest approach - this simply results in a cube tesselated with a nicely structured grid:

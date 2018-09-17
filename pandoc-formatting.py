@@ -1,5 +1,6 @@
 import fileinput
 from argparse import ArgumentParser
+import os
 
 parser = ArgumentParser()
 parser.add_argument('filename', type=str, help='enter tex file to add python highlighting')
@@ -7,66 +8,81 @@ args = parser.parse_args()
 filename = args.filename
 
 count = 0
-with fileinput.FileInput(filename, inplace=True, backup='.bak') as file:
-    for line in file:
-        # remove pre-existing code highlighting
-        line = line.replace('[language=Python]', '')
-        # add pythonstyle highlighting if not already done
-        if not 'style' in line:
-            line = line.replace('begin{lstlisting}', 'begin{lstlisting}[style=pythonstyle]')
-        # rescale images to fit pagewidth
-        if filename != 'laplace-la.tex':
-            line = line.replace('includegraphics{', 'includegraphics[width=\\textwidth, height=7cm, keepaspectratio]{')
-        elif filename == 'laplace-la.tex':
-            line = line.replace('includegraphics{', 'includegraphics[width=0.5\\textwidth]{')
-        # add captions to images
-        if filename == 'battery.tex' and line.startswith('\includegraphics'):
-            if count == 0:
-                print(line, end='')
-            elif count == 1:
-                print(line, end='')
-                print('\caption{The initial plot of $c$ and $\phi$}')
-            elif count ==2:
-                print(line, end='')
-                print('\caption{The plot after the final timestep}')
-            count += 1
-        elif filename == 'mcf.tex' and line.startswith('\includegraphics'):
-            if count == 0:
-                print(line, end='')
-                print('\caption{The plot of the surface at three different timesteps}')
-            elif count == 1:
-                print(line, end='')
-                print('\caption{Comparison of the error over time for varying levels of refinement}')
-            count += 1
-        elif filename == 'crystal.tex' and line.startswith('\includegraphics'):
-            if count == 0:
-                print(line, end='')
-                print('\caption{The initial adapted grid and phase field}')
-            elif count == 1:
-                print(line, end='')
-                print('\caption{The grid, phase field and temperature after the final timestep}')
-            count += 1
-        elif filename == 'laplace-adaptive.tex' and line.startswith('\includegraphics'):
-            if count == 0:
-                print(line, end='')
-                print('\caption{The first three plots of the solution}')
-            elif count == 1:
-                print(line, end='')
-                print('\caption{The second three plots of the solution}')
-            elif count == 2:
-                print(line, end='')
-                print('\caption{The final three plots of the solution}')
-            elif count == 3:
-                print(line, end='')
-                print('\caption{Zooming in on the re-entrant corner}')
-            elif count == 4:
-                print(line, end='')
-                print('\caption{Plot of the level function of the grid}')
-            count += 1
-        # remove empty captions
-        elif 'caption{png}' in line:
+input = open(filename, 'r')
+output = open('output', 'w')
+lines = input.readlines()
+for i in range(len(lines)):
+    # remove pre-existing code highlighting
+    lines[i] = lines[i].replace('[language=Python]', '')
+    # add pythonstyle highlighting if not already done
+    if not 'style' in lines[i]:
+        lines[i] = lines[i].replace('begin{lstlisting}', 'begin{lstlisting}[style=pythonstyle]')
+    # rescale images to fit pagewidth
+    if filename != 'laplace-la.tex':
+        lines[i] = lines[i].replace('includegraphics{', 'includegraphics[width=\\textwidth, height=7cm, keepaspectratio]{')
+    elif filename == 'laplace-la.tex':
+        lines[i] = lines[i].replace('includegraphics{', 'includegraphics[width=0.5\\textwidth]{')
+    # add captions to images
+    if filename == 'battery.tex' and lines[i].startswith('\includegraphics'):
+        if count == 0:
+            output.write(lines[i])
+        elif count == 1:
+            output.write(lines[i])
+            output.write('\caption{The initial plot of $c$ and $\phi$}\n')
+        elif count ==2:
+            output.write(lines[i])
+            output.write('\caption{The plot after the final timestep}\n')
+        count += 1
+    elif filename == 'mcf.tex' and lines[i].startswith('\includegraphics'):
+        if count == 0:
+            output.write(lines[i])
+            output.write('\caption{The plot of the surface at three different timesteps}\n')
+        elif count == 1:
+            output.write(lines[i])
+            output.write('\caption{Comparison of the error over time for varying levels of refinement}\n')
+        count += 1
+    elif filename == 'crystal.tex' and lines[i].startswith('\includegraphics'):
+        if count == 0:
+            output.write(lines[i])
+            output.write('\caption{The initial adapted grid and phase field}\n')
+        elif count == 1:
+            output.write(lines[i])
+            output.write('\caption{The grid, phase field and temperature after the final timestep}\n')
+        count += 1
+    elif filename == 'laplace-adaptive.tex' and lines[i].startswith('\includegraphics'):
+        if count == 0:
+            output.write(lines[i])
+            output.write('\caption{The first three plots of the solution}\n')
+        elif count == 1:
+            output.write(lines[i])
+            output.write('\caption{The second three plots of the solution}\n')
+        elif count == 2:
+            output.write(lines[i])
+            output.write('\caption{The final three plots of the solution}\n')
+        elif count == 3:
+            output.write(lines[i])
+            output.write('\caption{Zooming in on the re-entrant corner}\n')
+        elif count == 4:
+            output.write(lines[i])
+            output.write('\caption{Plot of the level function of the grid}\n')
+        count += 1
+    # remove empty captions
+    elif 'caption{png}' in lines[i]:
+        pass
+    elif lines[i] == '\n':
+        # remove empty lines either side of equations
+        equations = ('equation', 'eqnarray', 'gather', 'align')
+        try:
+            if any(eqn in lines[i-1] for eqn in equations):
+                pass
+            elif any(eqn in lines[i+1] for eqn in equations):
+                pass
+            else:
+                output.write(lines[i])
+        except:
             pass
-        else:
-            print(line, end='')
+    else:
+        output.write(lines[i])
+os.rename("output", filename)
 
 print('added lstlisting tags')

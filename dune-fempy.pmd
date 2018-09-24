@@ -1658,7 +1658,7 @@ function call.
 
 %<*append>
 
-\chapter{Derivation of Forchheimer model} \label{sec:forch}
+\section{Derivation of Forchheimer model} \label{sec:forch}
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
 groundwater flow models.
@@ -1737,14 +1737,14 @@ the python version in section \ref{sec:cpp-models}.
 
 \inputcpp{../../dune-fempy/forchheimer/main.cc}{}{lst:forch-cpp}
 
-\chapter{List of Dune-Python modules} \label{sec:modules}
+\section{List of Dune-Python modules} \label{sec:modules}
 
 Here we list the different modules that are available to \dune[Python]
 and \dune[Fempy] at the time of writing. We will divide thddm by component
 into different sections that reflect the structure we have previously
 introduced.
 
-\section{Grids} \label{sec:grid-list}
+\subsection{Grids} \label{sec:grid-list}
 
 Grids by default take the following form.
 
@@ -1788,7 +1788,7 @@ Grids can also be constructed in the grid view format.
   \end{tabular}
 \end{center}
 
-\section{Spaces} \label{sec:space-list}
+\subsection{Spaces} \label{sec:space-list}
 
 Now we move on to spaces. By default, they take the form
 
@@ -1824,7 +1824,7 @@ the storage used for discrete functions (as shown in
   \end{tabular}
 \end{center}
 
-\section{Function}
+\subsection{Function}
 
 Functions can be constructed in a variety of ways, though the explicit
 way to make a grid function is
@@ -1875,7 +1875,7 @@ space by default. The following possibilities are available.
   \end{tabular}
 \end{table}
 
-\section{Schemes} \label{sec:scheme-list}
+\subsection{Schemes} \label{sec:scheme-list}
 
 As discussed in section \ref{sec:schemes}, schemes can be constructed
 directly with a UFL form and contain the method for solving the PDE.
@@ -1960,7 +1960,7 @@ applied without requiring a solve method.
   \end{tabular}
 \end{table}
 
-\section{Solving}
+\subsection{Solving}
 
 Finally we list the possible solving methods available that can be
 selected during scheme creation above.

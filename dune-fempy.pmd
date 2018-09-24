@@ -1660,7 +1660,7 @@ function call.
 
 %<*append>
 
-\section{Derivation of Forchheimer model} \label{sec:forch}
+\section{Derivation of Forchheimer Model} \label{sec:forch}
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
 groundwater flow models.
@@ -1731,7 +1731,7 @@ Then we have the time discretized PDE.
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
-\chapter{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
+\section{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
 
 Here we present the C++ version of the Forchheimer example from
 section \ref{sec:fem-in-fempy} using \dune[FEM], that we compare to
@@ -1739,7 +1739,7 @@ the python version in section \ref{sec:cpp-models}.
 
 \inputcpp{../../dune-fempy/forchheimer/main.cc}{}{lst:forch-cpp}
 
-\chapter{List of Dune-Python modules} \label{sec:modules}
+\section{List of Dune-Python modules} \label{sec:modules}
 
 Here we list the different modules that are available to \dune[Python]
 and \dune[Fempy] at the time of writing. We will divide them by component

@@ -1740,7 +1740,7 @@ the python version in section \ref{sec:cpp-models}.
 \section{List of Dune-Python modules} \label{sec:modules}
 
 Here we list the different modules that are available to \dune[Python]
-and \dune[Fempy] at the time of writing. We will divide thddm by component
+and \dune[Fempy] at the time of writing. We will divide them by component
 into different sections that reflect the structure we have previously
 introduced.
 
@@ -1751,7 +1751,7 @@ Grids by default take the following form.
 \renewcommand{\pweavecaption}{The default form for grid creation}
 \renewcommand{\pweavelabel}{lst:default-grid}
 \begin{pweavecode}
-grid = create.grid('class-name', constructor, dimgrid=a, dimworld=b)
+grid = create.grid('class-name', constructor, dimgrid=None, dimworld=None)
 \end{pweavecode}
 
 Where in particular we have the following arguments.
@@ -1764,9 +1764,11 @@ section \ref{sec:grids}.
 \item \pyth{dimgrid} (optional): The dimension of the grid.
 \item \pyth{dimworld} (optional): The dimension of the space the grid is in.
 \end{enumerate}
+The dimensions of the grid do not have to be passed to the constructor if
+they can be determined from the \pyth{constructor} argument.
 
-The table below shows a list of possible classes to use to construct
-grid objects.
+The table below shows a list of possible grid implementations for which
+binding are available at the time of writing:
 
 \begin{center}
   \captionof{table}{Grids}
@@ -1777,8 +1779,16 @@ grid objects.
   \end{tabular}
 \end{center}
 
-Grids can also be constructed in the grid view format.
+Grids can also be constructed to provide a different grid view:
+\renewcommand{\pweavecaption}{Creating a custom grid view}
+\renewcommand{\pweavelabel}{lst:default-view}
+\begin{pweavecode}
+view = create.view('class-name', grid)
+\end{pweavecode}
 
+The first argument can be any of the ones allowed for the grid construction
+(in which case the same \pyth{LeafGridView} is constructor as when directly
+constructing the grid. In addition the following views can be constructed:
 \begin{center}
   \captionof{table}{Gridviews}
   \begin{tabular}{l | l | l}
@@ -1795,8 +1805,8 @@ Now we move on to spaces. By default, they take the form
 \renewcommand{\pweavecaption}{The default form for space creation}
 \renewcommand{\pweavelabel}{lst:default-space}
 \begin{pweavecode}
-space = create.space('class-name', grid, dimgrid=a, order=b,
-storage='type', field='double')
+space = create.space('class-name', grid, dimrange=1, order=1,
+                     storage='fem', field='double')
 \end{pweavecode}
 
 where we have the following arguments.
@@ -1804,17 +1814,28 @@ where we have the following arguments.
 \begin{enumerate}
 \item \pyth{'class-name'}: A string from the table below.
 \item \pyth{grid}: A grid object from above.
-\item \pyth{dimgrid} (optional): The dimension of the grid (deduced
-from the grid by default).
+\item \pyth{dimrange} (optional): The range dimension of the space.
 \item \pyth{order} (optional): The polynomial order of the basis
 functions.
 \item \pyth{storage} (optional): \pyth{'fem'} by default. Specifies
 the storage used for discrete functions (as shown in
+\ref{tab:discrete-functions}.
 \item \pyth{field} (optional): The field of the range space
 (\pyth{'double'} or \pyth{'complex'}).
 \ref{tab:discrete-functions}).
 \end{enumerate}
 
+\begin{center}
+  \captionof{table}{Discrete Functions}
+  \label{tab:discrete-functions}
+  \begin{tabular}{l | l | l}
+    \hline
+    Class & Module & Description \\ \hline \hline
+    \input{tables/features_discretefunction}
+  \end{tabular}
+\end{center}
+
+Available spaces are:
 \begin{center}
   \captionof{table}{Spaces}
   \begin{tabular}{l | l | l}
@@ -1824,16 +1845,16 @@ the storage used for discrete functions (as shown in
   \end{tabular}
 \end{center}
 
-\subsection{Function}
+\subsection{Grid Function}
 
-Functions can be constructed in a variety of ways, though the explicit
+Grid functions can be constructed in a variety of ways, though the explicit
 way to make a grid function is
 
 \renewcommand{\pweavecaption}{The default form for function creation}
 \renewcommand{\pweavelabel}{lst:default-function}
 \begin{pweavecode}
 create.function('class-name', grid, 'function-name', order,
-constructor)
+                constructor)
 \end{pweavecode}
 
 with the following arguments.
@@ -1843,61 +1864,57 @@ with the following arguments.
 \item \pyth{grid}: A grid object from \ref{sec:grid-list}.
 \item \pyth{'function-name'}: A string for the name of the created
 function.
-\item \pyth{order}: The order of the function.
+\item \pyth{order}: The order of the function used for quadrature.
 \item \pyth{constructor}: An object described in the table below used
 to construct the function.
 \end{enumerate}
 
-For the below table we list the available constructors as they
-describe each functions purpose.
+For the below table we list the available strings for
+\pyth{'class-name'} together with the compatible argument for the
+\pyth{constructor} parameter.
 
 \begin{center}
   \captionof{table}{Grid Functions}
-  \begin{tabular}{l | l | l | l}
+  \begin{tabular}{l | l | l }
     \hline
-    Class & Module & Constructor & kwargs \\ \hline \hline
+    Class & Module & Constructor \\ \hline \hline
     \input{tables/features_function}
   \end{tabular}
 \end{center}
 
-Discrete functions are typically made using the
-\pyth{space.interpolate()} syntax, using the storage type for the
-space by default. The following possibilities are available.
+In addition \pyth{'discrete'} can be used to construct discrete functions.
+But typically these are made using the
+\pyth{space.interpolate(expression} syntax, using the storage type for the
+space by default. The argument for \pyth{interpolate} method are the same
+used to construct general grid functions given in the previous table.
 
-\begin{table}[ht!]
-  \centering
-  \captionof{table}{Discrete Functions}
-  \label{tab:discrete-functions}
-  \begin{tabular}{l | l | l}
-    \hline
-    Class & Module & Description \\ \hline \hline
-    \input{tables/features_discretefunction}
-  \end{tabular}
-\end{table}
-
-\subsection{Schemes} \label{sec:scheme-list}
+\subsection{Schemes and Operators} \label{sec:scheme-list}
 
 As discussed in section \ref{sec:schemes}, schemes can be constructed
 directly with a UFL form and contain the method for solving the PDE.
 Addtionally as shown in section \ref{sec:header}, it is also possible to create
-models and operators that store the operator separately. We review
-this below.
+models and operators that store the operator separately.
+While schemes have to have identical domain and range spaces, operators can
+map between different spaces.
+We review this below.
 
 \renewcommand{\pweavecaption}{The default form for scheme creation}
 \renewcommand{\pweavelabel}{lst:default-scheme}
 \begin{pweavecode}
 scheme = create.scheme('class-name', equation, space, parameters=dict,
-solver='solver-name')
+                       solver='solver-name')
 \end{pweavecode}
 
 \begin{enumerate}
 \item \pyth{'class name'}: A string from the table below.
+\item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
+object from \ref{tab:models}. In addition a tuple or list can be used here
+where the first entry is the equation and further arguments can provide
+dirichlet boundary conditions.
 \item \pyth{space}: A space object from \ref{sec:space-list}. (This is
 optional if the trial/test UFL functions are initialized with a
 \dune[Fempy] discrete function space, as in code listing
 \ref{lst:forch-variables}.)
-\item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
-object from \ref{tab:models}.
 \item \pyth{parameters} (optional): A dictionary of \dune parameters that can be used
 to specify things like the solver behaviour, e.g.
 \pyth|{'fem.solver.newton.tolerance': 1e-3}|
@@ -1905,22 +1922,18 @@ to specify things like the solver behaviour, e.g.
 specify the solver used, from \ref{tab:solvers}.
 \end{enumerate}
 
-We list the possible schemes in table \ref{tab:schemes}.
+The two main schemes available in \dune[fempy] are 
+\pyth{galerkin} and \pyth{h1}. These were described in the previous
+sections. In addition the \dune[nvdg] module provide an
+\pyth{nvdg} scheme.
 
-\begin{table}[ht!]
-  \centering
-  \caption{Schemes}
-  \label{tab:schemes}
-  \begin{tabular}{l | l | l}
-    \hline
-    Class & Module & Description \\ \hline \hline
-    \input{tables/features_scheme}
-  \end{tabular}
-\end{table}
-
-\textbf{Remark.} We note that preconditioning is available via
-parameters that can be set independently of the scheme. Available
-options for methods include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi}
+There are a number of parameters that can be passed to the scheme to
+influence the solving proceedure. Most importantly tolerances for the
+iterative solvers can be provided and verbosity can be turned on and off.
+In addition preconditioners can be set via. Available options depend on the
+\pyth{storage} backend used to construct the space.
+For the \pyth{istl} backend available options are
+include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi}
 and \pyth{amg-ilu-0}. They are set using the following syntax.
 
 \renewcommand{\pweavecaption}{How preconditioning is set via
@@ -1932,35 +1945,12 @@ parameter.append({"istl.preconditioning.method": "ilu",
                   "istl.preconditioning.iterations": 1,
                   "istl.preconditioning.relaxation": 1.2})
 \end{pweavecode}
-
-Now we consider the models that can be constructed independently of
-the scheme.
-
-\begin{table}[ht!]
-  \centering
-  \caption{Models}
-  \label{tab:models}
-  \begin{tabular}{l | l | l}
-    \hline
-    Class & Module & Description \\ \hline \hline
-    \input{tables/features_model}
-  \end{tabular}
-\end{table}
-
-There is also the possibility of constructing an operator that can be
-applied without requiring a solve method.
-
-\begin{table}[ht!]
-  \centering
-  \caption{Operators}
-  \begin{tabular}{l | l | l}
-    \hline
-    Class & Module & Description\\ \hline \hline
-    \input{tables/features_operator}
-  \end{tabular}
-\end{table}
-
-\subsection{Solving}
+For the \pyth{petsc} backend options include:
+\pyth{none}, \pyth{oas}, \pyth{sor}, \pyth{jacobi}, \pyth{hypre},
+\pyth{ml}, \pyth{ilu}, \pyth{icc}, and \pyth{lu}. Which of these
+can actually be used will depend on the PeTSc implementation, e.g.,
+\pyth{hypre} requires that PeTSc was build with support for the
+\pyth{hypre} package.
 
 Finally we list the possible solving methods available that can be
 selected during scheme creation above.
@@ -1975,6 +1965,20 @@ selected during scheme creation above.
     \input{tables/features_solver}
   \end{tabular}
 \end{table}
+
+
+
+There is also the possibility of constructing an operator that can be
+applied using the \pyth{__call__} method and linearized using the
+\pyth{jacobian} method but does not provide a \pyth{solve} method.
+This is especially of interest in the case where the operator maps
+between different spaces. Creating an operator is similar to the scheme
+construction:
+\renewcommand{\pweavecaption}{The default form for operator creation}
+\renewcommand{\pweavelabel}{lst:default-operator}
+\begin{pweavecode}
+scheme = create.operator('class-name', equation, domainSpace, rangeSpace)
+\end{pweavecode}
 
 %</append>
 

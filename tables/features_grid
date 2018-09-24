@@ -1,6 +1,7 @@
-'alu' & dune.alugrid & Basic ALUGrid grid \\ \hline
-'aluconform' & dune.alugrid & Confirming ALUGrid grid \\ \hline
-'alucube' & dune.alugrid & ALUGrid with cube simplices \\ \hline
-'alusimplex' & dune.alugrid & Nonconforming ALUGrid  \\ \hline
+'aluconform' & dune.alugrid & Confirming simplex grid \\ \hline
+'alucube' & dune.alugrid & Nonconforming cube grid \\ \hline
+'alusimplex' & dune.alugrid & Nonconforming simplex grid  \\ \hline
 'oned' & dune.grid & One-dimensional grid \\ \hline
-'yasp' & dune.grid & Yaspgrid \\ \hline
+'polygon' & dune.polygongrid & Polygonal grid \\ \hline
+'ug' & dune.uggrid & Hybrid nonconforming unstructured grid \\ \hline
+'yasp' & dune.grid & Structured grid \\ \hline

@@ -2,10 +2,15 @@
                     elements \end{tabular} \\ \hline
 'combined' & dune.fem & \begin{tabular}{@{}l@{}} Discrete function space formed \\
 from a tuple of DF spaces \end{tabular} \\ \hline
-'dglagrange' & dune.fem & DG space for Lagrange elements \\ \hline
+'dglagrange' & dune.fem & DG space using Lagrange basis functions \\ \hline
 'dglegendre' & dune.fem & \begin{tabular}{@{}l@{}}
   DG space with elementwise Legendre \\
-  tensor product basis function \end{tabular} \\ \hline
+  tensor product basis function. \\
+  This space allows for an additional argument: \\
+  {\rm hierarchical} which defaults to {\rm True}. \\
+  This argument determines if the basis functions are \\
+  sorted hierarchical according to their polynomial order \\
+  or lexicographic.  \end{tabular} \\ \hline
 'dglegendrehp' & dune.fem & 'dglegendre' with hp-adaption \\ \hline
 'dgonb' & dune.fem & \begin{tabular}{@{}l@{}} DG space with elementwise \\
   orthonormal basis functions \end{tabular} \\ \hline

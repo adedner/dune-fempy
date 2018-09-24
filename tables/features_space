@@ -9,8 +9,8 @@ from a tuple of DF spaces \end{tabular} \\ \hline
   This space allows for an additional argument: \\
   {\rm hierarchical} which defaults to {\rm True}. \\
   This argument determines if the basis functions are \\
-  sorted hierarchical according to their polynomial order \\
-  or lexicographic.  \end{tabular} \\ \hline
+  sorted hierarchically according to their polynomial \\
+  order or lexicographically.  \end{tabular} \\ \hline
 'dglegendrehp' & dune.fem & 'dglegendre' with hp-adaption \\ \hline
 'dgonb' & dune.fem & \begin{tabular}{@{}l@{}} DG space with elementwise \\
   orthonormal basis functions \end{tabular} \\ \hline

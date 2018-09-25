@@ -100,9 +100,9 @@ In this paper we present the new \dune[Fempy] module...
 Among the different numerical methods for solving partial differential
 equations, finite element methods are one of the most popular. They have been used
 for a broad range of engineering and scientific problems, with the first
-computational applications originating as early as 1956 in \cite{Turner}. Over the
-years there has been an extensive amount of literature analyzing FEMs
-in general and their uses (see \cite{Khoei} and \cite{Babuska}).
+computational applications originating as early as \cite{Turner}. Over the
+years there has been an extensive amount of literature analysing FEMs
+in general and their uses (see e.g. \cite{Khoei} and \cite{Babuska}).
 
 Just as the development of the theory of FEMs has progressed over the years,
 the landscape of FEM software itself has undergone much change.
@@ -113,22 +113,22 @@ options available. For instance with regards to types of finite
 elements, if one considers \textit{conforming} finite elements
 (i.e. where $V_h \subset V$) then one has possibilies such as the
 well-known Lagrange element, the $H(div)$ conforming
-Brezzi-Douglas-Marini element (used for e.g.
-the elastic stress tensor), the $H(curl)$ conforming N\'{e}d\'{e}lec element (used in
-electromagnetism), and so on. Then (provided one uses a penalty
-method) one can further expand this to have nonconforming elements such as the $H^2$
-Hermite (cubic) elements, the Morley (quadratic) elements (used for fourth order
-problems), and the $H^1$ Crouzeix-Raviart element (used in e.g. Stokes
-equations)\footnote{For a more complete list see \cite{FEniCS2}}. We
-then note that with regards to the mesh itself, one can
+Brezzi-Douglas-Marini element used for instance for
+the elastic stress tensor, the $H(curl)$ conforming N\'{e}d\'{e}lec element used in
+electromagnetism, and so on. Then, provided one uses an appropriate penalty
+method, one can further expand this to have nonconforming elements such as the $H^2$
+Hermite (cubic) elements, the Morley (quadratic) elements used for fourth order
+problems, and the $H^1$ Crouzeix-Raviart element used in Stokes
+flow\footnote{For a more complete list of types of elements, see
+\cite{FEniCS2}}. In addition one can consider the mesh itself; one can
 have structured grids that are more computationally efficient or
-unstructured ones that allow for more flexibility. Or one could
+unstructured ones that allow for more flexibility. Furthermore one could
 have different shapes such as squares, triangles, cubes, pyramids,
 hexahedrons and so on. This is all without going into more complex
 forms of FEM such as hp-FEM, spectral element methods and extended
 finite element methods (XFEM).
 
-This diversity of choice has lead to the situation of numerous
+All in all this diversity of choice has lead to the situation of numerous
 competing packages that offer slightly different
 flavours of FEM. One preventative measure to this has been the
 development of large modular software libraries that offer many
@@ -153,10 +153,10 @@ been using a simplfied interface attached to a backend with lower
 level code, which is typically achieved by an automatic code
 generation tool like SWIG or Cython.
 
-In particular the use of Unified Form Language
-(UFL) (\cite{UFL}), a domain-specific language (DSL),
+One large component of this approach is the use of Unified Form Language
+(UFL) (\cite{UFL}), a domain-specific language (DSL) which
 allows one to write variational equations directly. For instance
-for Poisson's equation we have
+for Poisson's equation we have the following simple code.
 \renewcommand{\pweavecaption}{Poisson's equation in UFL}
 \renewcommand{\pweavelabel}{lst:poisson}
 \begin{pweavecode}
@@ -224,7 +224,7 @@ is trying to make the user interface as simple and easy to use as possible.
 At the same time however, we also want to create an interface that retains
 all the functionality we need.
 
-In the context of finite element methods (FEMs), this leads to the question
+In the context of finite element methods, this leads to the question
 of what the minimal functional structure for a FEM looks like. In
 order to try to address this question, we will first outline from a
 mathematical standpoint the general structure we have in mind for a
@@ -242,24 +242,20 @@ piecewise polynomial functions.
 Next the variational (or weak) form of the equation is defined. For
 the purpose of illustration, let us assume to start with we have a
 parabolic PDE of the following general form.
-
 \begin{equation*}
   \begin{array}{ll}
-  \partial_t u + L[u] = 0 & \mbox{in } \Omega \times [0, T], \\
-  u(x, 0) = u^0(x) & \mbox{in } \Omega, \\
-  D \cdot \textbf{n} = g(x) & \mbox{on } \Gamma \times [0, T],
+  \partial_t u + L[u] = 0, & \mbox{in } \Omega \times [0, T], \\
+  u(x, 0) = u^0(x), & \mbox{in } \Omega, \\
+  D \cdot \textbf{n} = g(x), & \mbox{on } \Gamma \times [0, T],
   \end{array}
 \label{eqn:parabolic}
 \end{equation*}
-
-where the elliptic operator L is defined as
-
+where the elliptic operator $L$ is defined as
 \begin{equation}
-  L[u] := -\nabla \cdot D(x, u) + m(x, u, \nabla u).
+  L[u] := -\nabla \cdot D(x, u) + m(x, u, \nabla u),
 \label{eqn:elliptic}
 \end{equation}
-
-and $u^0$ and $g$ are the initial and boundary conditions and
+and where $u^0$ and $g$ are the initial and boundary conditions and
 $\textbf{n}$ is the outward pointing normal. We note that we are
 only considering Neumann boundary conditions here for simplicity,
 although Dirichlet boundary conditions are also a possibility. The
@@ -267,14 +263,12 @@ variational form is then obtained in the usual way by multiplying by a
 test function $\varphi \in V_h$, integrating by parts and discretizing
 in time. After applying a simple time stepping schmee, this leads to
 methods that take the following form.
-
 \begin{equation}
   \int_{\Omega} u^{n+1} \varphi + \Delta t L_I[u^{n+1}] \diff x =
   \int_{\Omega} u^n \varphi + \Delta t L_E[u^n] \diff x + \Delta t \int_{\Gamma} g(x)
   \varphi \diff s.
 \label{eqn:rothe}
 \end{equation}
-
 where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
 defined as
 \begin{gather}
@@ -282,7 +276,6 @@ defined as
   L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + m_2(x, u, \nabla u) \varphi,
 \label{eqn:im-ex}
 \end{gather}
-
 and $D_1 -D_2 = D$, $m_1 - m_2 = m$. The last step is to
 solve this system for $u^{n+1} \in V_h$. This also
 involves potential variation in terms of the solver used and possible
@@ -322,11 +315,10 @@ decision that must be made without a clear \textit{right} answer.
 With that in mind, for the remainder of this section we shall
 demonstrate in more detail how each of these concepts are implemented
 in the context of a worked example, the FEM applied to
-the Forchheimer equation, a scalar,
+the Forchheimer equation: a scalar,
 nonlinear parabolic equation derived in \cite{Kieu}. A full derivation
 of this equation is described in appendix \ref{sec:forch}, but for the
-following the final form (\ref{eqn:rothe}) suffices:
-
+following the final form suffices.
 \begin{equation} \label{eqn:forch-roche}
   \int_{\Omega} u^{n+1} v + \Delta t K(\nabla u) \nabla u^{n+1} \cdot
   \nabla v \diff x = \int_{\Omega} u^n v + \Delta t f
@@ -344,36 +336,30 @@ triangulated 2D domains and more complex surfaces and meshes.
 
 For now we will look at a simple example. Let us suppose we
 have a domain of the following form.
-
 \begin{equation*}
   \Omega = \{ (x,y) \in \mathbb{R}^2 : 0 \leq x \leq 1, 0 \leq y \leq 1\}.
 \label{eqn:domain}
 \end{equation*}
-
 In creating a computational grid for this domain, it will be necessary to specify
 the following things.
-
 \begin{enumerate}
-  \item The shape (a square) and its vertices.
+  \item The shape of the domain (a square) and its vertices.
   \item The number of elements.
-  \item The type of elements (squares? triangles?).
+  \item The type of elements (e.g. square elements or triangles).
 \end{enumerate}
-
 With these points in mind, we implement the grid in the following way
-in \dune[Fempy] and plot the result.
-
+in \dune[Fempy] and plot the result in figure \ref{fig:grid}.
 \renewcommand{\pweavecaption}{Creating and plotting two simple
 rectangular grids}
 \renewcommand{\pweavelabel}{lst:grid}
-```python, label="grid", fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
+```python, label="grid", Fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
 from dune.grid import structuredGrid
 grid = structuredGrid([0, 0], [1, 1], [4, 4])
 grid.plot()
 grid.hierarchicalGrid.globalRefine(1)
 grid.plot()
-grid.hierarchicalGrid.globalRefine(-1)  # return grid to original state
+grid.hierarchicalGrid.globalRefine(-1)  # revert grid refinement
 ```
-
 Here we create a simple square domain by specifying two opposite
 corners $(0,0)$ and $(1,1)$, and the number
 of elements in each direction $(4,4)$. We then refine the grid and
@@ -400,11 +386,10 @@ particular this is important because the order of elements used can
 dictate the solvability and the efficiency of the method.
 
 Let us consider a simple case of Lagrange elements. Since we have a 2D
-domain with a quadrilateal mesh, we consider shape functions that are 1 on
-each separate node (shown in \ref{fig:lagrange-elements}), and 0 on
-the others. For orders 2 and 3, the shape functions would be quadratic
-and cubic polynomials respectively.
-
+domain with a quadrilateral mesh, we consider shape functions that are 1 on
+each separate node, and 0 on the others. For orders 2 and 3, the shape
+functions would be quadratic and cubic polynomials respectively (as
+shown in figure \ref{fig:lagrange-elements}).
 \begin{figure}
 \begin{subfigure}{.5\textwidth}
   \centering
@@ -421,10 +406,8 @@ and cubic polynomials respectively.
 \caption{Node maps of two Lagrange reference elements}
 \label{fig:lagrange-elements}
 \end{figure}
-
 The creation of such a Lagrange space in \dune[Fempy] is done by the
 following code.
-
 \renewcommand{\pweavecaption}{Creating a Lagrange space with
 polynomial basis functions}
 \renewcommand{\pweavelabel}{lst:space}
@@ -432,10 +415,8 @@ polynomial basis functions}
 import dune.create as create
 space = create.space('lagrange', grid, dimrange=1, order=2)
 ```
-
 We note that the above space is called with two default
 arguments and two keyword arguments.
-
 \begin{itemize}
   \item \pyth{'lagrange'} indicates that we will use a space with
   Lagrange basis functions.
@@ -445,14 +426,13 @@ arguments and two keyword arguments.
   \item \pyth{order=2} (optional) sets the order of the finite
   elements to 2 (2 is the default).
 \end{itemize}
-
 Of particular note is that the first argument corresponds to a \dune
 discrete space realization that can come from anywhere within a \dune
 installation, provided python bindings are created for it. For instance we could use a
 discontinuous Galerkin space with orthonormal basis functions instead
 by using \pyth{'dgonb'}.
 
-\subsection{Grid Functions} \label{sec:functions}
+\subsection{Grid  Functions} \label{sec:functions}
 
 Having defined the computational domain and function space, we look
 towards functions that we may need to define, e.g. for containing the
@@ -460,35 +440,30 @@ solution. In particular we want to be able to store what initial
 values it can take, its value at the previous timestep and so on.
 
 Let us begin by just considering a function for the initial condition.
-In \dune[Fempy], we use Unified Form Language (UFL) \cite{UFL} to define
+In \dune[Fempy], we use Unified Form Language (UFL) (\cite{UFL}) to define
 equations, which is essentially a human-readable way of writing a
-variational form. In order to use this we must begin by defining the
-variables in the following way.
-
+variational form. In order to use this we must begin by defining
+a variable.
 \renewcommand{\pweavecaption}{Creating an \pyth{x} variable in UFL}
 \renewcommand{\pweavelabel}{lst:forch-uflx}
 ```python, label = 'forch-uflx'
 from ufl import SpatialCoordinate
 x = SpatialCoordinate(space)
 ```
-
 Here we create \pyth{x} as a spatial coordinate from UFL by using the
 \pyth{space} object from the previous section. The \pyth{space} gives
 UFL the dimensions of the grid and the range space, so it knows
 \pyth{x} is two dimensional. So now for initial condition $u =
 \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$, we would
 have the following code.
-
 \renewcommand{\pweavecaption}{Creating a grid function using UFL}
 \renewcommand{\pweavelabel}{lst:forch-initial}
 ```python, label = 'forch-initial'
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 ```
-
 Now this function can be used in a variety of ways. Let us first
 show how we would compute the $L^2$ norm of the initial function.
 We do this using \pyth{integrate} as follows.
-
 \renewcommand{\pweavecaption}{Integrating the initial data}
 \renewcommand{\pweavelabel}{lst:forch-integrate}
 ```python, label = 'forch-integrate'
@@ -497,12 +472,11 @@ from ufl import sqrt
 norm = sqrt( integrate(grid, initial, 5)[0] )
 print(norm)
 ```
-
 We can also plot functions fairly easily. The two main ways to do
 this in Fempy are either a quick plot in \pyth{matplotlib}
 (see \cite{Matplotlib}), or writing to a
-VTK file for use in Paraview (see \cite{Paraview}), as follows.
-
+VTK file for use in Paraview (see \cite{Paraview}), which we do
+below, resulting in figure \ref{fig:forch-plot}.
 \renewcommand{\pweavecaption}{Plotting a function using two different
 methods}
 \renewcommand{\pweavelabel}{lst:forch-plot}
@@ -511,18 +485,15 @@ from dune.fem.plotting import plotPointData as plot
 plot(initial, grid=grid)
 grid.writeVTK('initial', pointdata={'initial': initial})
 ```
-
 Note that so far we have simply called the UFL expression \pyth{initial}
 directly, but it is equally possible to do the above with a discrete
 function. A discrete function can be created through interpolation as
 shown below.
-
 \renewcommand{\pweavecaption}{}
 \renewcommand{\pweavelabel}{lst:forch-uh}
 ```python, label = 'forch-uh'
 u_h = space.interpolate(initial, name='u_h')
 ```
-
 So we have created a discrete function \pyth{u_h} over the discrete
 finite element space to contain the solution and
 used an interpolation over the space to assign its initial value to
@@ -550,15 +521,13 @@ main functions.
 \item Solve the PDE. That is to compute the solution $u_h$ to $L[u_h] = v_h$ given some $v_h \in
 V_h^{*}$, by using a solve method. By default $v_h = 0$.
 \end{enumerate}
+\noindent \textit{Remark.} In the case where only the operator application is
+required/possible (e.g. when $L:V \to W \neq V$ , an \pyth{operator}
+object can be constructed instead which comes without a solve method.
 
-\textbf{Remark.} In the case where only the operator application is
-required/possible (e.g. when $L:V \to W \neq V$ , an \pyth{operator} object can be constructed
-instead which comes without a solve method.
-
-Recall the parabolic equation \eqref{eqn:forch-roche} which we will focus
-on in the following. To begin with, it is
+Recall the parabolic equation \eqref{eqn:forch-roche}, which we will focus
+on in the following example. To begin with, it is
 necessary to define the variables that are used in the equation.
-
 \renewcommand{\pweavecaption}{Setting up UFL variables to be used}
 \renewcommand{\pweavelabel}{lst:forch-variables}
 ```python, label = 'forch-variables'
@@ -569,16 +538,11 @@ v = TestFunction(space)
 dt = NamedConstant(space, "dt")    # time step
 t  = NamedConstant(space, "t")     # current time
 ```
-
 The trial function $u$ and the test function $v$ are defined on the
 same \pyth{space} as before. Additionally $\Delta t$ and $t$ are
 defined as \pyth{NamedConstant}, which is simply a UFL \pyth{Constant}
 variable that can be given a name so it can be more easily modified
-later on by using a property with the given name.
-
-\textbf{Remark.} We note that as of the time of writing, spaces are
-always vector valued and that scalar test/trial functions do not work
-by default (i.e. one must specify \pyth{u[0]} even if \pyth{u} is 1D).
+later on.
 
 Now for the equation (\ref{eqn:forch-roche}) itself, let us prescribe
 the following value for $K$.
@@ -586,9 +550,7 @@ the following value for $K$.
   K(\nabla u) = \frac{2}{1+\sqrt{1+4\nabla u}}.
 \label{eqn:parameters}
 \end{equation}
-
 This results in an implementation of the following form.
-
 \renewcommand{\pweavecaption}{Implementing the bilinear form}
 \renewcommand{\pweavelabel}{lst:forch-eqn-impl}
 ```python, label = 'forch-eqn-impl'
@@ -597,7 +559,6 @@ abs_du = sqrt(inner(grad(u), grad(u)))
 K = 2/(1 + sqrt(1 + 4*abs_du))
 a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
 ```
-
 For the exact solution we will use the following (which is consistent
 with the initial data).
 \begin{equation}
@@ -605,7 +566,6 @@ with the initial data).
   \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
 \label{eqn:exact}
 \end{equation}
-
 We can use \pyth{initial} to define this using some algebra, and we
 write a lambda function that takes \pyth{t} as argument.
 \renewcommand{\pweavecaption}{The exact solution}
@@ -614,26 +574,21 @@ write a lambda function that takes \pyth{t} as argument.
 from ufl import as_vector, exp
 exact = lambda t: as_vector([exp(-2*t)*(initial - 1) + 1])
 ```
-
 To set the right hand side of the equation, i.e. $f$, we put the
 exact solution into the left hand side of the PDE using \pyth{replace} as follows.
-
 \renewcommand{\pweavecaption}{Setting up the right hand side}
 \renewcommand{\pweavelabel}{lst:forch-rhs}
 ```python, label = 'forch-rhs'
 from ufl import replace
 b = replace(a, {u: exact(t)})
 ```
-
-Having defined the bilinear form and right hand side, we can now set
-up a scheme object which we can use to solve the PDE.
-
+Finally, having defined the bilinear form and right hand side, we can
+now set up a scheme object which we can use to solve the PDE.
 \renewcommand{\pweavecaption}{Creating an $H^{1}$ scheme}
 \renewcommand{\pweavelabel}{lst:forch-scheme}
 ```python, label = 'forch-scheme'
 scheme = create.scheme("galerkin", a == b, solver='cg')
 ```
-
 The above function creates a simple Galerkin method for $H^1$
 conforming elements, with the space and equation passed in. As before
 there exist other such premade \dune schemes for different problems
@@ -649,23 +604,20 @@ this in section \ref{sec:header}.
 \subsection{Solving} \label{sec:solving}
 
 The last natural part of a FEM is the solving, which includes
-time loops, mesh refinements, data output and plotting, and so on.
+time loops, mesh refinements, data output, plotting, and so on.
 Let us begin by setting up the timestep, $\Delta t = 0.05$, by
 assigning it in the model (using the name given to the coefficient
 previously).
-
 \renewcommand{\pweavecaption}{Setting up time variables before the
 loop}
 \renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
 scheme.model.dt = 0.05
 ```
-
 Next we write the following method for solving the problem over the
 time range. Since the problem is time-dependent, we
-solve over a for loop with $t_0 = 0, t_N = 1$, using \pyth{u_h_n} for
+solve over a for loop with $t_0 = 0$ and $t_N = 1$, using \pyth{u_h_n} for
 the old solution and \pyth{u_h} for the new one.
-
 \renewcommand{\pweavecaption}{Evolve method for solving in time}
 \renewcommand{\pweavelabel}{lst:forch-evolve}
 ```python, label='forch-evolve'
@@ -678,20 +630,16 @@ def evolve(scheme, u_h, u_h_n):
         scheme.solve(target=u_h)
         time += scheme.model.dt
 ```
-
 Lastly we want to have a way of computing the error. Say for
-instance we want to look at the $L^2$ and $H^1$ errors for our computed solution
-assuming an exact solution $u$ is known at the final time of the
-simulation.
-
+instance we want to look at the $L^2$ and $H^1$ errors for our
+computed solution, assuming an exact solution $u$ is known at the
+final time of the simulation.
 \begin{equation}
  L^2\text{ error} = \int_{\Omega} | u - u_h |^2 \diff x, \qquad
  H^1\text{ error} = \int_{\Omega} | \nabla(u - u_h) |^2 \diff x.
 \label{eqn:error}
 \end{equation}
-
 This can be achieved with the following code.
-
 \renewcommand{\pweavecaption}{Writing expressions for the error
 computed at the final time}
 \renewcommand{\pweavelabel}{lst:forch-error}
@@ -700,40 +648,34 @@ exact_end = exact(1)
 l2error_fn = inner(u_h - exact_end, u_h - exact_end)
 h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
-
-First of all we define the exact solution at the end time $T=1$,
-\pyth{exact_end}. Then we simply write expressions in UFL to calculate
+First of all we define the exact solution (\pyth{exact_end}) at the
+end time $T=1$. Then we simply write expressions in UFL to calculate
 the $L^2$ and $H^1$ errors. We note that this works even though
 \pyth{u_h} is a discrete function and not a UFL term itself,
 since the expression is extracted from it automatically.
 
 We also want to compute the estimated order of convergence (EOC), to test our
 method.
-
 \begin{equation*}
   EOC = \frac{\log(e_{new}/e_{old})}{\log(h_{new}/h_{old})}.
 \label{eqn:eoc}
 \end{equation*}
-
 This is calculated by refining the grid and comparing the errors
 ($e_{old}$ and $e_{new}$) to the grid sizes ($h_{old}$ and
 $h_{new}$), where the errors are computed using the error function
 \pyth{l2error_fn} from \ref{lst:forch-error}. In particular for a grid size
 that is being halved at each step, we do the following after each
 solve step.
-
 \renewcommand{\pweavecaption}{Calculating the EOCs}
 \renewcommand{\pweavelabel}{lst:eoc}
 \begin{pweavecode}
-error_old = error                               # set the previous error
-error = sqrt(integrate(grid, l2error_fn, 5)[0]) # integrate and sqrt
-eoc = log(error/error_old)/log(0.5)             # do the EOC calculation
-grid.hierarchicalGrid.globalRefine(1)           # refine the grid once
+error_old = error                               # store old error
+error = sqrt(integrate(grid, l2error_fn, 5)[0]) # integrate
+eoc = log(error/error_old)/log(0.5)             # do the EOC calc
+grid.hierarchicalGrid.globalRefine(1)           # refine the grid
 \end{pweavecode}
-
 Combining these concepts into one solve method in Fempy, we have the
-following program.
-
+following program (with resulting figure \ref{fig:forch-main}).
 \renewcommand{\pweavecaption}{Solving the Forchheimer equation in
 time and refining the grid}
 \renewcommand{\pweavelabel}{lst:forch-main}
@@ -756,10 +698,8 @@ for eocLoop in range(3):
                   l2error_fn, 'h1error': h1error_fn}, number=eocLoop)
     grid.hierarchicalGrid.globalRefine(1)
 ```
-
 We compile a table of the errors and eocs for additional refinement
 steps and a smaller timestep of $\Delta t = 0.001$ below.
-
 \begin{center}
   \begin{tabular}{l | l | l | l | l}
     \hline
@@ -771,7 +711,6 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
     4096 & 7.024e-09 & 2.994 & 3.482e-06 & 2.000
   \end{tabular}
 \end{center}
-
 \section{Alternate Solve Methods} \label{sec:solve}
 ```python, label="solve-methods", echo=False
 # <markdowncell>
@@ -788,13 +727,11 @@ We will continue to do so in the context of a worked examples
 that demonstrate the practicality of these features.
 
 We can specify alternate storage types as follows.
-
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
 \begin{pweavecode}
 space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
 \end{pweavecode}
-
 As before we construct the space, but now with the additional argument
 that specifies the usage of \dune[Istl] (see \cite{Dune-Istl}) as a
 linear algebra backend. Changing the
@@ -826,8 +763,8 @@ Usually this would be automatically taken care of in Fempy by
 \pyth{scheme.solve}, however this time we will use the call operator on the
 \pyth{scheme} to compute $S(u^n)$ as well as \pyth{scheme.assemble} to get a
 copy of the system matrix in form of a SciPy sparse row matrix. Note
-that this method is not available for all storage types.
-
+that this method is not available for all storage types. We present this
+alternative below, and plot the result in figure \ref{fig:forch-newton}.
 \renewcommand{\pweavecaption}{Creating a class to hold a different
 solve method}
 \renewcommand{\pweavelabel}{lst:forch-newton}
@@ -858,17 +795,16 @@ class Scheme:
 
 scheme_cls = Scheme(scheme)
 
-grid.hierarchicalGrid.globalRefine(-2)  # return grid to original state
-u_h.interpolate(initial)                # reset u_h to original state
+grid.hierarchicalGrid.globalRefine(-2)  # revert grid refinement
+u_h.interpolate(initial)                # reset u_h to initial
 evolve(scheme_cls, u_h, u_h_n)
 plot(u_h)
 ```
-
 We can redo the above computation using a Newton-Krylov solver from
 SciPy. We do this by constructing a class \pyth{Df} containing the
 derivative of the operator. This would normally be done within DUNE,
-but here we do it purely through python.
-
+but here we do it purely through python, giving figure \ref{fig:forch-df}
+which is identical to before.
 \renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with
 SciPy}
 \renewcommand{\pweavelabel}{lst:forch-df}
@@ -908,7 +844,6 @@ class Scheme2:
     def __init__(self, scheme):
         self.scheme = scheme
         self.model = scheme.model
-
     def solve(self, target=None):
         sol_coeff = target.as_numpy
         # call the newton krylov solver from scipy
@@ -921,13 +856,12 @@ u_h.interpolate(initial)
 evolve(scheme2_cls, u_h, u_h_n)
 plot(u_h)
 ```
-
 We can also solvers from the PETSc package (see \cite{PETSc}) to solve
 the problem. This can be done either through bindings available in
-\dune[fem] or through the \pyth{petsc4py} package (\cite{PETSc4Py}).
-
-\textbf{Remark.} Make sure that \dune has been configured using the
-same version of PETSc used for \pyth{petsc4py}.
+\dune[fem] or through the \pyth{petsc4py} package
+(\cite{PETSc4Py}).\footnote{For this to work, one must make sure that \dune
+has been configured using the same version of PETSc used for
+\pyth{petsc4py}.}
 
 The first step is to change the storage in the space. This also
 requires setting up the scheme and discrete functions again to use the
@@ -935,14 +869,14 @@ new storage structure.
 
 We can directly use the PETSc solvers by invoking \pyth{solve} on the
 scheme as before. Note that to do this we must change the storage type by
-creating a new \pyth{space}. Then we have
-
+creating a new \pyth{space}. Then we have the following code, with the same
+results found once again in figure \ref{fig:forch-petsc}.
 \renewcommand{\pweavecaption}{Using petsc4py to solve using PETSc}
 \renewcommand{\pweavelabel}{lst:forch-petsc}
 ```python, label='forch-petsc', fig=True, caption='Plot of solution using PETSc', width='0.5\\textwidth'
 space = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc')
 scheme = create.scheme("galerkin", a == b, space=space,
-                        parameters={"petsc.preconditioning.method":"sor"})
+                   parameters={"petsc.preconditioning.method":"sor"})
 # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
 u_h = space.interpolate(initial, name='u_h')
 u_h_n = u_h.copy(name="previous")
@@ -950,7 +884,6 @@ scheme.model.dt = 0.05
 evolve(scheme, u_h, u_h_n)
 plot(u_h)
 ```
-
 Next we will implement the Newton loop in Python using \pyth{petsc4py}
 to solve the linear systems.
 We can access the PETSc vectors by calling \pyth{as_petsc} on the
@@ -959,7 +892,6 @@ the discrete function is an element of a space with storage
 \pyth{'petsc'}. The method \pyth{assemble} on the scheme now returns
 the sparse PETSc matrix and so we can directly use the KSP class
 from \pyth{petsc4py}.
-
 \renewcommand{\pweavecaption}{Using petsc4py and its Krylov solvers to
 define a Newton scheme and solve}
 \renewcommand{\pweavelabel}{lst:forch-petsc-ksp}
@@ -977,12 +909,10 @@ ksp.getPC().setType("icc")
 class Scheme3:
   def __init__(self, scheme):
       self.model = scheme.model
-
   def solve(self, target=None):
       res = target.copy(name="residual")
       sol_coeff = target.as_petsc
       res_coeff = res.as_petsc
-
       n = 0
       while True:
           scheme(target, res)
@@ -1001,10 +931,8 @@ scheme3_cls = Scheme3(scheme)
 evolve(scheme3_cls, u_h, u_h_n)
 plot(u_h)
 ```
-
 Finally we we will use PETSc's nonlinear solvers (the \pyth{snes}
 classes) directly.
-
 \renewcommand{\pweavecaption}{Using petsc4py and their nonlinear
 solvers (SNES) directly}
 \renewcommand{\pweavelabel}{lst:forch-petsc-snes}
@@ -1033,7 +961,6 @@ class Scheme4:
         snes = PETSc.SNES().create()
         snes.setMonitor(lambda snes, i, r:print())
         snes.setFunction(f, res_coeff)
-        # snes.setUseMF(True)
         matrix = self.scheme.assemble(target).as_petsc
         snes.setJacobian(Df, matrix, matrix)
         snes.getKSP().setType("cg")
@@ -1045,87 +972,20 @@ scheme4_cls = Scheme4(scheme)
 evolve(scheme4_cls, u_h, u_h_n)
 plot(u_h)
 ```
-
-\textbf{Remark.} The method \pyth{as_numpy}, \pyth{as_petsc} (returning the DoF vector either as
-a \pyth{numpy} or a \pyth{petsc} vector) do not lead to a copy of the data and
-the same is true for the \pyth{numpyFunction} and the \pyth{petscFunction}
-methods on the space. In the \pyth{numpy} case we can use python's buffer
-protocol to use the same underlying storage. In the case of
-\pyth{petsc} the underlying \pyth{Vec} can be shared.
-
-In the case of matrices the
+\noindent \textit{Remark.} The methods \pyth{as_numpy} and \pyth{as_petsc}
+(returning the DoF vector either as a \pyth{numpy} or a \pyth{petsc}
+vector) do not lead to a copy of the data and the same is true for the
+\pyth{numpyFunction} and the \pyth{petscFunction} methods on the
+space. In the \pyth{numpy} case we can use python's buffer protocol to
+use the same underlying storage. In the case of \pyth{petsc} the
+underlying \pyth{Vec} can be shared. In the case of matrices the
 situation is not yet as clear; \pyth{scheme.assemble} returns a copy of the
-data in the \pyth{scipy} case while the \pyth{Mat} structure is shared between
+data in the SciPy case while the \pyth{Mat} structure is shared between
 C++ and python in the \pyth{petsc} case. But at the time of writing it
 is not possible to pass in the \pyth{Mat} structure to the
 \pyth{scheme.assemble} method from the outside. That is why it is necessary
 to copy the data when using the \pyth{snes} nonlinear solver as seen
 above.
-
-\iffalse
-One other thing we can do is assemble PDE systems on the python side
-by using SciPy. For instance suppose we had a system of PDEs of the form
-
-\[
-\left( \begin{array}{cc}
-  A & B \\
-  B^T & C \end{array} \right)
-  \left( \begin{array}{c}
-  \textbf{u} \\
-  \textbf{w} \end{array} \right)
-  = \left( \begin{array}{c}
-  \textbf{f} \\
-  \textbf{g} \end{array} \right).
-\]
-
-If we have access to the schemes that represent $A, B$ and $C$, this
-is easy to set up. First we can individually assemble the matrices from the schemes
-and combine them into one matrix as follows.
-
-\renewcommand{\pweavecaption}{Assembling matrices}
-\renewcommand{\pweavelabel}{lst:assemble}
-\begin{pweavecode}
-from scipy.sparse import bmat
-A  = scheme_a.assemble(uh).as_numpy
-B  = scheme_b.assemble(uh).as_numpy
-BT = B.transpose(copy=True)
-C  = scheme_c.assemble(uh).as_numpy
-system = bmat([[A, B], [BT, C]])
-\end{pweavecode}
-
-Suppose now schemes \pyth{scheme_a} and \pyth{scheme_c}
-correspond to operators $L_a$ and $L_c$.
-Then one can construct a RHS using the residuals from the schemes in a
-similar way to below.
-
-\renewcommand{\pweavecaption}{Assembling the right hand side}
-\renewcommand{\pweavelabel}{lst:rhs}
-\begin{pweavecode}
-import numpy as np
-wh = uh.copy()
-f = uh.copy()
-g = uh.copy()
-uh_coeff = uh.as_numpy
-wh_coeff = wh.as_numpy
-f_coeff = f.as_numpy
-g_coeff = g.as_numpy
-scheme_a(uh, f)  # calculate L_a(uh) = f
-f_coeff *= -1
-scheme_c(uh, g)  # calculate L_c(uh) = g
-g_coeff *= -1
-rhs = np.concatenate((f_coeff, g_coeff))
-sol = np.concatenate((uh_coeff, wh_coeff))
-\end{pweavecode}
-
-Finally the system can simply be solved using a CG solver.
-
-\renewcommand{\pweavecaption}{Solving the system using SciPy}
-\renewcommand{\pweavelabel}{lst:scipy-solve}
-\begin{pweavecode}
-from scipy.sparse.linalg import cg
-sol, info = cg(system, rhs)
-\end{pweavecode}
-\fi
 
 \section{Model Generation} \label{sec:header}
 
@@ -1136,14 +996,12 @@ integration and code extensibility.
 We briefly alluded to a way of creating a model independent of a
 scheme in section \ref{sec:schemes}, so let us expand upon this idea here.
 We can separate the process into two steps as follows.
-
 \renewcommand{\pweavecaption}{A simple elliptic model}
 \renewcommand{\pweavelabel}{lst:elliptic}
 \begin{pweavecode}
 model = create.model('elliptic', grid, a == b)
 scheme = create.scheme("galerkin", model)
 \end{pweavecode}
-
 where \pyth{a == b} refers to the UFL expression used to represent the
 bilinear form, and \pyth{'elliptic'} refers to the elliptic operator
 class in \dune. The purpose of this class is to have a set list of
@@ -1164,25 +1022,20 @@ discuss in this section.
 
 First let us consider the default elliptic model. In mathematical
 terms, consider the same general operator we defined previously.
-
 \begin{equation}
   L[u] = -\nabla \cdot D(x, u) \nabla u + m(x, u, \nabla u).
   \tag{\ref{eqn:elliptic}}
 \end{equation}
-
 In variational form, after multiplying with a test function and
 integration by parts (ignoring boundary terms for now), we arrive at
-
 \[
   L[u] = \int_{\Omega}D(x, u) \nabla u \cdot \nabla v + m(x, u, \nabla u)
   v \diff x.
 \]
-
 Now the elliptic model class in Fempy has methods that represent
 the above form in general terms. Suppose for instance we were to take
 the case of $m(x, u, \nabla u) = u$ above. In the model class, this would be
 defined under the method \cpp{source}.
-
 \renewcommand{\pweavecaption}{A function in the elliptic model C++
 class}
 \renewcommand{\pweavelabel}{lst:elliptic-cpp}
@@ -1193,19 +1046,18 @@ void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, R
   result[ 0 ] = u[ 0 ];
 }
 \end{pweavecode}
-
 A similar method exists for $D(x, u)$, as well as linearized
 versions for the purposes of nonlinear methods. Addtionally there are
 methods for the associated Dirichlet or Neumann boundary conditions.
-Together these form the elliptic model class which is the
+Together these form the elliptic model class which is
 one way of expressing bilinear forms in \dune[Fempy]. Generally this
 class is then used to create a shared object file that is exported to
-python using Pybind11 for use in python scripts and notebooks.
+python using pybind11 for use in python scripts and notebooks.
 
 Another possibility provided for by the modular design of
 \dune[python]  and the elliptic class structure is the creation of alternate
 models. This approach involves the writing of additional C++
-classes (one example would be a discontinuous Galerkin elliptic ) based on
+classes (one example would be an elliptic discontinuous Galerkin model) based on
 the elliptic model class except with extra modifications that one
 might want to make to the underlying structure.
 Whilst this approach is more in-depth than simply editing
@@ -1216,17 +1068,14 @@ An example of this approach is the \textit{nonvariational} model
 for the \dune[femnv] module (see chapter \ref{sec:nvpdes}). This comes
 from the desire to write bilinear forms that can accept a Hessian as
 as argument as follows.
-
 \begin{equation*}
   L[u] = \nabla \cdot D(x, u) \nabla u(x) + m(x, u, \nabla
   u, D^2 u).
 \end{equation*}
-
 Such a change would require different arguments to be made available
 to the methods from the elliptic model. Suppose we wanted to
 implement the nonvariational Poisson equation, i.e. taking $m = -\Delta u$
 above. Then we would need the following method.
-
 \renewcommand{\pweavecaption}{A nonvariational method}
 \renewcommand{\pweavelabel}{lst:nvop}
 \begin{pweavecode}
@@ -1237,12 +1086,10 @@ JacobianRangeType &du, const HessianRangeType &d2u, RangeType &result ) const
   result[ 0 ] = d2u[ 0 ][ 0 ] + d2u[ 1 ][ 1 ];
 }
 \end{pweavecode}
-
 Whilst this may not be immediately possible with the standard elliptic
 model, it is possible to create a model \cpp{'nvdg'} that can
 use such functions, which results in the ability to write functional
 \dune[Fempy] code as follows.
-
 \renewcommand{\pweavecaption}{The Fempy code for a nonvariational
 model}
 \renewcommand{\pweavelabel}{lst:fempy_nv}
@@ -1251,7 +1098,6 @@ a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
 b = rhs(A, exact)
 model = create.model("nvdg", grid, a == b)
 \end{pweavecode}
-
 Thus it becomes possible to write schemes that expect different
 arguments from the operator.
 
@@ -1263,7 +1109,6 @@ bypasses the virtual methods used in the elliptic operator class and
 creates methods purely using the UFL expressions given to it. This
 again allows for expressions that are not by default allowed in the
 default elliptic class, as shown below.
-
 \renewcommand{\pweavecaption}{Usage of integrands operators for
 skeleton terms}
 \renewcommand{\pweavelabel}{lst:fempy_integrands}
@@ -1273,9 +1118,10 @@ a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
 b = rhs(A, exact)
 scheme = create.model("integrands", space, a == b)
 \end{pweavecode}
-
 Here we take the nonvariational equation from before and add a term
-defined only on the skeleton (the edges) of the mesh.
+defined only on the skeleton (the edges) of the mesh. Due to the
+ability to add such interior terms, the \pyth{'integrands'} class is
+particularly useful for discontinuous Galerkin methods.
 
 \subsection{C++ Models} \label{sec:cpp-models}
 
@@ -1287,7 +1133,6 @@ used flexibly in both Fempy and regular C++ compatible \dune code. We can do thi
 writing a pure UFL file and calling cmake on it.
 
 Let us examine what this file looks like for the Forchheimer model.
-
 \renewcommand{\pweavecaption}{UFL file used for C++ header file generation}
 \renewcommand{\pweavelabel}{lst:header}
 \begin{pweavecode}
@@ -1308,7 +1153,6 @@ b = replace(a, {u: exact})
 
 F = a - b
 \end{pweavecode}
-
 Once the corresponding \cpp{forchheimer.hh} file has been generated,
 it can then be edited manually in C++, and then used in place
 of a UFL expression in Fempy. This choice of default shared library
@@ -1317,13 +1161,12 @@ attempts we have made to improve extensibility of the code, since in
 particular it allows for the user to write in more complex features in
 C++ that do not necessarily have python bindings written for them.
 
-Additionally we must ask the question of efficiency between using the
+One natural question that arises is that of the efficiency between using the
 full \dune[Fempy] interface to run problems and simply using it to just generate a
 model file to be used in C++. To look at this problem we constructed
 an identical Forchheimer example in C++ which can be found in section
 \ref{sec:forch-cpp}. We compare the runtime of the two solve-steps
 below.
-
 \begin{center}
   \captionof{table}{Runtimes for Forchheimer solve time}
   \begin{tabular}{l | l}
@@ -1333,11 +1176,10 @@ below.
     Python & 83.0
   \end{tabular}
 \end{center}
-
 Thus we see there is not a sizable difference between the \dune[Fem] and
 \dune[Fempy] versions.
 
-\textbf{Remark.} We remark that both versions use preprocessing, which relatively
+\noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
 speaking is negligible for long-running simulations. We also note that
 the most \textit{costly} aspect of pure python code are generally
 callbacks, and in this example this amounts to just the solve call. An additional example
@@ -1380,28 +1222,19 @@ process
 \begin{enumerate}
 \item Create an interpolated function that describes the initial
 surface, i.e.
-\renewcommand{\pweavecaption}{The initial function describing the
-surface}
-\renewcommand{\pweavelabel}{lst:mcf1}
-\begin{pweavecode}
+\begin{lstlisting}[style=pythonstyle]
 positions = space.interpolate(lambda x: some_function(x), name="position")
-\end{pweavecode}
-\item Create a surface using this function
-\renewcommand{\pweavecaption}{The surface created from
-\pyth{positions}}
-\renewcommand{\pweavelabel}{lst:mcf2}
-\begin{pweavecode}
+\end{lstlisting}
+\item Create a surface from \pyth{positions} using this function
+\begin{lstlisting}[style=pythonstyle]
 surface = create.view("geometry", positions)
-\end{pweavecode}
+\end{lstlisting}
 \item Create the scheme that describes the surface evolution and solve
 it in the usual way.
 \item Update the surface using the computed solution.
-\renewcommand{\pweavecaption}{Reassigning the surface points using the
-solution}
-\renewcommand{\pweavelabel}{lst:mcf3}
-\begin{pweavecode}
+\begin{lstlisting}[style=pythonstyle]
 positions.dofVector.assign(solution.dofVector)
-\end{pweavecode}
+\end{lstlisting}
 \end{enumerate}
 With this process the surface (and by extension the mesh) can be
 changed over time. We will now demonstrate this in a mean curvature flow
@@ -1416,29 +1249,29 @@ although it can also be applied to image processing (e.g.
 \cite{Malladi}).
 Assume we can define a reference surface $\Gamma_0$ such that
 we can write the evolving surface $\Gamma(t)$ in the form
-\begin{gather}
-  \Gamma(t) = X(t,\Gamma_0)
-\end{gather}
-It is now possible to show that the vector valued function $X=X(t,x)$ with $x\in\Gamma_0$ satisfies:
-\begin{gather}
-  \frac{\partial}{\partial_t}X = - H(X)\nu(X)
-\end{gather}
+\begin{gather*}
+  \Gamma(t) = X(t,\Gamma_0).
+\end{gather*}
+It is now possible to show that the vector valued function $X=X(t,x)$
+with $x\in\Gamma_0$ satisfies
+\begin{gather*}
+  \frac{\partial}{\partial_t}X = - H(X)\nu(X),
+\end{gather*}
 where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
 
 We will solve this using a finite element approach based on the
 following time discrete approximation from \cite[Eqn 4.16]{Charlie}
-(with a $\theta$-scheme applied):
-\begin{gather}
+(with a $\theta$-scheme applied).
+\begin{gather*}
   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
     \tau \int_{\Gamma^n} \big(
     \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
     \colon\nabla_{\Gamma^n}\varphi
-  =0~.
-\end{gather}
+  =0.
+\end{gather*}
 Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
-$\Gamma^n:=\Gamma(t^{n})$,
-$I$ is the identity matrix, $\tau$ is the time step and
-$\theta\in[0,1]$ is a discretization parameter.
+$\Gamma^n:=\Gamma(t^{n})$, $I$ is the identity matrix, $\tau$ is the
+time step and $\theta\in[0,1]$ is a discretization parameter.
 
 \input{mcf.tex}
 
@@ -1471,7 +1304,6 @@ Here we will demonstrate this translation process, and additionally
 provide comparisons for the difference in effiency timewise. We will
 examine the function used for calculating the averaged radius of a
 surface used in section \ref{sec:mcf}.
-
 \renewcommand{\pweavecaption}{A pythonic function for calculating the
 radius of a surface}
 \renewcommand{\pweavelabel}{lst:calcR}
@@ -1489,12 +1321,10 @@ def calcRadius(surface):
             vol += weight
     return R/vol
 \end{pweavecode}
-
 As a relatively simple example, this code is not particularly slow in
 python, however the existence of callbacks inside a looped statement
 are not insignificant. Now let us look at a C++ translation of the above
 code.
-
 \renewcommand{\pweavecaption}{The C++ version of the calcRadius
 function}
 \renewcommand{\pweavelabel}{lst:calcR-cpp}
@@ -1520,21 +1350,18 @@ double calcRadius( const Surface &surface )
   return R/vol;
 }
 \end{pweavecode}
-
 We note that we take advantage of C++11 features such as \cpp{auto}
 and range based for loops to keep a similar structure to the python
 code.
 
 Supposing we save the above as \cpp{radius.hh}, we can then call it
 in a python script and use it like a regular function as follows.
-
 \renewcommand{\pweavecaption}{Calling our C++ function using algorithm}
 \renewcommand{\pweavelabel}{lst:calcR-algorithm}
 \begin{pweavecode}
 from dune.generator import algorithm
 calcRadius = algorithm.load('calcRadius', 'radius.hh', surface)
 \end{pweavecode}
-
 Doing this, we can quite easily swap between the two versions and
 compare the runtime of the solve method. We show these results in
 figure \ref{fig:mcf-comparison}.
@@ -1553,7 +1380,7 @@ worth the extra coding time for longer running simulations. Naturally
 a full C++ version would see a further improvement in runtime, though
 whether that is justified depends on a case-by-case basis.
 
-\section{Virtualization}
+\section{Virtualization} \label{sec:virtualization}
 
 One final topic we want to discuss is virtualization and the
 rationalities behind various design decisions. In the development of the
@@ -1664,36 +1491,29 @@ function call.
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
 groundwater flow models.
-
 \begin{equation}
   -\nabla p = \frac{\mu}{\kappa} v,
 \label{eqn:darcy}
 \end{equation}
-
 where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
 viscosity and permeability. For situations where the Reynolds number
 is greater than \~10, inertia begins to have an effect on the system,
 which is accounted for in the Darcy-Forchheimer equation. In its most
 general form we have the following.
-
 \begin{equation}
   -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
 \label{eqn:darcy-forch}
 \end{equation}
-
 where $a_i$ and $\alpha_i$ are obtained empirically. Through some
 manipulations, we can simplify this to an equation for just the
 pressure $\rho$.
-
 \begin{equation}
   \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f,
 \label{eqn:forch}
 \end{equation}
-
 where the function $K: \mathbb{R}^{+} \to \mathbb{R}^{+}$ is dependent
 on the $a_i$ and $\alpha_i$ above. Adding in boundary data and initial
 values gives us the \textbf{boundary value problem}.
-
 \begin{equation}
   \begin{array}{ll}
   \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
@@ -1704,22 +1524,18 @@ values gives us the \textbf{boundary value problem}.
   \end{array}
 \label{eqn:forch-bvp}
 \end{equation}
-
 where $\rho^0$ and $g$ are initial and boundary data given. Thus
 the \textbf{weak form} or variational formulation follows.
-
 \begin{equation}
   (\rho_t, \varphi_h) + (K(|\nabla \rho|) \nabla \rho, \nabla \varphi_h) = - <
   g, \varphi_h> + (f, \varphi_h), \quad \varphi_h \in V_h,
 \label{eqn:forch-weak}
 \end{equation}
-
 with $\rho(x, 0) = \rho^{0}(x)$. Finally it remains to discretize the
 equation in time using a backward Euler method. Let the time domain $I
 = [0,T]$ be divided into $N$ intervals $t_0 = 0 < t_1 < \dots < t_N = T$
 such that $\Delta t = t_n - t_{n-1}$ and $\rho^{n} = \rho(x, t_n)$.
 Then we have the time discretized PDE.
-
 \begin{equation}
   \left(\frac{\rho^{n+1} - \rho^{n}}{\Delta t}, \varphi_h \right) +
   (K(|\nabla \rho^{n+1}|) \nabla \rho^{n+1},
@@ -1727,7 +1543,6 @@ Then we have the time discretized PDE.
   \varphi_h \in V_h.
 \label{eqn:forch-time}
 \end{equation}
-
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
@@ -1749,13 +1564,11 @@ introduced.
 \subsection{Grids} \label{sec:grid-list}
 
 Grids by default take the following form.
-
 \renewcommand{\pweavecaption}{The default form for grid creation}
 \renewcommand{\pweavelabel}{lst:default-grid}
 \begin{pweavecode}
 grid = create.grid('class-name', constructor, dimgrid=None, dimworld=None)
 \end{pweavecode}
-
 Where in particular we have the following arguments.
 
 \begin{enumerate}
@@ -1804,14 +1617,12 @@ constructed.
 \subsection{Spaces} \label{sec:space-list}
 
 Now we move on to spaces. By default, they take the form
-
 \renewcommand{\pweavecaption}{The default form for space creation}
 \renewcommand{\pweavelabel}{lst:default-space}
 \begin{pweavecode}
 space = create.space('class-name', grid, dimrange=1, order=1,
                      storage='fem', field='double')
 \end{pweavecode}
-
 where we have the following arguments.
 
 \begin{enumerate}
@@ -1837,7 +1648,6 @@ the storage used for discrete functions (as shown in
     \input{tables/features_discretefunction}
   \end{tabular}
 \end{center}
-
 Available spaces are:
 \begin{center}
   \captionof{table}{Spaces}
@@ -1852,16 +1662,13 @@ Available spaces are:
 
 Grid functions can be constructed in a variety of ways, though the explicit
 way to make a grid function is
-
 \renewcommand{\pweavecaption}{The default form for function creation}
 \renewcommand{\pweavelabel}{lst:default-function}
 \begin{pweavecode}
 create.function('class-name', grid, 'function-name', order,
                 constructor)
 \end{pweavecode}
-
 with the following arguments.
-
 \begin{enumerate}
 \item \pyth{'class-name'}: A string from the table below.
 \item \pyth{grid}: A grid object from \ref{sec:grid-list}.
@@ -1871,11 +1678,9 @@ function.
 \item \pyth{constructor}: An object described in the table below used
 to construct the function.
 \end{enumerate}
-
 For the below table we list the available strings for
 \pyth{'class-name'} together with the compatible argument for the
 \pyth{constructor} parameter.
-
 \begin{center}
   \captionof{table}{Grid Functions}
   \begin{tabular}{l | l | l }
@@ -1884,7 +1689,6 @@ For the below table we list the available strings for
     \input{tables/features_function}
   \end{tabular}
 \end{center}
-
 In addition \pyth{'discrete'} can be used to construct discrete functions.
 But typically these are made using the
 \pyth{space.interpolate(expression)} syntax, using the storage type
@@ -1901,14 +1705,12 @@ models and operators that store the operator separately.
 While schemes have to have identical domain and range spaces, operators can
 map between different spaces.
 We review this below.
-
 \renewcommand{\pweavecaption}{The default form for scheme creation}
 \renewcommand{\pweavelabel}{lst:default-scheme}
 \begin{pweavecode}
 scheme = create.scheme('class-name', equation, space,
                        parameters=dict, solver='solver-name')
 \end{pweavecode}
-
 \begin{enumerate}
 \item \pyth{'class name'}: A string from the table below.
 \item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
@@ -1925,7 +1727,6 @@ to specify things like the solver behaviour, e.g.
 \item \pyth{solver} (optional): \pyth{'fem'} by default. Used to
 specify the solver used, from \ref{tab:solvers}.
 \end{enumerate}
-
 The two main schemes available in \dune[fempy] are
 \pyth{galerkin} and \pyth{h1}. The distinction between them is
 described in section \ref{sec:header}. In addition the \dune[nvdg]
@@ -1939,7 +1740,6 @@ In addition preconditioners can be set via the parameters. Available options dep
 For the \pyth{istl} backend available options
 include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi}
 and \pyth{amg-ilu-0}. They are set using the following syntax.
-
 \renewcommand{\pweavecaption}{How preconditioning is set via
 parameters}
 \renewcommand{\pweavelabel}{lst:preconditioning}
@@ -1958,7 +1758,6 @@ can actually be used will depend on the PETSc implementation, e.g.
 
 Finally we list the possible solving methods available that can be
 selected during scheme creation above.
-
 \begin{table}[ht!]
   \centering
   \caption{Solvers}
@@ -1969,9 +1768,6 @@ selected during scheme creation above.
     \input{tables/features_solver}
   \end{tabular}
 \end{table}
-
-
-
 There is also the possibility of constructing an operator that can be
 applied using the \pyth{__call__} method and linearized using the
 \pyth{jacobian} method but does not provide a \pyth{solve} method.

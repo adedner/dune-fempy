@@ -4,7 +4,7 @@ import math
 from ufl import *
 
 from dune.grid import cartesianDomain
-from dune.ufl import Space
+from dune.ufl import NamedConstant
 
 import dune.create as create
 
@@ -31,47 +31,32 @@ def compute():
     vtk()
 
     # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
-    old_solution = solution.copy();
-    old_solution.name = "uOld"
+    old_solution = solution.copy(name="uOld")
 
     # now define the actual pde to solve:
-    #            u - u_n deltaT laplace( theta u + (1-theta) u_n ) = 0
-    uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
-    u = TrialFunction(uflSpace)
-    v = TestFunction(uflSpace)
-    x = SpatialCoordinate(uflSpace.cell())
-    n = FacetNormal(uflSpace.cell())
+    #            u - u_n - deltaT laplace( theta u + (1-theta) u_n ) = 0
+    u = TrialFunction(spc)
+    v = TestFunction(spc)
+    x = SpatialCoordinate(spc)
+    n = FacetNormal(spc)
     mu = 7.5 * 16
-    u_n = old_solution
-    tau = Constant(triangle)
-    a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
-
+    tau = NamedConstant(spc,"tau")
+    a  = inner(grad(u), grad(v)) * dx
     a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS
     a += mu * inner(jump(u), jump(v)) * dS
     a -= (inner(outer(u, n), grad(v)) + inner(grad(u), outer(v, n))) * ds
     a += mu * inner(u, v) * ds
-    # now generate the model code and compile
-    #model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
-    #model.setConstant(tau,[deltaT])
-
-    model = create.model("integrands", grid, a == 0)
-    model.setConstant(tau, deltaT)
+    a = inner(u - old_solution, v) * dx + tau*theta*a + tau*(1-theta)*replace(a,{u:old_solution})
 
     # setup structure for olver parameters
     solverParameter={"fem.solver.newton.linabstol": 1e-13,
                      "fem.solver.newton.linreduction": 1e-13,
                      "fem.solver.newton.tolerance": 1e-12,
-                     "fem.solver.newton.verbose": "true",
+                     "fem.solver.newton.verbose": "false",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
-    scheme = create.scheme("galerkin", spc, model, parameters=solverParameter)
-    # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
-    # scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
-
-    # scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
-
-    # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
-    # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)
+    scheme = create.scheme("galerkin", a == 0, spc, parameters=solverParameter)
+    scheme.model.tau = deltaT
 
     # now loop through time and output the solution after each time step
     steps = int(0.1 / deltaT)

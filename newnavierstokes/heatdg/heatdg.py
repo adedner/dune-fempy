@@ -64,7 +64,7 @@ def compute():
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
-    scheme = create.scheme("h1", spc, model, parameters=solverParameter)
+    scheme = create.scheme("galerkin", spc, model, parameters=solverParameter)
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
     # scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
 

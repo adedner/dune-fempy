@@ -1549,7 +1549,9 @@ keepaspectratio]{figures/mcf-comparison.png}
 
 What we see is that the C++ version is roughly 18\% faster. On a small
 scale this is not a significant change, but it shows that it can be
-worth the extra coding time for longer running simulations.
+worth the extra coding time for longer running simulations. Naturally
+a full C++ version would see a further improvement in runtime, though
+whether that is justified depends on a case-by-case basis.
 
 \section{Virtualization}
 
@@ -1658,7 +1660,7 @@ function call.
 
 %<*append>
 
-\section{Derivation of Forchheimer model} \label{sec:forch}
+\section{Derivation of Forchheimer Model} \label{sec:forch}
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
 groundwater flow models.
@@ -1729,7 +1731,7 @@ Then we have the time discretized PDE.
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for brevity.
 
-\chapter{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
+\section{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
 
 Here we present the C++ version of the Forchheimer example from
 section \ref{sec:fem-in-fempy} using \dune[FEM], that we compare to
@@ -1768,7 +1770,7 @@ The dimensions of the grid do not have to be passed to the constructor if
 they can be determined from the \pyth{constructor} argument.
 
 The table below shows a list of possible grid implementations for which
-binding are available at the time of writing:
+binding are available at the time of writing.
 
 \begin{center}
   \captionof{table}{Grids}
@@ -1788,7 +1790,8 @@ view = create.view('class-name', grid)
 
 The first argument can be any of the ones allowed for the grid construction
 (in which case the same \pyth{LeafGridView} is constructor as when directly
-constructing the grid. In addition the following views can be constructed:
+constructing the grid). In addition the following views can be
+constructed.
 \begin{center}
   \captionof{table}{Gridviews}
   \begin{tabular}{l | l | l}
@@ -1884,9 +1887,10 @@ For the below table we list the available strings for
 
 In addition \pyth{'discrete'} can be used to construct discrete functions.
 But typically these are made using the
-\pyth{space.interpolate(expression} syntax, using the storage type for the
-space by default. The argument for \pyth{interpolate} method are the same
-used to construct general grid functions given in the previous table.
+\pyth{space.interpolate(expression)} syntax, using the storage type
+for the space by default. The arguments for the \pyth{interpolate}
+method are the same used to construct general grid functions given in
+the previous table.
 
 \subsection{Schemes and Operators} \label{sec:scheme-list}
 
@@ -1901,38 +1905,38 @@ We review this below.
 \renewcommand{\pweavecaption}{The default form for scheme creation}
 \renewcommand{\pweavelabel}{lst:default-scheme}
 \begin{pweavecode}
-scheme = create.scheme('class-name', equation, space, parameters=dict,
-                       solver='solver-name')
+scheme = create.scheme('class-name', equation, space,
+                       parameters=dict, solver='solver-name')
 \end{pweavecode}
 
 \begin{enumerate}
 \item \pyth{'class name'}: A string from the table below.
 \item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
-object from \ref{tab:models}. In addition a tuple or list can be used here
+object. In addition a tuple or list can be used here
 where the first entry is the equation and further arguments can provide
-dirichlet boundary conditions.
+Dirichlet boundary conditions.
 \item \pyth{space}: A space object from \ref{sec:space-list}. (This is
 optional if the trial/test UFL functions are initialized with a
 \dune[Fempy] discrete function space, as in code listing
-\ref{lst:forch-variables}.)
+\ref{lst:forch-variables}).
 \item \pyth{parameters} (optional): A dictionary of \dune parameters that can be used
 to specify things like the solver behaviour, e.g.
-\pyth|{'fem.solver.newton.tolerance': 1e-3}|
+\pyth|{'fem.solver.newton.tolerance': 1e-3}|.
 \item \pyth{solver} (optional): \pyth{'fem'} by default. Used to
 specify the solver used, from \ref{tab:solvers}.
 \end{enumerate}
 
-The two main schemes available in \dune[fempy] are 
-\pyth{galerkin} and \pyth{h1}. These were described in the previous
-sections. In addition the \dune[nvdg] module provide an
-\pyth{nvdg} scheme.
+The two main schemes available in \dune[fempy] are
+\pyth{galerkin} and \pyth{h1}. The distinction between them is
+described in section \ref{sec:header}. In addition the \dune[nvdg]
+module provides an \pyth{nvdg} scheme.
 
 There are a number of parameters that can be passed to the scheme to
-influence the solving proceedure. Most importantly tolerances for the
+influence the solving procedure. Most importantly tolerances for the
 iterative solvers can be provided and verbosity can be turned on and off.
-In addition preconditioners can be set via. Available options depend on the
+In addition preconditioners can be set via the parameters. Available options depend on the
 \pyth{storage} backend used to construct the space.
-For the \pyth{istl} backend available options are
+For the \pyth{istl} backend available options
 include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi}
 and \pyth{amg-ilu-0}. They are set using the following syntax.
 
@@ -1948,8 +1952,8 @@ parameter.append({"istl.preconditioning.method": "ilu",
 For the \pyth{petsc} backend options include:
 \pyth{none}, \pyth{oas}, \pyth{sor}, \pyth{jacobi}, \pyth{hypre},
 \pyth{ml}, \pyth{ilu}, \pyth{icc}, and \pyth{lu}. Which of these
-can actually be used will depend on the PeTSc implementation, e.g.,
-\pyth{hypre} requires that PeTSc was build with support for the
+can actually be used will depend on the PETSc implementation, e.g.
+\pyth{hypre} requires that PETSc was build with support for the
 \pyth{hypre} package.
 
 Finally we list the possible solving methods available that can be
@@ -1973,11 +1977,12 @@ applied using the \pyth{__call__} method and linearized using the
 \pyth{jacobian} method but does not provide a \pyth{solve} method.
 This is especially of interest in the case where the operator maps
 between different spaces. Creating an operator is similar to the scheme
-construction:
+construction.
 \renewcommand{\pweavecaption}{The default form for operator creation}
 \renewcommand{\pweavelabel}{lst:default-operator}
 \begin{pweavecode}
-scheme = create.operator('class-name', equation, domainSpace, rangeSpace)
+scheme = create.operator('class-name', equation, domainSpace,
+                         rangeSpace)
 \end{pweavecode}
 
 %</append>

@@ -71,7 +71,7 @@ def compute():
     a = (inner(u - u_n, v) + tau * viscosity * inner(grad(u), grad(v))) * dx
     a += -1*tau*inner(p[0],div(v)) * dx
     a += tau* inner(grad(u), outer(v, u)) * dx
-    a += (0.0001*inner(p[0] - p_n[0], q[0]) - 1*tau*div(u)*q[0]) * dx
+    a += (inner(p[0] - p_n[0], q[0]) + 0.5*tau*div(u)*q[0]) * dx
 
 
     # a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS

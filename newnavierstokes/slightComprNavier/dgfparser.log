@@ -1,0 +1,15 @@
+DGF parser started
+Using VERTEX block
+Using SIMPLEX block
+Step 1 finished: 
+                 2d
+                 8 vertices
+                 6 elements
+Using BOUNDARYDOMAIN block
+Step 2 finished: 
+                 0 bnd-segs read in BoundarySegment block
+                 8 bnd-segs in grid
+                 1 bnd-segs in a boundary domain
+                 7 bnd-seg assigned default value
+                 0 bnd-segs have not been assigned an id!
+Successful

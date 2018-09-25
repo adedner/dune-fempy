@@ -22,12 +22,12 @@ def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
     grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
-    spc = create.space("lagrange", grid, dimrange=1, order=2, storage="istl")
+    spc = create.space("dgonb", grid, dimrange=1, order=2, storage="istl")
     # spc = create.space("dgonb", grid, dimrange=1, order=2)
 
     # set up initial conditions
     solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
-    vtk = grid.sequencedVTK("heat", pointdata=[solution])
+    vtk = grid.sequencedVTK("heat-dg", pointdata=[solution])
     vtk()
 
     # get a discrete function to hold the old solution and tell the model to use that for the coefficient u_n
@@ -39,10 +39,17 @@ def compute():
     uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
     u = TrialFunction(uflSpace)
     v = TestFunction(uflSpace)
+    x = SpatialCoordinate(uflSpace.cell())
+    n = FacetNormal(uflSpace.cell())
+    mu = 7.5 * 16
     u_n = old_solution
     tau = Constant(triangle)
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
+    a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS
+    a += mu * inner(jump(u), jump(v)) * dS
+    a -= (inner(outer(u, n), grad(v)) + inner(grad(u), outer(v, n))) * ds
+    a += mu * inner(u, v) * ds
     # now generate the model code and compile
     #model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
     #model.setConstant(tau,[deltaT])
@@ -57,11 +64,11 @@ def compute():
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}
     # create the solver using a standard fem scheme
-    # scheme = create.scheme("h1", spc, model, parameters=solverParameter)
+    scheme = create.scheme("h1", spc, model, parameters=solverParameter)
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)
     # scheme = create.scheme("dggalerkin", spc, model, 15*theta*deltaT, parameters=solverParameter)
 
-    scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
+    # scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
 
     # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
     # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)

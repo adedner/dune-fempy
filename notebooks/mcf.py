@@ -51,6 +51,7 @@ import dune.create as create
 import dune.geometry as geometry
 import dune.fem as fem
 from dune.fem.plotting import plotPointData as plot
+from dune.plotting import block
 import matplotlib.pyplot as pyplot
 from IPython import display
 
@@ -148,7 +149,7 @@ while t < endTime:
         # surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
         plot(solution, figure=(fig, 131+count/10), colorbar=False, gridLines="", triplot=True)
         show3d()
-pyplot.show()
+pyplot.show(block=block)
 pyplot.close('all')
 
 

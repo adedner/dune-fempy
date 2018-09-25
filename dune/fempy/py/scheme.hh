@@ -179,6 +179,26 @@ namespace Dune
       {
         registerSchemeGeneralCall( cls, PriorityTag< 42 >() );
       }
+
+      // registerSchemeModel
+      // -------------------
+
+      template< class Scheme, class... options >
+      inline static auto registerSchemeModel ( pybind11::class_< Scheme, options... > cls, PriorityTag< 1 > )
+        -> void_t< decltype( std::declval< Scheme >().model() ) >
+      {
+        cls.def_property_readonly( "model", &Scheme::model );
+      }
+
+      template< class Scheme, class... options >
+      inline static void registerSchemeModel ( pybind11::class_< Scheme, options... > cls, PriorityTag< 0 > )
+      {}
+
+      template< class Scheme, class... options >
+      inline static void registerSchemeModel ( pybind11::class_< Scheme, options... > cls )
+      {
+        registerSchemeModel( cls, PriorityTag< 42 >() );
+      }
 #endif
 
       // registerScheme

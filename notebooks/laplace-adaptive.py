@@ -20,7 +20,7 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[1]:
+# In[4]:
 
 
 try:
@@ -33,6 +33,7 @@ import matplotlib.pyplot as pyplot
 import dune.create as create
 from dune.fem.view import adaptiveLeafGridView
 from dune.fem.plotting import plotPointData as plot
+from dune.plotting import block
 import dune.grid as grid
 import dune.fem as fem
 
@@ -58,7 +59,7 @@ spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 # Next define the model together with the exact solution.
 
-# In[2]:
+# In[5]:
 
 
 from ufl import *
@@ -97,7 +98,7 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
 
-# In[3]:
+# In[6]:
 
 
 # energy error
@@ -121,7 +122,7 @@ def mark(element):
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
 
-# In[4]:
+# In[7]:
 
 
 # adaptive loop (solve, mark, estimate)
@@ -130,7 +131,7 @@ count = 0
 while count < 20:
     laplace.solve(target=uh)
     if count%3 == 0:
-        pyplot.show()
+        pyplot.show(block=block)
         pyplot.close('all')
         fig = pyplot.figure(figsize=(10,10))
     plot(uh,figure=(fig,131+count%3), colorbar=False)
@@ -151,26 +152,26 @@ while count < 20:
     gridSize = view.size(0)
     laplace.solve( target=uh )
     count += 1
-pyplot.show()
+pyplot.show(block=block)
 pyplot.close('all')
 
 
 # Let's have a look at the center of the domain:
 
-# In[5]:
+# In[8]:
 
 
 fig = pyplot.figure(figsize=(15,15))
 plot(uh, figure=(fig,131+0), xlim=(-0.5,0.5), ylim=(-0.5,0.5),colorbar={"shrink":0.3})
 plot(uh, figure=(fig,131+1), xlim=(-0.25,0.25), ylim=(-0.25,0.25),colorbar={"shrink":0.3})
 plot(uh, figure=(fig,131+2), xlim=(-0.125,0.125), ylim=(-0.125,0.125),colorbar={"shrink":0.3})
-pyplot.show()
+pyplot.show(block=block)
 pyplot.close('all')
 
 
 # Finally, let us have a look at the grid levels:
 
-# In[ ]:
+# In[9]:
 
 
 from dune.fem.function import levelFunction

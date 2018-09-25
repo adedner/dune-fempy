@@ -7,11 +7,13 @@ logger = logging.getLogger(__name__)
 
 import dune.common.checkconfiguration as checkconfiguration
 
-def dgonb(gridview, order=1, dimrange=1, field="double", storage=None, **unused):
+def dgonb(view, order=1, dimrange=1, field="double", storage=None,
+            interiorQuadratureOrders=None, skeletonQuadratureOrders=None,
+            **unused):
     """create a discontinous galerkin space with elementwise orthonormal basis functions
 
     Args:
-        gridview: the underlying grid view
+        view: the underlying grid view
         order: polynomial order of the finite element functions
         dimrange: dimension of the range space
         field: field of the range space
@@ -21,7 +23,7 @@ def dgonb(gridview, order=1, dimrange=1, field="double", storage=None, **unused)
         Space: the constructed Space
     """
 
-    from dune.fem.space import module, addStorage
+    from dune.fem.space import module, addStorage, codegen
     if dimrange < 1:
         raise KeyError(\
             "Parameter error in DiscontinuosGalerkinSpace with "+
@@ -35,13 +37,23 @@ def dgonb(gridview, order=1, dimrange=1, field="double", storage=None, **unused)
     if field == "complex":
         field = "std::complex<double>"
 
-    includes = [ "dune/fem/space/discontinuousgalerkin.hh" ] + gridview._includes
-    dimw = gridview.dimWorld
+    includes = view._includes + [ "dune/fem/space/discontinuousgalerkin.hh" ]
+    dimw = view.dimWorld
     typeName = "Dune::Fem::DiscontinuousGalerkinSpace< " +\
       "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimrange) + " >, " +\
-      "Dune::FemPy::GridPart< " + gridview._typeName + " >, " + str(order) + " >"
+      "Dune::FemPy::GridPart< " + view._typeName + " >, " + str(order) + " >"
 
-    spc = module(field, includes, typeName).Space(gridview)
+    spc = module(field, includes, typeName).Space(view)
+    if interiorQuadratureOrders is not None or skeletonQuadratureOrders is not None:
+        codegen(spc,interiorQuadratureOrders,skeletonQuadratureOrders)
+        typeName = "Dune::Fem::DiscontinuousGalerkinSpace< " +\
+          "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimrange) + " >, " +\
+          "Dune::FemPy::GridPart< " + view._typeName + " >, " + str(order) + ", " +\
+          "Dune::Fem::CodegenStorage" +\
+          " >"
+        spc = module(field, includes, typeName,
+                    interiorQuadratureOrders=interiorQuadratureOrders,
+                    skeletonQuadratureOrders=skeletonQuadratureOrders).Space(view)
     addStorage(spc, storage)
     return spc.as_ufl()
 
@@ -164,11 +176,13 @@ def dglegendrehp(gridview, order=1, dimrange=1, field="double", storage=None, **
     addStorage(spc, storage)
     return spc.as_ufl()
 
-def dglagrange(gridview, order=1, dimrange=1, field="double", storage=None, **unused):
+def dglagrange(view, order=1, dimrange=1, field="double", storage=None,
+            interiorQuadratureOrders=None, skeletonQuadratureOrders=None,
+            **unused):
     """create a discontinous galerkin space with elementwise lagrange basis function
 
     Args:
-        gridview: the underlying grid view
+        view: the underlying grid view
         order: polynomial order of the finite element functions
         dimrange: dimension of the range space
         field: field of the range space
@@ -178,32 +192,44 @@ def dglagrange(gridview, order=1, dimrange=1, field="double", storage=None, **un
         Space: the constructed Space
     """
 
-    from dune.fem.space import module, addStorage
+    from dune.fem.space import module, addStorage, codegen
     if dimrange < 1:
         raise KeyError(\
-            "Parameter error in DiscontinuosGalerkinSpace with "+
+            "Parameter error in LagrangeDiscontinuosGalerkinSpace with "+
             "dimrange=" + str(dimrange) + ": " +\
             "dimrange has to be greater or equal to 1")
     if order < 0:
         raise KeyError(\
-            "Parameter error in DiscontinuousGalerkinSpace with "+
+            "Parameter error in LagrangeDiscontinuousGalerkinSpace with "+
             "order=" + str(order) + ": " +\
             "order has to be greater or equal to 0")
     if field == "complex":
         field = "std::complex<double>"
 
-    dimw = gridview.dimWorld
+    dimw = view.dimWorld
 
-    includes = [ "dune/fem/space/discontinuousgalerkin.hh" ] + gridview._includes
+    includes = view._includes + [ "dune/fem/space/discontinuousgalerkin.hh" ]
     typeName = "Dune::Fem::LagrangeDiscontinuousGalerkinSpace< " +\
       "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimrange) + " >, " +\
-      "Dune::FemPy::GridPart< " + gridview._typeName + " >, " + str(order) + " >"
-    spc = module(field, includes, typeName).Space(gridview)
+      "Dune::FemPy::GridPart< " + view._typeName + " >, " + str(order) + " >"
+    spc = module(field, includes, typeName).Space(view)
+    if interiorQuadratureOrders is not None or skeletonQuadratureOrders is not None:
+        codegen(spc,interiorQuadratureOrders,skeletonQuadratureOrders)
+        typeName = "Dune::Fem::LagrangeDiscontinuousGalerkinSpace< " +\
+          "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimrange) + " >, " +\
+          "Dune::FemPy::GridPart< " + view._typeName + " >, " + str(order) + ", " +\
+          "Dune::Fem::CodegenStorage" +\
+          " >"
+        spc = module(field, includes, typeName,
+                    interiorQuadratureOrders=interiorQuadratureOrders,
+                    skeletonQuadratureOrders=skeletonQuadratureOrders).Space(view)
     addStorage(spc, storage)
     return spc.as_ufl()
 
 
-def lagrange(view, order=1, dimrange=1, field="double", storage=None, **unused):
+def lagrange(view, order=1, dimrange=1, field="double", storage=None,
+            interiorQuadratureOrders=None, skeletonQuadratureOrders=None,
+            **unused):
     """create a Lagrange space
 
     Args:
@@ -217,7 +243,7 @@ def lagrange(view, order=1, dimrange=1, field="double", storage=None, **unused):
         Space: the constructed Space
     """
 
-    from dune.fem.space import module, addStorage
+    from dune.fem.space import module, addStorage, codegen
     if dimrange < 1:
         raise KeyError(\
             "Parameter error in LagrangeSpace with "+
@@ -231,13 +257,23 @@ def lagrange(view, order=1, dimrange=1, field="double", storage=None, **unused):
     if field == "complex":
         field = "std::complex<double>"
 
-    includes = [ "dune/fem/space/lagrange.hh" ] + view._includes
+    includes = view._includes + [ "dune/fem/space/lagrange.hh" ]
     dimw = view.dimWorld
     typeName = "Dune::Fem::LagrangeDiscreteFunctionSpace< " +\
       "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimrange) + " >, " +\
       "Dune::FemPy::GridPart< " + view._typeName + " >, " + str(order) + " >"
 
     spc = module(field, includes, typeName).Space(view)
+    if interiorQuadratureOrders is not None or skeletonQuadratureOrders is not None:
+        codegen(spc,interiorQuadratureOrders,skeletonQuadratureOrders)
+        typeName = "Dune::Fem::LagrangeDiscreteFunctionSpace< " +\
+          "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimrange) + " >, " +\
+          "Dune::FemPy::GridPart< " + view._typeName + " >, " + str(order) + ", " +\
+          "Dune::Fem::CodegenStorage" +\
+          " >"
+        spc = module(field, includes, typeName,
+                    interiorQuadratureOrders=interiorQuadratureOrders,
+                    skeletonQuadratureOrders=skeletonQuadratureOrders).Space(view)
     addStorage(spc, storage)
     return spc.as_ufl()
 

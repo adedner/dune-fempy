@@ -6,6 +6,7 @@ set(uflfiles
   system.ufl
   transport.ufl
   varyingcoeff.ufl
+  tuple.ufl
 )
 
 dune_fem_add_elliptic_models(${uflfiles})

@@ -1491,30 +1491,30 @@ function call.
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
 groundwater flow models.
-\begin{equation}
+\begin{equation*}
   -\nabla p = \frac{\mu}{\kappa} v,
 \label{eqn:darcy}
-\end{equation}
+\end{equation*}
 where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
 viscosity and permeability. For situations where the Reynolds number
-is greater than \~10, inertia begins to have an effect on the system,
+is greater than $\sim 10$, inertia begins to have an effect on the system,
 which is accounted for in the Darcy-Forchheimer equation. In its most
 general form we have the following.
-\begin{equation}
+\begin{equation*}
   -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
 \label{eqn:darcy-forch}
-\end{equation}
+\end{equation*}
 where $a_i$ and $\alpha_i$ are obtained empirically. Through some
 manipulations, we can simplify this to an equation for just the
 pressure $\rho$.
-\begin{equation}
+\begin{equation*}
   \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f,
 \label{eqn:forch}
-\end{equation}
+\end{equation*}
 where the function $K: \mathbb{R}^{+} \to \mathbb{R}^{+}$ is dependent
 on the $a_i$ and $\alpha_i$ above. Adding in boundary data and initial
 values gives us the \textbf{boundary value problem}.
-\begin{equation}
+\begin{equation*}
   \begin{array}{ll}
   \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
   } \Omega \times [0, T], \\
@@ -1523,28 +1523,28 @@ values gives us the \textbf{boundary value problem}.
   \Gamma \times [0, T],
   \end{array}
 \label{eqn:forch-bvp}
-\end{equation}
+\end{equation*}
 where $\rho^0$ and $g$ are initial and boundary data given. Thus
 the \textbf{weak form} or variational formulation follows.
-\begin{equation}
+\begin{equation*}
   (\rho_t, \varphi_h) + (K(|\nabla \rho|) \nabla \rho, \nabla \varphi_h) = - <
   g, \varphi_h> + (f, \varphi_h), \quad \varphi_h \in V_h,
 \label{eqn:forch-weak}
-\end{equation}
+\end{equation*}
 with $\rho(x, 0) = \rho^{0}(x)$. Finally it remains to discretize the
 equation in time using a backward Euler method. Let the time domain $I
 = [0,T]$ be divided into $N$ intervals $t_0 = 0 < t_1 < \dots < t_N = T$
 such that $\Delta t = t_n - t_{n-1}$ and $\rho^{n} = \rho(x, t_n)$.
 Then we have the time discretized PDE.
-\begin{equation}
+\begin{equation*}
   \left(\frac{\rho^{n+1} - \rho^{n}}{\Delta t}, \varphi_h \right) +
   (K(|\nabla \rho^{n+1}|) \nabla \rho^{n+1},
   \nabla \varphi_h) = - < g, \varphi_h > + (f, \varphi_h), \quad
   \varphi_h \in V_h.
 \label{eqn:forch-time}
-\end{equation}
+\end{equation*}
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
-we replace $\rho$ with $u$ for brevity.
+we replace $\rho$ with $u$ for simplicity.
 
 \section{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
 

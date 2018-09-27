@@ -4,8 +4,10 @@
 #include <dune/fem/gridpart/common/gridview2gridpart.hh>
 #include <dune/fem/gridpart/leafgridpart.hh>
 #include <dune/fem/quadrature/cachingquadrature.hh>
+
 #include <dune/fempy/quadrature/fempyquadratures.hh>
 #include <dune/fempy/function/simplegridfunction.hh>
+#include <dune/fempy/grid/gridpartadapter.hh>
 
 template< class GridView, class Rules, class GF >
 double l2norm2 ( const GridView &gridView, const Rules &rules, const GF& gf )
@@ -57,7 +59,7 @@ double l2norm2FemQuad ( const GridView &gridView, const Rules &rules, const GF& 
   int order = 2;
   QuadRegistry::registerQuadratureRule( rules, order, geoType );
 
-  typedef Dune::Fem::LeafGridPart< typename GridView::Grid > GridPart;
+  typedef Dune::FemPy::GridPartAdapter< GridView > GridPart;
 
   typedef Dune::Fem::CachingQuadrature< GridPart, 0, Dune::FemPy::FempyQuadratureTraits > VolumeQuadratureType;
 

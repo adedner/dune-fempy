@@ -111,7 +111,7 @@ scope for which direction to develop features is very high. Even
 within the realm of standard FEMs there exist a multitude of different
 options available. For instance with regards to types of finite
 elements, if one considers \textit{conforming} finite elements
-(i.e. where $V_h \subset V$) then one has possibilies such as the
+(i.e. where $V_h \subset V$) then one has possibilities such as the
 well-known Lagrange element, the $H(div)$ conforming
 Brezzi-Douglas-Marini element used for instance for
 the elastic stress tensor, the $H(curl)$ conforming N\'{e}d\'{e}lec element used in
@@ -149,7 +149,7 @@ facilitating of rapid prototyping, which allows one to quickly
 construct new models and test their viability without having to write
 an intricate program. In particular FEniCS (\cite{FEniCS}) and Firedrake
 (\cite{Firedrake}) are examples of this kind of software. Integral to this approach has
-been using a simplfied interface attached to a backend with lower
+been using a simplified interface attached to a back end with lower
 level code, which is typically achieved by an automatic code
 generation tool like SWIG or Cython.
 
@@ -178,7 +178,7 @@ adding high-level FEM features based on the \dune[Fem] module
 (\cite{Dune-Fem}) to \dune. The aim of both of these packages is to bring the
 usability and speedier writing of code to \dune and its large array of existing modules,
 whilst preserving the features available to a C++ developer. In
-particular the structure and functionality is designed to be analagous
+particular the structure and functionality is designed to be analogous
 in many ways to \dune code, making it less difficult to port code to
 C++ if necessary. Additionally, attempts to increase usability have been
 made, such as library caching to reduce the runtime of repeated computations, and
@@ -261,7 +261,7 @@ only considering Neumann boundary conditions here for simplicity,
 although Dirichlet boundary conditions are also a possibility. The
 variational form is then obtained in the usual way by multiplying by a
 test function $\varphi \in V_h$, integrating by parts and discretizing
-in time. After applying a simple time stepping schmee, this leads to
+in time. After applying a simple time stepping scheme, this leads to
 methods that take the following form.
 \begin{equation}
   \int_{\Omega} u^{n+1} \varphi + \Delta t L_I[u^{n+1}] \diff x =
@@ -364,7 +364,7 @@ Here we create a simple square domain by specifying two opposite
 corners $(0,0)$ and $(1,1)$, and the number
 of elements in each direction $(4,4)$. We then refine the grid and
 plot the results, before coarsening it again. We note that this is a
-simplfied example and in general grids in Fempy can
+simplified example and in general grids in Fempy can
 additionally be constructed via a dictionary containing vertex and
 element information, gmsh files or \textit{dune grid format} (dgf)
 files when more complexity is required, which is demonstrated in the
@@ -597,7 +597,7 @@ there exist other such premade \dune schemes for different problems
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
-Lastly we note that it is possible to explictly define a model object
+Lastly we note that it is possible to explicitly define a model object
 to hold the method, and we investigate the different ways of doing
 this in section \ref{sec:header}.
 
@@ -698,7 +698,7 @@ for eocLoop in range(3):
                   l2error_fn, 'h1error': h1error_fn}, number=eocLoop)
     grid.hierarchicalGrid.globalRefine(1)
 ```
-We compile a table of the errors and eocs for additional refinement
+We compile a table of the errors and EOCs for additional refinement
 steps and a smaller timestep of $\Delta t = 0.001$ below.
 \begin{center}
   \begin{tabular}{l | l | l | l | l}
@@ -722,7 +722,7 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 
 We carry on our explanation of different \dune[Fempy] features by
 looking at the different methods of solving the PDE, which is
-facilitated by the different storage backends for spaces.
+facilitated by the different storage back ends for spaces.
 We will continue to do so in the context of a worked examples
 that demonstrate the practicality of these features.
 
@@ -737,7 +737,7 @@ that specifies the usage of \dune[Istl] (see \cite{Dune-Istl}) as a
 linear algebra backend. Changing the
 \pyth{storage} argument in the construction of the space makes
 it possible to use more sophisticated solvers (either better
-preconditioners or direct solvers). Other possibilites are shown in
+preconditioners or direct solvers). Other possibilities are shown in
 \ref{tab:discrete-functions}.
 
 In particular one thing that we can do with certain storage methods is
@@ -1042,12 +1042,12 @@ class}
 \begin{pweavecode}
 template< class Point >
 void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
-{
+]
   result[ 0 ] = u[ 0 ];
 }
 \end{pweavecode}
-A similar method exists for $D(x, u)$, as well as linearized
-versions for the purposes of nonlinear methods. Addtionally there are
+A similar method exists for $D(x, u)$, as well as linearised
+versions for the purposes of nonlinear methods. Additionally there are
 methods for the associated Dirichlet or Neumann boundary conditions.
 Together these form the elliptic model class which is
 one way of expressing bilinear forms in \dune[Fempy]. Generally this
@@ -1182,9 +1182,9 @@ Thus we see there is not a sizable difference between the \dune[Fem] and
 \noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
 speaking is negligible for long-running simulations. We also note that
 the most \textit{costly} aspect of pure python code are generally
-callbacks, and in this example this amounts to just the solve call. An additional example
-that taxes the two versions differently can be found in section
-\ref{sec:mcf-comparison}.
+callbacks, and in this example this amounts to just the solve call. An
+additional example that taxes the two versions differently can be
+found in section \ref{sec:mcf-comparison}.
 
 \section{Adaptive Mesh Refinement} \label{sec:crystal}
 
@@ -1301,7 +1301,7 @@ its relative ease of use, after which code can be ported to C++ for
 efficiency if necessary in large-scale computation.
 
 Here we will demonstrate this translation process, and additionally
-provide comparisons for the difference in effiency timewise. We will
+provide comparisons for the difference in efficiency timewise. We will
 examine the function used for calculating the averaged radius of a
 surface used in section \ref{sec:mcf}.
 \renewcommand{\pweavecaption}{A pythonic function for calculating the
@@ -1427,7 +1427,7 @@ Lagrange space of a fixed order using an \pyth{istl} storage)
 will only accept one type of discrete function as \pyth{target} argument
 for its solve method. As described before the advantage of this is that the
 full static type information is available at the cost of more compilation
-requirements when changes (e.g. to the storage backend) are made.
+requirements when changes (e.g. to the storage back end) are made.
 
 There are a few exceptions to the above rule, where Python objects
 passed as arguments to C++ functions undergo type erasure
@@ -1769,7 +1769,7 @@ selected during scheme creation above.
   \end{tabular}
 \end{table}
 There is also the possibility of constructing an operator that can be
-applied using the \pyth{__call__} method and linearized using the
+applied using the \pyth{__call__} method and linearised using the
 \pyth{jacobian} method but does not provide a \pyth{solve} method.
 This is especially of interest in the case where the operator maps
 between different spaces. Creating an operator is similar to the scheme

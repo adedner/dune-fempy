@@ -6,6 +6,7 @@
 #include <dune/fem/quadrature/cachingquadrature.hh>
 #include <dune/fempy/quadrature/fempyquadratures.hh>
 #include <dune/fempy/function/simplegridfunction.hh>
+#include <dune/fem/function/localfunction/const.hh>
 
 template< class GridView, class Rules, class GF >
 double l2norm2 ( const GridView &gridView, const Rules &rules, const GF& gf )
@@ -43,7 +44,7 @@ double l2norm2 ( const GridView &gridView, const Rules &rules, const GF& gf )
 template< class GridView, class Rules, class GF >
 double l2norm2FemQuad ( const GridView &gridView, const Rules &rules, const GF& gf )
 {
-  auto lf = localFunction( gf );
+  auto lf = Dune::Fem::ConstLocalFunction<GF>( gf );
   double l2norm2 = 0;
 
   Dune::GeometryType geoType;
@@ -61,24 +62,28 @@ double l2norm2FemQuad ( const GridView &gridView, const Rules &rules, const GF& 
 
   typedef Dune::Fem::CachingQuadrature< GridPart, 0, Dune::FemPy::FempyQuadratureTraits > VolumeQuadratureType;
 
-  //typedef typename GF::RangeType RangeType;
-  //std::vector< RangeType > values;
+  typedef typename GF::RangeType RangeType;
+  std::vector< RangeType > values;
 
   for( const auto &entity : elements( gridView ) )
   {
+    lf.bind( entity );
     VolumeQuadratureType quad( entity, order );
-    //values.resize( quad.nop() );
+    values.resize( quad.nop() );
 
     const auto geo = entity.geometry();
 
-    // lf.evaluate( quad, values );
+    lf.evaluateQuadrature( quad, values );
 
     for( int i=0; i<quad.nop(); ++i )
     {
-      std::cout << quad.point(i ) << "  " << quad.weight( i ) << std::endl;
-
-      //double weight = quad.weight( i ) * geo.integrationElement( quad.point( i ) );
-      //l2norm2 += (values[ i ] * values[ i ]) * weight;
+      double weight = quad.weight( i ) * geo.integrationElement( quad.point( i ) );
+#if 0
+      std::cout << quad.point( i ) << "  " << quad.weight( i )
+        << "    " << weight << " " << geo.global(quad.point(i))
+        << "     " << values[i] << std::endl;
+#endif
+      l2norm2 += (values[ i ] * values[ i ]) * weight;
     }
     lf.unbind();
   }

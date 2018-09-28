@@ -11,7 +11,8 @@ x = ufl.SpatialCoordinate( ufl.triangle )
 function = ufl.as_vector([ ufl.cos(2*ufl.pi/(0.3+x[0]*x[1])) ])
 space = dune.create.space("lagrange", yaspView, order=1)
 uh = space.interpolate( function, name="uh" )
-error = dune.create.function("ufl",gridview=yaspView,name="error",order=5,ufl=uh-function)
+error = dune.create.function("ufl",gridview=yaspView,name="error",order=5,ufl=uh-function,
+        virtualize=True)
 
 rules = dune.geometry.quadratureRules(5)
 

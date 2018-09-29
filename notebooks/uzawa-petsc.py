@@ -40,11 +40,11 @@ divModel    = -div(u)*q[0] * dx
 massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
-mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)),solver="cg")
+mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU,solver="cg")
 gradOp      = create.operator("h1",gradModel,spcP,spcU)
 divOp       = create.operator("h1",divModel,spcU,spcP)
-massOp      = create.scheme("h1",spcP,massModel==0,solver="cg")
-preconOp    = create.scheme("h1",spcP,preconModel==0,solver="cg")
+massOp      = create.scheme("h1",massModel==0,spcP,solver="cg")
+preconOp    = create.scheme("h1",preconModel==0,spcP,solver="cg")
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -60,6 +60,7 @@ precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
 # Question: should assemble method also provide the affine shift?
+print("ASSEMBLE all matrices")
 A      = mainOp.assemble(velocity)
 G      = gradOp.assemble(pressure)
 D      = divOp.assemble(velocity)

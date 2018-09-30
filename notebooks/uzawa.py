@@ -113,7 +113,7 @@ for m in range(100):                      # for (int m=0;m<100;++m)
     oldDelta = delta                      #     double oldDelta = delta;
     delta = r.scalarProductDofs(rhsPress) #     delta = r_.scalarProductDofs(rhsP_);
     print("delta:",delta,flush=True)      #     std::cout << "delta: " << delta << std::endl;
-    if delta < 1e-14: break               #     if ( delta < solverEps_*10. ) break;
+    if delta < 1e-9: break                #     if ( delta < solverEps_*10. ) break;
     gamma = delta/oldDelta                #     double gamma = delta/oldDelta;
     d *= gamma                            #     d_ *= gamma;
     d += r                                #     d_ += r_;

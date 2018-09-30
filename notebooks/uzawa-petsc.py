@@ -1,11 +1,3 @@
-#############################################
-### Note: this one doesn't work since the
-### PetscLinearOperator only allows for equal
-### block sizes. So the div/grad operators
-### can not be used with petsc matrices.
-### Needs to be fixed in dune-fem
-#############################################
-
 import numpy
 from scipy.sparse import bmat, linalg
 import dune.create as create
@@ -71,8 +63,8 @@ Ainv   = mainOp.inverseLinearOperator(A,1e-10,solver)
 Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
 Pinv   = preconOp.inverseLinearOperator(P,1e-10,solver)
 
-def plot(count):
-    grid.writeVTK("Stokes",
+def plot(count=None):
+    grid.writeVTK("Stokes-petsc",
             pointdata={"pressure":pressure, "rhsPress":rhsPress,
                        "exact_p":exact_p},
             pointvector={"velocity":velocity, "rhsVelo":rhsVelo,
@@ -119,8 +111,8 @@ for m in range(100):                      # for (int m=0;m<100;++m)
     oldDelta = delta                      #     double oldDelta = delta;
     delta = r.scalarProductDofs(rhsPress) #     delta = r_.scalarProductDofs(rhsP_);
     print("delta:",delta,flush=True)      #     std::cout << "delta: " << delta << std::endl;
-    if delta < 1e-14: break               #     if ( delta < solverEps_*10. ) break;
+    if delta < 1e-9: break                #     if ( delta < solverEps_*10. ) break;
     gamma = delta/oldDelta                #     double gamma = delta/oldDelta;
     d *= gamma                            #     d_ *= gamma;
     d += r                                #     d_ += r_;
-plot(0)
+plot()

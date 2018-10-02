@@ -147,8 +147,8 @@ while count < 20:
         uh.interpolate([0])  # initial guess needed
     else:
         marked = view.hierarchicalGrid.mark(mark)
-        fem.adapt(view.hierarchicalGrid, [uh])
-        fem.loadBalance(view.hierarchicalGrid, [uh])
+        fem.adapt(uh)
+        fem.loadBalance(uh)
     gridSize = view.size(0)
     laplace.solve( target=uh )
     count += 1

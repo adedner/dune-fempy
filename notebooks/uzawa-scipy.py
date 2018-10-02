@@ -31,12 +31,12 @@ massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
 # can also use 'operator' everywhere
-mainOp      = create.scheme("galerkin",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
-# mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
+mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
+# mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
 gradOp      = create.operator("h1",gradModel,spcP,spcU)
 divOp       = create.operator("galerkin",divModel,spcU,spcP)
-massOp      = create.scheme("galerkin",spcP,massModel==0)
-preconOp    = create.scheme("h1",spcP,preconModel==0)
+massOp      = create.scheme("galerkin",massModel==0,spcP)
+preconOp    = create.scheme("h1",preconModel==0,spcP)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01

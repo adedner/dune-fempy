@@ -13,6 +13,7 @@ from dune.fem.view import adaptiveLeafGridView
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = adaptiveLeafGridView(aluConformGrid(domain, dimgrid=2))
 # grid = aluConformGrid(domain, dimgrid=2) # this fails
+dune.fem.adapt(grid.hierarchicalGrid)
 
 # interpolate some data onto macro grid
 spc = lagrange(grid, dimrange=1, order=1)

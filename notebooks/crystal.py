@@ -194,8 +194,8 @@ hgrid    = grid.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(0,maxLevel):
     hgrid.mark(mark)
-    fem.adapt(hgrid,[solution])
-    fem.loadBalance(hgrid,[solution])
+    fem.adapt([solution])
+    fem.loadBalance([solution])
     solution.interpolate(initial_gf)
     print(grid.size(0),end=" ")
 print()
@@ -240,8 +240,8 @@ while t < endTime:
     print(t,grid.size(0),end="\r")
     t += timeStep
     hgrid.mark(mark)
-    fem.adapt(hgrid,[solution])
-    fem.loadBalance(hgrid,[solution])
+    fem.adapt([solution])
+    fem.loadBalance([solution])
     # vtk()
 print()
 

@@ -62,5 +62,5 @@ for i in range(20):
     print(gridSize, eta, marked)
     if eta < tolerance or sum(marked)==0:
         break
-    adapt(grid.hierarchicalGrid,[solution])
+    adapt(solution)
     gridSize = grid.size(0)

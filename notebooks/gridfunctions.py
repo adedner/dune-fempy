@@ -231,7 +231,7 @@ def id(x):
 dofs = np.random.random(spc.size)
 print("id of numpy array: ", id(dofs))
 # reinterpret the numpy vector as a discrete function
-xh = spc.numpyFunction(dofs,"name")
+xh = spc.function("name", dofVector=dofs)
 # get the dof vector as numpy array
 xh_dofs = xh.as_numpy
 print("id of dof vector: ", id(xh_dofs))

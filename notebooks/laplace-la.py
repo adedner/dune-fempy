@@ -9,7 +9,7 @@
 # ~~~
 # spc = create.space("lagrange", grid, dimrange=1, order=1, storage="istl")
 # ~~~
-# in the above code will switch to the solvers from `dune-istl`, other options are for example `eigen` or `petsc`.
+# in the above code will switch to the solvers from `dune-istl`, other options are for example `petsc` or `eigen`.
 #
 # Using the internal `fem` storage structure or the `eigen` matrix/vector strorage
 # it is also possible to directly treate them as`numpy` vectors and an assembled system matrix can be stored in a `sympy` sparse matrix.
@@ -121,7 +121,7 @@ plot(uh)
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()
 def f(x_coeff):
-    x = spc.numpyFunction(x_coeff, "tmp")
+    x = spc.function("tmp", dofVector=x_coeff)
     scheme(x,res)
     return res_coeff
 # class for the derivative DS of S
@@ -131,12 +131,12 @@ class Df(scipy.sparse.linalg.LinearOperator):
         self.dtype = sol_coeff.dtype
         # the following converts a given numpy array
         # into a discrete function over the given space
-        x = spc.numpyFunction(x_coeff, "tmp")
+        x = spc.function("tmp", dofVector=x_coeff)
         # store the assembled matrix
         self.jac = scheme.assemble(x).as_numpy
     # reassemble the matrix DF(u) gmiven a dof vector for u
     def update(self,x_coeff,f):
-        x = spc.numpyFunction(x_coeff, "tmp")
+        x = spc.function("tmp", dofVector=x_coeff)
         # Note: the following does produce a copy of the matrix
         # and each call here will reproduce the full matrix
         # structure - no reuse possible in this version
@@ -226,11 +226,11 @@ if petsc4py:
 if petsc4py:
     uh.clear()
     def f(snes, X, F):
-        inDF = spc.petscFunction(X)
-        outDF = spc.petscFunction(F)
+        inDF = spc.function("tmp", dofVector=X)
+        outDF = spc.function("tmp", dofVector=F)
         scheme(inDF,outDF)
     def Df(snes, x, m, b):
-        inDF = spc.petscFunction(x)
+        inDF = spc.function("tmp", dofVector=x)
         matrix = scheme.assemble(inDF).as_petsc
         m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
         b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
@@ -248,4 +248,4 @@ if petsc4py:
 
 
 # __Note__:
-# The method `as_numpy, as_petsc` returning the`dof` vector either as a `numpy` or a `petsc` do not lead to a copy of the data and the same is true fr the `numpyFunction` and the `petscFunction` methods on the space. In the `numpy` case we can use `Python`'s buffer protocol to use the same underlying storage. In the case of `petsc` the underlying `Vec` can be shared. In the case of matrices the situation is not yet as clear: `scheme.assemble` returns a copy of the data in the `scipy` case while the `Mat` structure is shared between `c++` and  `Python` in the `petsc` case. But at the time of writting it is not possible to pass in the `Mat` structure to the `scheme.assemble` method from the outside. That is why it is necessary to copy the data when using the `snes` non linear solver as seen above.
+# The method `as_numpy, as_petsc` returning the `dof` vector either as a `numpy` or a `petsc` do not lead to a copy of the data and the same is true for the `function` method on the space. In the `numpy` case we can use `Python`'s buffer protocol to use the same underlying storage. In the case of `petsc` the underlying `Vec` can be shared. In the case of matrices the situation is not yet as clear: `scheme.assemble` returns a copy of the data in the `scipy` case while the `Mat` structure is shared between `c++` and  `Python` in the `petsc` case. But at the time of writting it is not possible to pass in the `Mat` structure to the `scheme.assemble` method from the outside. That is why it is necessary to copy the data when using the `snes` non linear solver as seen above.

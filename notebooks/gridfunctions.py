@@ -200,7 +200,7 @@ plot(copy)
 #
 # Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` property on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
 #
-# Accessing the dof vector becomes useful when the `eigen` backend is used for storing the dofs. In this case the
+# Accessing the dof vector becomes useful when the `fem` or `eigen` backend is used for storing the dofs. In this case the
 # python buffer protocol is used to convert the dof vector into an `numpy` array without requiring any copy.
 # This requires having the [Eigen package][1].
 #
@@ -210,7 +210,7 @@ plot(copy)
 
 
 import numpy as np
-spc = create.space("lagrange", grid, dimrange=1, order=1, storage='eigen')
+spc = create.space("lagrange", grid, dimrange=1, order=1, storage='fem')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
 uh_dofs = uh.as_numpy # equivalent to np.array( uh.dofVector, copy=False )
@@ -218,7 +218,7 @@ uh_dofs *= -2
 plot(uh)
 
 
-# We can also use an existing `numpy` array as basis of a discrete function (over space with `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
+# We can also use an existing `numpy` array as basis of a discrete function (over space with `fem` or `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
 
 # In[ ]:
 

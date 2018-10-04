@@ -92,6 +92,7 @@ try:
     import numpy
     mlab.init_notebook()
     def show3d():
+        # if not block: return
         t = surface.tesselate(level=2)
         x = t[0][:,0]
         y = t[0][:,1]

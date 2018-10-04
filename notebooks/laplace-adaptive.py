@@ -20,7 +20,7 @@
 #
 # We first define the domain and set up the grid and space
 
-# In[4]:
+# In[ ]:
 
 
 try:
@@ -59,7 +59,7 @@ spc  = create.space( "lagrange", view, dimrange=1, order=order )
 
 # Next define the model together with the exact solution.
 
-# In[5]:
+# In[ ]:
 
 
 from ufl import *
@@ -98,7 +98,7 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
 
-# In[6]:
+# In[ ]:
 
 
 # energy error
@@ -122,7 +122,7 @@ def mark(element):
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
 
-# In[7]:
+# In[ ]:
 
 
 # adaptive loop (solve, mark, estimate)
@@ -158,7 +158,7 @@ pyplot.close('all')
 
 # Let's have a look at the center of the domain:
 
-# In[8]:
+# In[ ]:
 
 
 fig = pyplot.figure(figsize=(15,15))
@@ -171,7 +171,7 @@ pyplot.close('all')
 
 # Finally, let us have a look at the grid levels:
 
-# In[9]:
+# In[ ]:
 
 
 from dune.fem.function import levelFunction

@@ -35,12 +35,13 @@ import dune.create as create
 # In[ ]:
 
 
-from dune.plotting import block
+from dune.plotting import block, disable
 from matplotlib import pyplot
 from matplotlib.collections import PolyCollection
 from numpy import amin, amax, linspace
 
 def plotGrid(grid):
+    if disable: return
     if not grid.dimension == 2:
         print("inline plotting so far only available for 2d grids")
         return

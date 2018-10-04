@@ -144,4 +144,5 @@ def test(space):
         pass
 
 test("lagrange")
-test("dglegendre")
+test("dglagrange")
+# test("dglegendre") # only works with cube grids

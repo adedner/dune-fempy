@@ -26,6 +26,7 @@
 \usepackage{anslistings}
 \usepackage{subcaption}
 \usepackage{xspace}
+\usepackage{comment}
 
 \newcommand{\dune}[1][]{\textsc{Dune}\ifx&#1&\else\textsc{-{#1}}\fi\xspace}
 \newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
@@ -74,9 +75,18 @@
 
 \maketitle
 
-Remove the following from the final tex output - leave in now so that
-ptangle works
-```python, label = "intro"
+```python, label="Intro", echo=False
+# <markdowncell>
+# Python code from the Dune-FemPy paper
+# ======================================
+# This Jupyter notebook contains the code examples shown in the
+# Dune-Python paper.
+# The sectioning reflects that of the paper and, while some introductory
+# comments are given, we refer to it for the details.
+#
+# __Note__: Some of the code cells depend on previous ones and cannot be
+# executed in arbitrary order.
+# <codecell>
 import time
 import numpy
 import math
@@ -91,7 +101,7 @@ In this paper we present the new \dune[Fempy] module...
 \keywords{..., \dune}
 \end{abstract}
 
-\tableofcontents
+% \tableofcontents
 
 \section{Introduction}
 
@@ -207,6 +217,7 @@ HTTP generator?}
 non variational problems or bounding box dg? Perhaps we could show r
 adaptivity (also shows off the moving grid capability) and the use of
 dune-femnv?}
+\Atodo{twophaseflow example? p-adaptivity? Uzawa examples?}
 
 %<*tag>
 
@@ -815,7 +826,7 @@ from scipy.sparse.linalg import LinearOperator
 def f(x_coeff):
     res = u_h.copy(name="residual")
     res_coeff = res.as_numpy
-    x = space.numpyFunction(x_coeff, "tmp")
+    x = space.function("tmp", dofVector=x_coeff)
     scheme(x, res)
     return res_coeff
 
@@ -826,12 +837,12 @@ class Df(LinearOperator):
         self.dtype = x_coeff.dtype
         # the following converts a given numpy array
         # into a discrete function over the given space
-        x = space.numpyFunction(x_coeff, "tmp")
+        x = space.function("tmp", dofVector=x_coeff)
         # store the assembled matrix
         self.jac = scheme.assemble(x).as_numpy
     # reassemble the matrix DF(u) given a DoF vector for u
     def update(self, x_coeff, f):
-        x = space.numpyFunction(x_coeff, "tmp")
+        x = space.function("tmp", dofVector=x_coeff)
         # Note: the following does produce a copy of the matrix
         # and each call here will reproduce the full matrix
         # structure - no reuse possible in this version
@@ -938,11 +949,11 @@ solvers (SNES) directly}
 \renewcommand{\pweavelabel}{lst:forch-petsc-snes}
 ```python, label='forch-petsc-snes', fig=True, caption='Plot of solution using SNES', width='0.5\\textwidth'
 def f(snes, X, F):
-    inDF = space.petscFunction(X)
-    outDF = space.petscFunction(F)
+    inDF = space.function("tmp",dofVector=X)
+    outDF = space.function("tmp",dofVector=F)
     scheme(inDF,outDF)
 def Df(snes, x, m, b):
-    inDF = space.petscFunction(x)
+    inDF = space.function("tmp",dofVector=x)
     matrix = scheme.assemble(inDF).as_petsc
     m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
     b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
@@ -975,8 +986,8 @@ plot(u_h)
 \noindent \textit{Remark.} The methods \pyth{as_numpy} and \pyth{as_petsc}
 (returning the DoF vector either as a \pyth{numpy} or a \pyth{petsc}
 vector) do not lead to a copy of the data and the same is true for the
-\pyth{numpyFunction} and the \pyth{petscFunction} methods on the
-space. In the \pyth{numpy} case we can use python's buffer protocol to
+\pyth{function} objects returned by the \pyth{function} method on the
+discrete space. In the \pyth{numpy} case we can use python's buffer protocol to
 use the same underlying storage. In the case of \pyth{petsc} the
 underlying \pyth{Vec} can be shared. In the case of matrices the
 situation is not yet as clear; \pyth{scheme.assemble} returns a copy of the
@@ -1275,6 +1286,7 @@ time step and $\theta\in[0,1]$ is a discretization parameter.
 
 \input{mcf.tex}
 
+\begin{comment}
 \section{Partitioned Grids} \label{sec:battery}
 
 As another application of grid techniques, we look at a problem where
@@ -1285,7 +1297,7 @@ described in \cite{Muthing} (though Fempy bindings are not yet
 available).
 
 \input{battery.tex}
-
+\end{comment}
 
 \section{Translating Python Code to C++} \label{sec:mcf-comparison}
 
@@ -1473,10 +1485,13 @@ underlying type of the grid view and the range dimension of the model but
 not on the actual details of the bilinear form. The consequence of this
 approach is that evaluating some part of the form introduces a virtual
 function call.
-% explain that tests have shown that this is negligible and refer to
-% performance tests in later section. Mention virtualization parameter to
-% disable type erasure if required.
-% Also need to add the virtualization of the coefficients in the model
+\Atodo{
+explain that tests have shown that this is negligible and show some
+performance test. Mention virtualization parameter to
+disable type erasure if required.
+Also need to add the virtualization of the coefficients in the model (which
+can also be diasbled).
+}
 
 %</tag>
 
@@ -1487,6 +1502,51 @@ function call.
 
 %<*append>
 
+\section{Installation}
+\label{sec:installation}
+
+\Atodo{Taken from dune-python paper - need to adapt}
+
+The simplest approach for testing \dune[Python] is to use the provided
+Docker image. It includes a number of Jupyter notebooks showcasing
+the possibilities of the \dune Python bindings. There is a special Docker
+image accompanying this paper. It can be used by executing
+\begin{bash}
+docker run --rm -v dune-python-paper:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/staging/dune-python:paper2018
+\end{bash}
+The Jupyter server can then be accessed from a web browser at \url{http://127.0.0.1:8888};
+the password is \file{dune}.
+The code examples from this paper are included in the notebook file
+\file{paper2018.ipynb}.
+Notice that this method works on Linux, MacOS, and Windows alike, although it
+might be necessary to increase the amount of system memory given to Docker to
+4~GB, e.g., on MacOS.
+
+If you already have the \dune core modules either installed or in local
+space, it suffices to download the \dune[Python] module
+\begin{bash}
+export GITURL=https://gitlab.dune-project.org/staging/dune-python
+wget -qO - ${GITURL}/repository/archive.tar.gz?ref=releases/2.6 | tar xz
+\end{bash}
+and to configure the module by running \code{dunecontrol}. Then
+set the environment variable \code{PYTHONPATH} to include the \code{python}
+subfolder in the build directory of \dune[Python], e.g.,
+\code{dune-python/build-cmake/python}.
+% The code used for the paper is
+% available as Python script and as Jupyter notebook in the `paper2018`
+% folder in the \dune[Python] source directory.
+
+For some of the example \dune[ALUGrid] and for the final example
+\dune[Polygongrid] will be required in addition to
+the core modules. After building these modules the corresponding `python`
+subfolder in the build directories of these modules also need to be added
+to \code{PYTHONPATH}.
+For a more permanent installation of \dune[Python] we suggest to set up a
+virtual environment and install all necessary \dune modules into it.
+More details can be found in the \url{README.md} file or on the main page of
+the GitLab repository of \dune[Python].
+
+\begin{comment}
 \section{Derivation of Forchheimer Model} \label{sec:forch}
 The origin of this equation stems from Darcy's law, an equation that
 describes flow through porous media, and is applied regularly to
@@ -1545,6 +1605,7 @@ Then we have the time discretized PDE.
 \end{equation*}
 We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
 we replace $\rho$ with $u$ for simplicity.
+\end{comment}
 
 \section{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
 
@@ -1552,7 +1613,7 @@ Here we present the C++ version of the Forchheimer example from
 section \ref{sec:fem-in-fempy} using \dune[FEM], that we compare to
 the python version in section \ref{sec:cpp-models}.
 
-\inputcpp{../../dune-fempy/forchheimer/main.cc}{}{lst:forch-cpp}
+\inputcpp{./forchheimer/main.cc}{}{lst:forch-cpp}
 
 \section{List of Dune-Python modules} \label{sec:modules}
 

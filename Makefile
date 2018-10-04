@@ -11,9 +11,9 @@ all: $(PDF) $(PY) dune-fempy.ipynb
 
 .PHONY: clean distclean
 clean:
-	@rm -f *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png
+	@rm -f *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc
 distclean: clean
-	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu
+	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu dune-fempy.py
 
 .PRECIOUS: %.tex
 

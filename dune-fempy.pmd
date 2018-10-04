@@ -443,7 +443,7 @@ installation, provided python bindings are created for it. For instance we could
 discontinuous Galerkin space with orthonormal basis functions instead
 by using \pyth{'dgonb'}.
 
-\subsection{Grid  Functions} \label{sec:functions}
+\subsection{Grid Functions} \label{sec:functions}
 
 Having defined the computational domain and function space, we look
 towards functions that we may need to define, e.g. for containing the
@@ -780,6 +780,9 @@ alternative below, and plot the result in figure \ref{fig:forch-newton}.
 solve method}
 \renewcommand{\pweavelabel}{lst:forch-newton}
 ```python, label='forch-newton', fig=True, caption='Plot of solution for python-side Newton scheme', width='0.5\\textwidth'
+# <markdowncell>
+# Implementing a simple Newton Krylov solver using the dune-fem linear solvers
+# <codecell>
 import numpy as np
 from scipy.sparse.linalg import spsolve
 class Scheme:
@@ -820,6 +823,9 @@ which is identical to before.
 SciPy}
 \renewcommand{\pweavelabel}{lst:forch-df}
 ```python, label='forch-df', fig=True, caption='Plot of solution with Df operator', width='0.5\\textwidth'
+# <markdowncell>
+# Using a non linear solver from the Scipy package
+# <codecell>
 from scipy.optimize import newton_krylov
 from scipy.sparse.linalg import LinearOperator
 
@@ -885,6 +891,10 @@ results found once again in figure \ref{fig:forch-petsc}.
 \renewcommand{\pweavecaption}{Using petsc4py to solve using PETSc}
 \renewcommand{\pweavelabel}{lst:forch-petsc}
 ```python, label='forch-petsc', fig=True, caption='Plot of solution using PETSc', width='0.5\\textwidth'
+# <markdowncell>
+# Switching to a storage based on the PETSc solver package and solving the
+# sysyem using the dune-fem bindings
+# <codecell>
 space = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc')
 scheme = create.scheme("galerkin", a == b, space=space,
                    parameters={"petsc.preconditioning.method":"sor"})
@@ -907,6 +917,9 @@ from \pyth{petsc4py}.
 define a Newton scheme and solve}
 \renewcommand{\pweavelabel}{lst:forch-petsc-ksp}
 ```python, label='forch-petsc-ksp', fig=True, caption='Plot of solution using PETSc and a Krylov method', width='0.5\\textwidth'
+# <markdowncell>
+# Implementing a Newton Krylov solver using the binding provided by petsc4py
+# <codecell>
 import petsc4py, sys
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
@@ -948,6 +961,9 @@ classes) directly.
 solvers (SNES) directly}
 \renewcommand{\pweavelabel}{lst:forch-petsc-snes}
 ```python, label='forch-petsc-snes', fig=True, caption='Plot of solution using SNES', width='0.5\\textwidth'
+# <markdowncell>
+# Using the petsc4py bindings for the non linear KSP solvers from PETSc
+# <codecell>
 def f(snes, X, F):
     inDF = space.function("tmp",dofVector=X)
     outDF = space.function("tmp",dofVector=F)

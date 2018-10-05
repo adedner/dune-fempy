@@ -422,6 +422,11 @@ following code.
 \renewcommand{\pweavecaption}{Creating a Lagrange space with
 polynomial basis functions}
 \renewcommand{\pweavelabel}{lst:space}
+```python, label="fem1", echo=False
+# <markdowncell>
+# Setting up a discrete function space and some grid function
+# <codecell>
+```
 ```python, label = 'space'
 import dune.create as create
 space = create.space('lagrange', grid, dimrange=1, order=2)
@@ -477,11 +482,15 @@ show how we would compute the $L^2$ norm of the initial function.
 We do this using \pyth{integrate} as follows.
 \renewcommand{\pweavecaption}{Integrating the initial data}
 \renewcommand{\pweavelabel}{lst:forch-integrate}
+```python, label="fem2", echo=False
+# <markdowncell>
+# We can easily easily integrate grid function
+# <codecell>
+```
 ```python, label = 'forch-integrate'
 from dune.fem.function import integrate
-from ufl import sqrt
-norm = sqrt( integrate(grid, initial, 5)[0] )
-print(norm)
+mass = integrate(grid, initial, 5)[0]
+print(mass)
 ```
 We can also plot functions fairly easily. The two main ways to do
 this in Fempy are either a quick plot in \pyth{matplotlib}
@@ -491,6 +500,11 @@ below, resulting in figure \ref{fig:forch-plot}.
 \renewcommand{\pweavecaption}{Plotting a function using two different
 methods}
 \renewcommand{\pweavelabel}{lst:forch-plot}
+```python, label="fem2", echo=False
+# <markdowncell>
+# and plot them using matplotlib or write a vtk file for postprocessing
+# <codecell>
+```
 ```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
 from dune.fem.plotting import plotPointData as plot
 plot(initial, grid=grid)
@@ -502,6 +516,14 @@ function. A discrete function can be created through interpolation as
 shown below.
 \renewcommand{\pweavecaption}{}
 \renewcommand{\pweavelabel}{lst:forch-uh}
+```python, label="fem3", echo=False
+# <markdowncell>
+# So far we used grid functions defined globally. An important subclass of
+# grid functions are discrete functions over a given discrete function space.
+# The easiest way to construct such functions is to use the interpolate
+# method on the discrete function space:
+# <codecell>
+```
 ```python, label = 'forch-uh'
 u_h = space.interpolate(initial, name='u_h')
 ```
@@ -541,6 +563,11 @@ on in the following example. To begin with, it is
 necessary to define the variables that are used in the equation.
 \renewcommand{\pweavecaption}{Setting up UFL variables to be used}
 \renewcommand{\pweavelabel}{lst:forch-variables}
+```python, label="fem4", echo=False
+# <markdowncell>
+# Now we can set up our PDE model
+# <codecell>
+```
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction
 from dune.ufl import NamedConstant
@@ -549,6 +576,8 @@ v = TestFunction(space)
 dt = NamedConstant(space, "dt")    # time step
 t  = NamedConstant(space, "t")     # current time
 ```
+\Atodo{Provide the Forchheimer model in the markdowncell}
+
 The trial function $u$ and the test function $v$ are defined on the
 same \pyth{space} as before. Additionally $\Delta t$ and $t$ are
 defined as \pyth{NamedConstant}, which is simply a UFL \pyth{Constant}
@@ -565,7 +594,7 @@ This results in an implementation of the following form.
 \renewcommand{\pweavecaption}{Implementing the bilinear form}
 \renewcommand{\pweavelabel}{lst:forch-eqn-impl}
 ```python, label = 'forch-eqn-impl'
-from ufl import dx, grad, inner
+from ufl import dx, grad, inner, sqrt
 abs_du = sqrt(inner(grad(u), grad(u)))
 K = 2/(1 + sqrt(1 + 4*abs_du))
 a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
@@ -597,6 +626,13 @@ Finally, having defined the bilinear form and right hand side, we can
 now set up a scheme object which we can use to solve the PDE.
 \renewcommand{\pweavecaption}{Creating an $H^{1}$ scheme}
 \renewcommand{\pweavelabel}{lst:forch-scheme}
+```python, label="fem5", echo=False
+# <markdowncell>
+# With the model described as a ufl form, we can construct a scheme class
+# that provides the solve method which we can use to evolve the solution from
+# one time step to the next:
+# <codecell>
+```
 ```python, label = 'forch-scheme'
 scheme = create.scheme("galerkin", a == b, solver='cg')
 ```
@@ -654,6 +690,15 @@ This can be achieved with the following code.
 \renewcommand{\pweavecaption}{Writing expressions for the error
 computed at the final time}
 \renewcommand{\pweavelabel}{lst:forch-error}
+```python, label="fem6", echo=False
+# <markdowncell>
+# Since we have forced the system towards a given solution, we can compute
+# the discretization error. First we define ufl expressions for the \$L^2\$
+# and \$H^1\$ norms and will use those to compute the experimental order of
+# convergence of the scheme by computing the time evolution on different grid
+# levels.
+# <codecell>
+```
 ```python, label = 'error'
 exact_end = exact(1)
 l2error_fn = inner(u_h - exact_end, u_h - exact_end)
@@ -722,6 +767,10 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
     4096 & 7.024e-09 & 2.994 & 3.482e-06 & 2.000
   \end{tabular}
 \end{center}
+\Atodo{this output should be generated by the script using for example
+pandas output}
+
+
 \section{Alternate Solve Methods} \label{sec:solve}
 ```python, label="solve-methods", echo=False
 # <markdowncell>
@@ -730,6 +779,7 @@ steps and a smaller timestep of $\Delta t = 0.001$ below.
 # packages and python functionality.
 # <codecell>
 ```
+\Atodo{Remove the plot command - replace with error and number of iterations?}
 
 We carry on our explanation of different \dune[Fempy] features by
 looking at the different methods of solving the PDE, which is
@@ -779,10 +829,12 @@ alternative below, and plot the result in figure \ref{fig:forch-newton}.
 \renewcommand{\pweavecaption}{Creating a class to hold a different
 solve method}
 \renewcommand{\pweavelabel}{lst:forch-newton}
-```python, label='forch-newton', fig=True, caption='Plot of solution for python-side Newton scheme', width='0.5\\textwidth'
+```python, label="solve-methods1", echo=False
 # <markdowncell>
 # Implementing a simple Newton Krylov solver using the dune-fem linear solvers
 # <codecell>
+```
+```python, label='forch-newton', fig=True, caption='Plot of solution for python-side Newton scheme', width='0.5\\textwidth'
 import numpy as np
 from scipy.sparse.linalg import spsolve
 class Scheme:
@@ -822,10 +874,12 @@ which is identical to before.
 \renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with
 SciPy}
 \renewcommand{\pweavelabel}{lst:forch-df}
-```python, label='forch-df', fig=True, caption='Plot of solution with Df operator', width='0.5\\textwidth'
+```python, label="solve-methods2", echo=False
 # <markdowncell>
 # Using a non linear solver from the Scipy package
 # <codecell>
+```
+```python, label='forch-df', fig=True, caption='Plot of solution with Df operator', width='0.5\\textwidth'
 from scipy.optimize import newton_krylov
 from scipy.sparse.linalg import LinearOperator
 
@@ -873,6 +927,7 @@ u_h.interpolate(initial)
 evolve(scheme2_cls, u_h, u_h_n)
 plot(u_h)
 ```
+\Atodo{Remove the comments from the python script - should be part of the actuall text}
 We can also solvers from the PETSc package (see \cite{PETSc}) to solve
 the problem. This can be done either through bindings available in
 \dune[fem] or through the \pyth{petsc4py} package
@@ -890,11 +945,13 @@ creating a new \pyth{space}. Then we have the following code, with the same
 results found once again in figure \ref{fig:forch-petsc}.
 \renewcommand{\pweavecaption}{Using petsc4py to solve using PETSc}
 \renewcommand{\pweavelabel}{lst:forch-petsc}
-```python, label='forch-petsc', fig=True, caption='Plot of solution using PETSc', width='0.5\\textwidth'
+```python, label="solve-methods2", echo=False
 # <markdowncell>
 # Switching to a storage based on the PETSc solver package and solving the
 # sysyem using the dune-fem bindings
 # <codecell>
+```
+```python, label='forch-petsc', fig=True, caption='Plot of solution using PETSc', width='0.5\\textwidth'
 space = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc')
 scheme = create.scheme("galerkin", a == b, space=space,
                    parameters={"petsc.preconditioning.method":"sor"})
@@ -916,10 +973,12 @@ from \pyth{petsc4py}.
 \renewcommand{\pweavecaption}{Using petsc4py and its Krylov solvers to
 define a Newton scheme and solve}
 \renewcommand{\pweavelabel}{lst:forch-petsc-ksp}
-```python, label='forch-petsc-ksp', fig=True, caption='Plot of solution using PETSc and a Krylov method', width='0.5\\textwidth'
+```python, label="solve-methods4", echo=False
 # <markdowncell>
 # Implementing a Newton Krylov solver using the binding provided by petsc4py
 # <codecell>
+```
+```python, label='forch-petsc-ksp', fig=True, caption='Plot of solution using PETSc and a Krylov method', width='0.5\\textwidth'
 import petsc4py, sys
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
@@ -960,10 +1019,12 @@ classes) directly.
 \renewcommand{\pweavecaption}{Using petsc4py and their nonlinear
 solvers (SNES) directly}
 \renewcommand{\pweavelabel}{lst:forch-petsc-snes}
-```python, label='forch-petsc-snes', fig=True, caption='Plot of solution using SNES', width='0.5\\textwidth'
+```python, label="solve-methods5", echo=False
 # <markdowncell>
 # Using the petsc4py bindings for the non linear KSP solvers from PETSc
 # <codecell>
+```
+```python, label='forch-petsc-snes', fig=True, caption='Plot of solution using SNES', width='0.5\\textwidth'
 def f(snes, X, F):
     inDF = space.function("tmp",dofVector=X)
     outDF = space.function("tmp",dofVector=F)

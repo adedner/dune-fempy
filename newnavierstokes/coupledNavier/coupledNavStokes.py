@@ -11,9 +11,9 @@ from dune.ufl import DirichletBC, Space
 
 
 # Crank Nicholson
-theta = 1.
+# theta = 1.
 deltaT = 0.001
-viscosity = 1.0
+viscosity = 1.0e0
 import dune.fem
 dune.fem.parameter.append({"fem.verboserank": 0,
                            "istl.preconditioning.method": "ilu",
@@ -64,10 +64,10 @@ def compute():
 
     u_n = old_velo
     tau = Constant(triangle)
-    a = (inner(u - u_n, v) + tau * viscosity * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
+    a = (inner(u - u_n, v) + tau * viscosity * inner(grad(u), grad(v))) * dx
     a += -1*tau*inner(p[0],div(v)) * dx
     a += tau* inner(grad(u), outer(v, u)) * dx
-    a += div(u)*q[0] * dx
+    a += inner(div(u), q[0]) * dx
 
 
     # a -= (inner(outer(jump(u), n('+')), avg(grad(v))) + inner(avg(grad(u)), outer(jump(v), n('+')))) * dS
@@ -103,13 +103,15 @@ def compute():
     # scheme = create.scheme("linearized", scheme, parameters=solverParameter)
     # scheme = create.scheme("linearized", scheme="h1", ubar=solution, space=spc, model=model, parameters=solverParameter)
 
-    # now loop through time and output the solution after each time step
-    steps = 500
-    for n in range(1,steps+1):
-        # old_solution.assign(solution)
+    endTime = 0.05
+    timeStep = deltaT
+    time = timeStep
+    while time < endTime:
+        print( "Time is:", time )
         old_velo.assign(velocity)
 
         scheme.solve(target=velocity)
         vtk()
+        time += timeStep
 
 compute()

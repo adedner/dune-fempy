@@ -7,17 +7,16 @@ import dune.fem
 from math import pi,log10
 from ufl import cos, sin, exp, as_vector, dx, grad, inner
 
-# Crank Nicholson
-theta = 0.5
 deltaT = 0.01
 
 from dune.fem import parameter
 parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
 order = 2
-#grid = create.grid( "ALUSimplex", "../../data/hole2_larger.dgf", dimgrid=2 )
+# grid = create.grid( "ALUSimplex", "../../data/unitcube-2d.dgf", dimgrid=2 )
+# grid.hierarchicalGrid.globalRefine(2)
 
-grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
+grid = create.grid("ALUCube",constructor=cartesianDomain([-1,-1],[1,1],[30,30]))
 # grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[1,1],[10,10]))
 spcU = create.space("lagrange", grid, dimrange=grid.dimension, order=order, storage="istl")
 spcP = create.space("lagrange", grid, dimrange=1, order=order-1, storage="istl")
@@ -31,10 +30,10 @@ p     = TrialFunction(spcP)
 q     = TestFunction(spcP)
 time     = NamedConstant(triangle, "t")     # current time
 
-exact_u     = as_vector( [x[1] * (1.-x[1]), 0] )
-exact_p     = as_vector( [ (-2*x[0] + 2)*0.1 ] )
-# exact_u     = as_vector( [-1*cos(2.*pi*x[0])*sin(2.*pi*x[1])*exp(-8.*pi*pi*mu*time), sin(2.*pi*x[0])*cos(2.*pi*x[1])*exp(-8.*pi*pi*mu*time)])
-# exact_p     = as_vector( [ -0.25*cos(4.*pi*x[0])*cos(4.*pi*x[1])*exp(-16.*pi*pi*mu*time) ] )
+# exact_u     = as_vector( [x[1] * (1.-x[1]), 0] )
+# exact_p     = as_vector( [ (-2*x[0] + 2)*0.1 ] )
+exact_u     = as_vector( [-1*cos(2.*pi*x[0])*sin(2.*pi*x[1])*exp(-8.*pi*pi*mu*time), sin(2.*pi*x[0])*cos(2.*pi*x[1])*exp(-8.*pi*pi*mu*time)])
+exact_p     = as_vector( [ -0.25*cos(4.*pi*x[0])*cos(4.*pi*x[1])*exp(-16.*pi*pi*mu*time) ] )
 f           = as_vector( [0,]*grid.dimension )
 f          += nu*exact_u
 mainModel   = (deltaT*nu*dot(u,v) + deltaT*mu*inner(grad(u)+grad(u).T, grad(v)) - deltaT*dot(f,v)) * dx
@@ -53,20 +52,14 @@ massOp      = create.scheme("galerkin",massModel==0)
 preconOp    = create.scheme("h1",preconModel==0)
 
 
-mainOp.model.mu = 0.1
-mainOp.model.nu = 1.0
+mainOp.model.mu = 0.01
+mainOp.model.nu = 0
 # velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
 # pressure = spcP.interpolate([0], name="pressure")
-velocity = spcU.interpolate( lambda x: [ x[1] * ( 1.0 - x[ 1 ] ),0], name = "velocity", storage = "Istl" )
-pressure = spcP.interpolate( lambda x: [(-2*x[0] + 2)*0.1], name = "pressure", storage = "Istl" )
-
-grid.writeVTK("NavierStokes",
-        pointdata={"pressure":pressure,
-                   "exact_p":exact_p},
-        pointvector={"velocity":velocity,
-                     "exact_velo":exact_u},
-        number=0
-)
+velocity = spcU.interpolate( exact_u, name = "velocity", storage = "Istl" )
+pressure = spcP.interpolate( exact_p, name = "pressure", storage = "Istl" )
+vtk = grid.sequencedVTK("FracNavierStokes", pointdata=[velocity])
+vtk()
 
 def compute():
     rhsVelo  = velocity.copy()
@@ -94,15 +87,6 @@ def compute():
     u_n = old_solution
     tau = 1
     solution = velocity, pressure
-
-    # def plot(count):
-    #     grid.writeVTK("NavierStokes",
-    #             pointdata={"pressure":pressure, "rhsPress":rhsPress,
-    #                        "exact_p":exact_p},
-    #             pointvector={"velocity":velocity, "rhsVelo":rhsVelo,
-    #                          "exact_velo":exact_u},
-    #             number=count
-    #     )
 
 
     def solveStokes(rhsVelo,r,d):
@@ -169,33 +153,22 @@ def compute():
     def solveBurger():
         old_solution.assign(velocity)
         scheme.solve(target=velocity)
+        vtk()
 
-    print( 'Solve step 1 - Stokes' )
-    solveStokes(rhsVelo,r,d)
-    print( 'Solve step 2 - Burgers' )
-    solveBurger()
-    print( 'Solve step 3 - Stokes' )
-    solveStokes(rhsVelo,r,d)
+    endTime = 1
+    timeStep = deltaT
+    time = timeStep
+    counter = 0
+    while time < endTime:
+        print( "Time is:", time )
+        print( 'Solve step 1 - Stokes' )
+        solveStokes(rhsVelo,r,d)
+        print( 'Solve step 2 - Burgers' )
+        solveBurger()
+        print( 'Solve step 3 - Stokes' )
+        solveStokes(rhsVelo,r,d)
 
-    # plot()
-    # vtk = grid.sequencedVTK("heat", pointdata=[velocity])
-    # vtk()
+        time += timeStep
 
 
-endTime = 10
-timeStep = deltaT
-time = timeStep
-counter = 1
-while time < endTime:
-    print( "Time is:", time )
-    compute()
-    grid.writeVTK("NavierStokes",
-            pointdata={"pressure":pressure,
-                       "exact_p":exact_p},
-            pointvector={"velocity":velocity,
-                         "exact_velo":exact_u},
-            number=counter
-    )
-    # vtk = grid.writeVTK("ns_", pointdata=[velocity, pressure], number=counter )
-    time += timeStep
-    counter += 1
+compute()

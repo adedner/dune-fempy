@@ -1,3 +1,5 @@
+# NOTE: there is some issue with failing convergence when using solver=cg -
+# it should work...
 import dune.create as create
 from dune.grid import cartesianDomain
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
@@ -5,7 +7,7 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
 from dune.fem import parameter
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0})
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
@@ -30,13 +32,17 @@ divModel    = -div(u)*q[0] * dx
 massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
+solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
 # can use 'h1' or 'galerkin'
-# mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)), solver="cg")
-mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)))
+# mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
+mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
+                            solver="gmres", parameters=solverParameters)
 gradOp      = create.operator("h1",gradModel)
 divOp       = create.operator("galerkin",divModel)
-massOp      = create.scheme("galerkin",massModel==0)
-preconOp    = create.scheme("h1",preconModel==0)
+massOp      = create.scheme("h1",massModel==0,
+                            solver="gmres", parameters=solverParameters)
+preconOp    = create.scheme("h1",preconModel==0,
+                            solver="gmres", parameters=solverParameters)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -52,12 +58,12 @@ precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
 # Question: should assemble method also provide the affine shift?
-A      = mainOp.assemble(velocity)
+A      = mainOp.assemble(velocity) # FIXME: , parameters=solverParameters)
 G      = gradOp.assemble(pressure)
 D      = divOp.assemble(velocity)
 M      = massOp.assemble(pressure)
 P      = preconOp.assemble(pressure)
-solver = {"krylovmethod":"cg","fem.solver.verbose":0}
+solver = {"fem.solver.krylovmethod":"gmres","fem.solver.verbose":1}
 Ainv   = mainOp.inverseLinearOperator(A,1e-10,parameters=solver)
 Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
 Pinv   = preconOp.inverseLinearOperator(P,1e-10,solver)

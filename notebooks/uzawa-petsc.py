@@ -7,7 +7,7 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
 from dune.fem import parameter
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0})
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
@@ -58,7 +58,7 @@ G      = gradOp.assemble(pressure)
 D      = divOp.assemble(velocity)
 M      = massOp.assemble(pressure)
 P      = preconOp.assemble(pressure)
-solver = {"krylovmethod":"acg","fem.solver.verbose":0}
+solver = {"fem.solver.krylovmethod":"cg","fem.solver.verbose":1}
 Ainv   = mainOp.inverseLinearOperator(A,1e-10,solver)
 Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
 Pinv   = preconOp.inverseLinearOperator(P,1e-10,solver)

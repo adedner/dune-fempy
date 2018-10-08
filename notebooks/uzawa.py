@@ -58,7 +58,7 @@ precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
 # Question: should assemble method also provide the affine shift?
-A      = mainOp.assemble(velocity) # FIXME: , parameters=solverParameters)
+A      = mainOp.assemble(velocity) # , parameters=solverParameters)
 G      = gradOp.assemble(pressure)
 D      = divOp.assemble(velocity)
 M      = massOp.assemble(pressure)

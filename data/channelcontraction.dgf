@@ -20,8 +20,8 @@ SIMPLEX
 # SIMPLEX
 
 BoundaryDomain
-4  -0.01 -0.01 0.01 4.51
-1  30.01 1.49 30.01 3.01
+4  -0.01 -0.01 0.01 4.51               % left
+1  29.99 1.49 30.01 3.01               % right
 default 3                              % all boundaries have id 1
 #
 

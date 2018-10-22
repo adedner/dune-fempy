@@ -5,3 +5,4 @@
 'polygon' & dune.polygongrid & Polygonal grid \\ \hline
 'ug' & dune.uggrid & Hybrid nonconforming unstructured grid \\ \hline
 'yasp' & dune.grid & Structured grid \\ \hline
+'spgrid' & dune.spgrid & Structured grid \\ \hline

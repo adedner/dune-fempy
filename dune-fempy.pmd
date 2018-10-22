@@ -49,6 +49,7 @@
 \newcommand{\Atodo}[1]{\todo[inline]{{\bf\color{green}Andreas:} #1}}
 \newcommand{\Ltodo}[1]{\todo[inline]{{\bf\color{blue}Lloyd:} #1}}
 \newcommand{\Mtodo}[1]{\todo[inline]{{\bf\color{green}Martin:} #1}}
+\newcommand{\Rtodo}[1]{\todo[inline]{{\bf\color{red}Robert:} #1}}
 
 \newcommand{\autocite}{\cite}
 %</pre>
@@ -212,7 +213,11 @@ technical side:
 The first could be a more technical description taken from the python paper
 the later would be new. If we want to try TOMS then perhaps having the
 HTTP generator?}
+\Rtodo{Agreed: The generator and create mechanism is missing. It would also be
+good to show and example of how a C++ class is exported to Python, even though
+this is probably already done in the dune-python paper.}
 \Atodo{do we want to add something on parallelism}
+\Rtodo{Parallelism only maybe for one example and only if it's already working.}
 \Atodo{which other features are missing? Should we include an example on
 non variational problems or bounding box dg? Perhaps we could show r
 adaptivity (also shows off the moving grid capability) and the use of
@@ -221,10 +226,10 @@ dune-femnv?}
 
 %<*tag>
 
-\section{Finite Element Methods in Fempy} \label{sec:fem-in-fempy}
+\section{Finite Element Methods in \dune[Fempy]} \label{sec:fem-in-fempy}
 ```python, label="fem-in-fempy", echo=False
 # <markdowncell>
-# ## Finite Element Methods in Fempy
+# ## Finite Element Methods in \dune[Fempy]
 # In this section we introduce the basic components of a finite
 # element method when applied to the Forchheimer problem.
 # <codecell>
@@ -375,7 +380,7 @@ Here we create a simple square domain by specifying two opposite
 corners $(0,0)$ and $(1,1)$, and the number
 of elements in each direction $(4,4)$. We then refine the grid and
 plot the results, before coarsening it again. We note that this is a
-simplified example and in general grids in Fempy can
+simplified example and in general grids in \dune[Fempy] can
 additionally be constructed via a dictionary containing vertex and
 element information, gmsh files or \textit{dune grid format} (dgf)
 files when more complexity is required, which is demonstrated in the
@@ -448,6 +453,9 @@ installation, provided python bindings are created for it. For instance we could
 discontinuous Galerkin space with orthonormal basis functions instead
 by using \pyth{'dgonb'}.
 
+\Rtodo{Mention dimRange. Grid Function is a function $f: \Omega \rightarrow \R^r$ with $r=dimRange$, cf. dune-fem paper.}
+
+
 \subsection{Grid Functions} \label{sec:functions}
 
 Having defined the computational domain and function space, we look
@@ -492,8 +500,11 @@ from dune.fem.function import integrate
 mass = integrate(grid, initial, 5)[0]
 print(mass)
 ```
+
+\Rtodo{Explain the 5, i.e. quadOrder = 5 in the code }
+
 We can also plot functions fairly easily. The two main ways to do
-this in Fempy are either a quick plot in \pyth{matplotlib}
+this in \dune[Fempy] are either a quick plot in \pyth{matplotlib}
 (see \cite{Matplotlib}), or writing to a
 VTK file for use in Paraview (see \cite{Paraview}), which we do
 below, resulting in figure \ref{fig:forch-plot}.
@@ -535,6 +546,10 @@ purposes.
 
 Having done this, a copy of this solution for the previous timestep,
 \pyth{u_h_n}, can be created quite easily.
+
+\Rtodo{The timestep is a bit unmotivated. There needs to be one more sentence.
+Maybe also summarize at this point what we have now and what we are going to do
+with this. }
 
 \renewcommand{\pweavecaption}{Copying a discrete function}
 \renewcommand{\pweavelabel}{lst:forch-u_h_n}
@@ -652,6 +667,10 @@ conforming elements, with the space and equation passed in. As before
 there exist other such premade \dune schemes for different problems
 (see \ref{sec:scheme-list})
 
+
+\Rtodo{The scheme and the model needs to be a bit more motivated here.}
+
+
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
@@ -741,7 +760,7 @@ error = sqrt(integrate(grid, l2error_fn, 5)[0]) # integrate
 eoc = log(error/error_old)/log(0.5)             # do the EOC calc
 grid.hierarchicalGrid.globalRefine(1)           # refine the grid
 \end{pweavecode}
-Combining these concepts into one solve method in Fempy, we have the
+Combining these concepts into one solve method in \dune[Fempy], we have the
 following program (with resulting figure \ref{fig:forch-main}).
 \renewcommand{\pweavecaption}{Solving the Forchheimer equation in
 time and refining the grid}
@@ -798,6 +817,9 @@ facilitated by the different storage back ends for spaces.
 We will continue to do so in the context of a worked examples
 that demonstrate the practicality of these features.
 
+\Rtodo{Motivate the different storage types, basically a result of the poor
+programming of the LA packages.}
+
 We can specify alternate storage types as follows.
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
@@ -831,7 +853,7 @@ guess $u^0$ (here taken to be zero) solve for $n\geq 0$,
 where $g$ is a discrete function containing the Dirichlet boundary
 conditions if they exist.
 
-Usually this would be automatically taken care of in Fempy by
+Usually this would be automatically taken care of in \dune[Fempy] by
 \pyth{scheme.solve}, however this time we will use the call operator on the
 \pyth{scheme} to compute $S(u^n)$ as well as \pyth{scheme.assemble} to get a
 copy of the system matrix in form of a SciPy sparse row matrix. Note
@@ -1086,6 +1108,8 @@ is not possible to pass in the \pyth{Mat} structure to the
 to copy the data when using the \pyth{snes} nonlinear solver as seen
 above.
 
+\Rtodo{Andreas, did you check this?}
+
 \section{Model Generation} \label{sec:header}
 
 After having looked at the basics of the python
@@ -1109,7 +1133,8 @@ structure of what we consider is necessary for an
 elliptic PDE model. This is then implemented in \dune[Fempy] by
 translating the UFL input into a \dune class compatible format.
 
-We note that this is a different approach to similar packages, which
+We note that this is a different approach to similar packages, like Fenics \cite{Fenics} and 
+Firedrake \cite{Firedrake}, which
 in general do not create a virtual class and instead use the UFL form
 directly. In fact such an approach is also available in \dune[Fempy],
 using the \pyth{'integrands'} identifier. The choice between
@@ -1131,7 +1156,7 @@ integration by parts (ignoring boundary terms for now), we arrive at
   L[u] = \int_{\Omega}D(x, u) \nabla u \cdot \nabla v + m(x, u, \nabla u)
   v \diff x.
 \]
-Now the elliptic model class in Fempy has methods that represent
+Now the elliptic model class in \dune[Fempy] has methods that represent
 the above form in general terms. Suppose for instance we were to take
 the case of $m(x, u, \nabla u) = u$ above. In the model class, this would be
 defined under the method \cpp{source}.
@@ -1145,6 +1170,10 @@ void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, R
   result[ 0 ] = u[ 0 ];
 }
 \end{pweavecode}
+
+\Rtodo{I would rather write result = u, then it holds for all dimRange.}
+
+
 A similar method exists for $D(x, u)$, as well as linearised
 versions for the purposes of nonlinear methods. Additionally there are
 methods for the associated Dirichlet or Neumann boundary conditions.
@@ -1189,7 +1218,7 @@ Whilst this may not be immediately possible with the standard elliptic
 model, it is possible to create a model \cpp{'nvdg'} that can
 use such functions, which results in the ability to write functional
 \dune[Fempy] code as follows.
-\renewcommand{\pweavecaption}{The Fempy code for a nonvariational
+\renewcommand{\pweavecaption}{The \dune[Fempy] code for a nonvariational
 model}
 \renewcommand{\pweavelabel}{lst:fempy_nv}
 \begin{pweavecode}
@@ -1199,6 +1228,10 @@ model = create.model("nvdg", grid, a == b)
 \end{pweavecode}
 Thus it becomes possible to write schemes that expect different
 arguments from the operator.
+
+\Rtodo{Here I would again explain a bit what is possible with this approach and
+what couldn't be done with Firedrake and Fenics. One has to be careful though. }
+
 
 \subsection{Integrands Models}
 
@@ -1228,7 +1261,7 @@ In addition to the automatic creation of a shared library object that
 is done when \pyth{create} is called, it is
 possible to generate a model class separately as a header file.
 That is, it is possible to generate a C++ file (e.g. \cpp{'model.hh'}) that can be
-used flexibly in both Fempy and regular C++ compatible \dune code. We can do this by
+used flexibly in both \dune[Fempy] and regular C++ compatible \dune code. We can do this by
 writing a pure UFL file and calling cmake on it.
 
 Let us examine what this file looks like for the Forchheimer model.
@@ -1254,7 +1287,7 @@ F = a - b
 \end{pweavecode}
 Once the corresponding \cpp{forchheimer.hh} file has been generated,
 it can then be edited manually in C++, and then used in place
-of a UFL expression in Fempy. This choice of default shared library
+of a UFL expression in \dune[Fempy]. This choice of default shared library
 generation or usable header files falls in line with
 attempts we have made to improve extensibility of the code, since in
 particular it allows for the user to write in more complex features in
@@ -1278,6 +1311,8 @@ below.
 Thus we see there is not a sizable difference between the \dune[Fem] and
 \dune[Fempy] versions.
 
+\Rtodo{When I tested this the run times were the same. So double check please.}
+
 \noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
 speaking is negligible for long-running simulations. We also note that
 the most \textit{costly} aspect of pure python code are generally
@@ -1293,13 +1328,17 @@ allows for the targeted refinement of the computational domain in
 specific areas where there is greater turbulence or activity, for greater
 precision. In problems where uniform refinement of a mesh is not
 required, this allows for more precision of the results at less
-computational cost.
+computational cost.  
+
+\Rtodo{What about exponential convergence rates, etc. }
 
 The method considered here uses so-called h-adaptivity that adds
 additional mesh points to the grid at areas of small scale activity.
 It does so based on a marking procedure that
 evaluates the gradient of the solution at each element and determines
 whether to refine the grid based on a level of tolerance.
+
+\Rtodo{Shouldn't just speak of error indicators here?}
 
 In this section we present two examples which use adaptive grid
 refinement in slightly different ways.
@@ -1381,7 +1420,7 @@ As another application of grid techniques, we look at a problem where
  we want to divide the grid into three regions. We do this using an
 \pyth{'adaptive'} grid that allows for grid filters to be applied. We
 note that another way of creating multi-domain grids in \dune is
-described in \cite{Muthing} (though Fempy bindings are not yet
+described in \cite{Muthing} (though \dune[Fempy] bindings are not yet
 available).
 
 \input{battery.tex}
@@ -1393,7 +1432,7 @@ Having looked at some of the functionality available for solving
 various FEM problems, we now shift our focus towards more in-depth
 features that concern efficiency and C++ development. Here we consider
 the idea of moving sections of python code
-over to C++ for efficiency. A key aspect of the design of Fempy has
+over to C++ for efficiency. A key aspect of the design of \dune[Fempy] has
 been about keeping the structure of the C++ code in the python code's
 design, to the point where translating between the two is relatively painless. In
 particular this allows for rapid prototyping of methods in python with

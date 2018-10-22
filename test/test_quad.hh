@@ -60,7 +60,7 @@ double l2norm2FemQuad ( const GridView &gridView, const Rules &rules, const GF& 
   typedef typename QuadRegistry ::QuadratureKeyType  QuadratureKeyType ;
   int order = 2;
 
-  QuadratureKeyType key = std::make_pair( order, 0 );
+  QuadratureKeyType key( order );
   QuadRegistry::registerQuadratureRule( rules, key, geoType );
 
   typedef Dune::FemPy::GridPartAdapter< GridView > GridPart;
@@ -73,7 +73,7 @@ double l2norm2FemQuad ( const GridView &gridView, const Rules &rules, const GF& 
   for( const auto &entity : elements( gridView ) )
   {
     lf.bind( entity );
-    VolumeQuadratureType quad( entity, key );
+    VolumeQuadratureType quad( entity, order );
     values.resize( quad.nop() );
 
     const auto geo = entity.geometry();

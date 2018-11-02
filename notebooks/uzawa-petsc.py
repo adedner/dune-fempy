@@ -1,5 +1,3 @@
-import numpy
-from scipy.sparse import bmat, linalg
 import dune.create as create
 from dune.grid import cartesianDomain
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\

@@ -16,7 +16,7 @@
 # If you have compiled DUNE against MPI, we strongly advise you to first initialize MPI from Python.
 # At least OpenMPI is known to fail, if initialized only in the dune-fempy library.
 
-# In[ ]:
+# In[1]:
 
 
 try:
@@ -30,7 +30,7 @@ dune.fem.parameter.append("parameter")
 
 # First, we create our computational grid. Our domain will be the unit square divided into 8x8 quadrilaterals. To actually create the grid, we choose an implementation of the DUNE grid interface: a 2-dimensional ALUGrid with simplices and conforming bisection refinement.
 
-# In[ ]:
+# In[2]:
 
 
 import dune.create as create
@@ -39,7 +39,7 @@ grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [4, 4
 
 # We set up the base variables u, v and x in UFL.
 
-# In[ ]:
+# In[3]:
 
 
 from dune.ufl import Space
@@ -60,7 +60,7 @@ x = SpatialCoordinate(uflSpace.cell())
 # Note that then the exact solution is then
 # $u = \cos(2\pi x_0)\cos(2\pi x_1)$.
 
-# In[ ]:
+# In[4]:
 
 
 from math import pi,log10
@@ -72,7 +72,7 @@ equation = (inner(grad(u), grad(v)) + inner(u,v)) * dx == f * v[0] * dx
 
 # We create the space and the model.
 
-# In[ ]:
+# In[5]:
 
 
 spc = create.space("lagrange", grid, dimrange=1, order=1)
@@ -81,7 +81,7 @@ model = create.model("integrands", grid, equation)
 
 # We create the scheme and set parameters for the solver.
 
-# In[ ]:
+# In[6]:
 
 
 scheme = create.scheme("galerkin", model, spc)
@@ -89,7 +89,7 @@ scheme = create.scheme("galerkin", model, spc)
 
 # We create a grid function for our exact solution.
 
-# In[ ]:
+# In[7]:
 
 
 exact_gf = create.function("ufl", grid, "exact", 5, exact)
@@ -97,7 +97,7 @@ exact_gf = create.function("ufl", grid, "exact", 5, exact)
 
 # Now we solve the system. We assign the solution to `uh`, and define a function to calculate the $L^2$ error, i.e. $|u_h - u|_{L^2}$. We output the data to a vtk file with name `laplace`, and plot it using `plot`. Finally we refine the grid twice and repeat the process.
 
-# In[ ]:
+# In[8]:
 
 
 from math import sqrt
@@ -123,7 +123,7 @@ for i in range(levels):
 #
 # But it is still rather coarse... so either we refine the grid a bit further or we use a second order method:
 
-# In[ ]:
+# In[9]:
 
 
 spc = create.space("lagrange", grid, dimrange=1, order=2)
@@ -151,7 +151,7 @@ plot(uh,level=5)
 #
 # Plot the log differecence between the solution and the exact solution - also retrieve the information returned by the solver:
 
-# In[ ]:
+# In[10]:
 
 
 def error(en,x):

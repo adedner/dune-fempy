@@ -231,6 +231,7 @@ if petsc4py:
         scheme(inDF,outDF)
     def Df(snes, x, m, b):
         inDF = spc.function("tmp", dofVector=x)
+        scheme.assemble(inDF)
         matrix = scheme.assemble(inDF).as_petsc
         m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
         b.createAIJ(matrix.size, csr=matrix.getValuesCSR())

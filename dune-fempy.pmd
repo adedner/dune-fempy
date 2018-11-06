@@ -443,7 +443,8 @@ arguments and two keyword arguments.
   Lagrange basis functions.
   \item \pyth{grid} passes in the grid we constructed previously.
   \item \pyth{dimrange=1} (optional) sets the dimension of the range
-  space to 1 (deduced from the UFL expression by default).
+  space to 1
+  \Atodo{the following doesn't make sence: deduced from the UFL expression by default}
   \item \pyth{order=2} (optional) sets the order of the finite
   elements to 2 (2 is the default).
 \end{itemize}
@@ -466,8 +467,8 @@ values it can take, its value at the previous timestep and so on.
 Let us begin by just considering a function for the initial condition.
 In \dune[Fempy], we use Unified Form Language (UFL) (\cite{UFL}) to define
 equations, which is essentially a human-readable way of writing a
-variational form. In order to use this we must begin by defining
-a variable.
+variational form. We can also use UFL to define simple function.
+To this end, we must begin by defining a variable.
 \renewcommand{\pweavecaption}{Creating an \pyth{x} variable in UFL}
 \renewcommand{\pweavelabel}{lst:forch-uflx}
 ```python, label = 'forch-uflx'
@@ -497,7 +498,7 @@ We do this using \pyth{integrate} as follows.
 ```
 ```python, label = 'forch-integrate'
 from dune.fem.function import integrate
-mass = integrate(grid, initial, 5)[0]
+mass = integrate(grid, initial, order=5)[0]
 print(mass)
 ```
 
@@ -521,10 +522,14 @@ from dune.fem.plotting import plotPointData as plot
 plot(initial, grid=grid)
 grid.writeVTK('initial', pointdata={'initial': initial})
 ```
-Note that so far we have simply called the UFL expression \pyth{initial}
-directly, but it is equally possible to do the above with a discrete
-function. A discrete function can be created through interpolation as
-shown below.
+For the vtk output the function needs to be assigned a name, which is given
+by the key argument of the dictionary passed as the \pyth{pointdata}
+argument.
+
+Note that so far we have simply evaluated the UFL expression \pyth{initial}
+directly, i.e., without using any approximation. It is equally possible to do the above with a discrete
+function, which can be created through interpolation into the discrete
+function space as shown below:
 \renewcommand{\pweavecaption}{}
 \renewcommand{\pweavelabel}{lst:forch-uh}
 ```python, label="fem3", echo=False
@@ -541,15 +546,14 @@ u_h = space.interpolate(initial, name='u_h')
 So we have created a discrete function \pyth{u_h} over the discrete
 finite element space to contain the solution and
 used an interpolation over the space to assign its initial value to
-the UFL expression \pyth{exact}. The name is used later for plotting
-purposes.
+the UFL expression \pyth{initial}. The name is used later for plotting
+purposes for example in the vtk output.
 
-Having done this, a copy of this solution for the previous timestep,
-\pyth{u_h_n}, can be created quite easily.
-
-\Rtodo{The timestep is a bit unmotivated. There needs to be one more sentence.
-Maybe also summarize at this point what we have now and what we are going to do
-with this. }
+To define the weak formulation given by \eqref{eqn:forch-roche} we need two
+discrete function, one to store the next time step ($u^{n+1}$) and a second one
+$u^{n}$ containing the approximation of the previous time step. We use
+\pyth{u_h} to store the former and construct a copy of \pyth{u_h} to store
+the later:
 
 \renewcommand{\pweavecaption}{Copying a discrete function}
 \renewcommand{\pweavelabel}{lst:forch-u_h_n}
@@ -559,19 +563,36 @@ u_h_n = u_h.copy(name="previous")
 
 \subsection{Schemes} \label{sec:schemes}
 
-In \dune[Fempy], we define schemes as the object containing the
-bilinear form of the PDE, its boundary conditions and the method used
+\Atodo{There are some things we do differently from standard ufl:
+
+1) we don't use the ufl spaces: we could add this and construct the fem
+space in the operator/scheme by analysing the space provided in the ufl
+form.
+
+2) scalar functions: again this could be done by using something like
+form = replace(form,{u:vecU[0]} for each u which is scalar
+}
+
+In \dune[Fempy], we define schemes as the object combining a
+discretization of a given bilinear form, its boundary conditions and the method used
 to approximate the inverse e.g. the iterative linear solver to use.
 Specifically, for an operator $L: V_h \to V_h^{*}$, schemes have two
-main functions.
+main methods:
 \begin{enumerate}
-\item Apply the operator. That is to calculate $w_h = L[v_h]$ given some $v_h \in V_h$.
-\item Solve the PDE. That is to compute the solution $u_h$ to $L[u_h] = v_h$ given some $v_h \in
+\item Apply the operator (\pyth{__call__}). That is to calculate $w_h = L[v_h]$ given some
+$v_h \in V_h$. If Dirichlet boundary conditions are part of the problem
+then $w_h = v_h - g$ on the Dirichlet boundary, where $g$ is the boundary
+function.
+\item Solve the PDE (\pyth{solve}). That is to compute the solution $u_h$ to $L[u_h] = v_h$ given some $v_h \in
 V_h^{*}$, by using a solve method. By default $v_h = 0$.
 \end{enumerate}
 \noindent \textit{Remark.} In the case where only the operator application is
 required/possible (e.g. when $L:V \to W \neq V$ , an \pyth{operator}
-object can be constructed instead which comes without a solve method.
+object can be constructed instead of a scheme which comes without a solve method.
+
+\noindent \textit{Remark.} By default the \pyth{solve} method solves the
+residual problem, e.g., $L[u_h]=0$ in the domain and $u_h=g$ on the
+Dirichlet boundary.
 
 Recall the parabolic equation \eqref{eqn:forch-roche}, which we will focus
 on in the following example. To begin with, it is
@@ -581,6 +602,7 @@ necessary to define the variables that are used in the equation.
 ```python, label="fem4", echo=False
 # <markdowncell>
 # Now we can set up our PDE model
+```
 \begin{equation}
   \int_{\Omega} u^{n+1} v + \Delta t K(\nabla u) \nabla u^{n+1} \cdot \nabla v\mathop{dx}
           = \int_{\Omega} u^n v + \Delta t f v\ \mathop{dx}
@@ -595,7 +617,6 @@ and we force the system by defining $f$ so that
 \end{equation}
 becomes the exact solution.
 # <codecell>
-```
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction
 from dune.ufl import NamedConstant
@@ -620,7 +641,7 @@ This results in an implementation of the following form.
 \renewcommand{\pweavecaption}{Implementing the bilinear form}
 \renewcommand{\pweavelabel}{lst:forch-eqn-impl}
 ```python, label = 'forch-eqn-impl'
-from ufl import dx, grad, inner, sqrt
+from ufl import dx, grad, div, inner, sqrt
 abs_du = sqrt(inner(grad(u), grad(u)))
 K = 2/(1 + sqrt(1 + 4*abs_du))
 a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
@@ -646,7 +667,7 @@ exact solution into the left hand side of the PDE using \pyth{replace} as follow
 \renewcommand{\pweavelabel}{lst:forch-rhs}
 ```python, label = 'forch-rhs'
 from ufl import replace
-b = replace(a, {u: exact(t)})
+b = inner(-2*exact(t) - div(grad(exact(t))),v) * dx
 ```
 Finally, having defined the bilinear form and right hand side, we can
 now set up a scheme object which we can use to solve the PDE.
@@ -1064,9 +1085,7 @@ def f(snes, X, F):
     scheme(inDF,outDF)
 def Df(snes, x, m, b):
     inDF = space.function("tmp",dofVector=x)
-    matrix = scheme.assemble(inDF).as_petsc
-    m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
-    b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
+    scheme.assemble(inDF)
     return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
 
 class Scheme4:
@@ -1108,7 +1127,8 @@ is not possible to pass in the \pyth{Mat} structure to the
 to copy the data when using the \pyth{snes} nonlinear solver as seen
 above.
 
-\Rtodo{Andreas, did you check this?}
+\Atodo{copying is not required since petsc reuses the matices passed into
+the \pyth{setJacobian} method}
 
 \section{Model Generation} \label{sec:header}
 
@@ -1133,7 +1153,8 @@ structure of what we consider is necessary for an
 elliptic PDE model. This is then implemented in \dune[Fempy] by
 translating the UFL input into a \dune class compatible format.
 
-We note that this is a different approach to similar packages, like Fenics \cite{Fenics} and 
+We note that this is a different approach to similar packages, like Fenics
+\cite{FEniCS} and
 Firedrake \cite{Firedrake}, which
 in general do not create a virtual class and instead use the UFL form
 directly. In fact such an approach is also available in \dune[Fempy],

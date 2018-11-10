@@ -616,7 +616,6 @@ and we force the system by defining $f$ so that
   u(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
 \end{equation}
 becomes the exact solution.
-# <codecell>
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction
 from dune.ufl import NamedConstant
@@ -642,9 +641,9 @@ This results in an implementation of the following form.
 \renewcommand{\pweavelabel}{lst:forch-eqn-impl}
 ```python, label = 'forch-eqn-impl'
 from ufl import dx, grad, div, inner, sqrt
-abs_du = sqrt(inner(grad(u), grad(u)))
-K = 2/(1 + sqrt(1 + 4*abs_du))
-a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
+abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
+K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
+a = (inner((u - u_h_n)/dt, v) + inner(K(u)*grad(u), grad(v)))*dx
 ```
 For the exact solution we will use the following (which is consistent
 with the initial data).
@@ -667,7 +666,7 @@ exact solution into the left hand side of the PDE using \pyth{replace} as follow
 \renewcommand{\pweavelabel}{lst:forch-rhs}
 ```python, label = 'forch-rhs'
 from ufl import replace
-b = inner(-2*exact(t) - div(grad(exact(t))),v) * dx
+b = inner(-2*exp(-2*t)*(initial - 1) - div(K(exact(t))*grad(exact(t)[0])),v[0]) * dx
 ```
 Finally, having defined the bilinear form and right hand side, we can
 now set up a scheme object which we can use to solve the PDE.
@@ -723,7 +722,7 @@ def evolve(scheme, u_h, u_h_n):
     time = 0
     endTime = 1.0
     while time < (endTime + 1e-6):
-        scheme.model.t = time
+        scheme.model.t = time + scheme.model.dt
         u_h_n.assign(u_h)
         scheme.solve(target=u_h)
         time += scheme.model.dt
@@ -835,7 +834,9 @@ pandas output}
 We carry on our explanation of different \dune[Fempy] features by
 looking at the different methods of solving the PDE, which is
 facilitated by the different storage back ends for spaces.
-We will continue to do so in the context of a worked examples
+\dune[fem] allows to store dof vectors and matrices directly based on the
+data structures from different linear algebra packages.
+We will demonstrate this in the context of the worked examples used so far
 that demonstrate the practicality of these features.
 
 \Rtodo{Motivate the different storage types, basically a result of the poor
@@ -849,10 +850,12 @@ space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
 \end{pweavecode}
 As before we construct the space, but now with the additional argument
 that specifies the usage of \dune[Istl] (see \cite{Dune-Istl}) as a
-linear algebra backend. Changing the
-\pyth{storage} argument in the construction of the space makes
-it possible to use more sophisticated solvers (either better
-preconditioners or direct solvers). Other possibilities are shown in
+linear algebra backend. By default we use a very simple storage structure
+directly provided in \dune[fem] and consequently not requiring any
+additional packages. A number of simple Krylov type solvers are available.
+Changing the \pyth{storage} argument in the construction of the space makes
+it possible to use more sophisticated solvers (e.g., better
+preconditioners or direct solvers). Available possibilities are shown in
 \ref{tab:discrete-functions}.
 
 In particular one thing that we can do with certain storage methods is

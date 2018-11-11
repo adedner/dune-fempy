@@ -726,8 +726,8 @@ the old solution and \pyth{u_h} for the new one.
 def evolve(scheme, u_h, u_h_n):
     time = 0
     endTime = 1.0
-    while time < (endTime + 1e-6):
-        scheme.model.t = time + scheme.model.dt
+    while time < (endTime - 1e-6):
+        scheme.model.t = time + 0.5*scheme.model.dt
         u_h_n.assign(u_h)
         scheme.solve(target=u_h)
         time += scheme.model.dt

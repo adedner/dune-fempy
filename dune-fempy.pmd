@@ -643,7 +643,9 @@ This results in an implementation of the following form.
 from ufl import dx, grad, div, inner, sqrt
 abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
 K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
-a = (inner((u - u_h_n)/dt, v) + inner(K(u)*grad(u), grad(v)))*dx
+a = ( inner((u - u_h_n)/dt, v) \
+    + 0.5*inner(K(u)*grad(u), grad(v)) \
+    + 0.5*inner(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx
 ```
 For the exact solution we will use the following (which is consistent
 with the initial data).
@@ -665,8 +667,11 @@ exact solution into the left hand side of the PDE using \pyth{replace} as follow
 \renewcommand{\pweavecaption}{Setting up the right hand side}
 \renewcommand{\pweavelabel}{lst:forch-rhs}
 ```python, label = 'forch-rhs'
-from ufl import replace
-b = inner(-2*exp(-2*t)*(initial - 1) - div(K(exact(t))*grad(exact(t)[0])),v[0]) * dx
+from ufl import dot, FacetNormal, ds
+n = FacetNormal(space)
+b = inner(-2*exp(-2*t)*(initial - 1) \
+          -div(K(exact(t))*grad(exact(t)[0])),v[0]) * dx \
+    + K(exact(t))*dot(grad(exact(t)[0]),n) * v[0] * ds
 ```
 Finally, having defined the bilinear form and right hand side, we can
 now set up a scheme object which we can use to solve the PDE.
@@ -803,6 +808,7 @@ for eocLoop in range(3):
     grid.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
                   l2error_fn, 'h1error': h1error_fn}, number=eocLoop)
     grid.hierarchicalGrid.globalRefine(1)
+    scheme.model.dt /= 2
 ```
 We compile a table of the errors and EOCs for additional refinement
 steps and a smaller timestep of $\Delta t = 0.001$ below.

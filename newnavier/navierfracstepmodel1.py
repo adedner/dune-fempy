@@ -3,7 +3,6 @@ from __future__ import print_function
 import math
 from ufl import *
 
-
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
                 inner, dot, div, grad, dx, as_vector, transpose, Identity
 
@@ -138,6 +137,7 @@ def compute():
                 # DirichletBC(spc, [0,0,None], 1))             # right
                 DirichletBC(spc,[exact_u[0],exact_u[1],exact_u[2]],1))
         model.tau = deltaT
+        model.time = time
 
         # setup structure for olver parameters
         solverParameter={"fem.solver.newton.linabstol": 1e-13,
@@ -185,6 +185,7 @@ def compute():
                 # DirichletBC(spc, [0,0,None], 1))             # right
                 DirichletBC(spc,[exact_u[0],exact_u[1],exact_u[2]],1))
         model2.tau = deltaT
+        model2.time = time
 
         # setup structure for olver parameters
         solverParameter2={"fem.solver.newton.linabstol": 1e-13,

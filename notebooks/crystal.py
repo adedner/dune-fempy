@@ -241,7 +241,7 @@ while t < endTime:
     t += timeStep
     hgrid.mark(mark)
     fem.adapt(solution)
-    fem.loadBalance(solutio])
+    fem.loadBalance(solution)
     # vtk()
 print()
 

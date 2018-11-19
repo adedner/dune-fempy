@@ -1,0 +1,30 @@
+DGF
+VERTEX
+5   1.5   % vertex 0
+30   1.5   % vertex 1
+30   3   % vertex 2
+0  4.5   % vertex 3
+0  0  % vertex 4
+5   0  % vertex 5
+5   4.5
+5   3
+# VERTEX
+
+SIMPLEX
+2  0  1
+2  7  0
+3  6  7
+3  7  0
+3  4  0
+4  5  0
+# SIMPLEX
+
+BoundaryDomain
+4  -0.01 -0.01 0.01 4.51               % left
+1  29.99 1.49 30.01 3.01               % right
+default 3                              % all boundaries have id 1
+#
+
+GridParameter
+refinementedge longest
+#

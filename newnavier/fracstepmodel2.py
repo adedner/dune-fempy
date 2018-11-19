@@ -89,7 +89,7 @@ def compute():
         mainModel   =  (inner(u-u_n,v) + theta1 * deltaT * alpha * mu * inner(grad(u)+grad(u).T, grad(v))) * dx
         mainModel   += (theta1 * deltaT * beta * mu * inner(grad(u_n)+grad(u_n).T, grad(v)) - theta1 * deltaT * dot(f,v)) * dx
         mainModel   += theta1 * deltaT * inner(grad(u_n), outer(v, u_n)) * dx
-        gradModel   =  -1* theta1 *deltaT * inner( p[0] * Identity(grid.dimension), grad(v) ) * dx
+        gradModel   =  (-1 * inner(p[0],div(v)) )* dx
         divModel    =  -1 * inner(div(u),q[0]) * dx
         massModel   =  inner(p,q) * dx
         preconModel =  inner(grad(p),grad(q)) * dx
@@ -131,6 +131,8 @@ def compute():
         # old_solution.name = "uOld"
         # u_n = old_solution
         tau = 1
+        mainOp.time = time
+
         solution = velocity, pressure
 
         mainOp(velocity,rhsVelo)                  # assembleRHS ( mainModel_, mainModel_.rightHandSide(), mainModel_.neumanBoundary(), rhsU_ );
@@ -194,9 +196,10 @@ def compute():
         a = (inner(u - u_n, v) + theta2 * deltaT * beta * mu * inner(grad(u)+grad(u).T, grad(v)) + theta2 * deltaT * inner(grad(u), outer(v, u))) * dx
         a += ( theta2 * deltaT * alpha * mu * inner(grad(u_n)+grad(u_n).T, grad(v))) * dx
         a += (-1* theta2 *deltaT * inner(p_n[0],div(v)) )* dx
-
+        a +=  (- theta2 * deltaT * dot(f,v)) * dx
 
         model = create.model("integrands", grid, a == 0)
+
 
         solverParameter={"fem.solver.newton.linabstol": 1e-11,
                          "fem.solver.newton.linreduction": 1e-11,
@@ -205,6 +208,7 @@ def compute():
                          "fem.solver.newton.linear.verbose": "false"}
 
         scheme = create.scheme("galerkin", a == 0, spcU, solver="gmres", parameters = solverParameter)
+        scheme.time = time
 
         old_solution.assign(velocity)
         old_pressure.assign(pressure)

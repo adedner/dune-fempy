@@ -25,10 +25,6 @@ spcP = create.space("lagrange", grid, dimrange=1, order=order-1, storage="istl")
 x     = SpatialCoordinate(spcU)
 dt    = NamedConstant(spcU, "dt")
 time  = NamedConstant(spcU, "t")     # current time
-u     = TrialFunction(spcU)
-v     = TestFunction(spcU)
-p     = TrialFunction(spcP)
-q     = TestFunction(spcP)
 
 gamma_t = lambda t: exp(-2.*pi*pi*mu*t)
 exact_u = as_vector( [-1*cos(1.*pi*x[0])*sin(1.*pi*x[1])*gamma_t(time), sin(1.*pi*x[0])*cos(1.*pi*x[1])*exp(-2.*pi*pi*mu*time)])

@@ -11,7 +11,6 @@ class Burgers:
         self.oldVelo = spcU.interpolate([0,]*spcU.dimRange,name="oldU")
         self.oldPress = spcU.interpolate([0]*spcP.dimRange,name="oldP")
 
-
         f = (dot(forcing,v) +
              mu*dot(self.oldVelo,v) - theta2 * deltaT * alpha * nu*inner(grad(self.oldVelo)+grad(self.oldVelo).T, grad(v)) -
              inner(grad(self.oldVelo), outer(v, self.oldVelo)) -1* theta2 *deltaT * inner(self.oldPress,div(v)) ) * dx

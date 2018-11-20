@@ -6,6 +6,10 @@ class Stokes:
     def __init__(self,spc,forcing):
         spcU = spc[0]
         spcP = spc[1]
+        u  = TrialFunction(spcU)
+        v  = TestFunction(spcU)
+        p  = TrialFunction(spcP)
+        q  = TestFunction(spcP)
         mu = NamedConstant(spcU, "mu")
         nu = NamedConstant(spcU, "nu")
         self.oldVelo = spcU.interpolate([0,]*spcU.dimRange,name="oldU")

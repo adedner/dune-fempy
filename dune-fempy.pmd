@@ -669,7 +669,7 @@ exact = lambda t: as_vector([exp(-2*t)*(initial - 1) + 1])
 ```
 To set the right hand side of the equation, i.e. $f$, we put the exact
 solution into the strong form of the equation (i.e. $u_t - \nabla
-\cdot (K(\nabla u) \cdot \nabla u). We also add in Neumann boundary
+\cdot (K(\nabla u) \cdot \nabla u$). We also add in Neumann boundary
 conditions by substituting the exact solution into the boundary term (obtained
 after differentiation by parts).
 \renewcommand{\pweavecaption}{Setting up the right hand side}

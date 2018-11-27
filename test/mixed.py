@@ -8,15 +8,15 @@ from dune.ufl import DirichletBC, Space
 dune.fem.parameter.append("parameter")
 dune.fem.parameter.append( {"fem.verboserank": -1} )
 
-newtonParameter = {"linabstol": 1e-6, "linreduction": 1e-6, "tolerance": 1e-5,\
-                "verbose": "false", "linear.verbose": "false",\
-                }
+newtonParameter = {"linabstol": 1e-14, "linreduction": 1e-14, "tolerance": 1e-5,\
+                   "verbose": "true", "linear.verbose": "true",\
+                  }
 
 dimDomain = 2
 dimRange = 2
 grid = create.grid("ALUConform", "../data/mixed.dgf", dimgrid=2)
 
-from ufl import TestFunction, TrialFunction, SpatialCoordinate, conditional
+from ufl import TestFunction, TrialFunction, SpatialCoordinate, conditional, dot
 uflSpace = Space(dimDomain, dimRange)
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
@@ -29,28 +29,35 @@ laplace = lambda u : grad(grad(u))[0,0]+grad(grad(u))[1,1]
 f = as_vector([ -laplace(exact[0])+exact[0], -laplace(exact[1])+exact[1] ])
 left = conditional(x[0]<1e-5,1,0)
 equation = inner(grad(u), grad(v)) * dx + inner(u,v) * dx - inner(f,v) * dx \
-        + 3*pi*x[1]**2*v[0] * left*ds == 0
+           + 3*pi*x[1]**2*v[0] * left*ds == 0
 
 # spc = create.space("dgonb", grid, dimrange=dimRange, order=1)
 spc = create.space("lagrange", grid, dimrange=dimRange, order=1)
 
-model = create.model("elliptic", grid, equation,
-        DirichletBC(uflSpace, [None,x[0]**2], 2),       # bottom
-        DirichletBC(uflSpace, [exact[0],None], 3),      # top
-        DirichletBC(uflSpace, [None,None], 4),          # left
-        DirichletBC(uflSpace, exact, 1))                # right
-parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()}
+def test(operator):
+    model = [equation,
+            DirichletBC(uflSpace, [None,x[0]**2], 2),       # bottom
+            DirichletBC(uflSpace, [exact[0],None], 3),      # top
+            DirichletBC(uflSpace, [None,None], 4),          # left
+            DirichletBC(uflSpace, exact, 1)]                # right
+    parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()}
 
-scheme = create.scheme("h1", model, spc, parameters=parameters)
-# scheme = create.scheme("dg", model, spc, penalty=10,parameters=parameters)
-solution, _ = scheme.solve()
-l2errA = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
-grid.hierarchicalGrid.globalRefine(2)
-solution, _ = scheme.solve()
-l2errB = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
+    scheme = create.scheme(operator, model, spc, parameters=parameters)
+    solution, _ = scheme.solve()
+    l2errA = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
+    grid.hierarchicalGrid.globalRefine(2)
+    solution, _ = scheme.solve()
+    l2errB = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
+    return solution, l2errA,l2errB
+
+solution, l2errA, l2errB = test("galerkin")
 l2eoc = log(l2errA/l2errB)/log(2.)
-
 # print(l2errA,l2errB,l2eoc)
-grid.writeVTK("mixed", pointdata={"solution":solution, "exact":exact})
+# grid.writeVTK("mixedGalerkin", pointdata={"solution":solution, "exact":exact})
+assert abs(l2eoc - (spc.order+1)) < 0.3
 
+solution, l2errA, l2errB = test("h1")
+l2eoc = log(l2errA/l2errB)/log(2.)
+# print(l2errA,l2errB,l2eoc)
+# grid.writeVTK("mixedh1", pointdata={"solution":solution, "exact":exact})
 assert abs(l2eoc - (spc.order+1)) < 0.3

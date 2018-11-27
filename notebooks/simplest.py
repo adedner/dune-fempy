@@ -33,7 +33,7 @@ f = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])] )
 # elliptic equation
 scheme = galerkin( ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx )
 
-solution, info = scheme.solve()
+solution, info = scheme.solve(name="solution")
 
 # some postprocessing
 plot(solution)

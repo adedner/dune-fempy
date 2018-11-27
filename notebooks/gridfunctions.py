@@ -77,7 +77,7 @@ c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*c ])
 funcUFL = create.function("ufl", grid, "ufl", 1, expr)
-funcUFL.setConstant(const, [10])
+funcUFL.setConstant(const, 10)
 # in the case of a scalar function the actual values are plotted
 # and not the absolute values are for dimRange > 1
 plot(funcUFL)
@@ -120,11 +120,12 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 """
 code = { 'eval': func1, 'jac': func2 }
 
-coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
-func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
-func.setConstant("fac", [10])
+# Not working at the moment
+# coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
+# func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
+# func.setConstant("fac", 10)
 # show all components but not the grid
-plotComponents(func,gridLines="")
+# plotComponents(func,gridLines="")
 
 
 # Most of the methods available on the grid functions have been used above - mainly the `localfunction` method. There are a few more of interst are:
@@ -132,9 +133,9 @@ plotComponents(func,gridLines="")
 # In[ ]:
 
 
-print("dimension of range: ",func.dimRange)
-print("underlying grid instance: ",func.grid)
-print("name: ",func.name)
+# print("dimension of range: ",func.dimRange)
+# print("underlying grid instance: ",func.grid)
+# print("name: ",func.name)
 
 
 # The following two methods can be used together with the `grid.triangulation( level )` method to obtain a simple numpy vector representation of the solution:
@@ -142,8 +143,8 @@ print("name: ",func.name)
 # In[ ]:
 
 
-print("return array with values at cell centers: ", func.cellData(0))
-print("return array with values at nodes: ", func.pointData(0))
+# print("return array with values at cell centers: ", func.cellData(0))
+# print("return array with values at nodes: ", func.pointData(0))
 
 
 # The following method computes the integral of the function over the domain - a possible usage is to compute the approximation error of a function:
@@ -151,7 +152,7 @@ print("return array with values at nodes: ", func.pointData(0))
 # In[ ]:
 
 
-print("value of integral over whole domain: ", func.integrate())
+# print("value of integral over whole domain: ", func.integrate())
 
 
 # The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:

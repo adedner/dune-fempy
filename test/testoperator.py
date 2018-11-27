@@ -19,8 +19,8 @@ spaceName = "lagrange"
 space = create.space(spaceName, grid, dimrange=dimR, order=order)
 
 arg   = space.interpolate(as_vector([1,]*dimR), name='arg')
-destA = space.interpolate(as_vector([0,]*dimR), name='destA')
-destB = space.interpolate(as_vector([0,]*dimR), name='destB')
+destA = space.interpolate([0,]*dimR, name='destA')              # note: this uses an efficient approach in C++
+destB = space.interpolate(as_vector([0.,]*dimR), name='destB')   # note: this needs to generate a ufl local function in the current implementation
 destC = space.interpolate(as_vector([0,]*dimR), name='destC')
 destD = space.interpolate(as_vector([0,]*dimR), name='destD')
 destE = space.interpolate(as_vector([0,]*dimR), name='destE')

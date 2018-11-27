@@ -22,6 +22,11 @@ f2 = s.function("tmp", [2,1], dofs)
 assert not (dofs-f1.as_numpy).any()
 assert not (dofs-f2.as_numpy).any()
 
+f1.interpolate([3,2])
+dofs[:] = f1.as_numpy
+assert not (dofs-f1.as_numpy).any()
+assert not (dofs-f2.as_numpy).any()
+
 try:
     import petsc4py
     from petsc4py import PETSc

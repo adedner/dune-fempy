@@ -31,9 +31,9 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 """
 code = { 'eval': func1, 'jac': func2 }
 
-coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
-func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
-func.setConstant("fac", [factor])
+# coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
+# func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
+# func.setConstant("fac", [factor])
 
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
@@ -44,7 +44,9 @@ s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
 coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [1,2])
 funcUFL = create.function("ufl", grid, "ufl", 1, expr, coefficients={coeff: coeffFunc})
-funcUFL.setConstant(const, [factor])
+funcUFL.setConstant(const, factor)
+
+func = funcUFL # needed since cpp function doesn't work
 
 space = create.space("lagrange", grid, dimrange=3, order=2)
 solution = space.interpolate(funcUFL, name="solution")

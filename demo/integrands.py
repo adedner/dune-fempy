@@ -41,4 +41,4 @@ from dune.models.integrands import load
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = aluConformGrid(domain, dimgrid=2)
 
-integrands = load(grid, integrands).Integrands()
+integrands = load(grid, integrands)

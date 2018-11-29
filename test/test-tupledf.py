@@ -17,8 +17,8 @@ solution = spc.interpolate(exact, name="solution")
 
 space = product( spc1, spc2, components=["p","s"] )
 df    = space.interpolate( exact, name="df")
-print(df.dofVector.size,solution.dofVector.size,
-      df.components[0].dofVector.size,df.p.dofVector.size,test1.dofVector.size)
+# print(df.dofVector.size,solution.dofVector.size,
+#       df.components[0].dofVector.size,df.p.dofVector.size,test1.dofVector.size)
 assert df.components[0].dofVector.size == test1.dofVector.size
 assert df.s.dofVector.size == test2.dofVector.size
 assert df.dofVector.size   == solution.dofVector.size

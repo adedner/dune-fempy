@@ -207,22 +207,17 @@ look at additional features in the context of more complex examples.
 Finally we discuss the comparison to C++ code in section
 \ref{sec:mcf-comparison}.
 
-\Atodo{depending on the journal we would need to describe a bit about the
-technical side:
-(1) generator (2) create mechanism since it is heavily used here.
-The first could be a more technical description taken from the python paper
-the later would be new. If we want to try TOMS then perhaps having the
-HTTP generator?}
-\Rtodo{Agreed: The generator and create mechanism is missing. It would also be
-good to show and example of how a C++ class is exported to Python, even though
-this is probably already done in the dune-python paper.}
+\Rtodo{Include example of ellipticmodel.hh}
 \Atodo{do we want to add something on parallelism}
 \Rtodo{Parallelism only maybe for one example and only if it's already working.}
 \Atodo{which other features are missing? Should we include an example on
 non variational problems or bounding box dg? Perhaps we could show r
 adaptivity (also shows off the moving grid capability) and the use of
-dune-femnv?}
-\Atodo{twophaseflow example? p-adaptivity? Uzawa examples?}
+dune-femnv?  twophaseflow example? p-adaptivity? Uzawa examples?}
+\Atodo{describe new 'dune.get(category=None,entry=None)' function listing all available
+       implementations of a given category, e.g., grid,space etc.}
+\Atodo{shuld we 'import' all spaces,function etc. into 'dune.fem' to allow
+       'from dune.fem import *'}
 
 %<*tag>
 
@@ -306,9 +301,9 @@ following breakdown of parts.
 
 \begin{itemize}
   \item \ref{sec:grids} Grid. The computational domain $\Omega$ the problem is set in.
+  \item \ref{sec:functions} Grid functions. Functions defined on the grid
+  used for example for the solution $u_h$ but also for the exact solution.
   \item \ref{sec:spaces} Space. The finite element space $V_h$ and type of basis functions.
-  \item \ref{sec:functions} Grid functions. Functions defined on the grid that store the
-  solution $u_h$ and other variables.
   \item \ref{sec:schemes} Scheme. The weak form of the equation, its
   boundary conditions, and method for solving.
   \item \ref{sec:solving} Solving. The actual solving process and data
@@ -395,69 +390,6 @@ not necessary, a basic square grid could simply be made with
 \pyth{grid = square()}. However such a design comes at the cost of it
 being unclear how to make small modifications.
 
-\subsection{Spaces} \label{sec:spaces}
-
-The next key part of a FEM after constructing the grid is defining the
-kind of elements we want to use, and by extension their space. In
-particular this is important because the order of elements used can
-dictate the solvability and the efficiency of the method.
-
-Let us consider a simple case of Lagrange elements. Since we have a 2D
-domain with a quadrilateral mesh, we consider shape functions that are 1 on
-each separate node, and 0 on the others. For orders 2 and 3, the shape
-functions would be quadratic and cubic polynomials respectively (as
-shown in figure \ref{fig:lagrange-elements}).
-\begin{figure}
-\begin{subfigure}{.5\textwidth}
-  \centering
-  \includegraphics[width=.4\linewidth]{figures/lagrange-ele2.jpg}
-  \caption{Second order element}
-  \label{fig:lagrange2}
-\end{subfigure}%
-\begin{subfigure}{.5\textwidth}
-  \centering
-  \includegraphics[width=.4\linewidth]{figures/lagrange-ele3.png}
-  \caption{Third order element}
-  \label{fig:lagrange3}
-\end{subfigure}
-\caption{Node maps of two Lagrange reference elements}
-\label{fig:lagrange-elements}
-\end{figure}
-The creation of such a Lagrange space in \dune[Fempy] is done by the
-following code.
-\renewcommand{\pweavecaption}{Creating a Lagrange space with
-polynomial basis functions}
-\renewcommand{\pweavelabel}{lst:space}
-```python, label="fem1", echo=False
-# <markdowncell>
-# Setting up a discrete function space and some grid function
-# <codecell>
-```
-```python, label = 'space'
-import dune.create as create
-space = create.space('lagrange', grid, dimrange=1, order=2)
-```
-We note that the above space is called with two default
-arguments and two keyword arguments.
-\begin{itemize}
-  \item \pyth{'lagrange'} indicates that we will use a space with
-  Lagrange basis functions.
-  \item \pyth{grid} passes in the grid we constructed previously.
-  \item \pyth{dimrange=1} (optional) sets the dimension of the range
-  space to 1
-  \Atodo{the following doesn't make sence: deduced from the UFL expression by default}
-  \item \pyth{order=2} (optional) sets the order of the finite
-  elements to 2 (2 is the default).
-\end{itemize}
-Of particular note is that the first argument corresponds to a \dune
-discrete space realization that can come from anywhere within a \dune
-installation, provided python bindings are created for it. For instance we could use a
-discontinuous Galerkin space with orthonormal basis functions instead
-by using \pyth{'dgonb'}.
-
-\Rtodo{Mention dimRange. Grid Function is a function $f: \Omega \rightarrow \R^r$ with $r=dimRange$, cf. dune-fem paper.}
-
-
 \subsection{Grid Functions} \label{sec:functions}
 
 Having defined the computational domain and function space, we look
@@ -473,8 +405,8 @@ To this end, we must begin by defining a variable.
 \renewcommand{\pweavecaption}{Creating an \pyth{x} variable in UFL}
 \renewcommand{\pweavelabel}{lst:forch-uflx}
 ```python, label = 'forch-uflx'
-from ufl import SpatialCoordinate
-x = SpatialCoordinate(space)
+from ufl import SpatialCoordinate, triangle
+x = SpatialCoordinate(triangle)
 ```
 Here we create \pyth{x} as a spatial coordinate from UFL by using the
 \pyth{space} object from the previous section. The \pyth{space} gives
@@ -528,9 +460,74 @@ by the key argument of the dictionary passed as the \pyth{pointdata}
 argument.
 
 Note that so far we have simply evaluated the UFL expression \pyth{initial}
-directly, i.e., without using any approximation. It is equally possible to do the above with a discrete
-function, which can be created through interpolation into the discrete
-function space as shown below:
+directly, i.e., without using any approximation. To obtain a discrete
+function we need to define finite dimensional spaces.
+\Atodo{Show how to evaluate grid functions?}
+
+\subsection{Spaces} \label{sec:spaces}
+
+The next key part of a FEM after constructing the grid is defining the
+kind of finite element we want to use, and by extension their space. In
+particular this is important because the order of elements used can
+dictate the solvability and the efficiency of the method.
+
+Let us consider a simple case of Lagrange elements. Since we have a 2D
+domain with a quadrilateral mesh, we consider shape functions that are 1 on
+each separate node, and 0 on the others. For orders 2 and 3, the shape
+functions would be quadratic and cubic polynomials respectively (as
+shown in figure \ref{fig:lagrange-elements}).
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{figures/lagrange-ele2.jpg}
+  \caption{Second order element}
+  \label{fig:lagrange2}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{figures/lagrange-ele3.png}
+  \caption{Third order element}
+  \label{fig:lagrange3}
+\end{subfigure}
+\caption{Node maps of two Lagrange reference elements}
+\label{fig:lagrange-elements}
+\end{figure}
+The creation of such a Lagrange space in \dune[Fempy] is done by the
+following code.
+\renewcommand{\pweavecaption}{Creating a Lagrange space with
+polynomial basis functions}
+\renewcommand{\pweavelabel}{lst:space}
+```python, label="fem1", echo=False
+# <markdowncell>
+# Setting up a discrete function space and some grid function
+# <codecell>
+```
+```python, label = 'space'
+from dune.fem.space import lagrange
+space = lagrange(grid, dimrange=1, order=2)
+```
+We note that the above space is called with two default
+arguments and two keyword arguments.
+\begin{itemize}
+  \item \pyth{'lagrange'} indicates that we will use a space with
+  Lagrange basis functions.
+  \item \pyth{grid} passes in the grid we constructed previously.
+  \item \pyth{dimrange=1} (optional) sets the dimension of the range
+  space to 1
+  \item \pyth{order=2} (optional) sets the order of the finite
+  elements to 2 (2 is the default).
+  \Atodo{the default order is 1 not 2 but that is not clear}
+\end{itemize}
+Of particular note is that the first argument corresponds to a \dune
+discrete space realization that can come from anywhere within a \dune
+installation, provided python bindings are created for it. For instance we could use a
+discontinuous Galerkin space with orthonormal basis functions instead
+by using \pyth{'dgonb'}.
+
+\Rtodo{Mention dimRange. Grid Function is a function $f: \Omega \rightarrow \R^r$ with $r=dimRange$, cf. dune-fem paper.}
+
+Now we can create discrete grid function by using the default interpolation
+into the finite element space:
 \renewcommand{\pweavecaption}{}
 \renewcommand{\pweavelabel}{lst:forch-uh}
 ```python, label="fem3", echo=False
@@ -545,14 +542,26 @@ function space as shown below:
 u_h = space.interpolate(initial, name='u_h')
 ```
 So we have created a discrete function \pyth{u_h} over the discrete
-finite element space to contain the solution and
-used an interpolation over the space to assign its initial value to
-the UFL expression \pyth{initial}. The name is used later for plotting
-purposes for example in the vtk output.
+finite element space which we will use to contain the solution to our PDE and
+used an interpolation over the space to assign its initial value by
+interpolation of the UFL expression \pyth{initial}. The name is used later for plotting
+purposes for example in the vtk output. Discrete function are a special
+form of grid functions so have the same properties shown in the previous
+section:
+\renewcommand{\pweavecaption}{Plotting discrete function using \matplotlib}
+\renewcommand{\pweavelabel}{lst:forch-plot}
+```python, label="fem2", echo=False
+# <markdowncell>
+# and plot them using matplotlib or write a vtk file for postprocessing
+# <codecell>
+```
+```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
+plot(u_h, grid=grid)
+```
 
 To define the weak formulation given by (\ref{eqn:forch-roche}) we need two
 discrete function, one to store the next time step ($u^{n+1}$) and a second one
-$u^{n}$ containing the approximation of the previous time step. We use
+$u^{n}$ containing the approximation of the present time step. We use
 \pyth{u_h} to store the former and construct a copy of \pyth{u_h} to store
 the later:
 
@@ -561,17 +570,19 @@ the later:
 ```python, label = 'forch-u_h_n'
 u_h_n = u_h.copy(name="previous")
 ```
+Given two discrete function we can use \pyth{u_h_n.assign(u_h)} to assign
+one to the other.
+
+\Atodo{Move the describtion of the error computation to here, i.e., show
+the interpolation error for the initial conditions?}
 
 \subsection{Schemes} \label{sec:schemes}
 
-\Atodo{There are some things we do differently from standard ufl:
-
-1) we don't use the ufl spaces: we could add this and construct the fem
-space in the operator/scheme by analysing the space provided in the ufl
-form.
-
-2) scalar functions: again this could be done by using something like
+\Atodo{There are things we do differently from standard ufl:
+1) scalar functions: again this could be done by using something like
 form = replace(form,{u:vecU[0]} for each u which is scalar
+
+Also explain that grid function are ufl coefficients so can be directly used
 }
 
 In \dune[Fempy], we define schemes as the object combining a
@@ -693,6 +704,7 @@ now set up a scheme object which we can use to solve the PDE.
 # <codecell>
 ```
 ```python, label = 'forch-scheme'
+import dune.create as create
 scheme = create.scheme("galerkin", a == b, solver='cg')
 ```
 The above function creates a simple Galerkin method for $H^1$
@@ -722,7 +734,7 @@ previously).
 loop}
 \renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
-scheme.model.dt = 0.001
+scheme.model.dt = 0.05
 ```
 Next we write the following method for solving the problem over the
 time range. Since the problem is time-dependent, we
@@ -820,6 +832,7 @@ for eocLoop in range(3):
 ```
 We compile a table of the errors and EOCs for additional refinement
 steps and also including the $H^1$ error below.
+\Atodo{The following table is hard coded so needs to be fixed before submission}
 \begin{center}
   \begin{tabular}{l | l | l | l | l}
     \hline
@@ -843,7 +856,7 @@ pandas output}
 # packages and python functionality.
 # <codecell>
 ```
-\Atodo{Remove the plot command - replace with error and number of iterations?}
+% \Atodo{Remove the plot command - replace with error and number of iterations?}
 
 We carry on our explanation of different \dune[Fempy] features by
 looking at the different methods of solving the PDE, which is
@@ -935,7 +948,9 @@ scheme_cls = Scheme(scheme)
 grid.hierarchicalGrid.globalRefine(-2)  # revert grid refinement
 u_h.interpolate(initial)                # reset u_h to initial
 evolve(scheme_cls, u_h, u_h_n)
-plot(u_h)
+error = u_h - exact_end
+print("L^2 and H^1 error:",
+  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 ```
 We can redo the above computation using a Newton-Krylov solver from
 SciPy. We do this by constructing a class \pyth{Df} containing the
@@ -996,7 +1011,9 @@ class Scheme2:
 scheme2_cls = Scheme2(scheme)
 u_h.interpolate(initial)
 evolve(scheme2_cls, u_h, u_h_n)
-plot(u_h)
+error = u_h - exact_end
+print("L^2 and H^1 error:",
+  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 ```
 \Atodo{Remove the comments from the python script - should be part of the actuall text}
 We can also solvers from the PETSc package (see \cite{PETSc}) to solve
@@ -1031,7 +1048,9 @@ u_h = space.interpolate(initial, name='u_h')
 u_h_n = u_h.copy(name="previous")
 scheme.model.dt = 0.05
 evolve(scheme, u_h, u_h_n)
-plot(u_h)
+error = u_h - exact_end
+print("L^2 and H^1 error:",
+  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 ```
 Next we will implement the Newton loop in Python using \pyth{petsc4py}
 to solve the linear systems.
@@ -1083,7 +1102,9 @@ class Scheme3:
 u_h.interpolate(initial)
 scheme3_cls = Scheme3(scheme)
 evolve(scheme3_cls, u_h, u_h_n)
-plot(u_h)
+error = u_h - exact_end
+print("L^2 and H^1 error:",
+  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 ```
 Finally we we will use PETSc's nonlinear solvers (the \pyth{snes}
 classes) directly.
@@ -1127,7 +1148,9 @@ class Scheme4:
 u_h.interpolate(initial)
 scheme4_cls = Scheme4(scheme)
 evolve(scheme4_cls, u_h, u_h_n)
-plot(u_h)
+error = u_h - exact_end
+print("L^2 and H^1 error:",
+  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 ```
 \noindent \textit{Remark.} The methods \pyth{as_numpy} and \pyth{as_petsc}
 (returning the DoF vector either as a \pyth{numpy} or a \pyth{petsc}
@@ -1204,8 +1227,8 @@ class}
 \begin{pweavecode}
 template< class Point >
 void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
-]
-  result[ 0 ] = u[ 0 ];
+{
+  result = u;
 }
 \end{pweavecode}
 

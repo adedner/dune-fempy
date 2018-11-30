@@ -462,6 +462,8 @@ argument.
 Note that so far we have simply evaluated the UFL expression \pyth{initial}
 directly, i.e., without using any approximation. To obtain a discrete
 function we need to define finite dimensional spaces.
+\Atodo{Explain that JIT compilation happens behind the scheme and show
+       \pyth{uflFunction} to make the process explicit}
 \Atodo{Show how to evaluate grid functions?}
 
 \subsection{Spaces} \label{sec:spaces}

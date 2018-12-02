@@ -26,10 +26,12 @@ a = inner(u, v) * dx
 f = sin(math.pi*x[0]) * sin(math.pi * x[1])
 b = inner(as_vector([f, f]), v) * dx
 
-model = create.model("integrands", grid, a == b)
-
-scheme = create.scheme("galerkin", model, space)
-solution, _ = scheme.solve()
+scheme = create.scheme("h1", a==b, space)
+solution = space.interpolate([0],name="solution")
+scheme.solve(target=solution)
 grid.writeVTK("l2projection", pointdata=[solution])
 
-scheme.assemble(solution).as_istl.store("l2projection.mm", "matrixmarket")
+from dune.fem.operator import linear
+op = linear(space)
+scheme.jacobian(solution,op)
+op.as_istl.store("l2projection.mm", "matrixmarket")

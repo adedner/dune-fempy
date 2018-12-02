@@ -35,7 +35,7 @@ from ufl import *
 from dune.grid import cartesianDomain
 from dune.fem import parameter
 from dune.fem.plotting import plotPointData as plot
-from dune.ufl import Space, DirichletBC
+from dune.ufl import DirichletBC
 
 import dune.create as create
 
@@ -57,10 +57,9 @@ grid.hierarchicalGrid.globalRefine(4)
 
 spc = create.space("lagrange", grid, dimrange=1, order=1, storage="istl")
 
-uflSpace = Space(spc)
-u = TrialFunction(uflSpace)
-v = TestFunction(uflSpace)
-x = SpatialCoordinate(uflSpace.cell())
+u = TrialFunction(spc)
+v = TestFunction(spc)
+x = SpatialCoordinate(spc)
 
 phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*math.pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])

@@ -7,6 +7,7 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
 from dune.fem import parameter
+from dune.fem.operator import linear as linearOperator
 
 parameter.append({"fem.verboserank": "0"})
 
@@ -35,15 +36,15 @@ preconModel = inner(grad(p),grad(q)) * dx
 
 solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
 # can use 'h1' or 'galerkin'
-# mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
-mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
-                            solver="gmres", parameters=solverParameters)
+mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
+# mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
+                            solver="cg", parameters=solverParameters)
 gradOp      = create.operator("h1",gradModel)
 divOp       = create.operator("galerkin",divModel)
 massOp      = create.scheme("h1",massModel==0,
                             solver="gmres", parameters=solverParameters)
 preconOp    = create.scheme("h1",preconModel==0,
-                            solver="gmres", parameters=solverParameters)
+                            solver="cg", parameters=solverParameters)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -59,11 +60,23 @@ precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
 # Question: should assemble method also provide the affine shift?
-A      = mainOp.assemble(velocity) # , parameters=solverParameters)
-G      = gradOp.assemble(pressure)
-D      = divOp.assemble(velocity)
-M      = massOp.assemble(pressure)
-P      = preconOp.assemble(pressure)
+# A      = mainOp.assemble(velocity)
+# G      = gradOp.assemble(pressure)
+# D      = divOp.assemble(velocity)
+# M      = massOp.assemble(pressure)
+# P      = preconOp.assemble(pressure)
+
+A = linearOperator(mainOp)     # or linearOperator(spcU)
+G = linearOperator(gradOp)     # or linearOperator(spcP,spcU)
+D = linearOperator(divOp)      # or linearOperator(spcU,spcP)
+M = linearOperator(massOp)     # or linearOperator(spcP,spcp)
+P = linearOperator(preconOp)   # or linearOperator(spcP,spcP)
+mainOp.jacobian(velocity,A)
+gradOp.jacobian(pressure,G)
+divOp.jacobian(velocity,D)
+massOp.jacobian(pressure,M)
+preconOp.jacobian(pressure,P)
+
 solver = {"fem.solver.krylovmethod":"gmres","fem.solver.verbose":0}
 Ainv   = mainOp.inverseLinearOperator(A,1e-10,parameters=solver)
 Minv   = massOp.inverseLinearOperator(M,1e-10,solver)

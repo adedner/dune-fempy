@@ -34,7 +34,7 @@ import numpy as np
 import scipy.sparse.linalg
 import scipy.optimize
 import dune.grid
-import dune.fem
+from dune.fem.operator import linear
 from dune.fem.plotting import plotPointData as plot
 import dune.create as create
 
@@ -77,7 +77,7 @@ uh = create.function("discrete", spc, name="solution")
 # In[ ]:
 
 
-uh,info = scheme.solve(target = uh)
+info = scheme.solve(target = uh)
 print(info)
 plot(uh)
 
@@ -102,14 +102,19 @@ sol_coeff = uh.as_numpy
 res_coeff = res.as_numpy
 n = 0
 
+matrix = linear(scheme)
+matrix_coeff = matrix.as_numpy
+
 while True:
     scheme(uh, res)
     absF = math.sqrt( np.dot(res_coeff,res_coeff) )
     print("iterations ("+str(n)+")",absF)
     if absF < 1e-10:
         break
-    matrix = scheme.assemble(uh).as_numpy
-    sol_coeff -= scipy.sparse.linalg.spsolve(matrix, res_coeff)
+    matrix = linear(scheme)
+    scheme.jacobian(uh,matrix)
+    matrix_coeff = matrix.as_numpy
+    sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff, res_coeff)
     n += 1
 
 plot(uh)
@@ -174,7 +179,7 @@ try:
     scheme = create.scheme("galerkin", a==b, spc,
                             parameters={"petsc.preconditioning.method":"sor"})
     # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
-    uh, info = scheme.solve()
+    info = scheme.solve(target=uh)
     print(info)
     plot(uh)
 except ImportError:

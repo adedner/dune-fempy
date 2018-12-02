@@ -39,8 +39,8 @@ solution, info = scheme.solve(name="solution")
 plot(solution)
 exact = as_vector( [cos(2.*pi*x[0])*cos(2.*pi*x[1])] )
 error = solution - exact
-print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )
-print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )
+print("L^2 and H^1 error:",
+  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 plot(error,grid=grid)
 
 # heat equation

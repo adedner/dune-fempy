@@ -16,6 +16,10 @@ class Stokes:
         q  = TestFunction(spcP)
         mu = NamedConstant(spcU, "mu")
         nu = NamedConstant(spcU, "nu")
+        x     = SpatialCoordinate(spcU)
+        time  = NamedConstant(spcU, "time")     # current time
+        self.oldVelo = spcU.interpolate([0,]*spcU.dimRange,name="oldU")
+
         mainModel    = (mu*dot(u,v) + nu/Re*inner(grad(u)+grad(u).T, grad(v))) * dx
         gradModel    = -1*inner( p[0]*Identity(dimension), grad(v) ) * dx
         divModel     = -1*inner(div(u),q[0]) * dx
@@ -26,13 +30,14 @@ class Stokes:
         else:
             f = 0
         if withBurgers:
-             self.oldVelo = spcU.interpolate([0,]*spcU.dimRange,name="oldU")
+             # self.oldVelo = spcU.interpolate([0,]*spcU.dimRange,name="oldU")
              f += (mu*dot(self.oldVelo,v) - (1-nu)/Re*inner(grad(self.oldVelo)+grad(self.oldVelo).T, grad(v)) -
              inner(grad(self.oldVelo), outer(v, self.oldVelo))) * dx
 
         # TODO give better diagonostics when no equation is passed to scheme
         # TODO galerkin doesn't work here
-        self.mainOp   = create.scheme("h1",spcU,[mainModel==f,*bcs], solver="cg")
+        self.mainOp   = create.scheme("galerkin",[mainModel==f,*bcs],spcU)
+        # self.mainOp   = create.scheme("h1",spcU,[mainModel==f,*bcs], solver="cg")
         self.gradOp   = create.operator("galerkin",gradModel)
         self.divOp    = create.operator("galerkin",divModel)
         self.massOp   = create.scheme("galerkin",massModel==0)
@@ -60,7 +65,8 @@ class Stokes:
         self.mainOp.model.mu = mu
         self.mainOp.model.nu = nu
         if oldSolution:
-            self.oldVelo.assign(oldSolution[0])
+            self.oldVelo=oldSolution[0].copy()
+            # self.oldVelo.assign(oldSolution[0])
         self.A = self.mainOp.assemble(self.rhsVelo)
         self.Ainv   = self.mainOp.inverseLinearOperator(self.A,1e-10,parameters=self.solver)
 
@@ -71,9 +77,9 @@ class Stokes:
         self.rhsVelo *= -1
         self.G(pressure,self.xi)                            # gradOperator_(pressure_, xi_);
         self.rhsVelo -= self.xi                             # rhs_ -= xi_;
-        try:
-            self.mainOp.setConstraints(self.rhsVelo)        # mainOperator_.prepare( velocity_, rhsU_ );
-        except: pass
+        # try:
+        self.mainOp.setConstraints(self.rhsVelo)        # mainOperator_.prepare( velocity_, rhsU_ );
+        # except: pass
         self.Ainv(self.rhsVelo, velocity)                   # invMainOp( rhsU_, velocity_ );
         self.D(velocity,self.rhsPress)                      # divLinearOperator_( velocity_, rhsP_ );
         self.Minv(self.rhsPress, self.r)                         # invMassOp( rhsP_, r_ );
@@ -92,10 +98,10 @@ class Stokes:
         for m in range(100):                      # for (int m=0;m<100;++m)
             self.xi.clear()                            #   xi_.clear();
             self.G(self.d,self.rhsVelo)                          #   gradLinearOperator_(d_, rhsU_);
-            try:
-                self.mainOp.setConstraints(\
-                    [0,]*grid.dimension, self.rhsVelo)     #   mainOperator_.prepare( mainModel_.zeroVelocity(), rhsU_ );
-            except: pass
+            # try:
+            self.mainOp.setConstraints(\
+                velocity, self.rhsVelo)     #   mainOperator_.prepare( mainModel_.zeroVelocity(), rhsU_ );
+            # except: pass
             self.Ainv(self.rhsVelo, self.xi)                     #   invMainOp( rhsU_, xi_ );
             self.D(self.xi,self.rhsPress)                        #   divLinearOperator_( xi_, rhsP_ );
             self.rho = delta /\

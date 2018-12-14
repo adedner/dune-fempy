@@ -14,7 +14,7 @@ from dune.fem import parameter
 from burgerclass import Burgers
 from stokesclass import Stokes
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "jacobi", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
 
 Re      = 100.
 deltaT  = 0.001
@@ -39,7 +39,7 @@ f          += as_vector( [0.25*2.*pi*sin(2.*pi*x[0])*exp(-4.*pi*pi*nu*time),  0.
 f          -= as_vector( [nu*2*gamma_t(time)*pi*pi*cos(1.*pi*x[0])*sin(1.*pi*x[1]), nu*-2*gamma_t(time)*pi*pi*sin(1.*pi*x[0])*cos(1.*pi*x[1])] )
 f          += as_vector( [cos(1.*pi*x[0])*sin(1.*pi*x[0])*(cos(1.*pi*x[1])*cos(1.*pi*x[1])-sin(1.*pi*x[1])*sin(1.*pi*x[1])),cos(1.*pi*x[1])*sin(1.*pi*x[1])*(cos(1.*pi*x[0])*cos(1.*pi*x[0])-sin(1.*pi*x[0])*sin(1.*pi*x[0]))] )
 
-bcs = [DirichletBC(spcU,exact_u,1)]
+bcs = [DirichletBC(spcU,[None,None],1)]
 ##############################################
 
 # TODO: set ufl time constant in expression
@@ -82,7 +82,7 @@ vtk = grid.sequencedVTK("visc1navierfracstep_model2",
         pointvector={"velocity":solution[0],"exact_u":exact(endTime)[0]})
 vtk()
 
-scheme = PR() # FractionalTheta()
+scheme = FractionalTheta() #PR() #
 endTime = 0.1
 timeStep = deltaT
 simTime = 0

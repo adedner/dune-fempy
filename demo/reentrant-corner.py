@@ -12,7 +12,7 @@ from dune.ufl import Space, DirichletBC
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0})
 
 vertices = numpy.array([(0,0), (1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1)])
 triangles = numpy.array([(2,1,0), (0,3,2), (4,3,0,), (0,5,4), (6,5,0), (0,7,6)])
@@ -32,7 +32,11 @@ exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 
 model = create.model("integrands", grid, inner(grad(u), grad(v))*dx == 0, DirichletBC(uflSpace,exact,1))
 
-newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
+newtonParameter = {"tolerance": 1e-10, "verbose": "false",
+                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                   "linear.preconditioning.method": "ilu",
+                   "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
+                   "linear.verbose": "false"}
 scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 fvspc = create.space("finitevolume", grid, dimrange=1, storage="istl")

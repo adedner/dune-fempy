@@ -128,11 +128,12 @@ for i in range(levels):
 
 spc = create.space("lagrange", grid, dimrange=1, order=2)
 # create the scheme but change some of the default parameters..
-scheme = create.scheme("galerkin", model, spc,        parameters=       {"fem.solver.newton.tolerance": 1e-9,
-        "fem.solver.newton.linabstol": 1e-12,
-        "fem.solver.newton.linreduction": 1e-12,
-        "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 0})
+scheme = create.scheme("galerkin", model, spc,        parameters=\
+       {"fem.solver.newton.tolerance": 1e-5, "fem.solver.newton.verbose": "false",
+        "fem.solver.newton.linear.linabstol": 1e-8, "fem.solver.newton.linear.linreduction": 1e-8,
+        "fem.solver.newton.linear.preconditioning.method": "ilu",
+        "fem.solver.newton.linear.preconditioning.iterations": 1, "fem.solver.newton.linear.preconditioning.relaxation": 1.2,
+        "fem.solver.newton.linear.verbose": "false"}
 
 print("solve with second order", i, "number of dofs=", spc.size)
 

@@ -9,7 +9,7 @@ from dune.ufl import Space
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0})
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 spc = create.space("dgonb", grid, dimrange=1, order=2, storage="istl")
@@ -31,7 +31,11 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 
 model = create.model("integrands", grid, a == b)
 
-newtonParameter = {"linabstol": 1e-13, "linreduction": 1e-13, "tolerance": 1e-12, "verbose": "true", "linear.verbose": "false"}
+newtonParameter = {"tolerance": 1e-10, "verbose": "true",
+                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                   "linear.preconditioning.method": "ilu",
+                   "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
+                   "linear.verbose": "false"}
 scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
 solution, _ = scheme.solve()

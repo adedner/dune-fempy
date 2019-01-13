@@ -55,10 +55,12 @@ x = SpatialCoordinate(spc.cell())
 rhs = (x[0] + x[1]) * v[0]
 a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
 b = rhs * dx + 10*rhs * ds
-scheme = create.scheme("galerkin", a==b, spc,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
-        "fem.solver.newton.linreduction": 1e-10,
-        "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 0})
+scheme = create.scheme("galerkin", a==b, spc, parameters=
+       {"fem.solver.newton.tolerance": 1e-5, "fem.solver.newton.verbose": "false",
+        "fem.solver.newton.linear.linabstol": 1e-8, "fem.solver.newton.linear.linreduction": 1e-8,
+        "fem.solver.newton.linear.preconditioning.method": "ilu",
+        "fem.solver.newton.linear.preconditioning.iterations": 1, "fem.solver.newton.linear.preconditioning.relaxation": 1.2,
+        "fem.solver.newton.linear.verbose": "false"})
 # create a discrete solution over this space - will be initialized with zero by default
 
 uh = create.function("discrete", spc, name="solution")
@@ -232,9 +234,6 @@ if petsc4py:
     def Df(snes, x, m, b):
         inDF = spc.function("tmp", dofVector=x)
         scheme.assemble(inDF)
-        matrix = scheme.assemble(inDF).as_petsc
-        m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
-        b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
         return PETSc. Mat. Structure.SAME_NONZERO_PATTERN
 
     snes = PETSc.SNES().create()

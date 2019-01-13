@@ -8,9 +8,11 @@ from dune.ufl import DirichletBC, Space
 dune.fem.parameter.append("parameter")
 dune.fem.parameter.append( {"fem.verboserank": -1} )
 
-newtonParameter = {"linabstol": 1e-14, "linreduction": 1e-14, "tolerance": 1e-5,\
-                   "verbose": "true", "linear.verbose": "true",\
-                  }
+newtonParameter = {"tolerance": 1e-10, "verbose": "false",
+                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                   "linear.preconditioning.method": "ilu",
+                   "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
+                   "linear.verbose": "false"}
 
 dimDomain = 2
 dimRange = 2

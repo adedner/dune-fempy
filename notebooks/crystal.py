@@ -159,13 +159,11 @@ equation = a_im == a_ex
 
 
 model  = create.model("integrands", grid, equation, coefficients={un:solution_n} )
-solverParameters = {
-        "fem.solver.newton.tolerance": 1e-5,
-        "fem.solver.newton.linabstol": 1e-8,
-        "fem.solver.newton.linreduction": 1e-8,
-        "fem.solver.newton.verbose": 0,
-        "fem.solver.newton.linear.verbose": 0
-    }
+solverParameters = {"tolerance": 1e-5, "verbose": "false",
+                    "linear.linabstol": 1e-8, "linear.linreduction": 1e-8,
+                    "linear.preconditioning.method": "ilu",
+                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
+                    "linear.verbose": "false"}
 scheme = create.scheme("galerkin", model, space, solver="gmres",
         parameters=solverParameters)
 
@@ -235,11 +233,11 @@ t        = 0.0
 
 endTime = 0.05
 while t < endTime:
+    print(t,grid.size(0)) # ,end="\r")
     solution_n.assign(solution)
     scheme.solve(target=solution)
-    print(t,grid.size(0),end="\r")
     t += timeStep
-    hgrid.mark(mark)
+    marked = hgrid.mark(mark)
     fem.adapt(solution)
     fem.loadBalance(solution)
     # vtk()

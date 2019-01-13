@@ -11,9 +11,12 @@ from dune.fem.function import integrate
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0,\
-    "istl.preconditioning.method": "jacobi", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
-newtonParameter = {"linabstol": 1e-9, "linreduction": 1e-8, "tolerance": 1e-7, "verbose": "false", "linear.verbose": "false"}
+parameter.append({"fem.verboserank": 0)}
+newtonParameter = {"tolerance": 1e-10, "verbose": "false",
+                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                   "linear.preconditioning.method": "ilu",
+                   "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
+                   "linear.verbose": "false"}
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[10,10]), dimgrid=2)
 spc = create.space("lagrange", grid, dimrange=1, order=2, storage="istl")

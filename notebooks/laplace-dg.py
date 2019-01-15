@@ -82,7 +82,8 @@ newtonParameter = {"tolerance": 1e-5, "verbose": "false",
                    "linear.verbose": "false"}
 scheme = create.scheme("galerkin", a == b, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
-uh, _ = scheme.solve(name="dg")
+uh = spc.interpolate([0],name="dg")
+scheme.solve(target=uh)
 
 
 # The result looks as follows:
@@ -111,7 +112,8 @@ a = inner(grad(u[0])-contGrad, grad(v[0])) * dx
 scheme = create.scheme("galerkin", [a==0, DirichletBC(lagSpc,uh,1)],
     lagSpc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
-zzUh,_ = scheme.solve(name="ZZ")
+zzUh = lagSpc.interpolate([0,]*grid.dimension,name="ZZ")
+scheme.solve(target=zzUh)
 plot(zzUh)
 error = zzUh - exact
 print("ZZ: L^2 and H^1 error:",

@@ -111,10 +111,12 @@ while True:
     print("iterations ("+str(n)+")",absF)
     if absF < 1e-10:
         break
-    matrix = linear(scheme)
     scheme.jacobian(uh,matrix)
-    matrix_coeff = matrix.as_numpy
-    sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff, res_coeff)
+    ### spsolve fails because it changes the numpy matrix (permutes the col)
+    ### and that fails for some reason (not yet clear why)
+    # matrix_coeff = matrix.as_numpy
+    # sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff_tmp, res_coeff)
+    sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10)[0]
     n += 1
 
 plot(uh)
@@ -136,21 +138,17 @@ class Df(scipy.sparse.linalg.LinearOperator):
     def __init__(self,x_coeff):
         self.shape = (sol_coeff.shape[0],sol_coeff.shape[0])
         self.dtype = sol_coeff.dtype
+        # setup the assembled matrix
+        self.linOp = linear(scheme)
+    # reassemble the matrix DF(u) gmiven a dof vector for u
+    def update(self,x_coeff,f):
         # the following converts a given numpy array
         # into a discrete function over the given space
         x = spc.function("tmp", dofVector=x_coeff)
-        # store the assembled matrix
-        self.jac = scheme.assemble(x).as_numpy
-    # reassemble the matrix DF(u) gmiven a dof vector for u
-    def update(self,x_coeff,f):
-        x = spc.function("tmp", dofVector=x_coeff)
-        # Note: the following does produce a copy of the matrix
-        # and each call here will reproduce the full matrix
-        # structure - no reuse possible in this version
-        self.jac = scheme.assemble(x).as_numpy
+        scheme.jacobian(x,self.linOp)
     # compute DS(u)^{-1}x for a given dof vector x
     def _matvec(self,x_coeff):
-        return scipy.sparse.linalg.spsolve(self.jac, x_coeff)
+        return scipy.sparse.linalg.cg(self.linOp.as_numpy, x_coeff, tol=1e-10)[0]
 
 # call the newton krylov solver from scipy
 sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
@@ -179,6 +177,7 @@ try:
     scheme = create.scheme("galerkin", a==b, spc,
                             parameters={"petsc.preconditioning.method":"sor"})
     # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
+    uh   = spc.interpolate([0],name="petsc")
     info = scheme.solve(target=uh)
     print(info)
     plot(uh)
@@ -210,15 +209,16 @@ if petsc4py:
     ksp.getPC().setType("icc")
 
     n = 0
+    linOp  = linear(scheme)
+    ksp.setOperators(linOp.as_petsc)
+    ksp.setFromOptions()
     while True:
         scheme(uh, res)
         absF = math.sqrt( res_coeff.dot(res_coeff) )
         print("iterations ("+str(n)+")",absF)
         if absF < 1e-10:
             break
-        matrix = scheme.assemble(uh).as_petsc
-        ksp.setOperators(matrix)
-        ksp.setFromOptions()
+        scheme.jacobian(uh,linOp)
         ksp.solve(res_coeff, res_coeff)
         sol_coeff -= res_coeff
         n += 1
@@ -233,14 +233,15 @@ if petsc4py:
 if petsc4py:
     uh.clear()
     def f(snes, X, F):
-        inDF = spc.function("tmp", dofVector=X)
+        inDF  = spc.function("tmp", dofVector=X)
         outDF = spc.function("tmp", dofVector=F)
         scheme(inDF,outDF)
     def Df(snes, x, m, b):
         inDF = spc.function("tmp", dofVector=x)
-        scheme.assemble(inDF)
-        return PETSc. Mat. Structure.SAME_NONZERO_PATTERN
+        scheme.jacobian(inDF, linOp)
+        return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
 
+    matrix = linOp.as_petsc
     snes = PETSc.SNES().create()
     snes.setMonitor(lambda snes,i,r:print(i,r,flush=True))
     snes.setFunction(f, res_coeff)

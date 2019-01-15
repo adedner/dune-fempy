@@ -38,5 +38,6 @@ newtonParameter = {"tolerance": 1e-10, "verbose": "true",
                    "linear.verbose": "false"}
 scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
 
-solution, _ = scheme.solve()
+solution = spc.interpolate([0],name="solution")
+scheme.solve(target=solution)
 grid.writeVTK("dg-laplace", celldata=[solution])

@@ -4,12 +4,12 @@ import scipy.sparse
 import dune.grid
 import dune.fem
 import dune.create as create
+from dune.fem.operator import linear as linearOperator
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, ds, dx, inner, grad
 
 test_fem   = True
-test_eigen = False # not working at the moment
 test_istl  = True
 test_petsc = True
 testLoop = 10
@@ -40,29 +40,14 @@ def test(space):
         # femScheme.solve(target = fem_h)
         start= time.clock()
         for i in range(testLoop):
-            fem_mat = femScheme.assemble(fem_h).as_numpy
-        end= time.clock()
-        # print( "fem:", (end-start)/testLoop, flush=True )
+            linOp   = linearOperator(femScheme)
+            femScheme.jacobian(fem_h,linOp)
+            fem_mat = linOp.as_numpy
+        end = time.clock()
+        print( "fem:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
         fem_coo   = fem_mat.tocoo()
         # for i,j,v in zip(fem_coo.row,fem_coo.col,fem_coo.data):
-        #     print(i,j,v)
-        # print("****************************",flush=True)
-
-    if test_eigen:
-        eigenSpace  = create.space(space, grid, dimrange=1, order=1, storage='eigen')
-        eigenScheme = create.scheme("galerkin", model, eigenSpace)
-        eigen_h     = create.function("discrete", eigenSpace, name="eigen")
-        eigen_dofs  = eigen_h.as_numpy
-        # eigenScheme.solve(target = eigen_h)
-        start= time.clock()
-        for i in range(testLoop):
-           eigen_mat = eigenScheme.assemble(eigen_h).as_numpy
-        end= time.clock()
-        # print( "eigen:", (end-start)/testLoop, flush=True )
-        sys.stdout.flush()
-        eigen_coo = eigen_mat.tocoo()
-        # for i,j,v in zip(eigen_coo.row,eigen_coo.col,eigen_coo.data):
         #     print(i,j,v)
         # print("****************************",flush=True)
 
@@ -74,9 +59,11 @@ def test(space):
         # istlScheme.solve(target = istl_h)
         start= time.clock()
         for i in range(testLoop):
-           istl_mat = istlScheme.assemble(istl_h).as_istl
+            linOp = linearOperator(istlScheme)
+            istlScheme.jacobian(istl_h,linOp)
+            istl_mat = linOp.as_istl
         end= time.clock()
-        # print( "istl:", (end-start)/testLoop, flush=True )
+        print( "istl:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
         # there is no way yet to go from istl to scipy - would be nice to have
         # istl_coo = istl_mat.tocoo()
@@ -93,12 +80,16 @@ def test(space):
         petsc_h     = create.function("discrete", petscSpace, name="petsc")
         petsc_dofs  = petsc_h.as_petsc
         # petscScheme.solve(target = petsc_h)
-        petsc_mat = petscScheme.assemble(petsc_h).as_petsc
+        linOp = linearOperator(petscScheme)
+        petscScheme.jacobian(petsc_h,linOp)
+        petsc_mat = linOp.as_petsc
         rptr, cind, vals = petsc_mat.getValuesCSR()
         petsc_coo = scipy.sparse.csr_matrix((vals,cind,rptr)).tocoo()
         start= time.clock()
         for i in range(testLoop):
-            petsc_mat = petscScheme.assemble(petsc_h).as_petsc
+            linOp = linearOperator(petscScheme)
+            petscScheme.jacobian(petsc_h,linOp)
+            petsc_mat = linOp.as_petsc
         end= time.clock()
         print( "petsc:", (end-start)/testLoop, flush=True )
         sys.stdout.flush()
@@ -110,7 +101,8 @@ def test(space):
         petsc_h.clear()
         res = petsc_h.copy()
         petscScheme(petsc_h, res)
-        petsc_mat = petscScheme.assemble(petsc_h).as_petsc
+        petscScheme.jacobian(petsc_h,linOp)
+        petsc_mat = linOp.as_petsc
         ksp.setOperators(petsc_mat,petsc_mat)
         ksp.setFromOptions()
         ksp.solve(res.as_petsc, petsc_h.as_petsc)
@@ -127,21 +119,20 @@ def test(space):
         # for i,j,v in zip(petsc_coo.row,petsc_coo.col,petsc_coo.data):
         #     print(i,j,v)
 
-    try:
-        # print(eigen_coo.data-fem_coo.data)
-        assert (eigen_coo.row == fem_coo.row).all()
-        assert (eigen_coo.col == fem_coo.col).all()
-        assert np.allclose( eigen_coo.data, fem_coo.data )
+    try: # istl_coo does not exist
+        assert (istl_coo.row == fem_coo.row).all()
+        assert (istl_coo.col == fem_coo.col).all()
+        assert np.allclose( istl_coo.data, fem_coo.data )
     except:
+        # print("issue between istl and fem matrices")
         pass
 
     try:
-        # print(eigen_coo.data-fem_coo.data)
         assert (petsc_coo.row == fem_coo.row).all()
         assert (petsc_coo.col == fem_coo.col).all()
         assert np.allclose( petsc_coo.data, fem_coo.data )
     except:
-        pass
+        print("issue between petsc and fem matrices")
 
 test("lagrange")
 test("dglagrange")

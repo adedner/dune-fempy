@@ -6,6 +6,7 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
                 inner, dot, div, grad, dx, as_vector, transpose, Identity
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
+from dune.fem.operator import linear as linearOperator
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
@@ -54,11 +55,11 @@ r      = numpy.copy(rhs_p)
 d      = numpy.copy(rhs_p)
 precon = numpy.copy(rhs_p)
 xi     = numpy.copy(rhs_u)
-A      = mainOp.assemble(velocity).as_numpy
-G      = gradOp.assemble(pressure).as_numpy
-D      = divOp.assemble(velocity).as_numpy
-M      = massOp.assemble(pressure).as_numpy
-P      = preconOp.assemble(pressure).as_numpy
+A = linearOperator(mainOp).as_numpy
+G = linearOperator(gradOp).as_numpy
+D = linearOperator(divOp).as_numpy
+M = linearOperator(massOp).as_numpy
+P = linearOperator(preconOp).as_numpy
 def Ainv(rhs,target): target[:] = linalg.spsolve(A,rhs)
 def Minv(rhs,target): target[:] = linalg.spsolve(M,rhs)
 def Pinv(rhs,target): target[:] = linalg.spsolve(P,rhs)

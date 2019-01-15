@@ -8,6 +8,7 @@ from ufl import TestFunction, TrialFunction, SpatialCoordinate, triangle, exp,\
                 derivative, action
 from ufl.algorithms.apply_derivatives import apply_derivatives
 from dune.ufl import NamedConstant
+from dune.fem.operator import linear as linearOperator
 
 parameter.append({"fem.verboserank": -1})
 
@@ -33,7 +34,8 @@ ubar = space.interpolate(as_vector([dot(x,x),]*dimR),name="ubar")
 a    = ( inner(0.5*dot(u,u), v[0]) +
          inner(u[0]*grad(u), grad(v)) ) * dx
 op   = create.operator("galerkin", a, space)
-A    = op.assemble(ubar)
+A    = linearOperator(op)
+op.jacobian(ubar,A)
 A(arg,destA)
 
 da   = apply_derivatives(derivative(action(a, ubar), ubar, u))
@@ -43,7 +45,8 @@ err = integrate(grid, (destA-destB)**2, 5)
 # print("error=",err)
 assert(err.two_norm < 1e-15)
 
-A   = dop.assemble(arg)
+A = linearOperator(dop)
+dop.jacobian(arg,A)
 A(arg,destC)
 err = integrate(grid, (destA-destC)**2, 5)
 # print("error=",err)
@@ -61,7 +64,8 @@ err = integrate(grid, (destA-destD)**2, 5)
 # print("error=",err)
 assert(err.two_norm < 1e-15)
 
-A   = linop.assemble(arg)
+A = linearOperator(linop)
+linop.jacobian(arg,A)
 A(ubar,destE)
 err = integrate(grid, (destA-destE)**2, 5)
 # print("error=",err)

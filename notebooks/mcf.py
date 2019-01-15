@@ -207,7 +207,7 @@ for i in range(numberOfLoops):
     model.setConstant(tau,dt)
     iterations = 0
     while t < endTime:
-        _,info = scheme.solve(target=solution)
+        info = scheme.solve(target=solution)
         # move the surface
         positions.dofVector.assign(solution.dofVector)
         # store some information about the solution process

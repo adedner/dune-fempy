@@ -8,11 +8,11 @@ from dune.ufl import DirichletBC, Space
 dune.fem.parameter.append("parameter")
 dune.fem.parameter.append( {"fem.verboserank": -1} )
 
-newtonParameter = {"tolerance": 1e-10, "verbose": "false",
-                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+newtonParameter = {"tolerance": 1e-5, "verbose": "true",
+                   "linear.linabstol": 1e-6, "linear.linreduction": 1e-6,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
-                   "linear.verbose": "false"}
+                   "linear.verbose": "true"}
 
 dimDomain = 2
 dimRange = 2
@@ -45,10 +45,13 @@ def test(operator):
     parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()}
 
     scheme = create.scheme(operator, model, spc, parameters=parameters)
-    solution, _ = scheme.solve()
+    solution = spc.interpolate([0],name="solution")
+    scheme.solve(target=solution)
     l2errA = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
     grid.hierarchicalGrid.globalRefine(2)
-    solution, _ = scheme.solve()
+    # note: without the `clear` the code can fail since the new dofs in 'solution' can be nan
+    solution.clear()
+    scheme.solve(target=solution)
     l2errB = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
     return solution, l2errA,l2errB
 

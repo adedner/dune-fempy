@@ -32,6 +32,5 @@ scheme.solve(target=solution)
 grid.writeVTK("l2projection", pointdata=[solution])
 
 from dune.fem.operator import linear
-op = linear(space)
-scheme.jacobian(solution,op)
+op = linear(scheme, ubar=solution)
 op.as_istl.store("l2projection.mm", "matrixmarket")

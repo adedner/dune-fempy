@@ -5,6 +5,7 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
 from dune.fem import parameter
+from dune.fem.operator import linear as linearOperator
 parameter.append({"fem.verboserank": 0})
 
 order = 2
@@ -49,13 +50,12 @@ d      = rhsPress.copy()
 precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
-# Question: should assemble method also provide the affine shift?
 print("ASSEMBLE all matrices")
-A      = mainOp.assemble(velocity)
-G      = gradOp.assemble(pressure)
-D      = divOp.assemble(velocity)
-M      = massOp.assemble(pressure)
-P      = preconOp.assemble(pressure)
+A = linearOperator(mainOp)
+G = linearOperator(gradOp)
+D = linearOperator(divOp)
+M = linearOperator(massOp)
+P = linearOperator(preconOp)
 solver = {"fem.solver.krylovmethod":"cg","fem.solver.verbose":1}
 Ainv   = mainOp.inverseLinearOperator(A,1e-10,solver)
 Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
@@ -114,3 +114,5 @@ for m in range(100):                      # for (int m=0;m<100;++m)
     d *= gamma                            #     d_ *= gamma;
     d += r                                #     d_ += r_;
 plot()
+
+# add a version that uses methods from petsc4py

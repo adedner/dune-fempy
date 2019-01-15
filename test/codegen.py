@@ -54,11 +54,12 @@ grid.writeVTK('initial', pointdata={'initial': initial})
 
 start = time.time()
 t = 0
+A = linearOperator(scheme)
 while t < 1.0:
     scheme.model.t = t
     u_h_n.assign(u_h)
-    # scheme.solve(target=u_h)
-    scheme.assemble(u_h_n)
+    scheme.solve(target=u_h)
+    scheme.jacobian(u_h_n,A)
     t += scheme.model.dt
 print("time loop:",time.time()-start)
 

@@ -59,23 +59,11 @@ d      = rhsPress.copy()
 precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
-# Question: should assemble method also provide the affine shift?
-# A      = mainOp.assemble(velocity)
-# G      = gradOp.assemble(pressure)
-# D      = divOp.assemble(velocity)
-# M      = massOp.assemble(pressure)
-# P      = preconOp.assemble(pressure)
-
-A = linearOperator(mainOp)     # or linearOperator(spcU)
-G = linearOperator(gradOp)     # or linearOperator(spcP,spcU)
-D = linearOperator(divOp)      # or linearOperator(spcU,spcP)
-M = linearOperator(massOp)     # or linearOperator(spcP,spcp)
-P = linearOperator(preconOp)   # or linearOperator(spcP,spcP)
-mainOp.jacobian(velocity,A)
-gradOp.jacobian(pressure,G)
-divOp.jacobian(velocity,D)
-massOp.jacobian(pressure,M)
-preconOp.jacobian(pressure,P)
+A = linearOperator(mainOp)
+G = linearOperator(gradOp)
+D = linearOperator(divOp)
+M = linearOperator(massOp)
+P = linearOperator(preconOp)
 
 solver = {"fem.solver.krylovmethod":"gmres","fem.solver.verbose":0}
 Ainv   = mainOp.inverseLinearOperator(A,1e-10,parameters=solver)

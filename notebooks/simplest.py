@@ -33,7 +33,8 @@ f = as_vector( [(8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])] )
 # elliptic equation
 scheme = galerkin( ( inner(u,v)  + inner(grad(u),grad(v)) )*dx == inner(f,v)*dx )
 
-solution, info = scheme.solve(name="solution")
+solution = space.interpolate([0],name="solution")
+info = scheme.solve(target=solution)
 
 # some postprocessing
 plot(solution)
@@ -56,7 +57,7 @@ dt = 0.01
 scheme.model.tau = dt
 dist = integrate(grid,error**2,order=5)[0]
 while dist > 0.01:
-    _, info = scheme.solve(target=solution)
+    info = scheme.solve(target=solution)
     t += dt
     un.assign(solution)
     dist = integrate(grid,error**2,order=5)[0]
@@ -76,7 +77,8 @@ phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
 exact = as_vector([inner(x,x)**(0.5*180./270.) * sin((180./270.) * phi)])
 a = inner(grad(u), grad(v))*dx
 scheme = galerkin([a==0,DirichletBC(space,exact,1)])
-solution, _ = scheme.solve()
+solution = space.interpolate([0],name="solution")
+scheme.solve(target=solution)
 plot(solution)
 error = solution - exact
 print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )

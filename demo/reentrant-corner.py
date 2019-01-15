@@ -55,8 +55,9 @@ def mark(element):
     estLocal = estimate(element, element.geometry.referenceElement.center)
     return Marker.refine if estLocal[0] > tolerance / gridSize else Marker.keep
 
+solution = spc.interpolate([0],name="solution")
 for i in range(20):
-    solution, _ = scheme.solve()
+    scheme.solve(target=solution)
     estimator(solution, estimate)
     grid.writeVTK("reentrant-corner",
             pointdata={"solution":solution, "exact":exact},

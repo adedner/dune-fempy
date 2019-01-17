@@ -17,7 +17,7 @@
 #   \frac{\partial}{\partial_t}X = - H(X)\nu(X)
 # \end{gather}
 # where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
-#
+# 
 # We will solve this using a finite element approach based on the following time discrete approximation:
 # \begin{gather}
 #   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
@@ -32,12 +32,12 @@
 # $\theta\in[0,1]$ is a discretization parameter.
 # <img src="mcf.gif" style="height:228px;">
 
-# In[1]:
+# In[ ]:
 
 
 from __future__ import print_function
 try:
-    get_ipython().run_line_magic('matplotlib', 'inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
 
@@ -60,167 +60,114 @@ order = 2
 # initial radius
 R0 = 2.
 
+# end time
+endTime = 0.1
 
-# In[2]:
+
+# In[ ]:
+
+
+def calculate(use_cpp, grid):
+    # space on Gamma_0 to describe position of Gamma(t)
+    space = create.space("lagrange", grid, dimrange=grid.dimWorld, order=order)
+    positions = space.interpolate(lambda x: x, name="position")
+
+    # space for discrete solution on Gamma(t)
+    surface   = create.view("geometry", positions)
+    space = create.space("lagrange", surface, dimrange=surface.dimWorld, order=order)
+    solution  = space.interpolate(lambda x: x, name="solution")
+
+    # set up model using theta scheme
+    theta = 0.5   # Crank-Nicholson
+
+    u = TrialFunction(space)
+    v = TestFunction(space)
+    x = SpatialCoordinate(space.cell())
+    I = Identity(3)
+    dt = dune.ufl.NamedConstant(space.cell(),"dt")
+
+    a = (inner(u - x, v) + dt * inner(theta*grad(u)
+        + (1 - theta)*I, grad(v))) * dx
+
+    scheme = create.scheme("galerkin", a==0, space, solver="cg")
+
+    if use_cpp:
+        radius = algorithm.load('calcRadius', 'radius.hh', surface)
+        file_path = 'cpp_time.p'
+    else:
+        # compute an averaged radius of the surface
+        def radius(surface):
+            # compute R = int_x |x| / int_x 1
+            R   = 0
+            vol = 0
+            for e in surface.elements:
+                rule = geometry.quadratureRule(e.type, 4)
+                for p in rule:
+                    geo = e.geometry
+                    weight = geo.volume * p.weight
+                    R   += geo.toGlobal(p.position).two_norm * weight
+                    vol += weight
+            return R/vol
+        file_path = 'python_time.p'
+
+    scheme.model.dt = 0.02
+    
+    import numpy as np
+    pyplot.figure()
+    pyplot.gca().set_xlim([0, endTime])
+    pyplot.gca().set_ylabel("error")
+    pyplot.gca().set_xlabel("time")
+
+    numberOfLoops = 3
+    times = np.zeros(numberOfLoops)
+    errors = np.zeros(numberOfLoops)
+    totalIterations = np.zeros(numberOfLoops, np.dtype(np.uint32))
+    gridSizes = np.zeros(numberOfLoops, np.dtype(np.uint32))
+    for i in range(numberOfLoops):
+        positions.interpolate(lambda x: x * (R0/x.two_norm))
+        solution.interpolate(lambda x: x)
+        t = 0.
+        R = radius( surface )
+        Rexact = math.sqrt(R0*R0 - 4.*t)
+        x = np.array([t])
+        y = np.array([R - Rexact])
+        iterations = 0
+        start = time.time()
+        while t < endTime:
+            info = scheme.solve(target=solution)
+            # move the surface
+            positions.dofVector.assign(solution.dofVector)
+            # store some information about the solution process
+            iterations += int( info["linear_iterations"] )
+            t          += scheme.model.dt
+            R           = radius( surface )
+            Rexact      = math.sqrt(R0*R0-4.*t)
+        print("time used:", time.time() - start)
+        times[i] = time.time() - start
+        errors[i] = abs(R-Rexact)
+        totalIterations[i] = iterations
+        gridSizes[i] = grid.size(2)
+        if i < numberOfLoops - 1:
+            grid.hierarchicalGrid.globalRefine(1)
+            scheme.model.dt /= 2
+    eocs = np.log(errors[0:][:numberOfLoops-1] / errors[1:]) / math.log(math.sqrt(2))
+    try:
+        import pandas as pd
+        keys = {'size': gridSizes, 'error': errors, "eoc": np.insert(eocs, 0, None), 'iterations': totalIterations}
+        table = pd.DataFrame(keys, index=range(numberOfLoops),columns=['size', 'error', 'eoc', 'iterations'])
+        print(table)
+    except ImportError:
+        print("pandas could not be used to show table with results")
+        pass
+    pickle.dump([gridSizes, times], open(file_path,'wb'))
+
+
+# In[ ]:
 
 
 # set up reference domain Gamma_0
 grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
-# grid.hierarchicalGrid.globalRefine(1)
-
-# space on Gamma_0 to describe position of Gamma(t)
-space = create.space("lagrange", grid, dimrange=grid.dimWorld, order=order)
-# non-spherical initial surface
-positions = space.interpolate(lambda x: x *
-                      (1 + 0.5*math.sin(2*math.pi*x[0]*x[1])*
-                            math.cos(math.pi*x[2])), name="position")
-
-# space for discrete solution on Gamma(t)
-surface   = create.view("geometry", positions)
-space = create.space("lagrange", surface, dimrange=surface.dimWorld, order=order)
-solution  = space.interpolate(lambda x: x, name="solution")
-
-
-# In[3]:
-
-
-# set up model using theta scheme
-theta = 0.5   # Crank-Nicholson
-
-u = TrialFunction(space)
-v = TestFunction(space)
-x = SpatialCoordinate(space.cell())
-I = Identity(3)
-tau = Constant(space.cell())
-
-a = (inner(u - x, v) + tau * inner(theta*grad(u)
-    + (1 - theta)*I, grad(v))) * dx
-model = create.model("elliptic", surface, a == 0)
-
-scheme = create.scheme("h1", space, model, solver="cg")
-
-
-# In[4]:
-
-
-count   = 0
-t       = 0.
-endTime = 0.05
-dt      = 0.005
-model.setConstant(tau,dt)
-
-fig = pyplot.figure(figsize=(10,10))
-plot(solution, figure=(fig, 131+count%3), colorbar=False, gridLines="", triplot=True)
-
-while t < endTime:
-    scheme.solve(target=solution)
-    t     += dt
-    count += 1
-    positions.dofVector.assign(solution.dofVector)
-    if count % 4 == 0:
-        # surface.writeVTK("mcf"+str(order)+"-0-", pointdata=[solution], number=count)
-        # surface.writeVTK("mcf"+str(order)+"-3-", pointdata=[solution], number=count, subsampling=3)
-        plot(solution, figure=(fig, 131+count%3), colorbar=False, gridLines="", triplot=True)
-pyplot.show()
-pyplot.close('all')
-
-
-# In case we start with a spherical initial surface, i.e., $\Gamma(0)=R_0\;S^2$, the solution
-# to the mean curvature flow equation is easy to compute:
-# \begin{align}
-#   \Gamma(t) &= R(t)\;S^2 \\
-#   R(t) &= \sqrt{R_0^2-4t}
-# \end{align}
-# We can use this to check that our implementation is correct:
-
-# In[5]:
-
-
-use_cpp = True
-if use_cpp:
-    calcRadius = algorithm.load('calcRadius', 'radius.hh', surface)
-    file_path = 'pickle/cpp_time.p'
-else:
-    # compute an averaged radius of the surface
-    def calcRadius(surface):
-        # compute R = int_x |x| / int_x 1
-        R   = 0
-        vol = 0
-        for e in surface.elements:
-            rule = geometry.quadratureRule(e.type, 4)
-            for p in rule:
-                geo = e.geometry
-                weight = geo.volume * p.weight
-                R   += geo.toGlobal(p.position).two_norm * weight
-                vol += weight
-        return R/vol
-    file_path = 'pickle/python_time.p'
-
-
-# In[6]:
-
-
-endTime = 0.1
-dt      = 0.02
-
-import numpy as np
-pyplot.figure()
-pyplot.gca().set_xlim([0, endTime])
-pyplot.gca().set_ylabel("error")
-pyplot.gca().set_xlabel("time")
-
-numberOfLoops = 3
-times = np.zeros(numberOfLoops)
-errors = np.zeros(numberOfLoops)
-totalIterations = np.zeros(numberOfLoops, np.dtype(np.uint32))
-gridSizes = np.zeros(numberOfLoops, np.dtype(np.uint32))
-for i in range(numberOfLoops):
-    positions.interpolate(lambda x: x * (R0/x.two_norm))
-    solution.interpolate(lambda x: x)
-    t = 0.
-    R = calcRadius( surface )
-    Rexact = math.sqrt(R0*R0 - 4.*t)
-    x = np.array([t])
-    y = np.array([R - Rexact])
-    model.setConstant(tau, dt)
-    iterations = 0
-    start = time.time()
-    while t < endTime:
-        solution,info = scheme.solve(target=solution)
-        # move the surface
-        positions.dofVector.assign(solution.dofVector)
-        # store some information about the solution process
-        iterations += int( info["linear_iterations"] )
-        t          += dt
-        R      = calcRadius( surface )
-        Rexact = math.sqrt(R0*R0-4.*t)
-    print("time used:", time.time() - start)
-    times[i] = time.time() - start
-    errors[i] = abs(R-Rexact)
-    totalIterations[i] = iterations
-    gridSizes[i] = grid.size(2)
-    if i < numberOfLoops - 1:
-        grid.hierarchicalGrid.globalRefine(1)
-        dt /= 2
-pickle.dump([gridSizes, times], open(file_path,'wb'))
-
-
-# In[7]:
-
-
-eocs = np.log(errors[0:][:numberOfLoops-1] / errors[1:]) / math.log(2.)
-print(eocs)
-
-
-# In[8]:
-
-
-try:
-    import pandas as pd
-    keys = {'size': gridSizes, 'error': errors, "eoc": np.insert(eocs, 0, None), 'iterations': totalIterations}
-    table = pd.DataFrame(keys, index=range(numberOfLoops),columns=['size', 'error', 'eoc', 'iterations'])
-    print(table)
-except ImportError:
-    print("pandas could not be used to show table with results")
-    pass
+calculate(True, grid)
+grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
+calculate(False, grid)
 

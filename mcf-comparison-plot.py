@@ -26,6 +26,6 @@ def plot(ct, ct2):
     plt.ylabel('Runtime in s (log)',fontsize=20)
     plt.savefig('figures/mcf-comparison.png')
 
-ct = pickle.load(open("pickle/cpp_time.p", 'rb'))
-ct2 = pickle.load(open("pickle/python_time.p", 'rb'))
+ct = pickle.load(open("cpp_time.p", 'rb'))
+ct2 = pickle.load(open("python_time.p", 'rb'))
 plot(ct, ct2)

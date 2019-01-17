@@ -65,7 +65,7 @@ D = linearOperator(divOp)
 M = linearOperator(massOp)
 P = linearOperator(preconOp)
 
-solver = {"fem.solver.krylovmethod":"gmres","fem.solver.verbose":0}
+solver = {"krylovmethod":"gmres","verbose":0}
 Ainv   = mainOp.inverseLinearOperator(A,1e-10,parameters=solver)
 Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
 Pinv   = preconOp.inverseLinearOperator(P,1e-10,solver)

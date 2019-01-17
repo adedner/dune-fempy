@@ -201,8 +201,8 @@ def compute():
         model = create.model("integrands", grid, a == 0)
 
 
-        solverParameter={"fem.solver.newton.linabstol": 1e-11,
-                         "fem.solver.newton.linreduction": 1e-11,
+        solverParameter={"fem.solver.newton.absolutetol": 1e-11,
+                         "fem.solver.newton.reductiontol": 1e-11,
                          "fem.solver.newton.tolerance": 1e-10,
                          "fem.solver.newton.verbose": "true",
                          "fem.solver.newton.linear.verbose": "false"}

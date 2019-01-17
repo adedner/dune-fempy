@@ -11,10 +11,10 @@ from dune.fem.function import integrate
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0)}
-newtonParameter = {"tolerance": 1e-10, "verbose": "false",
-                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
-                   "linear.preconditioning.method": "ilu",
+parameter.append({"fem.verboserank": 0})
+newtonParameter = {"tolerance": 1e-7, "verbose": "false",
+                   "linear.absolutetol": 1e-8, "linear.reductiontol": 1e-8,
+                   "linear.preconditioning.method": "jacobi",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
 
@@ -43,8 +43,9 @@ s  = mu/heInv * inner( jump(grad(u[0])), jump(grad(v[0])) ) * dS
 s += mu/hF * inner( u-exact, v ) * ds
 model  = create.model("integrands", grid, a+s == 0)
 scheme = create.scheme("galerkin", model, spc, solver="cg",
-        parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
-solA, _ = scheme.solve(name="solA")
+            parameters={"newton." + k: v for k, v in newtonParameter.items()})
+solA = spc.interpolate([0],name="solA")
+scheme.solve(solA)
 
 ########
 
@@ -53,8 +54,9 @@ s  = mu*heInv * inner( jump(grad(u[0])), jump(grad(v[0])) ) * dS
 s += mu/hF**3 * inner( u-exact, v ) * ds
 model  = create.model("integrands", grid, a+s == 0)
 scheme = create.scheme("galerkin", model, spc, solver="cg",
-        parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
-solB, _ = scheme.solve(name="solB")
+                parameters={"newton." + k: v for k, v in newtonParameter.items()})
+solB = spc.interpolate([0],name="solB")
+scheme.solve(solB)
 
 errA_sol = math.sqrt( integrate(grid, (solA-exact)**2, 5)[0] )
 errB_sol = math.sqrt( integrate(grid, (solB-exact)**2, 5)[0] )

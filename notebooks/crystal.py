@@ -160,7 +160,7 @@ equation = a_im == a_ex
 
 model  = create.model("integrands", grid, equation, coefficients={un:solution_n} )
 solverParameters = {"tolerance": 1e-5, "verbose": "false",
-                    "linear.linabstol": 1e-8, "linear.linreduction": 1e-8,
+                    "linear.absolutetol": 1e-8, "linear.reductiontol": 1e-8,
                     "linear.preconditioning.method": "ilu",
                     "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                     "linear.verbose": "false"}

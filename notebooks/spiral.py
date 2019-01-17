@@ -166,12 +166,12 @@ model = create.model("integrands", grid,  equation,  coefficients={un: uh_n, vn:
 
 
 solverParameters =\
-       {"fem.solver.newton.tolerance": 1e-3,
-        "fem.solver.newton.verbose": "true",
-        "fem.solver.newton.linear.linabstol": 1e-5, "fem.solver.newton.linear.linreduction": 1e-5,
-        "fem.solver.newton.linear.preconditioning.method": "ilu",
-        "fem.solver.newton.linear.preconditioning.iterations": 1, "fem.solver.newton.linear.preconditioning.relaxation": 1.2,
-        "fem.solver.newton.linear.verbose": "true"}
+       {"newton.tolerance": 1e-3,
+        "newton.verbose": "true",
+        "newton.linear.absolutetol": 1e-5, "newton.linear.reductiontol": 1e-5,
+        "newton.linear.preconditioning.method": "ilu",
+        "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
+        "newton.linear.verbose": "true"}
 scheme = create.scheme("galerkin", model, spc, solver="cg",parameters=solverParameters)
 
 

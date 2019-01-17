@@ -3,6 +3,7 @@ use_codegen = True
 import time
 from dune.grid import structuredGrid
 from dune.fem import parameter
+from dune.fem.operator import linear as linearOperator
 import dune.create as create
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, triangle, exp,\
                 dx, grad, inner, as_vector, replace, sqrt
@@ -42,8 +43,8 @@ a = (inner((u)/dt, v) + inner(u, v))*dx
 exact = as_vector( [exp(-2*t)*(initial - 1) + 1,]*dimR )
 b = replace(a, {u: exact})
 
-solverParam = {"fem.solver.newton.verbose": 0,
-               "fem.solver.newton.linear.verbose": 0}
+solverParam = {"newton.verbose": 0,
+               "newton.linear.verbose": 0}
 scheme = create.scheme("galerkin", a==b, space, solver='cg',
                        parameters = solverParam)
 scheme.setQuadratureOrders(quadOrder,quadOrder)

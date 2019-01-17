@@ -32,11 +32,11 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 model = create.model("integrands", grid, a == b)
 
 newtonParameter = {"tolerance": 1e-10, "verbose": "true",
-                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                   "linear.absolutetol": 1e-11, "linear.reductiontol": 1e-11,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
-scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("galerkin", model, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 solution = spc.interpolate([0],name="solution")
 scheme.solve(target=solution)

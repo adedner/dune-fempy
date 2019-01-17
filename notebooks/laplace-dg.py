@@ -76,11 +76,11 @@ exact = as_vector([ sin(pi*x[0])*sin(pi*x[1]) ])
 
 
 newtonParameter = {"tolerance": 1e-5, "verbose": "false",
-                   "linear.linabstol": 1e-8, "linear.linreduction": 1e-8,
+                   "linear.absolutetol": 1e-8, "linear.reductiontol": 1e-8,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
-scheme = create.scheme("galerkin", a == b, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("galerkin", a == b, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 uh = spc.interpolate([0],name="dg")
 scheme.solve(target=uh)
@@ -110,7 +110,7 @@ gradSpc = create.space("lagrange", grid, dimrange=grid.dimension, order=order, s
 contGrad = gradSpc.project(grad(uh[0]),name="ZZ")
 a = inner(grad(u[0])-contGrad, grad(v[0])) * dx
 scheme = create.scheme("galerkin", [a==0, DirichletBC(lagSpc,uh,1)],
-    lagSpc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+    lagSpc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 zzUh = lagSpc.interpolate([0,]*grid.dimension,name="ZZ")
 scheme.solve(target=zzUh)

@@ -33,11 +33,11 @@ exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 model = create.model("integrands", grid, inner(grad(u), grad(v))*dx == 0, DirichletBC(uflSpace,exact,1))
 
 newtonParameter = {"tolerance": 1e-10, "verbose": "false",
-                   "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                   "linear.absolutetol": 1e-11, "linear.reductiontol": 1e-11,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
-scheme = create.scheme("galerkin", model, spc, parameters={"fem.solver.newton." + k: v for k, v in newtonParameter.items()})
+scheme = create.scheme("galerkin", model, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 fvspc = create.space("finitevolume", grid, dimrange=1, storage="istl")
 estimate = fvspc.interpolate([0], name="estimate")

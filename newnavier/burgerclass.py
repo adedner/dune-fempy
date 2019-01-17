@@ -24,8 +24,8 @@ class Burgers:
 
         a = (mu*inner(u, v) + (1-nu)/Re * inner(grad(u)+grad(u).T, grad(v)) + inner(grad(u), outer(v, u))) * dx
 
-        solverParameter={"fem.solver.newton.linabstol": 1e-11,
-                         "fem.solver.newton.linreduction": 1e-11,
+        solverParameter={"fem.solver.newton.absolutetol": 1e-11,
+                         "fem.solver.newton.reductiontol": 1e-11,
                          "fem.solver.newton.tolerance": 1e-10,
                          "fem.solver.newton.verbose": "true",
                          "fem.solver.newton.linear.verbose": "false"}

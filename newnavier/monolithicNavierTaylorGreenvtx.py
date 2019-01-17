@@ -130,8 +130,8 @@ def compute():
     model.tau = deltaT
 
     # setup structure for olver parameters
-    solverParameter={"fem.solver.newton.linabstol": 1e-13,
-                     "fem.solver.newton.linreduction": 1e-13,
+    solverParameter={"fem.solver.newton.absolutetol": 1e-13,
+                     "fem.solver.newton.reductiontol": 1e-13,
                      "fem.solver.newton.tolerance": 1e-12,
                      "fem.solver.newton.verbose": "true",
                      "fem.solver.newton.linear.verbose": "false"}

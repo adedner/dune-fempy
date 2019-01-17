@@ -25,6 +25,7 @@ except:
     pass
 import dune.fem
 from dune.fem.plotting import plotPointData as plot
+dune.fem.parameter.append({"fem.verboserank": "0"})
 dune.fem.parameter.append("parameter")
 
 
@@ -84,7 +85,13 @@ model = create.model("integrands", grid, equation)
 # In[6]:
 
 
-scheme = create.scheme("galerkin", model, spc)
+scheme = create.scheme("galerkin", model, spc, parameters=
+       {"newton.tolerance": 1e-5, "newton.verbose": "true",
+        "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
+        "newton.linear.preconditioning.method": "ilu",
+        "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
+        "newton.linear.verbose": "true",
+        "newton.linear.krylovmethod": "cg"})
 
 
 # We create a grid function for our exact solution.
@@ -104,7 +111,8 @@ from math import sqrt
 levels=2
 for i in range(levels):
     print("solve on level", i, "number of dofs=", spc.size)
-    uh,_ = scheme.solve()
+    uh = spc.interpolate([0],name="uh")
+    scheme.solve(target=uh)
     def l2error(en,x):
         val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
         return [ val[0]*val[0] ];
@@ -129,15 +137,17 @@ for i in range(levels):
 spc = create.space("lagrange", grid, dimrange=1, order=2)
 # create the scheme but change some of the default parameters..
 scheme = create.scheme("galerkin", model, spc,        parameters=\
-       {"fem.solver.newton.tolerance": 1e-5, "fem.solver.newton.verbose": "false",
-        "fem.solver.newton.linear.linabstol": 1e-8, "fem.solver.newton.linear.linreduction": 1e-8,
-        "fem.solver.newton.linear.preconditioning.method": "ilu",
-        "fem.solver.newton.linear.preconditioning.iterations": 1, "fem.solver.newton.linear.preconditioning.relaxation": 1.2,
-        "fem.solver.newton.linear.verbose": "false"}
+       {"newton.tolerance": 1e-5, "newton.verbose": "true",
+        "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
+        "newton.linear.preconditioning.method": "ilu",
+        "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
+        "newton.linear.verbose": "true",
+        "newton.linear.krylovmethod": "cg"})
 
 print("solve with second order", i, "number of dofs=", spc.size)
 
-uh,info = scheme.solve()
+uh = spc.interpolate([0],name="uh")
+info = scheme.solve(target=uh)
 def l2error(en,x):
     val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
     return [ val[0]*val[0] ];

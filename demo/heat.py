@@ -49,7 +49,7 @@ def compute():
 
     # setup structure for olver parameters
     solverParameter = {"tolerance": 1e-10, "verbose": "true",
-                       "linear.linabstol": 1e-11, "linear.linreduction": 1e-11,
+                       "linear.absolutetol": 1e-11, "linear.reductiontol": 1e-11,
                        "linear.preconditioning.method": "ilu",
                        "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                        "linear.verbose": "false"}

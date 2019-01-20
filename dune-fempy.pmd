@@ -203,8 +203,8 @@ The structure of the paper is as follows. In section
 \ref{sec:fem-in-fempy} we introduce the interface for a simple
 FEM step-by-step. In sections \ref{sec:solve} and \ref{sec:header} we
 look more in-depth at this example and some of the design flexibility
-available. In sections \ref{sec:crystal}, \ref{sec:mcf} and \ref{sec:battery} we
-look at additional features in the context of more complex examples.
+available. In sections \ref{sec:crystal} and \ref{sec:mcf} % and \ref{sec:battery}
+we look at additional features in the context of more complex examples.
 Finally we discuss the comparison to C++ code in section
 \ref{sec:mcf-comparison}.
 
@@ -328,9 +328,10 @@ With that in mind, for the remainder of this section we shall
 demonstrate in more detail how each of these concepts are implemented
 in the context of a worked example, the FEM applied to
 the Forchheimer equation: a scalar,
-nonlinear parabolic equation derived in \cite{Kieu}. A full derivation
-of this equation is described in appendix \ref{sec:forch}, but for the
-following the final form suffices.
+nonlinear parabolic equation derived in \cite{Kieu}.
+% A full derivation
+% of this equation is described in appendix \ref{sec:forch}, but for the
+% following the final form suffices.
 \begin{equation} \label{eqn:forch-roche}
   \int_{\Omega} \frac{1}{\Delta t} (u^{n+1} - u^n) v \
   + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla v \
@@ -443,8 +444,7 @@ this in \dune[Fempy] are either a quick plot in \pyth{matplotlib}
 (see \cite{Matplotlib}), or writing to a
 VTK file for use in Paraview (see \cite{Paraview}), which we do
 below, resulting in figure \ref{fig:forch-plot}.
-\renewcommand{\pweavecaption}{Plotting a function using two different
-methods}
+\renewcommand{\pweavecaption}{Plotting a function using two different methods}
 \renewcommand{\pweavelabel}{lst:forch-plot}
 ```python, label="fem2", echo=False
 # <markdowncell>
@@ -552,13 +552,13 @@ purposes for example in the vtk output. Discrete function are a special
 form of grid functions so have the same properties shown in the previous
 section:
 \renewcommand{\pweavecaption}{Plotting discrete function using \matplotlib}
-\renewcommand{\pweavelabel}{lst:forch-plot}
+\renewcommand{\pweavelabel}{lst:forch-plot-uh}
 ```python, label="fem2", echo=False
 # <markdowncell>
 # and plot them using matplotlib or write a vtk file for postprocessing
 # <codecell>
 ```
-```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
+```python, label = 'forch-plot-uh', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
 plot(u_h, grid=grid)
 ```
 

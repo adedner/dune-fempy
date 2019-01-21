@@ -18,8 +18,7 @@
 #include <dune/fem/io/file/dataoutput.hh>
 
 // include header of elliptic solver
-#include <dune/fem/schemes/elliptic.hh>
-#include <dune/fem/schemes/femscheme.hh>
+#include <dune/fem/schemes/galerkin.hh>
 
 // include generated model
 #include <forchheimer/forchheimer.hh>
@@ -64,11 +63,11 @@ try
 
   Dune::Fem::interpolate(Initial<decltype(gridPart)>(gridPart),solution);
 
-  forchheimer::Model<decltype(gridPart),typename decltype(previous)::LocalFunctionType> model( previous.localFunction() );
+  Integrands<decltype(gridPart),decltype(previous)> model( previous );
 
-  typedef FemScheme< DifferentiableEllipticOperator<
-          Dune::Fem::SparseRowLinearOperator<decltype(solution),decltype(solution)>,decltype(model)>,
-          Dune::Fem::KrylovInverseOperator<decltype(solution)> > SchemeType;
+  typedef Dune::Fem::GalerkinScheme< decltype(model),
+             Dune::Fem::SparseRowLinearOperator<decltype(solution),decltype(solution)>,
+             Dune::Fem::KrylovInverseOperator<decltype(solution)>, false > SchemeType;
   SchemeType scheme( space, model );
 
   std::tuple< decltype(solution)* > ioTuple( &solution );
@@ -76,7 +75,7 @@ try
   dataOutput.writeData( 0 );
 
   Dune::Fem::GridTimeProvider< HGridType > timeProvider( grid );
-  double timeStep = 0.05;
+  double timeStep = 0.0005;
   model.dt() = timeStep;
 
   auto start = std::clock();

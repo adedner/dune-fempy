@@ -4,13 +4,20 @@ v = TestFunction(space)
 x = SpatialCoordinate(space.cell())
 dt = NamedConstant(triangle, "dt")    # time step
 t  = NamedConstant(triangle, "t")     # current time
+n = FacetNormal(space)
 u_h_n = NamedCoefficient(space,"previous")
 
+from ufl import as_vector, exp
+exact = lambda t: as_vector([exp(-2*t)*(initial - 1) + 1])
+
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-abs_du = sqrt(inner(grad(u), grad(u)))
-K = 2/(1 + sqrt(1 + 4*abs_du))
-a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
-exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
-b = replace(a, {u: exact})
+abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
+K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
+a = ( inner((u - u_h_n)/dt, v) \
+    + 0.5*inner(K(u)*grad(u), grad(v)) \
+    + 0.5*inner(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx
+b = inner(-2*exp(-2*t)*(initial - 1) \
+    - div(K(exact(t))*grad(exact(t)[0])), v[0]) * dx
+    + K(exact(t))*dot(grad(exact(t)[0]), n) * v[0] * ds
 
 F = a - b

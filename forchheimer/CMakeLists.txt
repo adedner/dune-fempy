@@ -1,4 +1,4 @@
-dune_fem_add_elliptic_models(forchheimer.ufl)
+dune_fem_add_integrands_models(forchheimer.ufl)
 
 add_executable( forchheimer EXCLUDE_FROM_ALL main.cc forchheimer.hh )
 target_compile_definitions( forchheimer PRIVATE YASPGRID;GRIDDIM=21;POLORDER=2 )

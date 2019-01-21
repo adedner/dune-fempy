@@ -867,7 +867,7 @@ namespace Dune
 
       GalerkinScheme ( const DiscreteFunctionSpaceType &dfSpace, Integrands &integrands, ParameterReader parameter = Parameter::container() )
         : dfSpace_( dfSpace ),
-          fullOperator_( dfSpace, dfSpace, std::move( integrands ) ),
+          fullOperator_( dfSpace, dfSpace, integrands ), // std::move( integrands ) ),
           parameter_( std::move( parameter ) ),
           linearOperator_( "assembled elliptic operator", dfSpace, dfSpace ),
           invOp_(parameter_)
@@ -915,28 +915,33 @@ namespace Dune
       const GridPartType &gridPart () const { return space().gridPart(); }
       ModelType &model() const { return fullOperator().model(); }
 
-      std::enable_if_t<addDirichletBC,void>
+      template <bool addDBC = addDirichletBC>
+      std::enable_if_t<addDBC,void>
       setConstraints( DomainFunctionType &u ) const
       {
         fullOperator().setConstraints( u );
       }
-      std::enable_if_t<addDirichletBC,void>
+      template <bool addDBC = addDirichletBC>
+      std::enable_if_t<addDBC,void>
       setConstraints( const typename DiscreteFunctionType::RangeType &value, DiscreteFunctionType &u ) const
       {
         fullOperator().setConstraints( value, u );
       }
-      std::enable_if_t<addDirichletBC,void>
+      template <bool addDBC = addDirichletBC>
+      std::enable_if_t<addDBC,void>
       setConstraints( const DiscreteFunctionType &u, DiscreteFunctionType &v ) const
       {
         fullOperator().setConstraints( u, v );
       }
-      std::enable_if_t<addDirichletBC,void>
+      template <bool addDBC = addDirichletBC>
+      std::enable_if_t<addDBC,void>
       subConstraints( const DiscreteFunctionType &u, DiscreteFunctionType &v ) const
       {
         fullOperator().subConstraints( u, v );
       }
     protected:
-      std::enable_if_t<addDirichletBC,void>
+      template <bool addDBC = addDirichletBC>
+      std::enable_if_t<addDBC,void>
       setZeroConstraints( DiscreteFunctionType &u ) const { fullOperator().setConstraints( typename DiscreteFunctionType::RangeType(0), u ); }
       void setZeroConstraints( ... ) const { }
       const DiscreteFunctionSpaceType &dfSpace_;

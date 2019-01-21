@@ -718,30 +718,36 @@ there exist other such premade \dune schemes for different problems
 
 \Rtodo{The scheme and the model needs to be a bit more motivated here.}
 
-
 Additionally the solver can be specified, so for this instance we use
 \pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
 Lastly we note that it is possible to explicitly define a model object
-to hold the method, and we investigate the different ways of doing
-this in section \ref{sec:header}.
+and we investigate the different ways of doing this in section \ref{sec:header}.
 
 \subsection{Solving} \label{sec:solving}
 
 The last natural part of a FEM is the solving, which includes
 time loops, mesh refinements, data output, plotting, and so on.
-Let us begin by setting up the timestep, $\Delta t = 0.05$, by
-assigning it in the model (using the name given to the coefficient
-previously).
+Let us begin by setting up the timestep $\Delta t = 0.05$.
+The timestep is part of the UFL equation passed to the constructor of the
+\pyth{scheme}. The scheme uses that equation to construct a model with
+methods to change any UFL constant found in the equation. Using an instance
+of \pyth{NamedConstant} we can easily assign values to these constant using
+the given name. Recall that we used
+\pyth{dt = NamedConstant(space, "dt")} in our UFL equation and setting this
+constant for example to \pyth{0.05} is achieved by the following code:
 \renewcommand{\pweavecaption}{Setting up time variables before the
 loop}
 \renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
 scheme.model.dt = 0.05
 ```
+Note that this does not require any additional JIT compilation. Similarly we
+can use \pyth{scheme.model.t = 0} to set the time in the model.
+
 Next we write the following method for solving the problem over the
 time range. Since the problem is time-dependent, we
-solve over a for loop with $t_0 = 0$ and $t_N = 1$, using \pyth{u_h_n} for
+solve over a for loop with $t_0 = 0$ and $t_N = T$, using \pyth{u_h_n} for
 the old solution and \pyth{u_h} for the new one.
 \renewcommand{\pweavecaption}{Evolve method for solving in time}
 \renewcommand{\pweavelabel}{lst:forch-evolve}
@@ -754,6 +760,10 @@ def evolve(scheme, u_h, u_h_n, endTime):
         scheme.solve(target=u_h)
         time += scheme.model.dt
 ```
+Note that changing \pyth{u_h_n} changes the corresponding function in the
+model defined by the UFL equation given above again without having to
+recompile the code.
+
 Lastly we want to have a way of computing the error. Say for
 instance we want to look at the $L^2$ and $H^1$ errors for our
 computed solution, assuming an exact solution $u$ is known at the
@@ -1187,220 +1197,6 @@ dofs so \pyth{clear} needs to be called or
 \pyth{dune.fem.globalRefine([uh])}
 should be used}
 
-\section{Model Generation} \label{sec:header}
-
-After having looked at the basics of the python
-interface, let us now consider features more aimed at C++
-integration and code extensibility.
-
-We briefly alluded to a way of creating a model independent of a
-scheme in section \ref{sec:schemes}, so let us expand upon this idea here.
-We can separate the process into two steps as follows.
-\renewcommand{\pweavecaption}{A simple elliptic model}
-\renewcommand{\pweavelabel}{lst:elliptic}
-\begin{pweavecode}
-model = create.model('elliptic', grid, a == b)
-scheme = create.scheme("galerkin", model)
-\end{pweavecode}
-where \pyth{a == b} refers to the UFL expression used to represent the
-bilinear form, and \pyth{'elliptic'} refers to the elliptic operator
-class in \dune. The purpose of this class is to have a set list of
-virtualized methods that represent the standard
-structure of what we consider is necessary for an
-elliptic PDE model. This is then implemented in \dune[Fempy] by
-translating the UFL input into a \dune class compatible format.
-
-We note that this is a different approach to similar packages, like Fenics
-\cite{FEniCS} and
-Firedrake \cite{Firedrake}, which
-in general do not create a virtual class and instead use the UFL form
-directly. In fact such an approach is also available in \dune[Fempy],
-using the \pyth{'integrands'} identifier. The choice between
-\pyth{'elliptic'} and \pyth{'integrands'} models each lead to
-separate advantages and disadvantages, which is what we would like to
-discuss in this section.
-
-\subsection{Elliptic Models}
-
-First let us consider the default elliptic model. In mathematical
-terms, consider the same general operator we defined previously.
-\begin{equation}
-  L[u] = -\nabla \cdot D(x, u) \nabla u + m(x, u, \nabla u).
-  \tag{\ref{eqn:elliptic}}
-\end{equation}
-In variational form, after multiplying with a test function and
-integration by parts (ignoring boundary terms for now), we arrive at
-\[
-  L[u] = \int_{\Omega}D(x, u) \nabla u \cdot \nabla v + m(x, u, \nabla u)
-  v \diff x.
-\]
-Now the elliptic model class in \dune[Fempy] has methods that represent
-the above form in general terms. Suppose for instance we were to take
-the case of $m(x, u, \nabla u) = u$ above. In the model class, this would be
-defined under the method \cpp{source}.
-\renewcommand{\pweavecaption}{A function in the elliptic model C++
-class}
-\renewcommand{\pweavelabel}{lst:elliptic-cpp}
-\begin{pweavecode}
-template< class Point >
-void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
-{
-  result = u;
-}
-\end{pweavecode}
-
-\Rtodo{I would rather write result = u, then it holds for all dimRange.}
-
-
-A similar method exists for $D(x, u)$, as well as linearised
-versions for the purposes of nonlinear methods. Additionally there are
-methods for the associated Dirichlet or Neumann boundary conditions.
-Together these form the elliptic model class which is
-one way of expressing bilinear forms in \dune[Fempy]. Generally this
-class is then used to create a shared object file that is exported to
-python using pybind11 for use in python scripts and notebooks.
-
-Another possibility provided for by the modular design of
-\dune[python]  and the elliptic class structure is the creation of alternate
-models. This approach involves the writing of additional C++
-classes (one example would be an elliptic discontinuous Galerkin model) based on
-the elliptic model class except with extra modifications that one
-might want to make to the underlying structure.
-Whilst this approach is more in-depth than simply editing
-an elliptic header file, it allows one to change the functions
-themselves beyond what the default elliptic model accepts.
-
-\Atodo{Do we keep the following or just chite Lloyd's thesis a future paper?
-We could even consider leaving the elliptic model out of the paper and only
-show how to use the integrands model in a C++ code...}
-An example of this approach is the \textit{nonvariational} model
-for the \dune[femnv] module (\cite{NVPAPER}). This comes
-from the desire to write bilinear forms that can accept a Hessian as
-as argument as follows.
-\begin{equation*}
-  L[u] = \nabla \cdot D(x, u) \nabla \varphi(x) + m(x, u, \nabla
-  u, D^2 u)\varphi.
-\end{equation*}
-Such a change would require different arguments to be made available
-to the methods from the elliptic model. Suppose we wanted to
-implement the nonvariational Poisson equation, i.e. taking $m = -\Delta u$
-above. Then we would need the following method.
-\renewcommand{\pweavecaption}{A nonvariational method}
-\renewcommand{\pweavelabel}{lst:nvop}
-\begin{pweavecode}
-template< class Point >
-void source ( const Point &x, const RangeType &u, const
-JacobianRangeType &du, const HessianRangeType &d2u, RangeType &result ) const
-{
-  result[ 0 ] = d2u[ 0 ][ 0 ] + d2u[ 1 ][ 1 ];
-}
-\end{pweavecode}
-Whilst this may not be immediately possible with the standard elliptic
-model, it is possible to create a model \cpp{'nvdg'} that can
-use such functions, which results in the ability to write functional
-\dune[Fempy] code as follows.
-\renewcommand{\pweavecaption}{The \dune[Fempy] code for a nonvariational
-model}
-\renewcommand{\pweavelabel}{lst:fempy_nv}
-\begin{pweavecode}
-a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
-b = rhs(A, exact)
-model = create.model("nvdg", grid, a == b)
-\end{pweavecode}
-Thus it becomes possible to write schemes that expect different
-arguments from the operator.
-
-\Rtodo{Here I would again explain a bit what is possible with this approach and
-what couldn't be done with Firedrake and Fenics. One has to be careful though. }
-
-
-\subsection{Integrands Models}
-
-We note however that as mentioned before, there exists another way of
-constructing operators, by using \pyth{'integrands'}. This method
-bypasses the virtual methods used in the elliptic operator class and
-creates methods purely using the UFL expressions given to it. This
-again allows for expressions that are not by default allowed in the
-default elliptic class, as shown below.
-\renewcommand{\pweavecaption}{Usage of integrands operators for
-skeleton terms}
-\renewcommand{\pweavelabel}{lst:fempy_integrands}
-\begin{pweavecode}
-a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
-    + jump(A*grad(u[0]), n)*avg(v[0])*dS
-b = rhs(A, exact)
-scheme = create.model("integrands", space, a == b)
-\end{pweavecode}
-Here we take the nonvariational equation from before and add a term
-defined only on the skeleton (the edges) of the mesh. Due to the
-ability to add such interior terms, the \pyth{'integrands'} class is
-particularly useful for discontinuous Galerkin methods.
-
-\subsection{C++ Models} \label{sec:cpp-models}
-
-In addition to the automatic creation of a shared library object that
-is done when \pyth{create} is called, it is
-possible to generate a model class separately as a header file.
-That is, it is possible to generate a C++ file (e.g. \cpp{'model.hh'}) that can be
-used flexibly in both \dune[Fempy] and regular C++ compatible \dune code. We can do this by
-writing a pure UFL file and calling cmake on it.
-
-Let us examine what this file looks like for the Forchheimer model.
-\renewcommand{\pweavecaption}{UFL file used for C++ header file generation}
-\renewcommand{\pweavelabel}{lst:header}
-\begin{pweavecode}
-space = Space(2, 1)
-u = TrialFunction(space)
-v = TestFunction(space)
-x = SpatialCoordinate(space.cell())
-dt = NamedConstant(triangle, "dt")    # time step
-t  = NamedConstant(triangle, "t")     # current time
-u_h_n = NamedCoefficient(space,"previous")
-
-initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-abs_du = sqrt(inner(grad(u), grad(u)))
-K = 2/(1 + sqrt(1 + 4*abs_du))
-a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
-exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
-b = replace(a, {u: exact})
-
-F = a - b
-\end{pweavecode}
-Once the corresponding \cpp{forchheimer.hh} file has been generated,
-it can then be edited manually in C++, and then used in place
-of a UFL expression in \dune[Fempy]. This choice of default shared library
-generation or usable header files falls in line with
-attempts we have made to improve extensibility of the code, since in
-particular it allows for the user to write in more complex features in
-C++ that do not necessarily have python bindings written for them.
-
-One natural question that arises is that of the efficiency between using the
-full \dune[Fempy] interface to run problems and simply using it to just generate a
-model file to be used in C++. To look at this problem we constructed
-an identical Forchheimer example in C++ which can be found in section
-\ref{sec:forch-cpp}. We compare the runtime of the two solve-steps
-below.
-\begin{center}
-  \captionof{table}{Runtimes for Forchheimer solve time}
-  \begin{tabular}{l | l}
-    \hline
-     & Runtime (s) \\ \hline
-    C++ & 78.3 \\
-    Python & 83.0
-  \end{tabular}
-\end{center}
-Thus we see there is not a sizable difference between the \dune[Fem] and
-\dune[Fempy] versions.
-
-\Rtodo{When I tested this the run times were the same. So double check please.}
-
-\noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
-speaking is negligible for long-running simulations. We also note that
-the most \textit{costly} aspect of pure python code are generally
-callbacks, and in this example this amounts to just the solve call. An
-additional example that taxes the two versions differently can be
-found in section \ref{sec:mcf-comparison}.
-
 \section{Adaptive Mesh Refinement} \label{sec:crystal}
 
 We shall now consider the implementation of adaptive mesh refinement
@@ -1601,6 +1397,244 @@ worth the extra coding time for longer running simulations. Naturally
 a full C++ version would see a further improvement in runtime, though
 whether that is justified depends on a case-by-case basis.
 
+\section{Model C++ Header Generation} \label{sec:header}
+
+After having looked at the basics of the python
+interface, let us now consider features more aimed at C++
+integration and code extensibility.
+
+In section \ref{sec:schemes}, we briefly alluded to the fact that the UFL
+equation passed to the \pyth{scheme} constructor is used to create a
+\pyth{model} class. To this end a C++ class is generated and JIT
+compilation is used to export this class to Python.
+We can separate the process into two steps as follows.
+\renewcommand{\pweavecaption}{A simple integrands model}
+\renewcommand{\pweavelabel}{lst:integrands}
+\begin{pweavecode}
+model = create.model('integrands', grid, a == b)
+scheme = create.scheme("galerkin", model)
+\end{pweavecode}
+where \pyth{a == b} refers to the UFL equation used to represent weak form
+of the PDE, i.e., the bilinear and linear form,
+and \pyth{'integrands'} refers to form of C++ class used to represent
+second order operators in \dune[Fem]. A form of this C++ representation
+that is more human readable is given by
+\renewcommand{\pweavecaption}{A simple elliptic model}
+\renewcommand{\pweavelabel}{lst:elliptic}
+\begin{pweavecode}
+model = create.model('elliptic', grid, a == b)
+scheme = create.scheme("h1", model)
+\end{pweavecode}
+While the generated class is easier to read and change it is less flexible
+then the \pyth{integrands} model, e.g., interior facet integrals can not be
+directly represented in this class.
+
+We note that this is a different approach to similar packages, like Fenics
+\cite{FEniCS} and Firedrake \cite{Firedrake}, which
+in general do not create a human readable C++ class that only depends on
+the PDE itself and not on discretization details, e.g., the discrete spaces
+or quadratures used. We are planning to adding this approach in the future
+to be able to generate more efficient code in some special cases.
+
+\subsection{Elliptic Models}
+
+First let us consider the simpler \pyth{elliptic} model. In mathematical
+terms, consider the same general operator we defined previously.
+\begin{equation}
+  L[u] = -\nabla \cdot D(x, u) \nabla u + m(x, u, \nabla u).
+  \tag{\ref{eqn:elliptic}}
+\end{equation}
+In variational form, after multiplying with a test function and
+integration by parts (ignoring boundary terms for now), we arrive at
+\[
+  L[u] = \int_{\Omega}D(x, u) \nabla u \cdot \nabla v + m(x, u, \nabla u)
+  v \diff x.
+\]
+Possibly with an additional boundary integral representing non trivial
+boundary conditions.
+Now the elliptic model class in \dune[Fempy] has methods that represent
+the above form in general terms. Most importantly it has four methods, two
+to compute $D(x, u) \nabla u$ and the corresponding linearization
+and a second pair to compute $m(x, u, \nabla u)$ and its linearization.
+Additionally there are
+methods for the associated Dirichlet or Neumann boundary conditions.
+Together these form the \pyth{elliptic} model class templated over the underlying
+type of the grid. As mention above this is only
+one way of expressing bilinear forms in \dune[Fempy].
+% Generally this
+% class is then used to create a shared object file that is exported to
+% python using pybind11 for use in python scripts and notebooks.
+
+As an example assume for instance we were to take
+the case of $m(x, u, \nabla u) = u$ above. In the model class, this would be
+defined under the method \cpp{source}.
+\renewcommand{\pweavecaption}{A function in the elliptic model C++
+class}
+\renewcommand{\pweavelabel}{lst:elliptic-cpp}
+\begin{pweavecode}
+template< class Point >
+void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
+{
+  result = u;
+}
+\end{pweavecode}
+
+\Rtodo{I would rather write result = u, then it holds for all dimRangei.}
+\Atodo{I think that is not what is generated - bit complicated to figure
+out that special case in the code generation process}
+
+Another possibility provided for by the modular design of
+\dune[python] and the simple structure of the class representing the
+elliptic model, is the creation of alternate
+models. This approach involves the writing of additional C++
+classes (one example would be an elliptic discontinuous Galerkin model) based on
+the elliptic model class except with extra modifications that one
+might want to make to the underlying structure.
+Whilst this approach is more in-depth than simply editing
+an elliptic header file, it allows one to change the functions
+themselves beyond what the default elliptic model accepts.
+\Atodo{the above is not too clear, i.e., what is actually needed?}
+
+\Atodo{Do we keep the following or just chite Lloyd's thesis a future paper?
+We could even consider leaving the elliptic model out of the paper and only
+show how to use the integrands model in a C++ code...}
+An example of this approach is the \textit{nonvariational} model
+for the \dune[femnv] module (\cite{NVPAPER}). This comes
+from the desire to write bilinear forms that can accept a Hessian as
+as argument as follows.
+\begin{equation*}
+  L[u] = \nabla \cdot D(x, u) \nabla \varphi(x) + m(x, u, \nabla
+  u, D^2 u)\varphi.
+\end{equation*}
+Such a change would require different arguments to be made available
+to the methods from the elliptic model. Suppose we wanted to
+implement the nonvariational Poisson equation, i.e. taking $m = -\Delta u$
+above. Then we would need the following method.
+\renewcommand{\pweavecaption}{A nonvariational method}
+\renewcommand{\pweavelabel}{lst:nvop}
+\begin{pweavecode}
+template< class Point >
+void source ( const Point &x, const RangeType &u, const
+JacobianRangeType &du, const HessianRangeType &d2u, RangeType &result ) const
+{
+  result[ 0 ] = d2u[ 0 ][ 0 ] + d2u[ 1 ][ 1 ];
+}
+\end{pweavecode}
+Whilst this may not be immediately possible with the standard elliptic
+model, it is possible to create a model \cpp{'nvdg'} that can
+use such functions, which results in the ability to write functional
+\dune[Fempy] code as follows.
+\renewcommand{\pweavecaption}{The \dune[Fempy] code for a nonvariational
+model}
+\renewcommand{\pweavelabel}{lst:fempy_nv}
+\begin{pweavecode}
+a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
+b = rhs(A, exact)
+model = create.model("nvdg", grid, a == b)
+\end{pweavecode}
+Thus it becomes possible to write schemes that expect different
+arguments from the operator.
+
+\Rtodo{Here I would again explain a bit what is possible with this approach and
+what couldn't be done with Firedrake and Fenics. One has to be careful though. }
+
+
+\subsection{Integrands Models}
+
+We note however that as mentioned before, there exists another way of
+constructing operators, by using \pyth{'integrands'}.
+% This method
+% bypasses the virtual methods used in the elliptic operator class and
+% creates methods purely using the UFL expressions given to it.
+This allows for a more general description of second order operators not
+expressible by the \pyth{elliptic} model class. For example we can express
+a non variational second order problem directly:
+\renewcommand{\pweavecaption}{Usage of integrands operators for
+skeleton terms}
+\renewcommand{\pweavelabel}{lst:fempy_integrands}
+\begin{pweavecode}
+a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
+    + jump(A*grad(u[0]), n)*avg(v[0])*dS
+b = rhs(A, exact)
+scheme = create.model("integrands", space, a == b)
+\end{pweavecode}
+In addition as the above shows we can add a term
+defined only on the skeleton (the facets) of the mesh. Due to the
+ability to add such interior terms, the \pyth{integrands} class is
+for example useful to construct discontinuous Galerkin methods.
+
+\subsection{C++ Models} \label{sec:cpp-models}
+
+In addition to the automatic creation of a shared library object that
+is done when the model is imported into Python, it is
+possible to generate a stand alone header file containing the model class
+That is, it is possible to generate a C++ file (e.g. \cpp{'model.hh'}) that can be
+used flexibly in both \dune[Fempy] and regular C++ compatible \dune code.
+Within a \dune[] module depending on \dune[Fempy], we can do this by
+writing a pure UFL file and calling cmake on it.
+
+Let us examine what this file looks like for the Forchheimer model:
+\renewcommand{\pweavecaption}{UFL file used for C++ header file generation}
+\renewcommand{\pweavelabel}{lst:header}
+\begin{pweavecode}
+from dune.fem import Space
+space = Space(2, 1)
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space.cell())
+dt = NamedConstant(triangle, "dt")    # time step
+t  = NamedConstant(triangle, "t")     # current time
+u_h_n = NamedCoefficient(space,"previous")
+
+initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+abs_du = sqrt(inner(grad(u), grad(u)))
+K = 2/(1 + sqrt(1 + 4*abs_du))
+a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
+exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
+b = replace(a, {u: exact})
+
+F = a - b
+\end{pweavecode}
+Once the corresponding \cpp{forchheimer.hh} file has been generated,
+it can then be edited manually, and then used in place
+of a UFL expression in \dune[Fempy]. This choice of default shared library
+generation or usable header files falls in line with
+attempts we have made to improve extensibility of the code, since in
+particular it allows for the user to write in more complex features in
+C++ that do not necessarily have python bindings written for them. An
+additional advantage is that this header file can be directly used within a
+traditional \dune[] C++ program.
+
+What the above allows us to do is to easily investigate,
+the difference in efficiency between using the
+full \dune[Fempy] interface to run problems and writing a pure C++ version
+to solve the same problem. The model file needed to run the C++ \dune[Fem]
+code can be generated using a UFL expression as explained above.
+To look at this in more detail we constructed
+an identical Forchheimer example in C++ which can be found in section
+\ref{sec:forch-cpp}. We compare the runtime of the two solve-steps
+below.
+\begin{center}
+  \captionof{table}{Runtimes for Forchheimer solve time}
+  \begin{tabular}{l | l}
+    \hline
+     & Runtime (s) \\ \hline
+    C++ & 78.3 \\
+    Python & 83.0
+  \end{tabular}
+\end{center}
+Thus we see there is not a sizable difference between the \dune[Fem] and
+\dune[Fempy] versions.
+
+\Rtodo{When I tested this the run times were the same. So double check please.}
+
+\noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
+speaking is negligible for long-running simulations. We also note that
+the most \textit{costly} aspect of pure python code are generally
+callbacks, and in this example this amounts to just the solve call. An
+additional example that taxes the two versions differently can be
+found in section \ref{sec:mcf-comparison}.
+
 \section{Virtualization} \label{sec:virtualization}
 
 One final topic we want to discuss is virtualization and the
@@ -1630,7 +1664,7 @@ or even impossible. Note that virtualizing the discrete function for
 example, would almost certainly also require virtualization of the
 underlying discrete function spaces (with mapper and basis function set),
 and the underlying grid view (with its iterators). The cumulative effect
-of this would be quite severe of performance.
+of this would be a quite severe hit on performance.
 
 To avoid this issue, no type erasure is carried out
 when an object is passed into Python. So in the above example the call to
@@ -1693,14 +1727,16 @@ Consequently, these classes only depend on some type information like the
 underlying type of the grid view and the range dimension of the model but
 not on the actual details of the bilinear form. The consequence of this
 approach is that evaluating some part of the form introduces a virtual
-function call.
+function call. At the same time UFL coefficients are stored as type erased
+\pyth{VirtualizedGridFunction} in the model class again to avoid too much
+recompilation when changes to the UFL equations are made.
 \Atodo{
 explain that tests have shown that this is negligible and show some
 performance test. Mention virtualization parameter to
 disable type erasure if required.
-Also need to add the virtualization of the coefficients in the model (which
-can also be diasbled).
 }
+\Atodo{We should add some information on typical compilation times}
+
 
 %</tag>
 
@@ -1972,9 +2008,10 @@ the previous table.
 \subsection{Schemes and Operators} \label{sec:scheme-list}
 
 As discussed in section \ref{sec:schemes}, schemes can be constructed
-directly with a UFL form and contain the method for solving the PDE.
-Addtionally as shown in section \ref{sec:header}, it is also possible to create
-models and operators that store the operator separately.
+directly with a UFL equation and contain the method for solving the PDE.
+% Addtionally as shown in section \ref{sec:header} it is also possible to create
+% models and operators that store the operator separately.
+In addition UFL forms can be used to construct operators which do not have 
 While schemes have to have identical domain and range spaces, operators can
 map between different spaces.
 We review this below.

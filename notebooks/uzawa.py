@@ -7,14 +7,21 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
 from dune.fem import parameter
+from dune.fem.space import lagrange  as lagrangeSpace
+from dune.fem.scheme import h1 as h1Scheme
+from dune.fem.operator import galerkin as galerkinOperator
+from dune.fem.operator import h1 as h1Operator
 from dune.fem.operator import linear as linearOperator
 
 parameter.append({"fem.verboserank": "0"})
 
+storage="petsc"
+# storage="istl"
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
-spcU = create.space("lagrange", grid, dimrange=grid.dimension, order=order, storage="istl")
-spcP = create.space("lagrange", grid, dimrange=1, order=order-1, storage="istl")
+
+spcU = lagrangeSpace(grid, dimrange=grid.dimension, order=order, storage=storage)
+spcP = lagrangeSpace(grid, dimrange=1, order=order-1, storage=storage)
 
 cell  = spcU.cell()
 x     = SpatialCoordinate(cell)
@@ -34,17 +41,20 @@ divModel    = -div(u)*q[0] * dx
 massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
-solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
+solverParameters = {}
+if storage == "istl" :
+    solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
+
 # can use 'h1' or 'galerkin'
-mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
 # mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
-                            solver="cg", parameters=solverParameters)
-gradOp      = create.operator("h1",gradModel)
-divOp       = create.operator("galerkin",divModel)
-massOp      = create.scheme("h1",massModel==0,
-                            solver="gmres", parameters=solverParameters)
-preconOp    = create.scheme("h1",preconModel==0,
-                            solver="cg", parameters=solverParameters)
+mainOp      = h1Scheme((mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
+                       solver="cg", parameters=solverParameters)
+gradOp      = h1Operator(gradModel)
+divOp       = galerkinOperator(divModel)
+massOp      = h1Scheme(massModel==0,
+                       solver="gmres", parameters=solverParameters)
+preconOp    = h1Scheme(preconModel==0,
+                       solver="cg", parameters=solverParameters)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -59,6 +69,7 @@ d      = rhsPress.copy()
 precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
+print("ASSEMBLE all matrices")
 A = linearOperator(mainOp)
 G = linearOperator(gradOp)
 D = linearOperator(divOp)
@@ -126,3 +137,6 @@ for m in range(100):                      # for (int m=0;m<100;++m)
     d *= gamma                            #     d_ *= gamma;
     d += r                                #     d_ += r_;
 plot()
+
+# add a version that uses methods from petsc4py
+# if storage == "petsc" ...

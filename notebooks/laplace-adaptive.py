@@ -30,8 +30,11 @@ except:
 import math
 import numpy
 import matplotlib.pyplot as pyplot
-import dune.create as create
-from dune.fem.view import adaptiveLeafGridView
+from dune.fem.view import adaptiveLeafGridView as createGridView
+from dune.fem.space import lagrange as lagrangeSpace
+from dune.fem.space import finiteVolume as fvSpace
+from dune.fem.scheme import galerkin as galerkinScheme
+from dune.fem.operator import galerkin as galerkinOperator
 from dune.fem.plotting import plotPointData as plot
 from dune.plotting import block
 import dune.grid as grid
@@ -52,9 +55,9 @@ for i in range(0,7):
                      math.sin(cornerAngle/6*math.pi/180*i)]
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-view = create.view("adaptive", "ALUConform", domain)
+view = createGridView("ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
-spc  = create.space( "lagrange", view, dimrange=1, order=order )
+spc  = lagrangeSpace( view, dimrange=1, order=order )
 
 
 # Next define the model together with the exact solution.
@@ -75,7 +78,7 @@ exact = as_vector([inner(x,x)**(math.pi/2/Phi) * sin(math.pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
-laplace = create.scheme("galerkin", [a==0, DirichletBC(spc,exact,1)], spc)
+laplace = galerkinScheme([a==0, DirichletBC(spc,exact,1)], spc)
 uh = spc.interpolate(lambda x: [0], name="solution")
 
 
@@ -105,14 +108,14 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
-fvspc = create.space("finitevolume", view, dimrange=1)
+fvspc = fvSpace(view, dimrange=1)
 estimate = fvspc.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(spc.cell())
 he = MaxFacetEdgeLength(spc.cell())('+')
 n = FacetNormal(spc.cell())
 estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx                 + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
-estimator = create.operator("galerkin", estimator_ufl, spc, fvspc)
+estimator = galerkinOperator(estimator_ufl, spc, fvspc)
 
 # marking strategy (equidistribution)
 tolerance = 0.1

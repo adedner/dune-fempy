@@ -28,6 +28,9 @@ except:
 from dune.grid import cartesianDomain
 from dune.fem import parameter
 from dune.fem.function import integrate
+from dune.fem.space import lagrange as lagrangeSpace
+from dune.fem.space import dgonb as dgSpace
+from dune.fem.scheme import galerkin as galerkinScheme
 from dune.fem.plotting import plotPointData as plot
 
 import dune.create as create
@@ -36,7 +39,7 @@ parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "i
 order = 2
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("dgonb", grid, dimrange=1, order=order, storage="istl")
+spc = dgSpace(grid, dimrange=1, order=order, storage="istl")
 
 
 # The classical IPDG method for this problem reads
@@ -80,7 +83,7 @@ newtonParameter = {"tolerance": 1e-5, "verbose": "false",
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
-scheme = create.scheme("galerkin", a == b, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
+scheme = galerkinScheme(a == b, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 uh = spc.interpolate([0],name="dg")
 scheme.solve(target=uh)
@@ -97,7 +100,7 @@ print("DG: L^2 and H^1 error:",
   [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 
 # We can simply produce a continuous projection of the discontinuous function
-lagSpc = create.space("lagrange", grid, dimrange=1, order=order+1, storage="istl")
+lagSpc = lagrangeSpace(grid, dimrange=1, order=order+1, storage="istl")
 contUh = lagSpc.project(uh, name="Vtx")
 plot(contUh)
 error = contUh - exact
@@ -106,10 +109,10 @@ print("Lag: L^2 and H^1 error:",
 
 # using averaged gradients
 from dune.ufl import DirichletBC
-gradSpc = create.space("lagrange", grid, dimrange=grid.dimension, order=order, storage="istl")
+gradSpc = lagrangeSpace(grid, dimrange=grid.dimension, order=order, storage="istl")
 contGrad = gradSpc.project(grad(uh[0]),name="ZZ")
 a = inner(grad(u[0])-contGrad, grad(v[0])) * dx
-scheme = create.scheme("galerkin", [a==0, DirichletBC(lagSpc,uh,1)],
+scheme = galerkinScheme([a==0, DirichletBC(lagSpc,uh,1)],
     lagSpc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 zzUh = lagSpc.interpolate([0,]*grid.dimension,name="ZZ")

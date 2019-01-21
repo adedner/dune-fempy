@@ -300,17 +300,19 @@ plot(phi,gridLines="white")
 
 
 from dune.fem.view import geometryGridView
+from dune.fem.function import globalFunction
+from dune.fem.space import lagrange as lagrangeSpace
 
 t = 0
 def expr_global(x):
     return [1.5*x[0],0.5*(x[0]+1.)*x[1]*math.cos(0.1+2.*math.pi*t)]
 
-gf = create.function("global", grid, "coordinates", 1, expr_global)
-spc = create.space("lagrange", grid, dimrange=2, order=1)
+gf = globalFunction(grid, "coordinates", 1, expr_global)
+spc = lagrangeSpace(grid, dimrange=2, order=1)
 df = spc.interpolate(gf, name="test")
 
 geogrid = geometryGridView(df)
-gfnew = create.function("global", geogrid, "expression", 1, expr_global)
+gfnew = globalFunction(geogrid, "expression", 1, expr_global)
 
 dt = 0.01
 count = 0

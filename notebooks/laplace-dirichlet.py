@@ -34,6 +34,8 @@ from ufl import *
 
 from dune.grid import cartesianDomain
 from dune.fem import parameter
+from dune.fem.space import lagrange as lagrangeSpace
+from dune.fem.scheme import galerkin as galerkinScheme
 from dune.fem.plotting import plotPointData as plot
 from dune.ufl import DirichletBC
 
@@ -55,7 +57,7 @@ grid.hierarchicalGrid.globalRefine(4)
 # In[ ]:
 
 
-spc = create.space("lagrange", grid, dimrange=1, order=1, storage="istl")
+spc = lagrangeSpace(grid, dimrange=1, order=1, storage="istl")
 
 u = TrialFunction(spc)
 v = TestFunction(spc)
@@ -74,7 +76,7 @@ newtonParameter = {"tolerance": 1e-5, "verbose": "false",
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
-scheme = create.scheme("galerkin", [a==0,DirichletBC(spc,exact,1)], spc,
+scheme = galerkinScheme([a==0,DirichletBC(spc,exact,1)], spc,
                 parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 solution = spc.interpolate([0],name="solution")

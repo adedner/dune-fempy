@@ -30,15 +30,15 @@ except:
 import math
 import numpy
 import matplotlib.pyplot as pyplot
-from dune.fem.view import adaptiveLeafGridView as createGridView
-from dune.fem.space import lagrange as lagrangeSpace
-from dune.fem.space import finiteVolume as fvSpace
-from dune.fem.scheme import galerkin as galerkinScheme
-from dune.fem.operator import galerkin as galerkinOperator
+from dune.fem.view     import adaptiveLeafGridView as gridView
+from dune.fem.space    import lagrange      as solutionSpace
+from dune.fem.space    import finiteVolume  as estimatorSpace
+from dune.fem.scheme   import galerkin      as solutionScheme
+from dune.fem.operator import galerkin      as estimatorOperator
 from dune.fem.plotting import plotPointData as plot
-from dune.plotting import block
+from dune.plotting     import block
 import dune.grid as grid
-import dune.fem as fem
+import dune.fem  as fem
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 320.
@@ -55,10 +55,9 @@ for i in range(0,7):
                      math.sin(cornerAngle/6*math.pi/180*i)]
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-view = createGridView("ALUConform", domain)
+view = gridView("ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
-spc  = lagrangeSpace( view, dimrange=1, order=order )
-
+space  = solutionSpace( view, dimrange=1, order=order )
 
 # Next define the model together with the exact solution.
 
@@ -67,9 +66,9 @@ spc  = lagrangeSpace( view, dimrange=1, order=order )
 
 from ufl import *
 from dune.ufl import DirichletBC
-u = TrialFunction(spc)
-v = TestFunction(spc)
-x = SpatialCoordinate(spc.cell())
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space.cell())
 
 # exact solution for this angle
 Phi = cornerAngle / 180 * math.pi
@@ -78,8 +77,8 @@ exact = as_vector([inner(x,x)**(math.pi/2/Phi) * sin(math.pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
-laplace = galerkinScheme([a==0, DirichletBC(spc,exact,1)], spc)
-uh = spc.interpolate(lambda x: [0], name="solution")
+laplace = solutionScheme([a==0, DirichletBC(space,exact,1)], space)
+uh = space.interpolate(lambda x: [0], name="solution")
 
 
 # Theory tells us that
@@ -108,14 +107,14 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
-fvspc = fvSpace(view, dimrange=1)
-estimate = fvspc.interpolate([0], name="estimate")
+fvspace = estimatorSpace(view, dimrange=1)
+estimate = fvspace.interpolate([0], name="estimate")
 
-hT = MaxCellEdgeLength(spc.cell())
-he = MaxFacetEdgeLength(spc.cell())('+')
-n = FacetNormal(spc.cell())
-estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx                 + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
-estimator = galerkinOperator(estimator_ufl, spc, fvspc)
+hT = MaxCellEdgeLength(space.cell())
+he = MaxFacetEdgeLength(space.cell())('+')
+n = FacetNormal(space.cell())
+estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
+estimator = estimatorOperator(estimator_ufl, space, fvspace)
 
 # marking strategy (equidistribution)
 tolerance = 0.1

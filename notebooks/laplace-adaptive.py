@@ -1,6 +1,6 @@
-
 # coding: utf-8
 
+# <markdowncell>
 # # Adaptive Finite Element [(Notebook)][1]
 #
 # [1]: _downloads/laplace-adaptive.ipynb
@@ -19,8 +19,7 @@
 # \end{gather}
 #
 # We first define the domain and set up the grid and space
-
-# In[1]:
+# <codecell>
 
 
 try:
@@ -59,9 +58,9 @@ view = gridView("ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
 space  = solutionSpace( view, dimrange=1, order=order )
 
+# <markdowncell>
 # Next define the model together with the exact solution.
-
-# In[2]:
+# <codecell>
 
 
 from ufl import *
@@ -80,7 +79,7 @@ a = inner(grad(u), grad(v)) * dx
 laplace = solutionScheme([a==0, DirichletBC(space,exact,1)], space)
 uh = space.interpolate(lambda x: [0], name="solution")
 
-
+# <markdowncell>
 # Theory tells us that
 # \begin{align*}
 #   \int_\Omega \nabla(u-u_h) \leq \sum_K \eta_K
@@ -99,9 +98,7 @@ uh = space.interpolate(lambda x: [0], name="solution")
 # \end{align*}
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
-
-# In[3]:
-
+# <codecell>
 
 # energy error
 h1error = inner(grad(uh - exact), grad(uh - exact))
@@ -123,8 +120,9 @@ def mark(element):
     estLocal = estimate(element, element.geometry.referenceElement.center)
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
-
-# In[4]:
+# <markdowncell>
+# Let's look at the result:
+# <codecell>
 
 
 # adaptive loop (solve, mark, estimate)
@@ -157,10 +155,9 @@ while count < 20:
 pyplot.show(block=block)
 pyplot.close('all')
 
-
+# <markdowncell>
 # Let's have a look at the center of the domain:
-
-# In[5]:
+# <codecell>
 
 
 fig = pyplot.figure(figsize=(15,15))
@@ -170,11 +167,9 @@ plot(uh, figure=(fig,131+2), xlim=(-0.125,0.125), ylim=(-0.125,0.125),colorbar={
 pyplot.show(block=block)
 pyplot.close('all')
 
-
+# <markdowncell>
 # Finally, let us have a look at the grid levels:
-
-# In[6]:
-
+# <codecell>
 
 from dune.fem.function import levelFunction
 plot(levelFunction(view), xlim=(-0.2,1), ylim=(-0.2,1))

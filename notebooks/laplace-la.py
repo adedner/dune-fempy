@@ -28,6 +28,11 @@ try:
     get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
+import sys
+import petsc4py
+from petsc4py import PETSc
+petsc4py.init(sys.argv)
+
 from dune.generator import builder
 import math
 import numpy as np
@@ -105,6 +110,7 @@ n = 0
 matrix = linear(scheme)
 matrix_coeff = matrix.as_numpy
 
+import pyamg
 while True:
     scheme(uh, res)
     absF = math.sqrt( np.dot(res_coeff,res_coeff) )
@@ -117,6 +123,28 @@ while True:
     # matrix_coeff = matrix.as_numpy
     # sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff_tmp, res_coeff)
     sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10)[0]
+
+    # print("setting up amg")
+    # construct the multigrid hierarchy
+    # ml = pyamg.ruge_stuben_solver(matrix_coeff)
+    # ml = pyamg.smoothed_aggregation_solver(matrix_coeff)
+    # ml = pyamg.rootnode_solver(matrix_coeff, smooth=('energy', {'degree':2}), strength='evolution' )
+    # print(ml)
+    # M = ml.aspreconditioner(cycle='V')
+    # print("solving...")
+    # sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10, M=M)[0]
+    # print("...done")
+
+    # print("setting up amg")
+    # A = scipy.sparse.csr.csr_matrix(matrix_coeff.todense())
+    # ml = pyamg.smoothed_aggregation_solver(A, max_coarse=10)
+    # print(ml)
+    # residuals = []
+    # print("solving...")
+    # sol_coeff -= ml.solve(res_coeff, tol=1e-10, accel='cg', residuals=residuals)
+    # residuals = residuals / residuals[0]
+    # print("...done")
+
     n += 1
 
 plot(uh)
@@ -157,6 +185,12 @@ sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
 
 plot(uh)
 
+# import sys
+# import petsc4py
+# from petsc4py import PETSc
+# petsc4py.init(sys.argv)
+# sys.exit(0)
+
 
 # We can also use the package `petsc4py` to solve the problem.
 #
@@ -170,9 +204,9 @@ plot(uh)
 
 
 try:
-    import petsc4py, sys
-    from petsc4py import PETSc
-    petsc4py.init(sys.argv)
+    # import petsc4py, sys
+    # from petsc4py import PETSc
+    # petsc4py.init(sys.argv)
     spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
     scheme = create.scheme("galerkin", a==b, spc,
                             parameters={"petsc.preconditioning.method":"sor"})
@@ -184,7 +218,6 @@ try:
 except ImportError:
     print("petsc4py could not be imported")
     petsc4py = False
-
 
 # Next we will implement the Newton loop in Python using `petsc4py` to solve the linear systems
 # Need to auxiliary function and set `uh` back to zero.

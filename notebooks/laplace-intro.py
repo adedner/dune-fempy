@@ -85,13 +85,13 @@ model = create.model("integrands", grid, equation)
 # In[6]:
 
 
-scheme = create.scheme("galerkin", model, spc, parameters=
+scheme = create.scheme("galerkin", model, spc, solver="cg",
+        parameters=
        {"newton.tolerance": 1e-5, "newton.verbose": "true",
         "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
         "newton.linear.preconditioning.method": "ilu",
         "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
-        "newton.linear.verbose": "true",
-        "newton.linear.krylovmethod": "cg"})
+        "newton.linear.verbose": "true"})
 
 
 # We create a grid function for our exact solution.
@@ -136,13 +136,13 @@ for i in range(levels):
 
 spc = create.space("lagrange", grid, dimrange=1, order=2)
 # create the scheme but change some of the default parameters..
-scheme = create.scheme("galerkin", model, spc,        parameters=\
+scheme = create.scheme("galerkin", model, spc, solver="cg",
+        parameters=\
        {"newton.tolerance": 1e-5, "newton.verbose": "true",
         "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
         "newton.linear.preconditioning.method": "ilu",
         "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
-        "newton.linear.verbose": "true",
-        "newton.linear.krylovmethod": "cg"})
+        "newton.linear.verbose": "true"})
 
 print("solve with second order", i, "number of dofs=", spc.size)
 

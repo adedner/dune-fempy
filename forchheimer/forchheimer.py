@@ -30,8 +30,8 @@ a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
 exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
 b = replace(a, {u: exact})
 
-solverParam = {"fem.solver.newton.verbose": 0,
-               "fem.solver.newton.linear.verbose": 0}
+solverParam = {"newton.verbose": 0,
+               "newton.linear.verbose": 0}
 scheme = create.scheme("h1", a == b, solver='cg', parameters = solverParam)
 
 scheme.model.dt = 0.05

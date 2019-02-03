@@ -13,7 +13,7 @@ from dune.fem.operator import galerkin as galerkinOperator
 from dune.fem.operator import h1 as h1Operator
 from dune.fem.operator import linear as linearOperator
 
-parameter.append({"fem.verboserank": "0"})
+parameter.append({"fem.verboserank": -1})
 
 storage="petsc"
 # storage="istl"
@@ -76,10 +76,11 @@ D = linearOperator(divOp)
 M = linearOperator(massOp)
 P = linearOperator(preconOp)
 
-solver = {"linear.method":"gmres","verbose":1}
-Ainv   = mainOp.inverseLinearOperator(A,1e-10,parameters=solver)
-Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
-Pinv   = preconOp.inverseLinearOperator(P,1e-10,solver)
+solver = {"method":"gmres","verbose":True,
+          "relativetol":1e-10,"absolutetol":1e-10}
+Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
+Minv   = massOp.inverseLinearOperator(M,solver)
+Pinv   = preconOp.inverseLinearOperator(P,solver)
 
 def plot(count=None):
     grid.writeVTK("Stokes",

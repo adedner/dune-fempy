@@ -155,11 +155,11 @@ typically written in languages such as C++ and Fortran that are
 efficient for large-scale computations.
 
 In recent years however there has been a trend towards packages that
-favour usability, especially given the rise in popularity of python as
+favour usability, especially given the rise in popularity of Python as
 a programming language. Such packages ideally look to lower the
 learning curve for new developers and non-computer focused
 researchers, without compromising the functionality and efficiency of
-traditional packages. An additional benefit to using python is the
+traditional packages. An additional benefit to using Python is the
 facilitating of rapid prototyping, which allows one to quickly
 construct new models and test their viability without having to write
 an intricate program. In particular FEniCS (\cite{FEniCS}) and Firedrake
@@ -181,7 +181,7 @@ b = inner(f, v)*dx
 Nonetheless there are potential weaknesses in the code generation
 approach. In particular this generated code is not
 suited to direct editing, so should a binding not exist for a feature
-on the python side, editing these generated files to add the feature
+on the Python side, editing these generated files to add the feature
 on the C++ side is not an option. Furthermore, user interactibility with the
 C++ interface is not prioritized, which means porting code over to C++
 for efficiency reasons or the writing of additional features are not
@@ -198,7 +198,7 @@ in many ways to \dune code, making it less difficult to port code to
 C++ if necessary. Additionally, attempts to increase usability have been
 made, such as library caching to reduce the runtime of repeated computations, and
 integration with modern C++11/C++14 via pybind11 (see
-\cite{Pybind11}) to interface between C++ and python.
+\cite{Pybind11}) to interface between C++ and Python.
 
 %</intro>
 
@@ -261,38 +261,47 @@ parabolic PDE of the following general form.
   \begin{array}{ll}
   \partial_t u + L[u] = 0, & \mbox{in } \Omega \times [0, T], \\
   u(x, 0) = u^0(x), & \mbox{in } \Omega, \\
-  D \cdot \textbf{n} = g(x), & \mbox{on } \Gamma \times [0, T],
+  D\nabla u \cdot \textbf{n} = g(x), & \mbox{on } \Gamma \times [0, T],
   \end{array}
 \label{eqn:parabolic}
 \end{equation*}
 where the elliptic operator $L$ is defined as
 \begin{equation}
-  L[u] := -\nabla \cdot D(x, u) + m(x, u, \nabla u),
+  L[u] := -\nabla \cdot D(x, t, u, \nabla u) + m(x, t, u, \nabla u),
 \label{eqn:elliptic}
 \end{equation}
 and where $u^0$ and $g$ are the initial and boundary conditions and
 $\textbf{n}$ is the outward pointing normal. We note that we are
 only considering Neumann boundary conditions at first for simplicity,
-although Dirichlet boundary conditions are also a possibility. The
-variational form is then obtained in the usual way by multiplying by a
-test function $\varphi \in V_h$, integrating by parts and discretizing
-in time. After applying a simple time stepping scheme, this leads to
-methods that take the following form.
+although Dirichlet boundary conditions are also a possibility.
+
+To obtain the discrete form, we begin by applying a simple time stepping
+scheme, starting from
+the initial data $u^0$ we define a sequence $u^n$ satisfying
 \begin{equation}
-  \int_{\Omega} u^{n+1} \varphi + \Delta t L_I[u^{n+1}] \diff x =
-  \int_{\Omega} u^n \varphi + \Delta t L_E[u^n] \diff x + \Delta t \int_{\Gamma} g(x)
-  \varphi \diff s.
-\label{eqn:rothe}
+  \frac{u^{n+1}-u^n}{\Delta t} + L_I[u^{n+1}] + L_E[u^n] = 0~,
+\label{eqn:rotheStrong}
 \end{equation}
-where $L_I$ and $L_E$ are the implicit and explicit parts of $L$,
+where $\Delta t$ is a time step and
+$L_I$ and $L_E$ are the implicit and explicit parts of $L$,
 defined as
 \begin{gather}
-  L_I[u] = D_1(x, u \nabla u) \cdot \nabla \varphi + m_1(x, u, \nabla u) \varphi, \quad \\
-  L_E[u] = D_2(x, u \nabla u) \cdot \nabla \varphi + m_2(x, u, \nabla u) \varphi,
+  L_I[u] = -\nabla\cdot D_1(x, t^{n+1}, u, \nabla u) + m_1(x, t^{n+1}, u, \nabla u), \quad \\
+  L_E[u] = -\nabla\cdot D_2(x, t^n, u, \nabla u) + m_2(x, t^n, u, \nabla u),
 \label{eqn:im-ex}
 \end{gather}
-and $D_1 -D_2 = D$, $m_1 - m_2 = m$. The last step is to
-solve this system for $u^{n+1} \in V_h$. This also
+and $D_1 + D_2 = D$, $m_1 + m_2 = m$. The variational formulation of
+\eqref{eqn:rotheStrong} is
+\begin{equation}
+  \int_\Omega \frac{u^{n+1}-u^n}{\Delta t}\varphi +
+  \int_\Omega D_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1}\cdot\nabla\varphi +
+        m_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1})\varphi
+  +\int_\Omega D_2(x, t^n, u^n, \nabla u^n)\cdot\nabla\varphi +
+        m_2(x, t^n u^n, \nabla u^n)\varphi
+  - \int_{\partial\Omega} \frac{1}{2}(g(t^{n+1},x)+g(t^n,x))\varphi = 0
+\label{eqn:rothe}
+\end{equation}
+The final step is to solve this system for $u^{n+1} \in V_h$. This also
 involves potential variation in terms of the solver used and possible
 nonlinearity of the problem. We also note that this is a simple scheme
 for demonstration, and more complex examples involving higher order
@@ -316,7 +325,7 @@ following breakdown of parts.
 
 We note that there exist even further simplifications that can be made
 in terms of this design choice; for instance a FEM could be
-distilled to simply choosing a bilinear form (an operator) and a grid,
+distilled to simply choosing a weak form (an operator) and a grid,
 and having all other things set to sensible defaults. Additionally the code
 itself used to represent these methods could be simplified to a large
 degree depending on the aim of the software.
@@ -332,16 +341,22 @@ demonstrate in more detail how each of these concepts are implemented
 in the context of a worked example, the FEM applied to
 the Forchheimer equation: a scalar,
 nonlinear parabolic equation derived in \cite{Kieu}.
-% A full derivation
-% of this equation is described in appendix \ref{sec:forch}, but for the
-% following the final form suffices.
 \begin{equation} \label{eqn:forch-roche}
-  \int_{\Omega} \frac{1}{\Delta t} (u^{n+1} - u^n) v \
-  + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla v \
-  + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla v \diff x
-  = \int_{\Omega} f v \diff x + \int_{\partial \Omega} g v \diff s.
+  \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
+  + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
+  + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v \diff x
+  - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi \diff x
+  - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v \diff s.
 \end{equation}
+where the diffusion tensor is given by
+\begin{equation}
+  K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+\end{equation}
+and $f=f(x,t)$ is some forcing term.
+This corresponds to taking $D_I=D_E=\frac{1}{2}K(\nabla u) \nabla u$
+and $m_I=\frac{1}{2}f(x,t),m_E=\frac{1}{2}f(x,t)$.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Grids} \label{sec:grids}
 
 The first aspect of FEMs that we consider is probably the most
@@ -400,33 +415,34 @@ being unclear how to make small modifications.
 Having defined the computational domain and function space, we look
 towards functions that we may need to define, e.g. for containing the
 solution. In particular we want to be able to store what initial
-values it can take, its value at the previous timestep and so on.
+values it can take, its value at the previous time step and so on.
 
-Let us begin by just considering a function for the initial condition.
-In \dune[Fempy], we use Unified Form Language (UFL) (\cite{UFL}) to define
-equations, which is essentially a human-readable way of writing a
-variational form. We can also use UFL to define simple function.
-To this end, we must begin by defining a variable.
+Let us begin by just considering functions $f\colon\Omega\to\R^r$
+e.g. the initial condition $u^0$.
+In \dune[Fempy], we use the Unified Form Language (UFL) (\cite{UFL}) to define
+equations, which is essentially a human-readable way of writing functions
+and variational forms.
+To this end, we must begin by defining a variable to describe the spatial
+variable $x$:
 \renewcommand{\pweavecaption}{Creating an \pyth{x} variable in UFL}
 \renewcommand{\pweavelabel}{lst:forch-uflx}
 ```python, label = 'forch-uflx'
 from ufl import SpatialCoordinate, triangle
 x = SpatialCoordinate(triangle)
 ```
-Here we create \pyth{x} as a spatial coordinate from UFL by using the
-\pyth{space} object from the previous section. The \pyth{space} gives
-UFL the dimensions of the grid and the range space, so it knows
-\pyth{x} is two dimensional. So now for initial condition $u =
-\frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$, we would
-have the following code.
+Here we create \pyth{x} as a 2D spatial coordinate from UFL.
+So now for initial condition
+$u^0 = \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$,
+we would have the following code:
 \renewcommand{\pweavecaption}{Creating a grid function using UFL}
 \renewcommand{\pweavelabel}{lst:forch-initial}
 ```python, label = 'forch-initial'
-initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+from ufl import as_vector
+initial = as_vector( [1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1] )
 ```
 Now this function can be used in a variety of ways. Let us first
-show how we would compute the $L^2$ norm of the initial function.
-We do this using \pyth{integrate} as follows.
+show how we would compute the mass of the initial function.
+We do this using the function \pyth{integrate} as follows:
 \renewcommand{\pweavecaption}{Integrating the initial data}
 \renewcommand{\pweavelabel}{lst:forch-integrate}
 ```python, label="fem2", echo=False
@@ -436,11 +452,16 @@ We do this using \pyth{integrate} as follows.
 ```
 ```python, label = 'forch-integrate'
 from dune.fem.function import integrate
-mass = integrate(grid, initial, order=5)[0]
+mass = integrate(grid, initial, order=5)
 print(mass)
 ```
+The arguments to the function \pyth{integrate} are the grid describing the
+domain of integration, a UFL expression describing the integrand and
+the parameter \pyth{order} giving the order of the quadrature to use.
+Note that at the time of writing \dune[Fempy] only operates with vectored
+valued expressions and forms.
 
-\Rtodo{Explain the 5, i.e. quadOrder = 5 in the code }
+\Atodo{Here it would be nice to be able to provide a quadrature instead of only an order}
 
 We can also plot functions fairly easily. The two main ways to do
 this in \dune[Fempy] are either a quick plot in \pyth{matplotlib}
@@ -463,18 +484,36 @@ For the vtk output the function needs to be assigned a name, which is given
 by the key argument of the dictionary passed as the \pyth{pointdata}
 argument.
 
-Note that so far we have simply evaluated the UFL expression \pyth{initial}
-directly, i.e., without using any approximation. To obtain a discrete
-function we need to define finite dimensional spaces.
-\Atodo{Explain that JIT compilation happens behind the scheme and show
-       \pyth{uflFunction} to make the process explicit}
-\Atodo{Show how to evaluate grid functions?}
+Note that so far we have simply used the UFL expressions, e.g., \pyth{initial}
+directly, i.e., without using any approximation and in fact the functions
+we have used so far, e.g., for integration and plotting do not require the
+UFL expression to be approximated. In some cases it can be necessary to
+convert the expression into a \emph{grid function}, i.e., a function that
+can be localized to one element of the grid and evaluated there in local
+coordinates. To this end we can use the function \pyth{uflFunction}
+and for example compute a simple approximation of the mass
+```python, label = 'uflfunction'
+from dune.fem.function import uflFunction
+initial_gf = uflFunction(grid, name="ufl", order=1, ufl=initial)
+mass = 0
+for element in grid.elements:
+  mass += initial_gf(element,[0.5,0.5]) * element.geometry.volume
+print(mass)
+```
+Since with \dune[Python] the complete grid interface is available in the
+Python script this simplifies rapid prototyping of new algorithms also
+using grid functions given by UFL expressions which can later also be used
+in C++ code.
+
+Finally to obtain a discrete
+function we need to define finite dimensional spaces which we will do in
+the next section.
 
 \subsection{Spaces} \label{sec:spaces}
 
 The next key part of a FEM after constructing the grid is defining the
 kind of finite element we want to use, and by extension their space. In
-particular this is important because the order of elements used can
+particular this is important because the order and type of elements used can
 dictate the solvability and the efficiency of the method.
 
 Let us consider a simple case of Lagrange elements. Since we have a 2D
@@ -519,21 +558,19 @@ arguments and two keyword arguments.
   Lagrange basis functions.
   \item \pyth{grid} passes in the grid we constructed previously.
   \item \pyth{dimrange=1} (optional) sets the dimension of the range
-  space to 1
+  space to $r=1$
   \item \pyth{order=2} (optional) sets the order of the finite
-  elements to 2 (2 is the default).
-  \Atodo{the default order is 1 not 2 but that is not clear}
+  elements to 2 (1 is the default).
 \end{itemize}
 Of particular note is that the first argument corresponds to a \dune
 discrete space realization that can come from anywhere within a \dune
-installation, provided python bindings are created for it. For instance we could use a
+installation, provided Python bindings are created for it. For instance we could use a
 discontinuous Galerkin space with orthonormal basis functions instead
 by using \pyth{'dgonb'}.
 
-\Rtodo{Mention dimRange. Grid Function is a function $f: \Omega \rightarrow \R^r$ with $r=dimRange$, cf. dune-fem paper.}
-
 Now we can create discrete grid function by using the default interpolation
-into the finite element space:
+into the finite element space given by the nodal variables on the space.
+The method \pyth{interpolate} can be used for that:
 \renewcommand{\pweavecaption}{}
 \renewcommand{\pweavelabel}{lst:forch-uh}
 ```python, label="fem3", echo=False
@@ -548,8 +585,8 @@ into the finite element space:
 u_h = space.interpolate(initial, name='u_h')
 ```
 So we have created a discrete function \pyth{u_h} over the discrete
-finite element space which we will use to contain the solution to our PDE and
-used an interpolation over the space to assign its initial value by
+finite element space which we will use to contain the solution $u^{n+1}$
+to our PDE and used an interpolation over the space to assign its initial value by
 interpolation of the UFL expression \pyth{initial}. The name is used later for plotting
 purposes for example in the vtk output. Discrete function are a special
 form of grid functions so have the same properties shown in the previous
@@ -583,16 +620,14 @@ one to the other.
 the interpolation error for the initial conditions?}
 
 \subsection{Schemes} \label{sec:schemes}
+\Atodo{Explain that JIT compilation happens behind the scheme and show
+       \pyth{uflFunction} to make the process explicit}
+\Atodo{Show how to evaluate grid functions?}
 
-\Atodo{There are things we do differently from standard ufl:
-1) scalar functions: again this could be done by using something like
-form = replace(form,{u:vecU[0]} for each u which is scalar
-
-Also explain that grid function are ufl coefficients so can be directly used
-}
+\Atodo{Note that grid function are ufl coefficients so can be directly used}
 
 In \dune[Fempy], we define schemes as the object combining a
-discretization of a given bilinear form, its boundary conditions and the method used
+discretization of a given weak form, its boundary conditions and the method used
 to approximate the inverse e.g. the iterative linear solver to use.
 Specifically, for an operator $L: V_h \to V_h^{*}$, schemes have two
 main methods:
@@ -606,11 +641,15 @@ V_h^{*}$, by using a solve method. By default $v_h = 0$.
 \end{enumerate}
 \noindent \textit{Remark.} In the case where only the operator application is
 required/possible (e.g. when $L:V \to W \neq V$ , an \pyth{operator}
-object can be constructed instead of a scheme which comes without a solve method.
+object can be constructed instead of a scheme which does not implement a solve method.
 
 \noindent \textit{Remark.} By default the \pyth{solve} method solves the
-residual problem, e.g., $L[u_h]=0$ in the domain and $u_h=g$ on the
-Dirichlet boundary.
+residual problem, e.g., $L[u_h]=0$ in the domain (and $u_h-g=0$ on the
+Dirichlet boundary if present). The \pyth{solve} method can take an
+optional argument \pyth{rhs} in which case $L[u_h]=$\pyth{rhs} will be
+solved.
+
+\Atodo{should we also mention the 'constraint' methods for handling Dirichlet bcs}
 
 Recall the parabolic equation (\ref{eqn:forch-roche}), which we will focus
 on in the following example. To begin with, it is
@@ -621,6 +660,7 @@ necessary to define the variables that are used in the equation.
 # <markdowncell>
 # Now we can set up our PDE model
 ```
+Recall that the semi discrete problem was
 \begin{equation}
   \int_{\Omega} \frac{1}{\Delta t} (u^{n+1} - u^n) v \
   + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla v \
@@ -628,15 +668,21 @@ necessary to define the variables that are used in the equation.
   = \int_{\Omega} f v \diff x + \int_{\partial \Omega} g v \diff s.
   \tag{\ref{eqn:forch-roche}}
 \end{equation}
-where the diffusion tensor is given by
-\begin{equation}
-  K(\nabla u) = \frac{2}{1+\sqrt{1+4\nabla u}}
-\end{equation}
 and we force the system by defining $f$ so that
 \begin{equation}
   u(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
+         = e^{-2t}\left(u^0(x)-1) + 1
 \end{equation}
-becomes the exact solution. Finally $g$ is defined by assigning the
+becomes the exact solution.
+We can use \pyth{initial} to define this using some algebra, and we
+write a lambda function that takes \pyth{t} as argument.
+\renewcommand{\pweavecaption}{The exact solution}
+\renewcommand{\pweavelabel}{lst:forch-exact}
+```python, label = 'forch-exact'
+from ufl import exp
+exact = lambda t: as_vector([exp(-2*t)*(initial[0]  - 1) + 1])
+```
+Finally $g$ is defined by assigning the
 value to the boundary term using the exact solution.
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction
@@ -652,14 +698,9 @@ defined as \pyth{NamedConstant}, which is simply a UFL \pyth{Constant}
 variable that can be given a name so it can be more easily modified
 later on.
 
-Now for the equation (\ref{eqn:forch-roche}) itself, let us prescribe
-the following value for $K$.
-\begin{equation}
-  K(\nabla u) = \frac{2}{1+\sqrt{1+4\nabla u}}.
-\label{eqn:parameters}
-\end{equation}
-This results in an implementation of the following form.
-\renewcommand{\pweavecaption}{Implementing the bilinear form}
+Now for the equation (\ref{eqn:forch-roche}) itself,
+resulting in an implementation of the following form.
+\renewcommand{\pweavecaption}{Implementing the weak form}
 \renewcommand{\pweavelabel}{lst:forch-eqn-impl}
 ```python, label = 'forch-eqn-impl'
 from ufl import dx, grad, div, inner, sqrt
@@ -669,36 +710,22 @@ a = ( inner((u - u_h_n)/dt, v) \
     + 0.5*inner(K(u)*grad(u), grad(v)) \
     + 0.5*inner(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx
 ```
-For the exact solution we will use the following (which is consistent
-with the initial data).
-\begin{equation}
-  u(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) -
-  \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
-\label{eqn:exact}
-\end{equation}
-We can use \pyth{initial} to define this using some algebra, and we
-write a lambda function that takes \pyth{t} as argument.
-\renewcommand{\pweavecaption}{The exact solution}
-\renewcommand{\pweavelabel}{lst:forch-exact}
-```python, label = 'forch-exact'
-from ufl import as_vector, exp
-exact = lambda t: as_vector([exp(-2*t)*(initial - 1) + 1])
-```
-To set the right hand side of the equation, i.e. $f$, we put the exact
-solution into the strong form of the equation (i.e. $u_t - \nabla
-\cdot (K(\nabla u) \cdot \nabla u$). We also add in Neumann boundary
+To define the forcing $f$, we put the exact
+solution into the strong form of the equation
+(i.e. $f = u_t - \nabla \cdot (K(\nabla u) \cdot \nabla u$).
+We also add in Neumann boundary
 conditions by substituting the exact solution into the boundary term (obtained
 after differentiation by parts).
 \renewcommand{\pweavecaption}{Setting up the right hand side}
 \renewcommand{\pweavelabel}{lst:forch-rhs}
 ```python, label = 'forch-rhs'
 from ufl import dot, FacetNormal, ds
+f = lambda s: -2*exp(-2*s)*(initial[0] - 1) - div( K(exact(s))*grad(exact(s)[0]) )
+g = lambda s: K(exact(s))*grad(exact(s)[0])
 n = FacetNormal(space)
-b = inner(-2*exp(-2*t)*(initial - 1) \
-    - div(K(exact(t))*grad(exact(t)[0])), v[0]) * dx \
-    + K(exact(t))*dot(grad(exact(t)[0]), n) * v[0] * ds
+b = 0.5*(f(t)+f(t+dt))*v[0]*dx + 0.5*dot(g(t)+g(t+dt),n)*v[0]*ds
 ```
-Finally, having defined the bilinear form and right hand side, we can
+Finally, having defined the weak form and right hand side, we can
 now set up a scheme object which we can use to solve the PDE.
 \renewcommand{\pweavecaption}{Creating an $H^{1}$ scheme}
 \renewcommand{\pweavelabel}{lst:forch-scheme}
@@ -713,16 +740,23 @@ now set up a scheme object which we can use to solve the PDE.
 import dune.create as create
 scheme = create.scheme("galerkin", a == b, solver='cg')
 ```
-The above function creates a simple Galerkin method for $H^1$
-conforming elements, with the space and equation passed in. As before
-there exist other such premade \dune schemes for different problems
-(see \ref{sec:scheme-list})
+The above function generates code to assemble and solve
+a Galerkin method, with the space and equation passed in.
+As before
+there exist other such premade \dune schemes for different
+types of problems (see \ref{sec:scheme-list}).
+Note that by default a Newton method is used to solve the resulting system
+and either a preconditioned Krylov solver or a direct solver is used to
+solve the linear system in each step. The type of Krylov solver can be
+specified by the \pyth{solver} argument (in this case we are using
+a conjugate gradient method, since the PDE operator is
+self-adjoint). The default value for this argument is \pyth{gmres}.
+More details on how to choose and customize the solvers will be given later.
 
-
+\Atodo{reminder to discuss solver parameters in section 3}
 \Rtodo{The scheme and the model needs to be a bit more motivated here.}
+\Atodo{Any suggestions?}
 
-Additionally the solver can be specified, so for this instance we use
-\pyth{'cg'} for a conjugate gradient method, since the PDE is symmetric.
 
 Lastly we note that it is possible to explicitly define a model object
 and we investigate the different ways of doing this in section \ref{sec:header}.
@@ -731,8 +765,8 @@ and we investigate the different ways of doing this in section \ref{sec:header}.
 
 The last natural part of a FEM is the solving, which includes
 time loops, mesh refinements, data output, plotting, and so on.
-Let us begin by setting up the timestep $\Delta t = 0.05$.
-The timestep is part of the UFL equation passed to the constructor of the
+Let us begin by setting up the time step $\Delta t = 0.05$.
+The time step is part of the UFL equation passed to the constructor of the
 \pyth{scheme}. The scheme uses that equation to construct a model with
 methods to change any UFL constant found in the equation. Using an instance
 of \pyth{NamedConstant} we can easily assign values to these constant using
@@ -743,10 +777,11 @@ constant for example to \pyth{0.05} is achieved by the following code:
 loop}
 \renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
-scheme.model.dt = 0.05
+scheme.model.dt = 0.0025
 ```
 Note that this does not require any additional JIT compilation. Similarly we
-can use \pyth{scheme.model.t = 0} to set the time in the model.
+can use set the time in the model to zero by calling
+\pyth{scheme.model.t = 0}.
 
 Next we write the following method for solving the problem over the
 time range. Since the problem is time-dependent, we
@@ -758,7 +793,7 @@ the old solution and \pyth{u_h} for the new one.
 def evolve(scheme, u_h, u_h_n, endTime):
     time = 0
     while time < (endTime - 1e-6):
-        scheme.model.t = time + 0.5*scheme.model.dt
+        scheme.model.t = time
         u_h_n.assign(u_h)
         scheme.solve(target=u_h)
         time += scheme.model.dt
@@ -772,11 +807,13 @@ instance we want to look at the $L^2$ and $H^1$ errors for our
 computed solution, assuming an exact solution $u$ is known at the
 final time of the simulation.
 \begin{equation}
- L^2\text{ error} = \int_{\Omega} | u - u_h |^2 \diff x, \qquad
- H^1\text{ error} = \int_{\Omega} | \nabla(u - u_h) |^2 \diff x.
+ L^2\text{ error} = \left( \int_{\Omega} | u - u_h |^2 \diff x
+                    \right)^{\frac{1}{2}}, \qquad
+ H^1\text{ error} = \left( \int_{\Omega} | \nabla(u - u_h) |^2 \diff x
+                    \right^{\frac{1}{2}}.
 \label{eqn:error}
 \end{equation}
-This can be achieved with the following code.
+Computing the squared norm can be achieved with the following code.
 \renewcommand{\pweavecaption}{Writing expressions for the error
 computed at the final time}
 \renewcommand{\pweavelabel}{lst:forch-error}
@@ -792,8 +829,8 @@ computed at the final time}
 ```python, label = 'error'
 endTime    = 1.0
 exact_end  = exact(endTime)
-l2error_fn = inner(u_h - exact_end, u_h - exact_end)
-h1error_fn = inner(grad(u_h - exact_end), grad(u_h - exact_end))
+l2error = inner(u_h - exact_end, u_h - exact_end)
+h1error = inner(grad(u_h - exact_end), grad(u_h - exact_end))
 ```
 First of all we define the exact solution (\pyth{exact_end}) at the
 end time $T=1$. Then we simply write expressions in UFL to calculate
@@ -810,14 +847,14 @@ method.
 This is calculated by refining the grid and comparing the errors
 ($e_{old}$ and $e_{new}$) to the grid sizes ($h_{old}$ and
 $h_{new}$), where the errors are computed using the error function
-\pyth{l2error_fn} from \ref{lst:forch-error}. In particular for a grid size
+\pyth{l2error} from \ref{lst:forch-error}. In particular for a grid size
 that is being halved at each step, we do the following after each
 solve step.
 \renewcommand{\pweavecaption}{Calculating the EOCs}
 \renewcommand{\pweavelabel}{lst:eoc}
 \begin{pweavecode}
 error_old = error                               # store old error
-error = sqrt(integrate(grid, l2error_fn, 5)[0]) # integrate
+error = sqrt(integrate(grid, l2error, 5)[0]) # integrate
 eoc = log(error/error_old)/log(0.5)             # do the EOC calc
 grid.hierarchicalGrid.globalRefine(1)           # refine the grid
 \end{pweavecode}
@@ -833,7 +870,7 @@ for eocLoop in range(3):
     u_h.interpolate(initial)
     evolve(scheme, u_h, u_h_n, endTime)
     error_old = error
-    error = sqrt( integrate(grid, l2error_fn, 5)[0] )
+    error = sqrt( integrate(grid, l2error, order=5)[0] )
     if eocLoop == 0:
         eoc = '-'
     else:
@@ -842,7 +879,7 @@ for eocLoop in range(3):
     print('|u_h - u| =', '{:0.5e}'.format(error), ', eoc =', eoc)
     plot(u_h)
     grid.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
-                  l2error_fn, 'h1error': h1error_fn}, number=eocLoop)
+                  l2error, 'h1error': h1error}, number=eocLoop)
     if eocLoop < 2:
         grid.hierarchicalGrid.globalRefine(1)
         scheme.model.dt /= 2
@@ -862,8 +899,8 @@ submission - or generated through the Makefile}
     4096 & 7.031e-09 & 2.999 & 3.483e-06 & 2.000
   \end{tabular}
 \end{center}
-\Atodo{why is it third order here but only second in the output from the script above?}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Using Alternative Linear Algebra Packages} \label{sec:solve}
 ```python, label="solve-methods", echo=False
@@ -873,57 +910,51 @@ submission - or generated through the Makefile}
 # packages and python functionality.
 # <codecell>
 ```
-% \Atodo{Remove the plot command - replace with error and number of iterations?}
-
 We carry on our exploration of the \dune[Fempy] feature set by
 looking at the different methods of solving the PDE,
 facilitated by the different storage back ends which can be chosen while
-constructing the spaces. As pointed out in the introduction flexibility to
-use different available software packages is part of the underlying
-principles of the \dune[] software framework and this has been carried over
-as much as possible in the design of the Python bindings. Consequently,
-\dune[Fem] allows to store dof vectors and matrices directly using the
-data structures from different linear algebra packages.
-We will demonstrate this in the context of the worked examples used so far
-that demonstrate the practicality of these features.
+constructing the spaces. The underlying module \dune[fem] allows us to
+directly store DoF vectors and system matrices in the native data
+structures of a number of different linear algebra software packages. Thus
+a large number of solvers and preconditioners become availbale without loss
+of performance. Furthermore, for those packages providing Python bindings
+for their data structures, these can be directly accessed in Python
+scripts.
 
 \Rtodo{Motivate the different storage types, basically a result of the poor
 programming of the LA packages.}
 \Atodo{That is a bit harsh - I tried to point out above that the
 flexibility to directly use different packages is a strength of \dune[] not
-a weakness of others :-)}
+a weakness of others - mach nicht immer alles schlecht :-)}
 
-We can specify alternate storage types as follows.
-\renewcommand{\pweavecaption}{Accessing different storage types}
-\renewcommand{\pweavelabel}{lst:storage}
-\begin{pweavecode}
-space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
-\end{pweavecode}
-As before we construct the space, but now with the additional argument
-that specifies the usage of \dune[Istl] (see \cite{Dune-Istl}) as a
-linear algebra backend. By default we use a very simple storage structure
+By default we use a very simple storage structure
 directly provided in \dune[fem] and consequently not requiring any
 additional packages. A number of simple Krylov type solvers are available
 but no sophisticated preconditioning.
 Changing the \pyth{storage} argument in the construction of the space makes
 it possible to use more sophisticated solvers (e.g., better
 preconditioners or direct solvers). Available possibilities are shown in
-Table \ref{tab:discrete-functions}.
+Table \ref{tab:discrete-functions}. In the following code the storage is
+changed to use data structures provided by the module
+\dune[Istl] (see \cite{Dune-Istl}) linear algebra backend.
+\renewcommand{\pweavecaption}{Accessing different storage types}
+\renewcommand{\pweavelabel}{lst:storage}
+\begin{pweavecode} % note: code will not be executed
+space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
+\end{pweavecode}
 
-In particular one thing that we can do with certain storage methods is
-integrate methods from SciPy \cite{SciPy} into our code. This
+An advantage of the default \pyth{"fem"} storage is that we can
+directly use solvers from SciPy \cite{SciPy}. This
 allows for more complex ways of writing numerical methods without the
-need to explicitly write it on the C++ side. \dune[Fempy] allows us
-to store the degrees of freedom and the sparse system matrix in such a way
-that they can be treated as vectors from the NumPy package
-\cite{NumPy} and CRS matrices from SciPy. Using the Python buffer protocol.
-Thus no copy is required and changes to the dof vector made
+need to explicitly write it on the C++ side. Using the Python buffer
+protocol the raw storage for the degrees of freedom and the sparse matrix
+can be directly transferred to vectors from the NumPy package
+\cite{NumPy} and CRS matrix from SciPy.
+No copy is required and changes to the DoF vector made
 on the Python side will automatically lead to changes on the C++ side.
 We demonstrate this via the Forchheimer example from
-Section \ref{sec:fem-in-fempy}.
-
-In the following we implement a simple Newton solver: given an initial
-guess $u^0$ (here taken to be zero) we solve for $n\geq 0$,
+Section \ref{sec:fem-in-fempy}, first by implementing a simple Newton solver:
+given an initial guess $u^0$ (here taken to be zero) we solve for $n\geq 0$,
 \begin{align*}
    u^{n+1} = u^n - DS^{-1}(u^n)S(u^n),
 \end{align*}
@@ -980,11 +1011,10 @@ error = u_h - exact_end
 print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
-\Atodo{Something not right here: the errors show do not corresponds with the previous ones}
 We can redo the above computation using a Newton-Krylov solver from
 SciPy. We do this by constructing a class \pyth{Df} containing the
 derivative of the operator. This would normally be done within DUNE,
-but here we do it purely through python:
+but here we do it purely through Python:
 %, giving figure \ref{fig:forch-df} which is identical to before.
 \renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with SciPy}
 \renewcommand{\pweavelabel}{lst:forch-df}
@@ -1186,7 +1216,7 @@ print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
 (returning the DoF vector or system matrix either as a \pyth{numpy} or a \pyth{petsc}
 vector or matrix) do not lead to a copy of the data and the same is true for the
 discrete functions returned by the \pyth{function} method on the
-discrete space. In the \pyth{numpy} case python's buffer protocol is used,
+discrete space. In the \pyth{numpy} case Python's buffer protocol is used,
 while in the case of \pyth{petsc} the
 underlying C++ \pyth{Vec} and \pyth{Mat} structures can be shared using the
 bindings provided by \pyth{petsc4py}. At the time of writing it
@@ -1312,11 +1342,11 @@ available).
 Having looked at some of the functionality available for solving
 various FEM problems, we now shift our focus towards more in-depth
 features that concern efficiency and C++ development. Here we consider
-the idea of moving sections of python code
+the idea of moving sections of Python code
 over to C++ for efficiency. A key aspect of the design of \dune[Fempy] has
-been about keeping the structure of the C++ code in the python code's
+been about keeping the structure of the C++ code in the Python code's
 design, to the point where translating between the two is relatively painless. In
-particular this allows for rapid prototyping of methods in python with
+particular this allows for rapid prototyping of methods in Python with
 its relative ease of use, after which code can be ported to C++ for
 efficiency if necessary in large-scale computation.
 
@@ -1371,11 +1401,11 @@ double calcRadius( const Surface &surface )
 }
 \end{pweavecode}
 We note that we take advantage of C++11 features such as \cpp{auto}
-and range based for loops to keep a similar structure to the python
+and range based for loops to keep a similar structure to the Python
 code.
 
 Supposing we save the above as \cpp{radius.hh}, we can then call it
-in a python script and use it like a regular function as follows.
+in a Python script and use it like a regular function as follows.
 \renewcommand{\pweavecaption}{Calling our C++ function using algorithm}
 \renewcommand{\pweavelabel}{lst:calcR-algorithm}
 \begin{pweavecode}
@@ -1402,7 +1432,7 @@ whether that is justified depends on a case-by-case basis.
 
 \section{Model C++ Header Generation} \label{sec:header}
 
-After having looked at the basics of the python
+After having looked at the basics of the Python
 interface, let us now consider features more aimed at C++
 integration and code extensibility.
 
@@ -1604,7 +1634,7 @@ of a UFL expression in \dune[Fempy]. This choice of default shared library
 generation or usable header files falls in line with
 attempts we have made to improve extensibility of the code, since in
 particular it allows for the user to write in more complex features in
-C++ that do not necessarily have python bindings written for them. An
+C++ that do not necessarily have Python bindings written for them. An
 additional advantage is that this header file can be directly used within a
 traditional \dune[] C++ program.
 
@@ -1633,7 +1663,7 @@ Thus we see there is not a sizable difference between the \dune[Fem] and
 
 \noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
 speaking is negligible for long-running simulations. We also note that
-the most \textit{costly} aspect of pure python code are generally
+the most \textit{costly} aspect of pure Python code are generally
 callbacks, and in this example this amounts to just the solve call. An
 additional example that taxes the two versions differently can be
 found in section \ref{sec:mcf-comparison}.
@@ -1862,7 +1892,7 @@ we replace $\rho$ with $u$ for simplicity.
 
 Here we present the C++ version of the Forchheimer example from
 section \ref{sec:fem-in-fempy} using \dune[FEM], that we compare to
-the python version in section \ref{sec:cpp-models}.
+the Python version in section \ref{sec:cpp-models}.
 
 \inputcpp{./forchheimer/main.cc}{}{lst:forch-cpp}
 

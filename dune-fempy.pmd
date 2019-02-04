@@ -293,13 +293,15 @@ defined as
 and $D_1 + D_2 = D$, $m_1 + m_2 = m$. The variational formulation of
 \eqref{eqn:rotheStrong} is
 \begin{equation}
+\begin{split}
   \int_\Omega \frac{u^{n+1}-u^n}{\Delta t}\varphi +
   \int_\Omega D_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1}\cdot\nabla\varphi +
-        m_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1})\varphi
+        m_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1})\varphi \\
   +\int_\Omega D_2(x, t^n, u^n, \nabla u^n)\cdot\nabla\varphi +
         m_2(x, t^n u^n, \nabla u^n)\varphi
   - \int_{\partial\Omega} \frac{1}{2}(g(t^{n+1},x)+g(t^n,x))\varphi = 0
 \label{eqn:rothe}
+\end{split}
 \end{equation}
 The final step is to solve this system for $u^{n+1} \in V_h$. This also
 involves potential variation in terms of the solver used and possible
@@ -342,11 +344,13 @@ in the context of a worked example, the FEM applied to
 the Forchheimer equation: a scalar,
 nonlinear parabolic equation derived in \cite{Kieu}.
 \begin{equation} \label{eqn:forch-roche}
+\begin{split}
   \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
   + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
-  + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v \diff x
+  + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v \diff x \\
   - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi \diff x
   - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v \diff s.
+\end{split}
 \end{equation}
 where the diffusion tensor is given by
 \begin{equation}
@@ -386,7 +390,7 @@ rectangular grids}
 \renewcommand{\pweavelabel}{lst:grid}
 ```python, label="grid", Fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
 from dune.grid import structuredGrid
-grid = structuredGrid([0, 0], [1, 1], [4, 4])
+grid = structuredGrid([0, 0], [1, 1], [2, 2])
 grid.plot()
 grid.hierarchicalGrid.globalRefine(1)
 grid.plot()
@@ -671,7 +675,7 @@ Recall that the semi discrete problem was
 and we force the system by defining $f$ so that
 \begin{equation}
   u(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
-         = e^{-2t}\left(u^0(x)-1) + 1
+         = e^{-2t}\left(u^0(x)-1\right) + 1
 \end{equation}
 becomes the exact solution.
 We can use \pyth{initial} to define this using some algebra, and we
@@ -777,7 +781,7 @@ constant for example to \pyth{0.05} is achieved by the following code:
 loop}
 \renewcommand{\pweavelabel}{lst:forch-pre-solve}
 ```python, label = 'forch-pre-solve'
-scheme.model.dt = 0.0025
+scheme.model.dt = 0.005
 ```
 Note that this does not require any additional JIT compilation. Similarly we
 can use set the time in the model to zero by calling
@@ -810,7 +814,7 @@ final time of the simulation.
  L^2\text{ error} = \left( \int_{\Omega} | u - u_h |^2 \diff x
                     \right)^{\frac{1}{2}}, \qquad
  H^1\text{ error} = \left( \int_{\Omega} | \nabla(u - u_h) |^2 \diff x
-                    \right^{\frac{1}{2}}.
+                    \right)^{\frac{1}{2}}.
 \label{eqn:error}
 \end{equation}
 Computing the squared norm can be achieved with the following code.
@@ -827,7 +831,7 @@ computed at the final time}
 # <codecell>
 ```
 ```python, label = 'error'
-endTime    = 1.0
+endTime    = 0.25
 exact_end  = exact(endTime)
 l2error = inner(u_h - exact_end, u_h - exact_end)
 h1error = inner(grad(u_h - exact_end), grad(u_h - exact_end))
@@ -865,18 +869,20 @@ time and refining the grid}
 \renewcommand{\pweavelabel}{lst:forch-main}
 ```python, label='forch-main', fig=True, caption='Plot of solutions at each level of refinement', width='0.32\\textwidth'
 from math import log
-error = 0
+errors = 0,0
 for eocLoop in range(3):
     u_h.interpolate(initial)
     evolve(scheme, u_h, u_h_n, endTime)
-    error_old = error
-    error = sqrt( integrate(grid, l2error, order=5)[0] )
+    errors_old = errors
+    errors = [sqrt(e) for e in integrate(grid, as_vector([l2error,h1error]), order=5)]
     if eocLoop == 0:
-        eoc = '-'
+        eocs = ['-','-']
     else:
-        eoc = round(log(error/error_old)/log(0.5),2)
-    print('step:', eocLoop, ', size:', grid.size(0),end="\t")
-    print('|u_h - u| =', '{:0.5e}'.format(error), ', eoc =', eoc)
+        eocs = [ round(log(e/e_old)/log(0.5),2) \
+                 for e,e_old in zip(errors,errors_old) ]
+    print('step:', eocLoop, ', size:', grid.size(0))
+    print('\t |u_h - u| =', '{:0.5e}'.format(errors[0]), ', eoc =', eocs[0])
+    print('\t |grad(u_h - u)| =', '{:0.5e}'.format(errors[1]), ', eoc =', eocs[1])
     plot(u_h)
     grid.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
                   l2error, 'h1error': h1error}, number=eocLoop)
@@ -884,6 +890,7 @@ for eocLoop in range(3):
         grid.hierarchicalGrid.globalRefine(1)
         scheme.model.dt /= 2
 ```
+\begin{comment}
 We compile a table of the errors and EOCs for additional refinement
 steps and also including the $H^1$ error below.
 \Atodo{The following table is hard coded so needs to be fixed before
@@ -899,6 +906,7 @@ submission - or generated through the Makefile}
     4096 & 7.031e-09 & 2.999 & 3.483e-06 & 2.000
   \end{tabular}
 \end{center}
+\end{comment}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -939,7 +947,7 @@ changed to use data structures provided by the module
 \dune[Istl] (see \cite{Dune-Istl}) linear algebra backend.
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
-\begin{pweavecode} % note: code will not be executed
+\begin{pweavecode}
 space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
 \end{pweavecode}
 

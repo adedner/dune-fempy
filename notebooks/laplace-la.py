@@ -265,6 +265,7 @@ if petsc4py:
 
 if petsc4py:
     uh.clear()
+    res.clear()
     def f(snes, X, F):
         inDF  = spc.function("tmp", dofVector=X)
         outDF = spc.function("tmp", dofVector=F)
@@ -276,13 +277,14 @@ if petsc4py:
 
     matrix = linOp.as_petsc
     snes = PETSc.SNES().create()
-    snes.setMonitor(lambda snes,i,r:print(i,r,flush=True))
-    snes.setFunction(f, res_coeff)
-    # snes.setUseMF(True)
+    snes.setMonitor(lambda snes,i,r: print(i,r,flush=True))
+    b = res_coeff.duplicate()
+    snes.setFunction(f, b)
+    snes.setUseMF(False)
     snes.setJacobian(Df,matrix,matrix)
     snes.getKSP().setType("cg")
     snes.setFromOptions()
-    snes.solve(None, sol_coeff)
+    snes.solve(res_coeff, sol_coeff)
     plot(uh)
 
 

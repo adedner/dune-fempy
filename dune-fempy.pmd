@@ -538,7 +538,9 @@ shown in figure \ref{fig:lagrange-elements}).
   \caption{Third order element}
   \label{fig:lagrange3}
 \end{subfigure}
-\caption{Node maps of two Lagrange reference elements}
+\caption{Node maps of two Lagrange reference elements
+\Atodo{should we (a) leave these in (b) replace them with something more
+interesting, i.e., non equidistant Lagrange points or (c) remove them?}}
 \label{fig:lagrange-elements}
 \end{figure}
 The creation of such a Lagrange space in \dune[Fempy] is done by the
@@ -1193,15 +1195,16 @@ class Scheme4:
         self.scheme = scheme
         self.jacobian = linearOperator(self.scheme)
         self.snes = PETSc.SNES().create()
-        self.snes.setFunction(self.f, self.res.as_petsc)
+        self.snes.setFunction(self.f, self.res.as_petsc.duplicate())
+        self.snes.setUseMF(False)
         self.snes.setJacobian(self.Df, self.jacobian.as_petsc, self.jacobian.as_petsc)
         self.snes.getKSP().setType("cg")
         self.snes.setFromOptions()
 
-    def f(self, snes, X, F):
+    def f(self, snes, x, f):
         # setup discrete function using the provide petsc vectors
-        inDF = self.scheme.space.function("tmp",dofVector=X)
-        outDF = self.scheme.space.function("tmp",dofVector=F)
+        inDF = self.scheme.space.function("tmp",dofVector=x)
+        outDF = self.scheme.space.function("tmp",dofVector=f)
         self.scheme(inDF,outDF)
 
     def Df(self, snes, x, m, b):
@@ -1211,7 +1214,8 @@ class Scheme4:
 
     def solve(self, target):
         sol_coeff = target.as_petsc
-        self.snes.solve(None, sol_coeff)
+        self.res.clear()
+        self.snes.solve(self.res.as_petsc, sol_coeff)
 
 u_h.interpolate(initial)
 scheme4_cls = Scheme4(schemePetsc)

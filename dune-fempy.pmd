@@ -4,7 +4,7 @@
 \newcommand{\linkcolor}{hrefcolor}
 \hypersetup{pdfstartview=FitR}
 \hypersetup{pdftitle={The DUNE-Fempy Module},
-            pdfauthor={L. Connellan, A. Dedner, M. Nolte},
+            pdfauthor={L. Connellan, A. Dedner, R. Kloefkorn, M. Nolte},
             breaklinks=true,
             linkbordercolor=\linkcolor,
             urlbordercolor=\linkcolor,
@@ -63,10 +63,12 @@
 \title{The \dune[Fempy] Module}
 \author[1]{Lloyd Connellan}% \thanks{l.connellan@warwick.ac.uk}}
 \author[2]{Andreas Dedner}% \thanks{a.s.dedner@warwick.ac.uk}}
-\author[3]{Martin Nolte}%\thanks{nolte@mathematik.uni-freiburg.de}}
+\author[3]{Robert Kl\"ofkorn}%\thanks{robert.kloefkorn@norceresearch.no}}
+\author[4]{Martin Nolte}%\thanks{nolte@mathematik.uni-freiburg.de}}
 \affil[1]{University of Warwick, UK}
 \affil[2]{University of Warwick, UK}
-\affil[3]{University of Freiburg, Germany}
+\affil[3]{Norwegian Research Centre, Norway}
+\affil[4]{University of Freiburg, Germany}
 \runningtitle{The \dune[Fempy] Module}
 \runningauthor{Connellan, Dedner, Nolte}
 
@@ -1110,7 +1112,7 @@ spacePetsc = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc'
 # first we will use the petsc solver available in the `dune-fem` package
 # (using the sor preconditioner)
 schemePetsc = create.scheme("galerkin", a == b, space=spacePetsc,
-                   parameters={"petsc.preconditioning.method":"sor"})
+                parameters={"fem.solver.newton.linear.preconditioning.method":"sor"})
 schemePetsc.model.dt = scheme.model.dt
 u_h = spacePetsc.interpolate(initial, name='u_h')
 u_h_n = u_h.copy(name="previous")

@@ -1,21 +1,21 @@
-'cpp' & dune.fem & A c++ string, e.g. "value[ 0 ] = 2;" \\ \hline
-'global' & dune.fem & \begin{tabular}{@{}l@{}}
+'cpp' & dune.fem.function & A c++ string, e.g. "value[ 0 ] = 2;" \\ \hline
+'global' & dune.fem.function & \begin{tabular}{@{}l@{}}
                       A python function or lambda taking the global \\
                       coordinate as a single argument
                       \end{tabular} \\ \hline
-'levels' & dune.fem & \begin{tabular}{@{}l@{}}
+'levels' & dune.fem.function & \begin{tabular}{@{}l@{}}
                       This is a special piecewise constant grid function
                       used for \\
                       visualization which returns the level of each element
                       \end{tabular} \\ \hline
-'local' & dune.fem & \begin{tabular}{@{}l@{}}
+'local' & dune.fem.function & \begin{tabular}{@{}l@{}}
                      A python function or lambda taking an entity and \\
                      a local coordinate as arguments
                      \end{tabular} \\ \hline
-'numpy' & dune.fem & A numpy expression \\ \hline
-'partitions' & dune.fem & \begin{tabular}{@{}l@{}}
+'numpy' & dune.fem.function & A numpy expression \\ \hline
+'partitions' & dune.fem.function & \begin{tabular}{@{}l@{}}
                           This is a special piecewise constant grid \\
                           function used for visualization which returns \\
                           the partition number for each element
                           \end{tabular} \\ \hline
-'ufl' & dune.fem & A UFL expression \\ \hline
+'ufl' & dune.fem.function & A UFL expression \\ \hline

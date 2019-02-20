@@ -1954,7 +1954,8 @@ Grids can also be constructed to provide a different grid view:
 \renewcommand{\pweavecaption}{Creating a custom grid view}
 \renewcommand{\pweavelabel}{lst:default-view}
 \begin{pweavecode}
-view = create.view('class-name', grid)
+from dune.fem.view import viewtype
+view = viewtype(grid)
 \end{pweavecode}
 
 The first argument can be any of the ones allowed for the grid construction
@@ -1976,13 +1977,14 @@ Now we move on to spaces. By default, they take the form
 \renewcommand{\pweavecaption}{The default form for space creation}
 \renewcommand{\pweavelabel}{lst:default-space}
 \begin{pweavecode}
-space = create.space('class-name', grid, dimrange=1, order=1,
+from dune.fem.space import spacetype
+space = spacetype(grid, dimrange=1, order=1,
                      storage='fem', field='double')
 \end{pweavecode}
 where we have the following arguments.
 
 \begin{enumerate}
-\item \pyth{'class-name'}: A string from the table below.
+\item \pyth{spacetype}: A string from the table below.
 \item \pyth{grid}: A grid object from above.
 \item \pyth{dimrange} (optional): The range dimension of the space.
 \item \pyth{order} (optional): The polynomial order of the basis

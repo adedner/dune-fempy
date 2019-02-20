@@ -1,9 +1,9 @@
-'bdm' & dune.fem & \begin{tabular}{@{}l@{}} Space for Brezzi-Douglas Marini \\
+'bdm' & dune.fem.space & \begin{tabular}{@{}l@{}} Space for Brezzi-Douglas Marini \\
                     elements \end{tabular} \\ \hline
-'combined' & dune.fem & \begin{tabular}{@{}l@{}} Discrete function space formed \\
+'combined' & dune.fem.space & \begin{tabular}{@{}l@{}} Discrete function space formed \\
 from a tuple of DF spaces \end{tabular} \\ \hline
-'dglagrange' & dune.fem & DG space using Lagrange basis functions \\ \hline
-'dglegendre' & dune.fem & \begin{tabular}{@{}l@{}}
+'dglagrange' & dune.fem.space & DG space using Lagrange basis functions \\ \hline
+'dglegendre' & dune.fem.space & \begin{tabular}{@{}l@{}}
   DG space with elementwise Legendre \\
   tensor product basis function. \\
   This space allows for an additional argument: \\
@@ -11,13 +11,13 @@ from a tuple of DF spaces \end{tabular} \\ \hline
   This argument determines if the basis functions are \\
   sorted hierarchically according to their polynomial \\
   order or lexicographically.  \end{tabular} \\ \hline
-'dglegendrehp' & dune.fem & 'dglegendre' with hp-adaption \\ \hline
-'dgonb' & dune.fem & \begin{tabular}{@{}l@{}} DG space with elementwise \\
+'dglegendrehp' & dune.fem.space & 'dglegendre' with hp-adaption \\ \hline
+'dgonb' & dune.fem.space & \begin{tabular}{@{}l@{}} DG space with elementwise \\
   orthonormal basis functions \end{tabular} \\ \hline
-'dgonbhp' & dune.fem & 'dgonb' with hp-adaptation  \\ \hline
-'finitevolume' & dune.fem & Space for the finite volume method \\ \hline
-'lagrange' & dune.fem & Space for Lagrange elements \\ \hline
-'p1bubble' & dune.fem & P1 space with bubble elements \\ \hline
-'product' & dune.fem & \begin{tabular}{@{}l@{}} Discrete function space formed \\
+'dgonbhp' & dune.fem.space & 'dgonb' with hp-adaptation  \\ \hline
+'finitevolume' & dune.fem.space & Space for the finite volume method \\ \hline
+'lagrange' & dune.fem.space & Space for Lagrange elements \\ \hline
+'p1bubble' & dune.fem.space & P1 space with bubble elements \\ \hline
+'product' & dune.fem.space & \begin{tabular}{@{}l@{}} Discrete function space formed \\
 from a tuple of DF spaces \end{tabular} \\ \hline
-'rannacherturek' & dune.fem & Space for Rannacher-Turek elements \\
+'rannacherturek' & dune.fem.space & Space for Rannacher-Turek elements \\

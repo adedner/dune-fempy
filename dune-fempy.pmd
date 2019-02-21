@@ -1460,12 +1460,12 @@ We can separate the process into two steps as follows.
 \begin{pweavecode}
 from dune.fem.model  import integrands as discreteModel
 from dune.fem.scheme import galerkin   as solutionScheme
-model = discreteModel(grid, a == b)
+model  = discreteModel(grid, a == b)
 scheme = solutionScheme(model)
 \end{pweavecode}
 where \pyth{a == b} refers to the UFL equation used to represent weak form
 of the PDE, i.e., the bilinear and linear form,
-and \pyth{'integrands'} refers to form of C++ class used to represent
+and \pyth{integrands} refers to form of C++ class used to represent
 second order operators in \dune[Fem]. A form of this C++ representation
 that is more human readable is given by
 \renewcommand{\pweavecaption}{A simple elliptic model}
@@ -1473,7 +1473,7 @@ that is more human readable is given by
 \begin{pweavecode}
 from dune.fem.model  import elliptic as discreteModel
 from dune.fem.scheme import h1       as solutionScheme
-model = discreteModel(grid, a == b)
+model  = discreteModel(grid, a == b)
 scheme = solutionScheme(model)
 \end{pweavecode}
 While the generated class is easier to read and change it is less flexible
@@ -1588,6 +1588,7 @@ arguments from the operator.
 
 \Rtodo{Here I would again explain a bit what is possible with this approach and
 what couldn't be done with Firedrake and Fenics. One has to be careful though. }
+\Rtodo{I didn't find the module nvdg. Maybe Andreas has to fix this line.}
 
 
 \subsection{Integrands Models}
@@ -1992,7 +1993,8 @@ space = spacetype(grid, dimrange=1, order=1,
                      storage='fem', field='double')
 \end{pweavecode}
 where \pyth{spacetype} is a function from the \pyth{dune.fem.space} module and the available 
-implementations are listed in Table \ref{tab:spaces} below. All spaces have the following arguments.
+implementations are listed in Table \ref{tab:spaces} below. 
+All spaces are created with the following arguments.
 
 \begin{enumerate}
 \item \pyth{grid}: A grid object from \ref{sec:grid-list}.
@@ -2081,11 +2083,18 @@ We review this below.
 \renewcommand{\pweavecaption}{The default form for scheme creation}
 \renewcommand{\pweavelabel}{lst:default-scheme}
 \begin{pweavecode}
-scheme = create.scheme('class-name', equation, space,
-                       parameters=dict, solver='solver-name')
+from dune.fem.scheme import schemetype
+scheme = schemetype(equation, space,
+                    parameters=dict, solver='solver-name')
 \end{pweavecode}
+where \pyth{schemetype} is one of the schemes implemented in \dune[fempy].
+The two main schemes available in \dune[fempy] are
+\pyth{galerkin} and \pyth{h1}. The distinction between them is
+described in section \ref{sec:header}. In addition the \dune[nvdg]
+module provides an \pyth{nvdg} scheme. 
+Schemes are typically created with the following arguments.
+
 \begin{enumerate}
-\item \pyth{'class name'}: A string from the table below.
 \item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
 object. In addition a tuple or list can be used here
 where the first entry is the equation and further arguments can provide
@@ -2157,8 +2166,8 @@ construction.
 \renewcommand{\pweavecaption}{The default form for operator creation}
 \renewcommand{\pweavelabel}{lst:default-operator}
 \begin{pweavecode}
-scheme = create.operator('class-name', equation, domainSpace,
-                         rangeSpace)
+from dune.fem.operator import galerkin
+scheme = galerkin(equation, domainSpace, rangeSpace)
 \end{pweavecode}
 
 %</append>

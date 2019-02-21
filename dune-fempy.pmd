@@ -1700,11 +1700,9 @@ full potential.
 
 Take as an example a discrete function which is constructed
 using 
-\renewcommand{\pweavecaption}{Creation of a discrete function}
-\renewcommand{\pweavelabel}{lst:virtualization_df}
-\begin{pweavecode}
+\begin{lstlisting}[style=pythonstyle]
 df = space.interpolate([0], name="df")
-\end{pweavecode}
+\end{lstlisting}
 The call to
 \pyth{interpolate} goes back to the corresponding function in \dune[fem] and
 returns an instance of the discrete function. To store the solution to a PDE
@@ -1994,7 +1992,7 @@ space = spacetype(grid, dimrange=1, order=1,
                      storage='fem', field='double')
 \end{pweavecode}
 where \pyth{spacetype} is a function from the \pyth{dune.fem.space} module and the available 
-implementations are listed in the table below. All spaces have the following arguments.
+implementations are listed in Table \ref{tab:spaces} below. All spaces have the following arguments.
 
 \begin{enumerate}
 \item \pyth{grid}: A grid object from \ref{sec:grid-list}.
@@ -2010,6 +2008,7 @@ functions.
 Available spaces are:
 \begin{center}
   \captionof{table}{Spaces}
+  \label{tab:spaces}
   \begin{tabular}{l | l | l}
     \hline
     Class & Module & Description \\ \hline \hline

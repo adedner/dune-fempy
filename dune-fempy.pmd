@@ -62,15 +62,14 @@
 
 \title{The \dune[Fempy] Module}
 \author[1]{Lloyd Connellan}% \thanks{l.connellan@warwick.ac.uk}}
-\author[2]{Andreas Dedner}% \thanks{a.s.dedner@warwick.ac.uk}}
-\author[3]{Robert Kl\"ofkorn}%\thanks{robert.kloefkorn@norceresearch.no}}
-\author[4]{Martin Nolte}%\thanks{nolte@mathematik.uni-freiburg.de}}
+\author[1]{Andreas Dedner}% \thanks{a.s.dedner@warwick.ac.uk}}
+\author[2]{Robert Kl\"ofkorn}%\thanks{robert.kloefkorn@norceresearch.no}}
+\author[3]{Martin Nolte}%\thanks{nolte@mathematik.uni-freiburg.de}}
 \affil[1]{University of Warwick, UK}
-\affil[2]{University of Warwick, UK}
-\affil[3]{Norwegian Research Centre, Norway}
-\affil[4]{University of Freiburg, Germany}
+\affil[2]{Norwegian Research Centre, Norway}
+\affil[3]{University of Freiburg, Germany}
 \runningtitle{The \dune[Fempy] Module}
-\runningauthor{Connellan, Dedner, Nolte}
+\runningauthor{Connellan, Dedner, Kl\"ofkorn, Nolte}
 
 \providecommand{\keywords}[1]{\textbf{Keywords: } #1}
 
@@ -556,8 +555,8 @@ polynomial basis functions}
 # <codecell>
 ```
 ```python, label = 'space'
-from dune.fem.space import lagrange as discreteSpace
-space = discreteSpace(grid, dimrange=1, order=2)
+from dune.fem.space import lagrange as solutionSpace
+space = solutionSpace(grid, dimrange=1, order=2)
 ```
 We note that the above space with Lagrange basis functions as well as other discrete function spaces 
 are called with two default
@@ -951,8 +950,8 @@ changed to use data structures provided by the module
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
 \begin{pweavecode}
-from dune.fem.space import lagrange as discreteSpace
-space = discreteSpace(grid, dimrange=1, order=2, storage='istl')
+from dune.fem.space import lagrange as solutionSpace
+space = solutionSpace(grid, dimrange=1, order=2, storage='istl')
 \end{pweavecode}
 
 An advantage of the default \pyth{"fem"} storage is that we can
@@ -1108,7 +1107,7 @@ the same approximation as computed previously:
 # <codecell>
 ```
 ```python
-spacePetsc = discreteSpace(grid, dimrange=1, order=2, storage='petsc')
+spacePetsc = solutionSpace(grid, dimrange=1, order=2, storage='petsc')
 # first we will use the petsc solver available in the `dune-fem` package
 # (using the sor preconditioner)
 schemePetsc = solutionScheme(a == b, space=spacePetsc,
@@ -1290,8 +1289,8 @@ positions = space.interpolate(lambda x: some_function(x), name="position")
 \end{lstlisting}
 \item Create a surface from \pyth{positions} using this function
 \begin{lstlisting}[style=pythonstyle]
-from dune.fem.view import geometryGridView as gridView
-surface = gridView(positions)
+from dune.fem.view import geometryGridView as geoGridView
+surface = geoGridView(positions)
 \end{lstlisting}
 \item Create the scheme that describes the surface evolution and solve
 it in the usual way.
@@ -1462,7 +1461,7 @@ We can separate the process into two steps as follows.
 from dune.fem.model  import integrands as discreteModel
 from dune.fem.scheme import galerkin   as solutionScheme
 model = discreteModel(grid, a == b)
-scheme = solutionScheme("galerkin", model)
+scheme = solutionScheme(model)
 \end{pweavecode}
 where \pyth{a == b} refers to the UFL equation used to represent weak form
 of the PDE, i.e., the bilinear and linear form,
@@ -1472,8 +1471,10 @@ that is more human readable is given by
 \renewcommand{\pweavecaption}{A simple elliptic model}
 \renewcommand{\pweavelabel}{lst:elliptic}
 \begin{pweavecode}
-model = create.model('elliptic', grid, a == b)
-scheme = create.scheme("h1", model)
+from dune.fem.model  import elliptic as discreteModel
+from dune.fem.scheme import h1       as solutionScheme
+model = discreteModel(grid, a == b)
+scheme = solutionScheme(model)
 \end{pweavecode}
 While the generated class is easier to read and change it is less flexible
 then the \pyth{integrands} model, e.g., interior facet integrals can not be

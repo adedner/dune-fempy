@@ -1,5 +1,5 @@
-'adaptive' & dune.fem.discretefunction & An adaptive function \\ \hline
-'eigen' & dune.fem.discretefunction & Function from the eigen package \\ \hline
+%'adaptive' & dune.fem.discretefunction & An adaptive function \\ \hline
+%'eigen' & dune.fem.discretefunction & Function from the eigen package \\ \hline
 'fem' & dune.fem.discretefunction & The default DUNE-Fem function \\ \hline
 'istl' & dune.fem.discretefunction & Function from DUNE-Istl \\ \hline
 'petsc' & dune.fem.discretefunction & Function from the PETSc package \\ \hline

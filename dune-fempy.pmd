@@ -1699,7 +1699,13 @@ steps like inlining or loop unrolling could not be utilized to their
 full potential.
 
 Take as an example a discrete function which is constructed
-using \pyth{df = space.interpolate([0], name="df")}. The call to
+using 
+\renewcommand{\pweavecaption}{Creation of a discrete function}
+\renewcommand{\pweavelabel}{lst:virtualization_df}
+\begin{pweavecode}
+df = space.interpolate([0], name="df")
+\end{pweavecode}
+The call to
 \pyth{interpolate} goes back to the corresponding function in \dune[fem] and
 returns an instance of the discrete function. To store the solution to a PDE
 problem in \pyth{df}, the \pyth{solve} method on a \pyth{scheme} is
@@ -1927,14 +1933,16 @@ Grids by default take the following form.
 \renewcommand{\pweavecaption}{The default form for grid creation}
 \renewcommand{\pweavelabel}{lst:default-grid}
 \begin{pweavecode}
-grid = create.grid('class-name', constructor, dimgrid=None, dimworld=None)
+from dune.grid import gridtype
+grid = gridtype(constructor, dimgrid=None, dimworld=None)
 \end{pweavecode}
-Where in particular we have the following arguments.
+\pyth{gridtype} is one of the functions from the table below and may be located
+in a module different to \pyth{dune.grid}, for example \pyth{dune.alugrid} or \pyth{dune.spgrid}. 
+All functions have the following arguments. 
 
 \begin{enumerate}
-\item \pyth{'class-name'}: One of the strings from the table below.
 \item \pyth{constructor}: Either a dgf \textit{dune grid format} file, a
-gmesh file, or a preset object similar to what is demonstrated in
+\textit{gmsh} file, or a preset object similar to what is demonstrated in
 section \ref{sec:grids}.
 \item \pyth{dimgrid} (optional): The dimension of the grid.
 \item \pyth{dimworld} (optional): The dimension of the space the grid is in.
@@ -1985,21 +1993,29 @@ from dune.fem.space import spacetype
 space = spacetype(grid, dimrange=1, order=1,
                      storage='fem', field='double')
 \end{pweavecode}
-where we have the following arguments.
+where \pyth{spacetype} is a function from the \pyth{dune.fem.space} module and the available 
+implementations are listed in the table below. All spaces have the following arguments.
 
 \begin{enumerate}
-\item \pyth{spacetype}: A string from the table below.
 \item \pyth{grid}: A grid object from above.
 \item \pyth{dimrange} (optional): The range dimension of the space.
 \item \pyth{order} (optional): The polynomial order of the basis
 functions.
 \item \pyth{storage} (optional): \pyth{'fem'} by default. Specifies
-the storage used for discrete functions (as shown in
-\ref{tab:discrete-functions}.
+the storage used for discrete functions (as shown in Table \ref{tab:discrete-functions}).
 \item \pyth{field} (optional): The field of the range space
 (\pyth{'double'} or \pyth{'complex'}).
-\ref{tab:discrete-functions}).
 \end{enumerate}
+
+Available spaces are:
+\begin{center}
+  \captionof{table}{Spaces}
+  \begin{tabular}{l | l | l}
+    \hline
+    Class & Module & Description \\ \hline \hline
+    \input{tables/features_space}
+  \end{tabular}
+\end{center}
 
 \begin{center}
   \captionof{table}{Discrete Functions}
@@ -2010,15 +2026,7 @@ the storage used for discrete functions (as shown in
     \input{tables/features_discretefunction}
   \end{tabular}
 \end{center}
-Available spaces are:
-\begin{center}
-  \captionof{table}{Spaces}
-  \begin{tabular}{l | l | l}
-    \hline
-    Class & Module & Description \\ \hline \hline
-    \input{tables/features_space}
-  \end{tabular}
-\end{center}
+
 
 \subsection{Grid Function}
 

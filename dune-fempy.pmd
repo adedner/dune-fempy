@@ -2034,12 +2034,12 @@ way to make a grid function is
 \renewcommand{\pweavecaption}{The default form for function creation}
 \renewcommand{\pweavelabel}{lst:default-function}
 \begin{pweavecode}
-create.function('class-name', grid, 'function-name', order,
-                constructor)
+from dune.fen.function import functiontype 
+f = functiontype(grid, 'function-name', order, constructor)
 \end{pweavecode}
-with the following arguments.
+where \pyth{functiontype} is one of the functions listed in Table
+\ref{tab:functions} which is called with the following arguments.
 \begin{enumerate}
-\item \pyth{'class-name'}: A string from the table below.
 \item \pyth{grid}: A grid object from \ref{sec:grid-list}.
 \item \pyth{'function-name'}: A string for the name of the created
 function.
@@ -2047,18 +2047,21 @@ function.
 \item \pyth{constructor}: An object described in the table below used
 to construct the function.
 \end{enumerate}
-For the below table we list the available strings for
-\pyth{'class-name'} together with the compatible argument for the
+\Rtodo{I removed cpp and I didn't find numpy function.}
+For the below table we list the available functions 
+together with the compatible argument for the
 \pyth{constructor} parameter.
 \begin{center}
   \captionof{table}{Grid Functions}
+  \label{tab:functions}
   \begin{tabular}{l | l | l }
     \hline
     Class & Module & Constructor \\ \hline \hline
     \input{tables/features_function}
   \end{tabular}
 \end{center}
-In addition \pyth{'discrete'} can be used to construct discrete functions.
+In addition \pyth{discreteFunction} can be used to construct discrete functions
+where instead of a \pyth{grid} a \pyth{space} is passed as the first argument.
 But typically these are made using the
 \pyth{space.interpolate(expression)} syntax, using the storage type
 for the space by default. The arguments for the \pyth{interpolate}

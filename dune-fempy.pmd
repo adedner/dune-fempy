@@ -1997,12 +1997,12 @@ where \pyth{spacetype} is a function from the \pyth{dune.fem.space} module and t
 implementations are listed in the table below. All spaces have the following arguments.
 
 \begin{enumerate}
-\item \pyth{grid}: A grid object from above.
+\item \pyth{grid}: A grid object from \ref{sec:grid-list}.
 \item \pyth{dimrange} (optional): The range dimension of the space.
 \item \pyth{order} (optional): The polynomial order of the basis
 functions.
-\item \pyth{storage} (optional): \pyth{'fem'} by default. Specifies
-the storage used for discrete functions (as shown in Table \ref{tab:discrete-functions}).
+\item \pyth{storage} (optional): \pyth{'fem'} by default. Other options for the storage used for discrete functions 
+ are \pyth{'istl'}, \pyth{'petsc'}, or \pyth{'petscadapt'} (as shown in Table \ref{tab:discrete-functions}).
 \item \pyth{field} (optional): The field of the range space
 (\pyth{'double'} or \pyth{'complex'}).
 \end{enumerate}

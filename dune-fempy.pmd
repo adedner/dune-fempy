@@ -556,14 +556,13 @@ polynomial basis functions}
 # <codecell>
 ```
 ```python, label = 'space'
-from dune.fem.space import lagrange
-space = lagrange(grid, dimrange=1, order=2)
+from dune.fem.space import lagrange as discreteSpace
+space = discreteSpace(grid, dimrange=1, order=2)
 ```
-We note that the above space is called with two default
-arguments and two keyword arguments.
+We note that the above space with Lagrange basis functions as well as other discrete function spaces 
+are called with two default
+arguments and one keyword argument.
 \begin{itemize}
-  \item \pyth{'lagrange'} indicates that we will use a space with
-  Lagrange basis functions.
   \item \pyth{grid} passes in the grid we constructed previously.
   \item \pyth{dimrange=1} (optional) sets the dimension of the range
   space to $r=1$
@@ -574,7 +573,7 @@ Of particular note is that the first argument corresponds to a \dune
 discrete space realization that can come from anywhere within a \dune
 installation, provided Python bindings are created for it. For instance we could use a
 discontinuous Galerkin space with orthonormal basis functions instead
-by using \pyth{'dgonb'}.
+by importing \pyth{dgonb}.
 
 Now we can create discrete grid function by using the default interpolation
 into the finite element space given by the nodal variables on the space.
@@ -745,8 +744,8 @@ now set up a scheme object which we can use to solve the PDE.
 # <codecell>
 ```
 ```python, label = 'forch-scheme'
-import dune.create as create
-scheme = create.scheme("galerkin", a == b, solver='cg')
+from dune.fem.scheme import galerkin as solutionScheme
+scheme = solutionScheme(a == b, solver='cg')
 ```
 The above function generates code to assemble and solve
 a Galerkin method, with the space and equation passed in.
@@ -952,7 +951,8 @@ changed to use data structures provided by the module
 \renewcommand{\pweavecaption}{Accessing different storage types}
 \renewcommand{\pweavelabel}{lst:storage}
 \begin{pweavecode}
-space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
+from dune.fem.space import lagrange as discreteSpace
+space = discreteSpace(grid, dimrange=1, order=2, storage='istl')
 \end{pweavecode}
 
 An advantage of the default \pyth{"fem"} storage is that we can
@@ -1108,10 +1108,10 @@ the same approximation as computed previously:
 # <codecell>
 ```
 ```python
-spacePetsc = create.space("lagrange", grid, dimrange=1, order=2, storage='petsc')
+spacePetsc = discreteSpace(grid, dimrange=1, order=2, storage='petsc')
 # first we will use the petsc solver available in the `dune-fem` package
 # (using the sor preconditioner)
-schemePetsc = create.scheme("galerkin", a == b, space=spacePetsc,
+schemePetsc = solutionScheme(a == b, space=spacePetsc,
                 parameters={"fem.solver.newton.linear.preconditioning.method":"sor"})
 schemePetsc.model.dt = scheme.model.dt
 u_h = spacePetsc.interpolate(initial, name='u_h')
@@ -1290,7 +1290,8 @@ positions = space.interpolate(lambda x: some_function(x), name="position")
 \end{lstlisting}
 \item Create a surface from \pyth{positions} using this function
 \begin{lstlisting}[style=pythonstyle]
-surface = create.view("geometry", positions)
+from dune.fem.view import geometryGridView as gridView
+surface = gridView(positions)
 \end{lstlisting}
 \item Create the scheme that describes the surface evolution and solve
 it in the usual way.
@@ -1458,8 +1459,10 @@ We can separate the process into two steps as follows.
 \renewcommand{\pweavecaption}{A simple integrands model}
 \renewcommand{\pweavelabel}{lst:integrands}
 \begin{pweavecode}
-model = create.model('integrands', grid, a == b)
-scheme = create.scheme("galerkin", model)
+from dune.fem.model  import integrands as discreteModel
+from dune.fem.scheme import galerkin   as solutionScheme
+model = discreteModel(grid, a == b)
+scheme = solutionScheme("galerkin", model)
 \end{pweavecode}
 where \pyth{a == b} refers to the UFL equation used to represent weak form
 of the PDE, i.e., the bilinear and linear form,

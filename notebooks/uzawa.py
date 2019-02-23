@@ -17,6 +17,7 @@ parameter.append({"fem.verboserank": -1})
 
 storage="petsc"
 # storage="istl"
+# storage="fem"
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
 
@@ -46,9 +47,9 @@ if storage == "istl" :
     solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
 
 # can use 'h1' or 'galerkin'
-# mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
-mainOp      = h1Scheme((mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
-                       solver="cg", parameters=solverParameters)
+mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
+# mainOp      = h1Scheme((mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
+                        solver="cg", parameters=solverParameters)
 gradOp      = h1Operator(gradModel)
 divOp       = galerkinOperator(divModel)
 massOp      = h1Scheme(massModel==0,

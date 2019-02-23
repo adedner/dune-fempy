@@ -56,7 +56,7 @@ triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
 view = gridView("ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
-space  = solutionSpace( view, dimrange=1, order=order )
+space  = solutionSpace( view, dimrange=1, order=order, storage="fem" )
 
 # <markdowncell>
 # Next define the model together with the exact solution.
@@ -77,7 +77,7 @@ a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
 laplace = solutionScheme([a==0, DirichletBC(space,exact,1)], space)
-uh = space.interpolate(lambda x: [0], name="solution")
+uh = space.interpolate([0], name="solution")
 
 # <markdowncell>
 # Theory tells us that

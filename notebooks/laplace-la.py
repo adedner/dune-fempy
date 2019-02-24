@@ -40,11 +40,13 @@ import scipy.sparse.linalg
 import scipy.optimize
 import dune.grid
 from dune.fem.operator import linear
-from dune.fem.plotting import plotPointData as plot
 import dune.create as create
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, ds, dx, inner, grad
+
+import dune.fem
+dune.fem.parameter.append({"fem.verboserank": "0"})
 
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
@@ -60,12 +62,12 @@ x = SpatialCoordinate(spc.cell())
 rhs = (x[0] + x[1]) * v[0]
 a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
 b = rhs * dx + 10*rhs * ds
-scheme = create.scheme("galerkin", a==b, spc, parameters=
-       {"newton.tolerance": 1e-5, "newton.verbose": "false",
-        "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
-        "newton.linear.preconditioning.method": "ilu",
-        "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
-        "newton.linear.verbose": "false"})
+parameters = {"newton.tolerance": 1e-10, "newton.verbose": True,
+              "newton.linear.tolerance": 1e-12,
+              "newton.linear.preconditioning.method": "ilu",
+              "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
+              "newton.linear.verbose": False}
+scheme = create.scheme("galerkin", a==b, spc, parameters=parameters)
 # create a discrete solution over this space - will be initialized with zero by default
 
 uh = create.function("discrete", spc, name="solution")
@@ -84,7 +86,7 @@ uh = create.function("discrete", spc, name="solution")
 
 info = scheme.solve(target = uh)
 print(info)
-plot(uh)
+uh.plot()
 
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
@@ -110,7 +112,6 @@ n = 0
 matrix = linear(scheme)
 matrix_coeff = matrix.as_numpy
 
-import pyamg
 while True:
     scheme(uh, res)
     absF = math.sqrt( np.dot(res_coeff,res_coeff) )
@@ -118,37 +119,12 @@ while True:
     if absF < 1e-10:
         break
     scheme.jacobian(uh,matrix)
-    ### spsolve fails because it changes the numpy matrix (permutes the col)
-    ### and that fails for some reason (not yet clear why)
-    # matrix_coeff = matrix.as_numpy
-    # sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff_tmp, res_coeff)
-    sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10)[0]
-
-    # print("setting up amg")
-    # construct the multigrid hierarchy
-    # ml = pyamg.ruge_stuben_solver(matrix_coeff)
-    # ml = pyamg.smoothed_aggregation_solver(matrix_coeff)
-    # ml = pyamg.rootnode_solver(matrix_coeff, smooth=('energy', {'degree':2}), strength='evolution' )
-    # print(ml)
-    # M = ml.aspreconditioner(cycle='V')
-    # print("solving...")
-    # sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10, M=M)[0]
-    # print("...done")
-
-    # print("setting up amg")
-    # A = scipy.sparse.csr.csr_matrix(matrix_coeff.todense())
-    # ml = pyamg.smoothed_aggregation_solver(A, max_coarse=10)
-    # print(ml)
-    # residuals = []
-    # print("solving...")
-    # sol_coeff -= ml.solve(res_coeff, tol=1e-10, accel='cg', residuals=residuals)
-    # residuals = residuals / residuals[0]
-    # print("...done")
+    sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff, res_coeff)
+    # sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10)[0]
 
     n += 1
 
-plot(uh)
-
+uh.plot()
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
@@ -183,7 +159,7 @@ sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
             verbose=1, f_tol=1e-8,
             inner_M=Df(sol_coeff))
 
-plot(uh)
+uh.plot()
 
 # import sys
 # import petsc4py
@@ -208,13 +184,14 @@ try:
     # from petsc4py import PETSc
     # petsc4py.init(sys.argv)
     spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
+    parameters["newton.linear.preconditioning.method"] = "sor"
     scheme = create.scheme("galerkin", a==b, spc,
-                            parameters={"petsc.preconditioning.method":"sor"})
+                            parameters=parameters)
     # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
     uh   = spc.interpolate([0],name="petsc")
     info = scheme.solve(target=uh)
     print(info)
-    plot(uh)
+    uh.plot()
 except ImportError:
     print("petsc4py could not be imported")
     petsc4py = False
@@ -255,7 +232,7 @@ if petsc4py:
         ksp.solve(res_coeff, res_coeff)
         sol_coeff -= res_coeff
         n += 1
-    plot(uh)
+    uh.plot()
 
 
 # Finally we weill use `petsc`'s non-linear solvers (the `snes` classes) directly:
@@ -285,7 +262,7 @@ if petsc4py:
     snes.getKSP().setType("cg")
     snes.setFromOptions()
     snes.solve(res_coeff, sol_coeff)
-    plot(uh)
+    uh.plot()
 
 
 # __Note__:

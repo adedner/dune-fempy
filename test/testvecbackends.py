@@ -49,9 +49,16 @@ try:
     petscs  = create.space("lagrange",g,dimrange=2,storage="petsc")
     petscf1 = petscs.interpolate([2,1], name="tmp")
     petscDofs = PETSc.Vec().createSeq(petscs.size,bsize=2)
+    # print("1.",petscDofs[0],petscDofs[1])
     petscf2 = petscs.function("tmp", [2,1], petscDofs)
+    # print("2.",petscDofs[0],petscDofs[1])
+    # x = ufl.SpatialCoordinate(s)
+    # petscf2.interpolate([x[0]*x[1],2])
+    # petscf2.plot()
+    petscDiff = petscs.interpolate(petscf1-petscf2, name="tmp")
+    assert petscDiff.scalarProductDofs(petscDiff) == 0
     # assert all([(d1-d2).two_norm==0 for d1,d2 in zip(petscDofs,petscf1.as_petsc)])
     # assert all([(d1-d2).two_norm==0 for d1,d2 in zip(petscDofs,petscf2.as_petsc)])
-    print("NOTE: there is an issue with passing in a petsc Vector constructed in Python to a df - needs fixing")
+    print("NOTE: there is an issue with the tests commented out above - iteration over the petsc vectors seems broken")
 except ImportError:
     pass

@@ -44,7 +44,6 @@ import math
 from ufl import *
 from dune.ufl import NamedConstant
 import dune.ufl
-import dune.create as create
 import dune.geometry as geometry
 import dune.fem as fem
 from dune.fem.plotting import plotPointData as plot
@@ -66,16 +65,17 @@ R0 = 2.
 
 
 # <codecell>
-grid = create.grid("ALUConform", "sphere.dgf",
-                   dimgrid=2, dimworld=3)
-space = create.space("lagrange", grid,
-                     dimrange=grid.dimWorld, order=order)
-positions = space.interpolate(lambda x: x * (1 + 0.5*math.sin(2*
-                              math.pi*x[0]*x[1])*math.cos(math.pi*
-                              x[2])), name="position")
-surface = create.view("geometry", positions)
-space = create.space("lagrange", surface,
-                     dimrange=surface.dimWorld, order=order)
+from dune.fem.view import adaptiveLeafGridView as gridView
+from dune.fem.view import geometryGridView     as geoGridView
+from dune.fem.space import lagrange as solutionSpace
+from dune.alugrid import aluConformGrid as hierarchicalGrid
+grid = gridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
+space = solutionSpace(grid, dimrange=grid.dimWorld, order=order)
+positions = space.interpolate(lambda x:
+            x * (1 + 0.5*math.sin(2*math.pi*x[0]*x[1])*\
+                        math.cos(math.pi*x[2])), name="position")
+surface = geoGridView(positions)
+space = solutionSpace(surface, dimrange=surface.dimWorld, order=order)
 solution = space.interpolate(lambda x: x, name="solution")
 
 
@@ -84,6 +84,7 @@ solution = space.interpolate(lambda x: x, name="solution")
 
 
 # <codecell>
+from dune.fem.scheme import galerkin as solutionScheme
 theta = 0.5
 u = TrialFunction(space)
 v = TestFunction(space)
@@ -91,9 +92,8 @@ x = SpatialCoordinate(space)
 I = Identity(3)
 dt = NamedConstant(space, "dt")
 
-a = (inner(u - x, v) + dt * inner(theta*grad(u)
-    + (1 - theta)*I, grad(v))) * dx
-scheme = create.scheme("galerkin", a == 0, space, solver="cg")
+a = (inner(u - x, v) + dt * inner(theta*grad(u) + (1 - theta)*I, grad(v))) * dx
+scheme = solutionScheme(a == 0, space, solver="cg")
 
 
 # <markdowncell>

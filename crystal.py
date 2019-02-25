@@ -18,15 +18,16 @@ except:
 # <codecell>
 import dune.fem as fem
 from dune.grid import Marker, cartesianDomain
-import dune.create as create
+from dune.alugrid import aluConformGrid as hierarchicalGrid
+from dune.fem.view import adaptiveLeafGridView as gridView
+from dune.fem.space import lagrange as solutionSpace
+
 order = 1
 dimDomain = 2     # we are solving this in 2D
 dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [3, 3])
-grid   = create.view("adaptive", grid="ALUConform",
-                     constructor=domain, dimgrid=dimDomain)
-space  = create.space("lagrange", grid, dimrange=dimRange,
-                      order=order, storage="fem")
+grid  = gridView( hierarchicalGrid( domain, dimgrid=dimDomain ) )
+space = solutionSpace(grid, dimrange=dimRange, order=order, storage="fem")
 
 
 # <markdowncell>
@@ -71,11 +72,11 @@ N            = 6.
 
 
 # <codecell>
+from dune.fem.function import globalFunction
 def initial(x):
     r  = (x - [6, 6]).two_norm
     return [ 0 if r > 0.3 else 1, -0.5 ]
-initial_gf = create.function("global", grid, "initial",
-                             order+1, initial)
+initial_gf = globalFunction(grid, "initial", order+1, initial)
 u_h = space.interpolate(initial_gf, name="solution")
 u_h_n = u_h.copy()
 
@@ -149,15 +150,14 @@ a_im = (alpha*alpha*dt / tau * (inner(dot(d0, grad(u[0])),
 
 
 # <codecell>
+from dune.fem.scheme import galerkin as solutionScheme
 solverParameters = {
-        "newton.tolerance": 1e-5,
-        "newton.linear.absolutetol": 1e-8,
-        "newton.linear.reductiontol": 1e-8,
-        "newton.verbose": 0,
-        "newton.linear.verbose": 0
+        "newton.tolerance": 1e-8,
+        "newton.linear.tolerance": 1e-10,
+        "newton.verbose": False,
+        "newton.linear.verbose": False
     }
-scheme = create.scheme("galerkin", a_im == a_ex, space,
-                       solver="gmres", parameters=solverParameters)
+scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverParameters)
 
 
 # <markdowncell>

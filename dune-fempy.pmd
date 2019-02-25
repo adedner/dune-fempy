@@ -1499,13 +1499,9 @@ class}
 template< class Point >
 void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
 {
-  result = u;
+  result = u[ 0 ];
 }
 \end{pweavecode}
-
-\Rtodo{I would rather write result = u, then it holds for all dimRangei.}
-\Atodo{I think that is not what is generated - bit complicated to figure
-out that special case in the code generation process}
 
 Another possibility provided for by the modular design of
 \dune[python] and the simple structure of the class representing the
@@ -1574,14 +1570,14 @@ constructing operators, by using \pyth{'integrands'}.
 This allows for a more general description of second order operators not
 expressible by the \pyth{elliptic} model class. For example we can express
 a non variational second order problem directly:
-\renewcommand{\pweavecaption}{Usage of integrands operators for
-skeleton terms}
+\renewcommand{\pweavecaption}{Usage of integrands operators for skeleton terms}
 \renewcommand{\pweavelabel}{lst:fempy_integrands}
 \begin{pweavecode}
+from dune.fem.model import integrands
 a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
     + jump(A*grad(u[0]), n)*avg(v[0])*dS
 b = rhs(A, exact)
-scheme = create.model("integrands", space, a == b)
+scheme = integrands(space, a == b)
 \end{pweavecode}
 In addition as the above shows we can add a term
 defined only on the skeleton (the facets) of the mesh. Due to the
@@ -1798,6 +1794,7 @@ might be necessary to increase the amount of system memory given to Docker to
 
 \Atodo{mention the \pyth{dune.create.get} method - good name to be found, perhaps
        \pyth{inspect,help,show}...}
+\Rtodo{I thought \pyth{dune.create} is deprecated?}       
 
 If you already have the \dune core modules either installed or in local
 space, it suffices to download the \dune[Python] module
@@ -1921,10 +1918,10 @@ Grids by default take the following form.
 \renewcommand{\pweavecaption}{The default form for grid creation}
 \renewcommand{\pweavelabel}{lst:default-grid}
 \begin{pweavecode}
-from dune.grid import gridtype
-grid = gridtype(constructor, dimgrid=None, dimworld=None)
+from dune.grid import hierarchicalGrid 
+hgrid = hierarchicalGrid(constructor, dimgrid=None, dimworld=None)
 \end{pweavecode}
-\pyth{gridtype} is one of the functions from the table below and may be located
+\pyth{hierarchicalGrid} is one of the functions from the table below and may be located
 in a module different to \pyth{dune.grid}, for example \pyth{dune.alugrid} or \pyth{dune.spgrid}. 
 All functions have the following arguments. 
 
@@ -1954,8 +1951,8 @@ Grids can also be constructed to provide a different grid view:
 \renewcommand{\pweavecaption}{Creating a custom grid view}
 \renewcommand{\pweavelabel}{lst:default-view}
 \begin{pweavecode}
-from dune.fem.view import viewtype
-view = viewtype(grid)
+from dune.fem.view import gridView
+grid = gridView( hgrid )
 \end{pweavecode}
 
 The first argument can be any of the ones allowed for the grid construction
@@ -1977,16 +1974,16 @@ Now we move on to spaces. By default, they take the form
 \renewcommand{\pweavecaption}{The default form for space creation}
 \renewcommand{\pweavelabel}{lst:default-space}
 \begin{pweavecode}
-from dune.fem.space import spacetype
-space = spacetype(grid, dimrange=1, order=1,
-                     storage='fem', field='double')
+from dune.fem.space import solutionSpace
+space = solutionSpace(grid, dimrange=1, order=1,
+                      storage='fem', field='double')
 \end{pweavecode}
-where \pyth{spacetype} is a function from the \pyth{dune.fem.space} module and the available 
+where \pyth{solutionSpace} is a function from the \pyth{dune.fem.space} module and the available 
 implementations are listed in Table \ref{tab:spaces} below. 
 All spaces are created with the following arguments.
 
 \begin{enumerate}
-\item \pyth{grid}: A grid object from \ref{sec:grid-list}.
+\item \pyth{grid}: A grid view object from \ref{sec:grid-list}.
 \item \pyth{dimrange} (optional): The range dimension of the space.
 \item \pyth{order} (optional): The polynomial order of the basis
 functions.
@@ -2025,13 +2022,13 @@ way to make a grid function is
 \renewcommand{\pweavecaption}{The default form for function creation}
 \renewcommand{\pweavelabel}{lst:default-function}
 \begin{pweavecode}
-from dune.fen.function import functiontype 
-f = functiontype(grid, 'function-name', order, constructor)
+from dune.fen.function import gridFunction
+f = gridFunction(grid, 'function-name', order, constructor)
 \end{pweavecode}
-where \pyth{functiontype} is one of the functions listed in Table
+where \pyth{gridFunction} is one of the functions listed in Table
 \ref{tab:functions} which is called with the following arguments.
 \begin{enumerate}
-\item \pyth{grid}: A grid object from \ref{sec:grid-list}.
+\item \pyth{grid}: A grid view object from \ref{sec:grid-list}.
 \item \pyth{'function-name'}: A string for the name of the created
 function.
 \item \pyth{order}: The order of the function used for quadrature.
@@ -2072,11 +2069,11 @@ We review this below.
 \renewcommand{\pweavecaption}{The default form for scheme creation}
 \renewcommand{\pweavelabel}{lst:default-scheme}
 \begin{pweavecode}
-from dune.fem.scheme import schemetype
-scheme = schemetype(equation, space,
-                    parameters=dict, solver='solver-name')
+from dune.fem.scheme import solutionScheme
+scheme = solutionScheme(equation, space,
+                        parameters=dict, solver='solver-name')
 \end{pweavecode}
-where \pyth{schemetype} is one of the schemes implemented in \dune[fempy].
+where \pyth{solutionScheme} is one of the schemes implemented in \dune[fempy].
 The two main schemes available in \dune[fempy] are
 \pyth{galerkin} and \pyth{h1}. The distinction between them is
 described in section \ref{sec:header}. In addition the \dune[nvdg]

@@ -24,12 +24,15 @@ except:
     pass
 import math
 import numpy
-import dune.create as create
 import matplotlib.pyplot as pyplot
 from dune.fem.view import adaptiveLeafGridView
 from dune.fem.plotting import plotPointData as plot
 import dune.grid as grid
 import dune.fem as fem
+from dune.fem.view import adaptiveLeafGridView as gridView
+from dune.fem.space import lagrange as solutionSpace
+from dune.alugrid import aluConformGrid as hierachicalGrid
+
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 320.
@@ -51,10 +54,9 @@ for i in range(0, 7):
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
                          [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-view = create.view("adaptive", "ALUConform", domain, dimgrid=2)
-view.hierarchicalGrid.globalRefine(2)
-space  = create.space("lagrange", view, dimrange=1, order=order)
-
+grid = gridView( hierachicalGrid(domain, dimgrid=2) )
+grid.hierarchicalGrid.globalRefine(2)
+space  = solutionSpace(grid, dimrange=1, order=order)
 
 # <markdowncell>
 # Next we define the model together with the exact solution.
@@ -62,6 +64,7 @@ space  = create.space("lagrange", view, dimrange=1, order=order)
 # <codecell>
 from ufl import *
 from dune.ufl import DirichletBC
+from dune.fem.scheme import galerkin as solutionScheme
 u = TrialFunction(space)
 v = TestFunction(space)
 x = SpatialCoordinate(space.cell())
@@ -73,8 +76,7 @@ exact = as_vector([inner(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
-laplace = create.scheme("galerkin", [a==0,
-                        DirichletBC(space, exact, 1)])
+laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)])
 uh = space.interpolate(lambda x: [0], name="solution")
 
 
@@ -107,7 +109,10 @@ uh = space.interpolate(lambda x: [0], name="solution")
 h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
-fvspace = create.space("finitevolume", view, dimrange=1)
+from dune.fem.space import finiteVolume as estimatorSpace
+from dune.fem.operator import galerkin as estimatorOp
+
+fvspace = estimatorSpace(grid, dimrange=1)
 estimate = fvspace.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(space.cell())
@@ -115,7 +120,7 @@ he = MaxFacetEdgeLength(space.cell())('+')
 n = FacetNormal(space.cell())
 estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx +\
         he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
-estimator = create.operator("galerkin", estimator_ufl, space, fvspace)
+estimator = estimatorOp(estimator_ufl, space, fvspace)
 # marking strategy (equidistribution)
 tolerance = 0.1
 
@@ -134,18 +139,18 @@ while count < 20:
         fig = pyplot.figure(figsize=(10,10))
     plot(uh, figure=(fig, 131+count%3), colorbar=False)
     # compute the actual error and the estimator
-    error = math.sqrt(fem.function.integrate(view, h1error, 5)[0])
+    error = math.sqrt(fem.function.integrate(grid, h1error, 5)[0])
     estimator(uh, estimate)
     eta = sum(estimate.dofVector)
-    print(count, ": size=", view.size(0), "estimate=", eta,
+    print(count, ": size=", grid.size(0), "estimate=", eta,
           "error=", error)
     if eta < tolerance:
         break
     if tolerance == 0.:
-        view.hierarchicalGrid.globalRefine(2)
+        grid.hierarchicalGrid.globalRefine(2)
         uh.interpolate([0])  # initial guess needed
     else:
-        marked = fem.mark(estimate,tolerance/view.size(0))
+        marked = fem.mark(estimate,tolerance/grid.size(0))
         fem.adapt([uh])
         fem.loadBalance([uh])
     laplace.solve( target=uh )
@@ -173,4 +178,4 @@ pyplot.close('all')
 
 # <codecell>
 from dune.fem.function import levelFunction
-plot(levelFunction(view), xlim=(-0.2,1), ylim=(-0.2,1))
+plot(levelFunction(grid), xlim=(-0.2,1), ylim=(-0.2,1))

@@ -43,7 +43,6 @@ import pickle
 from ufl import *
 import dune.ufl
 from dune.generator import algorithm
-import dune.create as create
 import dune.geometry as geometry
 import dune.fem as fem
 from dune.fem.plotting import plotPointData as plot
@@ -70,14 +69,17 @@ endTime = 0.1
 
 
 # <codecell>
+from dune.fem.view import geometryGridView     as geoGridView
+from dune.fem.space import lagrange as solutionSpace
+from dune.fem.scheme import galerkin as solutionScheme
 def calculate(use_cpp, grid):
     # space on Gamma_0 to describe position of Gamma(t)
-    space = create.space("lagrange", grid, dimrange=grid.dimWorld, order=order)
+    space = solutionSpace(grid, dimrange=grid.dimWorld, order=order)
     positions = space.interpolate(lambda x: x, name="position")
 
     # space for discrete solution on Gamma(t)
-    surface   = create.view("geometry", positions)
-    space = create.space("lagrange", surface, dimrange=surface.dimWorld, order=order)
+    surface = geoGridView(positions)
+    space = solutionSpace(surface, dimrange=surface.dimWorld, order=order)
     solution  = space.interpolate(lambda x: x, name="solution")
 
     # set up model using theta scheme
@@ -92,7 +94,7 @@ def calculate(use_cpp, grid):
     a = (inner(u - x, v) + dt * inner(theta*grad(u)
         + (1 - theta)*I, grad(v))) * dx
 
-    scheme = create.scheme("galerkin", a==0, space, solver="cg")
+    scheme = solutionScheme(a == 0, space, solver="cg")
 
     if use_cpp:
         radius = algorithm.load('calcRadius', 'radius.hh', surface)
@@ -173,7 +175,9 @@ def calculate(use_cpp, grid):
 
 # <codecell>
 # set up reference domain Gamma_0
-grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
+from dune.alugrid import aluConformGrid as hierarchicalGrid
+from dune.fem.view import adaptiveLeafGridView as gridView
+grid = gridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
 calculate(True, grid)
-grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
+grid = gridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
 calculate(False, grid)

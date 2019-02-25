@@ -1,8 +1,6 @@
-
-# coding: utf-8
-
+# <markdowncell>
 # ## Mean Curvature Flow
-
+#
 # In this example we compute the mean curvature flow of a surface:
 # \begin{align}
 #    \frac{\partial}{\partial_t} x &= H(x)  && \text{for } x\in\Gamma(t)
@@ -17,7 +15,7 @@
 #   \frac{\partial}{\partial_t}X = - H(X)\nu(X)
 # \end{gather}
 # where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
-# 
+#
 # We will solve this using a finite element approach based on the following time discrete approximation:
 # \begin{gather}
 #   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
@@ -32,9 +30,7 @@
 # $\theta\in[0,1]$ is a discretization parameter.
 # <img src="mcf.gif" style="height:228px;">
 
-# In[ ]:
-
-
+# <codecell>
 from __future__ import print_function
 try:
     get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
@@ -64,9 +60,16 @@ R0 = 2.
 endTime = 0.1
 
 
-# In[ ]:
+# <markdowncell>
+# Main function for calculating the mean curvature flow of a given surface.
+# If first argument is `True` the radius of the computed surface is
+# computed using an algorithm implemented in C++ otherwise the computation
+# is done in Python.
+#
+# Timings for a number of different grid refinements is dumped to disk
 
 
+# <codecell>
 def calculate(use_cpp, grid):
     # space on Gamma_0 to describe position of Gamma(t)
     space = create.space("lagrange", grid, dimrange=grid.dimWorld, order=order)
@@ -111,7 +114,7 @@ def calculate(use_cpp, grid):
         file_path = 'python_time.p'
 
     scheme.model.dt = 0.02
-    
+
     import numpy as np
     pyplot.figure()
     pyplot.gca().set_xlim([0, endTime])
@@ -162,12 +165,15 @@ def calculate(use_cpp, grid):
     pickle.dump([gridSizes, times], open(file_path,'wb'))
 
 
-# In[ ]:
+# <markdowncell>
+# Compute the mean curvature flow evolution of a spherical surface. Compare
+# computational time of a pure Python implementation and using a C++
+# algorithm to compute the radius of the surface for verifying the
+# algorithm.
 
-
+# <codecell>
 # set up reference domain Gamma_0
 grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 calculate(True, grid)
 grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 calculate(False, grid)
-

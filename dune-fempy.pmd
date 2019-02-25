@@ -605,7 +605,7 @@ section:
 # <codecell>
 ```
 ```python, label = 'forch-plot-uh', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
-plot(u_h, grid=grid)
+u_h.plot(grid=grid,gridLines="white")
 ```
 
 To define the weak formulation given by (\ref{eqn:forch-roche}) we need two
@@ -655,7 +655,11 @@ Dirichlet boundary if present). The \pyth{solve} method can take an
 optional argument \pyth{rhs} in which case $L[u_h]=$\pyth{rhs} will be
 solved.
 
-\Atodo{should we also mention the 'constraint' methods for handling Dirichlet bcs}
+\Atodo{should we also mention the 'constraint' methods for handling Dirichlet bcs
+       we probably need to add an example of handling DirichletBCs in the
+       main part - they only appear without much explanation in the
+       reentrant corner problem. The issue of boundary ids is also not
+       addressed}
 
 Recall the parabolic equation (\ref{eqn:forch-roche}), which we will focus
 on in the following example. To begin with, it is
@@ -872,7 +876,8 @@ time and refining the grid}
 ```python, label='forch-main', fig=True, caption='Plot of solutions at each level of refinement', width='0.32\\textwidth'
 from math import log
 errors = 0,0
-for eocLoop in range(3):
+loops = 2
+for eocLoop in range(loops):
     u_h.interpolate(initial)
     evolve(scheme, u_h, u_h_n, endTime)
     errors_old = errors
@@ -885,13 +890,14 @@ for eocLoop in range(3):
     print('step:', eocLoop, ', size:', grid.size(0))
     print('\t |u_h - u| =', '{:0.5e}'.format(errors[0]), ', eoc =', eocs[0])
     print('\t |grad(u_h - u)| =', '{:0.5e}'.format(errors[1]), ', eoc =', eocs[1])
-    plot(u_h)
+    u_h.plot()
     grid.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
                   l2error, 'h1error': h1error}, number=eocLoop)
-    if eocLoop < 2:
+    if eocLoop < loops-1:
         grid.hierarchicalGrid.globalRefine(1)
         scheme.model.dt /= 2
 ```
+\Atodo{Possible increase the number of eoc loops for publication}
 \begin{comment}
 We compile a table of the errors and EOCs for additional refinement
 steps and also including the $H^1$ error below.
@@ -989,7 +995,7 @@ solve method}
 ```python, label='forch-newton'
 from dune.fem.operator import linear as linearOperator
 import numpy as np
-from scipy.sparse.linalg import cg as solver
+from scipy.sparse.linalg import spsolve as solver
 class Scheme:
   def __init__(self, scheme):
       self.model = scheme.model
@@ -1010,12 +1016,11 @@ class Scheme:
           if absF < 1e-10:
               break
           scheme.jacobian(target,self.jacobian)
-          sol_coeff -= solver(self.jacobian.as_numpy, res_coeff, tol=1e-10)[0]
+          sol_coeff -= solver(self.jacobian.as_numpy, res_coeff)
           n += 1
 
 scheme_cls = Scheme(scheme)
 
-# grid.hierarchicalGrid.globalRefine(-2)  # revert grid refinement
 u_h.interpolate(initial)                # reset u_h to initial
 evolve(scheme_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
@@ -1037,6 +1042,7 @@ but here we do it purely through Python:
 ```python, label='forch-df'
 from scipy.optimize import newton_krylov
 from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import cg as solver
 
 class Scheme2:
     def __init__(self, scheme):
@@ -1111,7 +1117,7 @@ spacePetsc = solutionSpace(grid, dimrange=1, order=2, storage='petsc')
 # first we will use the petsc solver available in the `dune-fem` package
 # (using the sor preconditioner)
 schemePetsc = solutionScheme(a == b, space=spacePetsc,
-                parameters={"fem.solver.newton.linear.preconditioning.method":"sor"})
+                parameters={"linear.preconditioning.method":"sor"})
 schemePetsc.model.dt = scheme.model.dt
 u_h = spacePetsc.interpolate(initial, name='u_h')
 u_h_n = u_h.copy(name="previous")
@@ -1302,39 +1308,6 @@ positions.dofVector.assign(solution.dofVector)
 With this process the surface (and by extension the mesh) can be
 changed over time. We will now demonstrate this in a mean curvature flow
 example.
-
-\subsection{Mean Curvature Flow}
-
-Mean curvature flow is a specific example of a geometric evolution
-equation where the evolution is governed by the mean curvature $H$.
-One real-life example of this is in how soap films change over time,
-although it can also be applied to image processing (e.g.
-\cite{Malladi}).
-Assume we can define a reference surface $\Gamma_0$ such that
-we can write the evolving surface $\Gamma(t)$ in the form
-\begin{gather*}
-  \Gamma(t) = X(t,\Gamma_0).
-\end{gather*}
-It is now possible to show that the vector valued function $X=X(t,x)$
-with $x\in\Gamma_0$ satisfies
-\begin{gather*}
-  \frac{\partial}{\partial_t}X = - H(X)\nu(X),
-\end{gather*}
-where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
-
-We will solve this using a finite element approach based on the
-following time discrete approximation from \cite[Eqn 4.16]{Charlie}
-(with a $\theta$-scheme applied).
-\begin{gather*}
-  \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
-    \tau \int_{\Gamma^n} \big(
-    \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
-    \colon\nabla_{\Gamma^n}\varphi
-  =0.
-\end{gather*}
-Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
-$\Gamma^n:=\Gamma(t^{n})$, $I$ is the identity matrix, $\tau$ is the
-time step and $\theta\in[0,1]$ is a discretization parameter.
 
 \input{mcf.tex}
 
@@ -1919,12 +1892,28 @@ the Python version in section \ref{sec:cpp-models}.
 
 \inputcpp{./forchheimer/main.cc}{}{lst:forch-cpp}
 
-\section{List of Dune-Python modules} \label{sec:modules}
+\section{List of available components} \label{sec:modules}
+\Atodo{suggestion for a better title?}
 
-Here we list the different modules that are available to \dune[Python]
-and \dune[Fempy] at the time of writing. We will divide them by component
-into different sections that reflect the structure we have previously
-introduced.
+Here we list the different components that are available for
+\dune[Fempy] at the time of writing. We will divide them
+into different sections that reflect the structure we have
+used in the main part of the paper. Since every additional \dune[] modules
+can add additional components, those available in a given \dune[]
+installation may warry and of course additional features are constantly
+added. To simplify determining what is available the following utility can
+be used:
+\renewcommand{\pweavecaption}{The default form for linearising an operator}
+\renewcommand{\pweavelabel}{lst:linearise-operator}
+```python, label="lst:componentsutility", echo=False
+from dune.utility import components
+# to get a list of all available components:
+components()
+# to get for example all available grid implementations:
+components("grid")
+```
+% # constructing a `yaspGrid` instance can be done using
+% component("grid","yasp")(cartesianDomain([0,0],[1,1],[10,10]))
 
 \subsection{Grids} \label{sec:grid-list}
 
@@ -2167,7 +2156,32 @@ construction.
 \renewcommand{\pweavelabel}{lst:default-operator}
 \begin{pweavecode}
 from dune.fem.operator import galerkin
-scheme = galerkin(equation, domainSpace, rangeSpace)
+operator = galerkin(form, domainSpace, rangeSpace)
+\end{pweavecode}
+Here the first argument is a UFL form.
+
+
+\Atodo{move the following to main part}
+such after calling
+\pyth{operator(d_h,r_h)} the degrees of freedom of the
+discrete function $r_h$ over the range
+space satisfies \pyth{r_h.dofVector[i] = form(d_h,phi_i)} where
+\pyth{phi_i} are the basis function of the range space. To obtain the
+linearization the \pyth{jacobian} method can be used. First a linear
+operator is constructed providing a \pyth{scheme} or \pyth{operator}. 
+\renewcommand{\pweavecaption}{The default form for creating a linear operator}
+\renewcommand{\pweavelabel}{lst:linear-operator}
+\begin{pweavecode}
+from dune.fem.operator import linear
+jacobian = linear(operator)
+\end{pweavecode}
+This construction already assembles the linearization of the operator
+around zero and is thus sufficient in the linear case. To obtain a
+linearization around some other point the following can be used
+\renewcommand{\pweavecaption}{The default form for linearising an operator}
+\renewcommand{\pweavelabel}{lst:linearise-operator}
+\begin{pweavecode}
+operator.jacobian(r_h,jacobian)
 \end{pweavecode}
 
 %</append>

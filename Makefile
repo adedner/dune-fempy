@@ -44,32 +44,36 @@ dune-fempy.py: dune-fempy.pmd
 
 laplace-adaptive.ipynb: laplace-adaptive.py
 	@python3 py2ipynb.py laplace-adaptive.py laplace-adaptive.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to notebook --inplace laplace-adaptive.ipynb
 laplace-adaptive.md: laplace-adaptive.ipynb
-	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to markdown laplace-adaptive.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --allow-errors --to markdown laplace-adaptive.ipynb
 laplace-adaptive.tex: laplace-adaptive.md
 	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
 	@python3 pandoc-formatting.py laplace-adaptive.tex
 
 crystal.ipynb: crystal.py
 	@python3 py2ipynb.py crystal.py crystal.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to notebook --inplace crystal.ipynb
 crystal.md: crystal.ipynb
-	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to markdown crystal.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --allow-errors --to markdown crystal.ipynb
 crystal.tex: crystal.md
 	@pandoc --listings -f markdown -t latex crystal.md -o crystal.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py crystal.tex
 
 mcf.ipynb: mcf.py
 	@python3 py2ipynb.py mcf.py mcf.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to notebook --inplace mcf.ipynb
 mcf.md: mcf.ipynb
-	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to markdown mcf.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --allow-errors --to markdown mcf.ipynb
 mcf.tex: mcf.md
 	@pandoc --listings -f markdown -t latex mcf.md -o mcf.tex
 	@python3 pandoc-formatting.py mcf.tex
 
 mcf-algorithm.ipynb: mcf-algorithm.py
 	@python3 py2ipynb.py mcf-algorithm.py mcf-algorithm.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to notebook --inplace mcf-algorithm.ipynb
 mcf-algorithm.md: mcf-algorithm.ipynb
-	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --allow-errors --to markdown mcf-algorithm.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --allow-errors --to markdown mcf-algorithm.ipynb
 mcf-algorithm.tex: mcf-algorithm.md
 	@pandoc --listings -f markdown -t latex mcf-algorithm.md -o mcf-algorithm.tex
 	@python3 pandoc-formatting.py mcf-algorithm.tex

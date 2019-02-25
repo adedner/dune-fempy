@@ -12,7 +12,7 @@ except:
 
 
 # <markdowncell>
-# Before anything else let us set up the grid and the function space. We use the default DoF storage available in ```dune-fem``` - this can be changed for example to ```istl,eigen``` or ```petsc```.
+# Before anything else let us set up the grid and the function space. We use the default DoF storage available in ```dune-fem``` - this can be changed for example to ```istl``` or ```petsc```.
 
 
 # <codecell>
@@ -53,7 +53,7 @@ space = solutionSpace(grid, dimrange=dimRange, order=order, storage="fem")
 # \end{array}\right),
 # \end{equation*}
 #
-# $and where \beta = \frac{1-\Phi^2}{1+\Phi^2}$, $\Phi = \tan \left( \frac{N}{2} \psi \right)$, $\psi = \theta + \arctan \left(\frac{\partial \phi/ \partial y}{\partial \phi / \partial x} \right)$ and $\theta$, $N$ are constants.
+# and where $\beta = \frac{1-\Phi^2}{1+\Phi^2}$, $\Phi = \tan \left( \frac{N}{2} \psi \right)$, $\psi = \theta + \arctan \left(\frac{\partial \phi/ \partial y}{\partial \phi / \partial x} \right)$ and $\theta$, $N$ are constants.
 #
 # Let us first set up the parameters for the problem.
 

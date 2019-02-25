@@ -103,7 +103,6 @@ def compute():
     return error
 
 for i in range(4):
-    print("\nNEW COMPUTATION:")
     error = compute()
     if i > 0:
         eoc = math.log(error/old_error) / math.log(0.5)

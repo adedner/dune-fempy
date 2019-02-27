@@ -54,7 +54,7 @@ for i in range(0, 7):
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
                          [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-grid = gridView( hierachicalGrid(domain, dimgrid=2) )
+grid = gridView( hierachicalGrid(domain) )
 grid.hierarchicalGrid.globalRefine(2)
 space  = solutionSpace(grid, dimrange=1, order=order)
 

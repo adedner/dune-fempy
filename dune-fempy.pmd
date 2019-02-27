@@ -36,6 +36,7 @@
 \newcommand{\yaspgrid}{\textsc{YaspGrid}\xspace}
 
 \newcommand{\matplotlib}{\pyth{Matplotlib}\xspace}
+\newcommand{\pygmsh}{\pyth{pygmsh}\xspace}
 \newcommand{\quadpy}{\pyth{Quadpy}\xspace}
 \newcommand{\numpy}{\pyth{Numpy}\xspace}
 \newcommand{\scipy}{\pyth{Scipy}\xspace}
@@ -1762,6 +1763,57 @@ disable type erasure if required.
 }
 \Atodo{We should add some information on typical compilation times}
 
+\section{Conclusions and Outlook}
+The example below shows an example of solving a simple laplace problem
+using \pygmsh to define the unstructured mesh:
+\renewcommand{\pweavecaption}{3D Laplace equation using a \pygmsh tetrahedral mesh}
+\renewcommand{\pweavelabel}{lst:3dgmsh}
+```python, label="lst:3dgmsh-md", echo=False
+# <markdowncell>
+# In this example we use pygmsh to construct a tetrahedral mesh and olve a
+# simple laplace problem
+# <codecell>
+```
+```python, label='lst:3dgmsh', results='hidden'
+try:
+  import pygmsh
+  geom = pygmsh.built_in.Geometry()
+  poly = geom.add_polygon([
+      [ 0.0,  0.5, 0.0], [-0.1,  0.1, 0.0], [-0.5,  0.0, 0.0],
+      [-0.1, -0.1, 0.0], [ 0.0, -0.5, 0.0], [ 0.1, -0.1, 0.0],
+      [ 0.5,  0.0, 0.0], [ 0.1,  0.1, 0.0] ], lcar=0.05)
+  axis = [0, 0, 1]
+  geom.extrude( poly, translation_axis=axis, rotation_axis=axis,
+      point_on_axis=[0, 0, 0], angle=2.0 / 6.0 * numpy.pi)
+  points, cells, _,_,_ = pygmsh.generate_mesh(geom)
+  domain = {"vertices":points, "simplices":cells["tetra"]}
+except ImportError: # pygmsh not installed - use a simple cartesian domain
+  from dune.grid import cartesianDomain
+  domain = cartesianDomain([-0.25,-0.25,0],[0.25,0.25,1],[30,30,60])
+
+from dune.alugrid import aluSimplexGrid as Grid
+grid  = Grid(domain)
+space = solutionSpace(grid, dimrange=1, order=1)
+
+from ufl import conditional
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space)
+scheme = solutionScheme((inner(grad(u),grad(v))+inner(u,v))*dx ==
+                        conditional(dot(x,x)<.01,100,0)*v[0]*dx,
+                        solver='cg')
+
+uh = space.interpolate([0],name="solution")
+scheme.solve(target=uh)
+# note: plotting with matplotlib not available for 3d grids
+grid.writeVTK('3dexample', pointdata=[uh])
+```
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/3dexample.png}
+\caption{Result from 3D example}
+\label{fig:3dgmsh}
+\end{figure}
 
 %</tag>
 

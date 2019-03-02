@@ -1,3 +1,7 @@
 *.swp
+*.vtu
+*.pvtu
+*.log
+*.out
 build-cmake/
 __pycache__

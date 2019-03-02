@@ -28,6 +28,9 @@
 #include <dune/fem/schemes/integrands.hh>
 #include <dune/fem/schemes/dirichletwrapper.hh>
 
+// fempy includes
+#include <dune/fempy/quadrature/fempyquadratures.hh>
+
 namespace Dune
 {
 
@@ -43,6 +46,7 @@ namespace Dune
       template< class Integrands >
       struct GalerkinOperator
       {
+        typedef GalerkinOperator<Integrands> ThisType;
         typedef std::conditional_t< Fem::IntegrandsTraits< Integrands >::isFull, Integrands, FullIntegrands< Integrands > > IntegrandsType;
 
         typedef typename IntegrandsType::GridPartType GridPartType;
@@ -53,11 +57,14 @@ namespace Dune
       private:
         typedef CachingQuadrature< GridPartType, 0 > InteriorQuadratureType;
         typedef CachingQuadrature< GridPartType, 1 > SurfaceQuadratureType;
+        // typedef CachingQuadrature< GridPartType, 0, Dune::FemPy::FempyQuadratureTraits > InteriorQuadratureType;
+        // typedef CachingQuadrature< GridPartType, 1, Dune::FemPy::FempyQuadratureTraits > SurfaceQuadratureType;
 
         typedef typename IntegrandsType::DomainValueType DomainValueType;
         typedef typename IntegrandsType::RangeValueType RangeValueType;
         typedef std::make_index_sequence< std::tuple_size< DomainValueType >::value > DomainValueIndices;
         typedef std::make_index_sequence< std::tuple_size< RangeValueType >::value > RangeValueIndices;
+
 
         template< std::size_t... i >
         static auto makeDomainValueVector ( std::size_t maxNumLocalDofs, std::index_sequence< i... > )
@@ -70,7 +77,51 @@ namespace Dune
           return makeDomainValueVector( maxNumLocalDofs, DomainValueIndices() );
         }
 
+        template< std::size_t... i >
+        static auto makeRangeValueVector ( std::size_t maxNumLocalDofs, std::index_sequence< i... > )
+        {
+          return std::make_tuple( std::vector< std::tuple_element_t< i, RangeValueType > >( maxNumLocalDofs )... );
+        }
+
+        static auto makeRangeValueVector ( std::size_t maxNumLocalDofs )
+        {
+          return makeRangeValueVector( maxNumLocalDofs, RangeValueIndices() );
+        }
+
         typedef decltype( makeDomainValueVector( 0u ) ) DomainValueVectorType;
+        typedef decltype( makeRangeValueVector( 0u ) )  RangeValueVectorType;
+
+        static void resizeDomainValueVector ( DomainValueVectorType& vec, const std::size_t size )
+        {
+          Hybrid::forEach( DomainValueIndices(), [ &vec, &size ] ( auto i ) {
+              std::get< i >( vec ).resize( size );
+            } );
+        }
+
+        static void resizeRangeValueVector ( RangeValueVectorType& vec, const std::size_t size )
+        {
+          Hybrid::forEach( RangeValueIndices(), [ &vec, &size ] ( auto i ) {
+              std::get< i >( vec ).resize( size );
+            } );
+        }
+
+        template< class LocalFunction, class Quadrature >
+        static void evaluateQuadrature ( const LocalFunction &u, const Quadrature &quad, std::vector< typename LocalFunction::RangeType > &phi )
+        {
+          u.evaluateQuadrature( quad, phi );
+        }
+
+        template< class LocalFunction, class Quadrature>
+        static void evaluateQuadrature ( const LocalFunction &u, const Quadrature &quad, std::vector< typename LocalFunction::JacobianRangeType > &phi )
+        {
+          u.jacobianQuadrature( quad, phi );
+        }
+
+        template< class LocalFunction, class Quadrature >
+        static void evaluateQuadrature ( const LocalFunction &u, const Quadrature &quad, std::vector< typename LocalFunction::HessianRangeType > &phi )
+        {
+          u.hessianQuadrature( quad, phi );
+        }
 
         template< class LocalFunction, class Point >
         static void value ( const LocalFunction &u, const Point &x, typename LocalFunction::RangeType &phi )
@@ -128,6 +179,25 @@ namespace Dune
           return phi;
         }
 
+        static DomainValueType domainValue ( const unsigned int qpIdx, DomainValueVectorType& vec)
+        {
+          DomainValueType phi;
+          Hybrid::forEach( DomainValueIndices(), [ &qpIdx, &vec, &phi ] ( auto i ) {
+              std::get< i > ( phi )  = std::get< i >( vec )[ qpIdx ];
+                } );
+          return phi;
+        }
+
+        template< class LocalFunction, class Quadrature >
+        static void domainValue ( const LocalFunction &u, const Quadrature& quadrature, DomainValueVectorType &result  )
+        {
+          Hybrid::forEach( DomainValueIndices(), [ &u, &quadrature, &result ] ( auto i ) {
+              auto& vec = std::get< i >( result );
+              vec.resize( quadrature.nop() );
+              ThisType::evaluateQuadrature( u, quadrature, vec );
+            } );
+        }
+
         template< class Phi, std::size_t... i >
         static auto value ( const Phi &phi, std::size_t col, std::index_sequence< i... > )
         {
@@ -140,17 +210,36 @@ namespace Dune
           return value( phi, col, std::index_sequence_for< T... >() );
         }
 
-        int interiorQuadratureOrder( const int order ) const
+        static void assignRange( RangeValueVectorType& ranges, const std::size_t idx, const RangeValueType& range )
         {
-          return 2*order + 3;
-          //return (order == 0) ? 3 : 2*order + 1 ;
+          Hybrid::forEach( RangeValueIndices(), [ &ranges, &idx, &range ] ( auto i ) {
+              std::get< i >( ranges )[ idx ] = std::get< i >( range );
+            });
+        }
+        template <class W>
+        static void assignRange( RangeValueVectorType& ranges, const std::size_t idx, const RangeValueType& range, const W &weight )
+        {
+          Hybrid::forEach( RangeValueIndices(), [ &ranges, &idx, &range, &weight ] ( auto i ) {
+              std::get< i >( ranges )[ idx ]  = std::get< i >( range );
+              std::get< i >( ranges )[ idx ] *= weight;
+            });
         }
 
-        int surfaceQuadratureOrder( const int order ) const
+        static void assignDomain( DomainValueVectorType& domains, const std::size_t idx, const DomainValueType& domain )
         {
-          return 2*order + 3;
-          //return (order == 0) ? 3 : 2*order + 1 ;
+          Hybrid::forEach( DomainValueIndices(), [ &domains, &idx, &domain ] ( auto i ) {
+              std::get< i >( domains )[ idx ] = std::get< i >( domain );
+            });
         }
+
+        template <class W, class Quadrature>
+        static void axpyQuadrature( W& w, const Quadrature& quadrature, RangeValueVectorType& ranges )
+        {
+          Hybrid::forEach( RangeValueIndices(), [ &w, &quadrature, &ranges ] ( auto i ) {
+              w.axpyQuadrature( quadrature, std::get< i >( ranges ) );
+            } );
+        }
+
       public:
         // interior integral
 
@@ -161,17 +250,24 @@ namespace Dune
             return;
 
           const auto geometry = u.entity().geometry();
-          for( const auto qp : InteriorQuadratureType( u.entity(), interiorQuadratureOrder( w.order() ) ) )
+          InteriorQuadratureType quadrature( u.entity(), interiorQuadratureOrder(w.order()) );
+
+          // evaluate u for all quadrature points
+          DomainValueVectorType& domains = domainValues_;
+          domainValue( u, quadrature, domains );
+
+          auto& ranges = values_;
+          resizeRangeValueVector( ranges, quadrature.nop() );
+
+          // evaluate integrands for all quadrature points
+          for( const auto qp : quadrature )
           {
             const ctype weight = qp.weight() * geometry.integrationElement( qp.position() );
-
-            RangeValueType integrand = integrands_.interior( qp, domainValue( u, qp ) );
-
-            Hybrid::forEach( RangeValueIndices(), [ &qp, &w, &integrand, weight ] ( auto i ) {
-                std::get< i >( integrand ) *= weight;
-                w.axpy( qp, std::get< i >( integrand ) );
-              } );
+            assignRange( ranges, qp.index(), integrands_.interior( qp, domainValue( qp.index(), domains ) ), weight );
           }
+
+          // add to w for all quadrature points
+          axpyQuadrature( w, quadrature, ranges );
         }
 
         template< class U, class J >
@@ -184,23 +280,40 @@ namespace Dune
           const auto &domainBasis = j.domainBasisFunctionSet();
           const auto &rangeBasis = j.rangeBasisFunctionSet();
 
-          for( const auto qp : InteriorQuadratureType( u.entity(), interiorQuadratureOrder(rangeBasis.order()) ) )
+          InteriorQuadratureType quadrature( u.entity(), interiorQuadratureOrder( std::max(domainBasis.order(),rangeBasis.order()) ) );
+          const size_t domainSize = domainBasis.size();
+          const size_t quadNop = quadrature.nop();
+
+          auto& basisValues = basisValues_;
+          resizeDomainValueVector( basisValues_, domainSize );
+
+          // evaluate u for all quadrature points
+          DomainValueVectorType& domains = domainValues_;
+          domainValue( u, quadrature, domains );
+
+          rangeValues_.resize( domainSize );
+          for( std::size_t col = 0; col < domainSize; ++col )
           {
+            resizeRangeValueVector( rangeValues_[ col ], quadNop );
+          }
+
+          // evaluate all basis functions and integrands
+          for( const auto qp : quadrature )
+          {
+            values( domainBasis, qp, basisValues );
             const auto weight = qp.weight() * geometry.integrationElement( qp.position() );
-
-            values( domainBasis, qp, phi );
-            auto integrand = integrands_.linearizedInterior( qp, domainValue( u, qp ) );
-
-            for( std::size_t col = 0, cols = domainBasis.size(); col < cols; ++col )
+            auto integrand = integrands_.linearizedInterior( qp, domainValue( qp.index(), domains ) );
+            for( std::size_t col = 0; col < domainSize; ++col )
             {
-              LocalMatrixColumn< J > jCol( j, col );
-              RangeValueType intPhi = integrand( value( phi, col ) );
-
-              Hybrid::forEach( RangeValueIndices(), [ &qp, &jCol, &intPhi, weight ] ( auto i ) {
-                  std::get< i >( intPhi ) *= weight;
-                  jCol.axpy( qp, std::get< i >( intPhi ) );
-                } );
+              assignRange( rangeValues_[ col ], qp.index(), integrand( value( basisValues, col ) ), weight );
             }
+          }
+
+          // add to local matrix for all quadrature points and basis functions
+          for( std::size_t col = 0; col < domainSize; ++col )
+          {
+            LocalMatrixColumn< J > jCol( j, col );
+            axpyQuadrature( jCol, quadrature, rangeValues_[ col ] );
           }
         }
 
@@ -428,8 +541,14 @@ namespace Dune
 
         template< class... Args >
         explicit GalerkinOperator ( const GridPartType &gridPart, Args &&... args )
-          : gridPart_( gridPart ), integrands_( std::forward< Args >( args )... )
+          : gridPart_( gridPart ), integrands_( std::forward< Args >( args )... ),
+            interiorQuadOrder_(0), surfaceQuadOrder_(0)
         {}
+        void setQuadratureOrders(unsigned int interior, unsigned int surface)
+        {
+          interiorQuadOrder_ = interior;
+          surfaceQuadOrder_ = surface;
+        }
 
         IntegrandsType &model() const
         {
@@ -443,12 +562,12 @@ namespace Dune
           w.clear();
 
           TemporaryLocalFunction< typename DiscreteFunction::DiscreteFunctionSpaceType > wLocal( w.space() );
-
+          Dune::Fem::ConstLocalFunction< GridFunction > uLocal( u );
           for( const EntityType &entity : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uLocal = u.localFunction( entity );
-
-            wLocal.init( entity );
+            // const auto uLocal = u.localFunction( entity );
+            uLocal.bind( entity );
+            wLocal.bind( entity );
             wLocal.clear();
 
             if( integrands_.hasInterior() )
@@ -475,13 +594,15 @@ namespace Dune
           w.clear();
 
           TemporaryLocalFunction< typename DiscreteFunction::DiscreteFunctionSpaceType > wInside( w.space() ), wOutside( w.space() );
+          Dune::Fem::ConstLocalFunction< GridFunction > uInside( u );
 
           const auto &indexSet = gridPart().indexSet();
           for( const EntityType &inside : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uInside = u.localFunction( inside );
+            // const auto uInside = u.localFunction( inside );
 
-            wInside.init( inside );
+            uInside.bind( inside );
+            wInside.bind( inside );
             wInside.clear();
 
             if( integrands_.hasInterior() )
@@ -498,13 +619,15 @@ namespace Dune
               {
                 const EntityType &outside = intersection.outside();
 
+                Dune::Fem::ConstLocalFunction< GridFunction > uOutside( u );
+                uOutside.bind( outside );
                 if( outside.partitionType() != InteriorEntity )
-                  addSkeletonIntegral( intersection, uInside, u.localFunction( outside ), wInside );
+                  addSkeletonIntegral( intersection, uInside, uOutside, wInside );
                 else if( indexSet.index( inside ) < indexSet.index( outside ) )
                 {
-                  wOutside.init( outside );
+                  wOutside.bind( outside );
                   wOutside.clear();
-                  addSkeletonIntegral( intersection, uInside, u.localFunction( outside ), wInside, wOutside );
+                  addSkeletonIntegral( intersection, uInside, uOutside, wInside, wOutside );
                   w.addLocalDofs( outside, wOutside.localDofVector() );
                 }
               }
@@ -545,10 +668,12 @@ namespace Dune
           DomainValueVectorType phi = makeDomainValueVector( maxNumLocalDofs );
 
           TemporaryLocalMatrixType jOpLocal( jOp.domainSpace(), jOp.rangeSpace() );
+          Dune::Fem::ConstLocalFunction< GridFunction > uLocal( u );
 
           for( const EntityType &entity : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uLocal = u.localFunction( entity );
+            // const auto uLocal = u.localFunction( entity );
+            uLocal.bind( entity );
 
             jOpLocal.init( entity, entity );
             jOpLocal.clear();
@@ -567,8 +692,6 @@ namespace Dune
 
             jOp.addLocalMatrix( entity, entity, jOpLocal );
           }
-
-          jOp.communicate();
         }
 
         template< class GridFunction, class JacobianOperator >
@@ -586,11 +709,13 @@ namespace Dune
 
           TemporaryLocalMatrixType jOpInIn( jOp.domainSpace(), jOp.rangeSpace() ), jOpOutIn( jOp.domainSpace(), jOp.rangeSpace() );
           TemporaryLocalMatrixType jOpInOut( jOp.domainSpace(), jOp.rangeSpace() ), jOpOutOut( jOp.domainSpace(), jOp.rangeSpace() );
+          Dune::Fem::ConstLocalFunction< GridFunction > uIn( u );
 
           const auto &indexSet = gridPart().indexSet();
           for( const EntityType &inside : elements( gridPart(), Partitions::interiorBorder ) )
           {
-            const auto uIn = u.localFunction( inside );
+            // const auto uIn = u.localFunction( inside );
+            uIn.bind( inside );
 
             jOpInIn.init( inside, inside );
             jOpInIn.clear();
@@ -612,8 +737,11 @@ namespace Dune
                 jOpOutIn.init( outside, inside );
                 jOpOutIn.clear();
 
+                Dune::Fem::ConstLocalFunction< GridFunction > uOut( u );
+                uOut.bind( outside );
+
                 if( outside.partitionType() != InteriorEntity )
-                  addLinearizedSkeletonIntegral( intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn );
+                  addLinearizedSkeletonIntegral( intersection, uIn, uOut, phiIn, phiOut, jOpInIn, jOpOutIn );
                 else if( indexSet.index( inside ) < indexSet.index( outside ) )
                 {
                   jOpInOut.init( inside, outside );
@@ -621,7 +749,7 @@ namespace Dune
                   jOpOutOut.init( outside, outside );
                   jOpOutOut.clear();
 
-                  addLinearizedSkeletonIntegral( intersection, uIn, u.localFunction( outside ), phiIn, phiOut, jOpInIn, jOpOutIn, jOpInOut, jOpOutOut );
+                  addLinearizedSkeletonIntegral( intersection, uIn, uOut, phiIn, phiOut, jOpInIn, jOpOutIn, jOpInOut, jOpOutOut );
 
                   jOp.addLocalMatrix( inside, outside, jOpInOut );
                   jOp.addLocalMatrix( outside, outside, jOpOutOut );
@@ -633,8 +761,6 @@ namespace Dune
 
             jOp.addLocalMatrix( inside, inside, jOpInIn );
           }
-
-          jOp.communicate();
         }
 
       public:
@@ -649,15 +775,30 @@ namespace Dune
             assemble( u, jOp, std::true_type() );
           else
             assemble( u, jOp, std::false_type() );
+
+          // note: assembly done without local contributions so need
+          // to call flush assembly
+          jOp.flushAssembly();
         }
 
         // accessors
 
         const GridPartType &gridPart () const { return gridPart_; }
 
+        unsigned int interiorQuadratureOrder(unsigned int order) const { return interiorQuadOrder_==0 ? 2*order+3:interiorQuadOrder_; }
+        unsigned int surfaceQuadratureOrder(unsigned int order)  const { return surfaceQuadOrder_==0 ? 2*order+3:surfaceQuadOrder_; }
+
       private:
         const GridPartType &gridPart_;
         mutable IntegrandsType integrands_;
+        unsigned int interiorQuadOrder_;
+        unsigned int surfaceQuadOrder_;
+
+        mutable std::vector< RangeValueVectorType > rangeValues_;
+        mutable RangeValueVectorType  values_;
+        mutable DomainValueVectorType basisValues_;
+        mutable DomainValueVectorType domainValues_;
+
       };
 
     } // namespace Impl
@@ -683,6 +824,8 @@ namespace Dune
       explicit GalerkinOperator ( const GridPartType &gridPart, Args &&... args )
         : impl_( gridPart, std::forward< Args >( args )... )
       {}
+
+      void setQuadratureOrders(unsigned int interior, unsigned int surface) { impl_.setQuadratureOrders(interior,surface); }
 
       virtual void operator() ( const DomainFunctionType &u, RangeFunctionType &w ) const final override
       {
@@ -722,13 +865,13 @@ namespace Dune
 
       typedef typename BaseType::DomainFunctionType DomainFunctionType;
       typedef typename BaseType::RangeFunctionType RangeFunctionType;
-      typedef typename DomainFunctionType::DiscreteFunctionSpaceType DomainSpaceType;
-      typedef typename RangeFunctionType::DiscreteFunctionSpaceType RangeSpaceType;
+      typedef typename DomainFunctionType::DiscreteFunctionSpaceType DomainDiscreteFunctionSpaceType;
+      typedef typename RangeFunctionType::DiscreteFunctionSpaceType RangeDiscreteFunctionSpaceType;
 
       typedef typename BaseType::GridPartType GridPartType;
 
       template< class... Args >
-      explicit DifferentiableGalerkinOperator ( const DomainSpaceType &dSpace, const RangeSpaceType &rSpace,
+      explicit DifferentiableGalerkinOperator ( const DomainDiscreteFunctionSpaceType &dSpace, const RangeDiscreteFunctionSpaceType &rSpace,
                        Args &&... args )
         : BaseType( rSpace.gridPart(), std::forward< Args >( args )... ),
           dSpace_(dSpace), rSpace_(rSpace)
@@ -745,19 +888,19 @@ namespace Dune
         impl_.assemble( u, jOp );
       }
 
-      const DomainSpaceType& domainSpace() const
+      const DomainDiscreteFunctionSpaceType& domainSpace() const
       {
         return dSpace_;
       }
-      const RangeSpaceType& rangeSpace() const
+      const RangeDiscreteFunctionSpaceType& rangeSpace() const
       {
         return rSpace_;
       }
 
     protected:
       using BaseType::impl_;
-      const DomainSpaceType &dSpace_;
-      const RangeSpaceType &rSpace_;
+      const DomainDiscreteFunctionSpaceType &dSpace_;
+      const RangeDiscreteFunctionSpaceType &rSpace_;
     };
 
 
@@ -813,16 +956,6 @@ namespace Dune
       {
         (*this).jacobian( u, jOp );
       }
-#if 0
-      void setConstraints( DiscreteFunctionType &u ) const
-      {}
-      void setConstraints( const RangeType &value, DiscreteFunctionType &u ) const
-      {}
-      void setConstraints( const DiscreteFunctionType &u, DiscreteFunctionType &v ) const
-      {}
-      void addConstraints( const DiscreteFunctionType &u, DiscreteFunctionType &v ) const
-      {}
-#endif
     };
 
 
@@ -842,14 +975,15 @@ namespace Dune
       typedef typename DifferentiableOperatorType::DomainFunctionType DomainFunctionType;
       typedef typename DifferentiableOperatorType::RangeFunctionType RangeFunctionType;
       typedef typename DifferentiableOperatorType::JacobianOperatorType LinearOperatorType;
+      typedef typename DifferentiableOperatorType::JacobianOperatorType JacobianOperatorType;
 
       typedef RangeFunctionType DiscreteFunctionType;
+      typedef typename RangeFunctionType::DiscreteFunctionSpaceType RangeFunctionSpaceType;
+      typedef typename RangeFunctionType::DiscreteFunctionSpaceType DomainFunctionSpaceType;
       typedef typename RangeFunctionType::DiscreteFunctionSpaceType DiscreteFunctionSpaceType;
 
       typedef typename DiscreteFunctionSpaceType::FunctionSpaceType FunctionSpaceType;
       typedef typename DiscreteFunctionSpaceType::GridPartType GridPartType;
-
-      typedef LinearOperator JacobianOperatorType;
 
       typedef Dune::Fem::NewtonInverseOperator< LinearOperatorType, InverseOperator > NewtonOperatorType;
       typedef InverseOperator LinearInverseOperatorType;
@@ -869,11 +1003,13 @@ namespace Dune
         : dfSpace_( dfSpace ),
           fullOperator_( dfSpace, dfSpace, std::move( integrands ) ),
           parameter_( std::move( parameter ) ),
-          linearOperator_( "assembled elliptic operator", dfSpace, dfSpace ),
           invOp_(parameter_)
       {}
 
+      void setQuadratureOrders(unsigned int interior, unsigned int surface) { fullOperator().setQuadratureOrders(interior,surface); }
+
       const DifferentiableOperatorType &fullOperator() const { return fullOperator_; }
+      DifferentiableOperatorType &fullOperator() { return fullOperator_; }
 
       void constraint ( DiscreteFunctionType &u ) const {}
 
@@ -897,6 +1033,7 @@ namespace Dune
         invOp_.unbind();
         return SolverInfo( invOp_.converged(), invOp_.linearIterations(), invOp_.iterations() );
       }
+
       SolverInfo solve ( DiscreteFunctionType &solution ) const
       {
         DiscreteFunctionType bnd( solution );
@@ -905,10 +1042,9 @@ namespace Dune
       }
 
       template< class GridFunction >
-      const LinearOperatorType &assemble ( const GridFunction &ubar )
+      void jacobian( const GridFunction &ubar, LinearOperatorType &linearOp) const
       {
-        fullOperator().jacobian( ubar, linearOperator_ );
-        return linearOperator_;
+        fullOperator().jacobian( ubar, linearOp );
       }
 
       const DiscreteFunctionSpaceType &space () const { return dfSpace_; }
@@ -935,6 +1071,7 @@ namespace Dune
       {
         fullOperator().subConstraints( u, v );
       }
+
     protected:
       std::enable_if_t<addDirichletBC,void>
       setZeroConstraints( DiscreteFunctionType &u ) const { fullOperator().setConstraints( typename DiscreteFunctionType::RangeType(0), u ); }
@@ -942,7 +1079,6 @@ namespace Dune
       const DiscreteFunctionSpaceType &dfSpace_;
       DifferentiableOperatorType fullOperator_;
       ParameterReader parameter_;
-      LinearOperatorType linearOperator_;
       mutable NewtonOperatorType invOp_;
     };
 

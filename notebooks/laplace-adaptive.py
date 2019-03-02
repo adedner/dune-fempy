@@ -1,6 +1,6 @@
-
 # coding: utf-8
 
+# <markdowncell>
 # # Adaptive Finite Element [(Notebook)][1]
 #
 # [1]: _downloads/laplace-adaptive.ipynb
@@ -19,8 +19,7 @@
 # \end{gather}
 #
 # We first define the domain and set up the grid and space
-
-# In[1]:
+# <codecell>
 
 
 try:
@@ -30,11 +29,15 @@ except:
 import math
 import numpy
 import matplotlib.pyplot as pyplot
-import dune.create as create
-from dune.fem.view import adaptiveLeafGridView
+from dune.fem.view     import adaptiveLeafGridView as gridView
+from dune.fem.space    import lagrange      as solutionSpace
+from dune.fem.space    import finiteVolume  as estimatorSpace
+from dune.fem.scheme   import galerkin      as solutionScheme
+from dune.fem.operator import galerkin      as estimatorOperator
 from dune.fem.plotting import plotPointData as plot
+from dune.plotting     import block
 import dune.grid as grid
-import dune.fem as fem
+import dune.fem  as fem
 
 # set the angle for the corner (0<angle<=360)
 cornerAngle = 320.
@@ -51,21 +54,20 @@ for i in range(0,7):
                      math.sin(cornerAngle/6*math.pi/180*i)]
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-view = create.view("adaptive", "ALUConform", domain)
+view = gridView("ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
-spc  = create.space( "lagrange", view, dimrange=1, order=order )
+space  = solutionSpace( view, dimrange=1, order=order, storage="fem" )
 
-
+# <markdowncell>
 # Next define the model together with the exact solution.
-
-# In[2]:
+# <codecell>
 
 
 from ufl import *
 from dune.ufl import DirichletBC
-u = TrialFunction(spc)
-v = TestFunction(spc)
-x = SpatialCoordinate(spc.cell())
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space.cell())
 
 # exact solution for this angle
 Phi = cornerAngle / 180 * math.pi
@@ -74,10 +76,10 @@ exact = as_vector([inner(x,x)**(math.pi/2/Phi) * sin(math.pi/Phi * phi)])
 a = inner(grad(u), grad(v)) * dx
 
 # set up the scheme
-laplace = create.scheme("galerkin", [a==0, DirichletBC(spc,exact,1)], spc)
-uh = spc.interpolate(lambda x: [0], name="solution")
+laplace = solutionScheme([a==0, DirichletBC(space,exact,1)], space)
+uh = space.interpolate([0], name="solution")
 
-
+# <markdowncell>
 # Theory tells us that
 # \begin{align*}
 #   \int_\Omega \nabla(u-u_h) \leq \sum_K \eta_K
@@ -96,22 +98,20 @@ uh = spc.interpolate(lambda x: [0], name="solution")
 # \end{align*}
 # where $\{\cdot\}$ is the average over the cell edges. This bilinear form can be easily written in UFL and by using it to define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
-
-# In[3]:
-
+# <codecell>
 
 # energy error
 h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
-fvspc = create.space("finitevolume", view, dimrange=1)
-estimate = fvspc.interpolate([0], name="estimate")
+fvspace = estimatorSpace(view, dimrange=1)
+estimate = fvspace.interpolate([0], name="estimate")
 
-hT = MaxCellEdgeLength(spc.cell())
-he = MaxFacetEdgeLength(spc.cell())('+')
-n = FacetNormal(spc.cell())
-estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx                 + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
-estimator = create.operator("galerkin", estimator_ufl, spc, fvspc)
+hT = MaxCellEdgeLength(space.cell())
+he = MaxFacetEdgeLength(space.cell())('+')
+n = FacetNormal(space.cell())
+estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx + he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
+estimator = estimatorOperator(estimator_ufl, space, fvspace)
 
 # marking strategy (equidistribution)
 tolerance = 0.1
@@ -120,8 +120,9 @@ def mark(element):
     estLocal = estimate(element, element.geometry.referenceElement.center)
     return grid.Marker.refine if estLocal[0] > tolerance / gridSize else grid.Marker.keep
 
-
-# In[4]:
+# <markdowncell>
+# Let's look at the result:
+# <codecell>
 
 
 # adaptive loop (solve, mark, estimate)
@@ -130,7 +131,7 @@ count = 0
 while count < 20:
     laplace.solve(target=uh)
     if count%3 == 0:
-        pyplot.show()
+        pyplot.show(block=block)
         pyplot.close('all')
         fig = pyplot.figure(figsize=(10,10))
     plot(uh,figure=(fig,131+count%3), colorbar=False)
@@ -146,32 +147,29 @@ while count < 20:
         uh.interpolate([0])  # initial guess needed
     else:
         marked = view.hierarchicalGrid.mark(mark)
-        fem.adapt(view.hierarchicalGrid, [uh])
-        fem.loadBalance(view.hierarchicalGrid, [uh])
+        fem.adapt(uh)
+        fem.loadBalance(uh)
     gridSize = view.size(0)
-    laplace.solve( target=uh )
     count += 1
-pyplot.show()
+
+pyplot.show(block=block)
 pyplot.close('all')
 
-
+# <markdowncell>
 # Let's have a look at the center of the domain:
-
-# In[5]:
+# <codecell>
 
 
 fig = pyplot.figure(figsize=(15,15))
 plot(uh, figure=(fig,131+0), xlim=(-0.5,0.5), ylim=(-0.5,0.5),colorbar={"shrink":0.3})
 plot(uh, figure=(fig,131+1), xlim=(-0.25,0.25), ylim=(-0.25,0.25),colorbar={"shrink":0.3})
 plot(uh, figure=(fig,131+2), xlim=(-0.125,0.125), ylim=(-0.125,0.125),colorbar={"shrink":0.3})
-pyplot.show()
+pyplot.show(block=block)
 pyplot.close('all')
 
-
+# <markdowncell>
 # Finally, let us have a look at the grid levels:
-
-# In[ ]:
-
+# <codecell>
 
 from dune.fem.function import levelFunction
 plot(levelFunction(view), xlim=(-0.2,1), ylim=(-0.2,1))

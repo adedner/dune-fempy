@@ -1,3 +1,13 @@
+- grid marking
+  - method with vector of <-1 >1
+  - ufl expression which evaluates to <-1 and >1
+  - callback
+  could pass in double vector, grid function and refTol,crsTol with default 1 and -1?
+- evaluate function for matrix, functionals, functions
+- remove create
+- provide mechanism to set CXXFLAGS pass during code generation
+
+
 Further Schemes etc:
 - vem scheme (needs special grid part for polygon)
 - nvdg scheeme (needs A(u,grad u) term for hessian multiplication in model

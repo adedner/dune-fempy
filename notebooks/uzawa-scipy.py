@@ -6,6 +6,7 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
                 inner, dot, div, grad, dx, as_vector, transpose, Identity
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
+from dune.fem.operator import linear as linearOperator
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
@@ -31,12 +32,12 @@ massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
 # can also use 'operator' everywhere
-mainOp      = create.scheme("galerkin",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
-# mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)))
+mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
+# mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
 gradOp      = create.operator("h1",gradModel,spcP,spcU)
 divOp       = create.operator("galerkin",divModel,spcU,spcP)
-massOp      = create.scheme("galerkin",spcP,massModel==0)
-preconOp    = create.scheme("h1",spcP,preconModel==0)
+massOp      = create.scheme("galerkin",massModel==0,spcP)
+preconOp    = create.scheme("h1",preconModel==0,spcP)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -54,11 +55,11 @@ r      = numpy.copy(rhs_p)
 d      = numpy.copy(rhs_p)
 precon = numpy.copy(rhs_p)
 xi     = numpy.copy(rhs_u)
-A      = mainOp.assemble(velocity).as_numpy
-G      = gradOp.assemble(pressure).as_numpy
-D      = divOp.assemble(velocity).as_numpy
-M      = massOp.assemble(pressure).as_numpy
-P      = preconOp.assemble(pressure).as_numpy
+A = linearOperator(mainOp).as_numpy
+G = linearOperator(gradOp).as_numpy
+D = linearOperator(divOp).as_numpy
+M = linearOperator(massOp).as_numpy
+P = linearOperator(preconOp).as_numpy
 def Ainv(rhs,target): target[:] = linalg.spsolve(A,rhs)
 def Minv(rhs,target): target[:] = linalg.spsolve(M,rhs)
 def Pinv(rhs,target): target[:] = linalg.spsolve(P,rhs)

@@ -42,6 +42,7 @@
 
 #include <cstddef>
 
+#include <dune/common/timer.hh>
 #include <dune/common/fmatrix.hh>
 
 #include <dune/fem/quadrature/cachingquadrature.hh>
@@ -54,9 +55,13 @@
 
 #include <dune/fem/operator/common/differentiableoperator.hh>
 
+
 // include parameter handling
 #include <dune/fem/io/parameter.hh>
 #include <dune/fem/io/file/dataoutput.hh>
+
+// fempy includes
+#include <dune/fempy/quadrature/fempyquadratures.hh>
 
 // EllipticOperator
 // ----------------
@@ -90,8 +95,8 @@ struct EllipticOperator
   typedef typename GridPartType::IntersectionIteratorType IntersectionIteratorType;
   typedef typename IntersectionIteratorType::Intersection IntersectionType;
 
-  typedef Dune::Fem::CachingQuadrature< GridPartType, 0 > QuadratureType;
-  typedef Dune::Fem::CachingQuadrature< GridPartType, 1 > FaceQuadratureType;
+  typedef Dune::Fem::CachingQuadrature< GridPartType, 0, Dune::FemPy::FempyQuadratureTraits > QuadratureType;
+  typedef Dune::Fem::CachingQuadrature< GridPartType, 1, Dune::FemPy::FempyQuadratureTraits > FaceQuadratureType;
 
   EllipticOperator ( const RangeDiscreteFunctionSpaceType &rangeSpace,
                      ModelType &model,
@@ -104,23 +109,9 @@ struct EllipticOperator
                      ModelType &model,
                      const Dune::Fem::ParameterReader &parameter = Dune::Fem::Parameter::container() )
     : model_( model ),
-      dSpace_(dSpace), rSpace_(rSpace)
+      dSpace_(dSpace), rSpace_(rSpace),
+      interiorOrder_(-1), surfaceOrder_(-1)
   {}
-
-#if 0
-  // prepare the solution vector
-  void setConstraints( DomainFunctionType &u ) const
-  { }
-  // prepare the solution vector
-  void setConstraints( const DomainRangeType &value, DomainFunctionType &u ) const
-  { }
-  template <class GF>
-  void setConstraints( const GF &u, RangeFunctionType &w ) const
-  { }
-  template <class GF>
-  void subConstraints( const GF &u, RangeFunctionType &w ) const
-  { }
-#endif
 
   //! application operator
   virtual void operator() ( const DomainFunctionType &u, RangeFunctionType &w ) const
@@ -141,6 +132,14 @@ struct EllipticOperator
   }
   ModelType &model () const { return model_; }
 
+  void setQuadratureOrders(unsigned int interior, unsigned int surface)
+  {
+    interiorOrder_ = interior;
+    surfaceOrder_ = surface;
+  }
+
+protected:
+  int interiorOrder_, surfaceOrder_;
 private:
   ModelType &model_;
   const DomainDiscreteFunctionSpaceType &dSpace_;
@@ -214,6 +213,8 @@ struct DifferentiableEllipticOperator
   using BaseType::operator();
 
   using BaseType::model;
+  using BaseType::interiorOrder_;
+  using BaseType::surfaceOrder_;
 };
 
 
@@ -247,7 +248,8 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model >
     auto wGuard = Dune::Fem::bindGuard( wLocal, entity );
 
     // obtain quadrature order
-    const int quadOrder = uLocal.order() + wLocal.order();
+    const int quadOrder = interiorOrder_==-1?
+      uLocal.order() + wLocal.order() : interiorOrder_;
 
     { // element integral
       QuadratureType quadrature( entity, quadOrder );
@@ -294,6 +296,8 @@ void EllipticOperator< DomainDiscreteFunction, RangeDiscreteFunction, Model >
         const bool hasDirichletComponent = model().isDirichletIntersection( intersection, components );
 
         const auto &intersectionGeometry = intersection.geometry();
+        const int quadOrder = surfaceOrder_==-1?
+          uLocal.order() + wLocal.order() : surfaceOrder_;
         FaceQuadratureType quadInside( dfSpace.gridPart(), intersection, quadOrder, FaceQuadratureType::INSIDE );
         const std::size_t numQuadraturePoints = quadInside.nop();
         for( std::size_t pt = 0; pt < numQuadraturePoints; ++pt )
@@ -327,6 +331,8 @@ template<class GF>
 void DifferentiableEllipticOperator< JacobianOperator, Model >
   ::assemble ( const GF &u, JacobianOperator &jOp ) const
 {
+  // std::cout << "starting assembly\n";
+  // Dune::Timer timer;
   typedef typename JacobianOperator::LocalMatrixType LocalMatrixType;
   typedef typename DomainDiscreteFunctionSpaceType::BasisFunctionSetType DomainBasisFunctionSetType;
   typedef typename RangeDiscreteFunctionSpaceType::BasisFunctionSetType  RangeBasisFunctionSetType;
@@ -346,6 +352,7 @@ void DifferentiableEllipticOperator< JacobianOperator, Model >
   std::vector< typename RangeLocalFunctionType::JacobianRangeType > rdphi( rangeSpace.blockMapper().maxNumDofs()*rangeBlockSize );
 
   Dune::Fem::ConstLocalFunction< GF > uLocal( u );
+  // std::cout << "   in assembly: start element loop size=" << rangeSpace.gridPart().grid().size(0) << " time=  " << timer.elapsed() << std::endl;;
   for( const EntityType &entity : rangeSpace )
   {
     if( !model().init( entity ) )
@@ -360,7 +367,9 @@ void DifferentiableEllipticOperator< JacobianOperator, Model >
     const RangeBasisFunctionSetType &rangeBaseSet  = jLocal.rangeBasisFunctionSet();
     const std::size_t domainNumBasisFunctions = domainBaseSet.size();
 
-    QuadratureType quadrature( entity, domainSpace.order()+rangeSpace.order() );
+    const int quadOrder = interiorOrder_==-1?
+      domainSpace.order() + rangeSpace.order() : interiorOrder_;
+    QuadratureType quadrature( entity, quadOrder );
     const size_t numQuadraturePoints = quadrature.nop();
     for( size_t pt = 0; pt < numQuadraturePoints; ++pt )
     {
@@ -411,7 +420,9 @@ void DifferentiableEllipticOperator< JacobianOperator, Model >
         bool hasDirichletComponent = model().isDirichletIntersection( intersection, components );
 
         const auto &intersectionGeometry = intersection.geometry();
-        FaceQuadratureType quadInside( rangeSpace.gridPart(), intersection, domainSpace.order()+rangeSpace.order(), FaceQuadratureType::INSIDE );
+        const int quadOrder = surfaceOrder_==-1?
+          domainSpace.order() + rangeSpace.order() : surfaceOrder_;
+        FaceQuadratureType quadInside( rangeSpace.gridPart(), intersection, quadOrder, FaceQuadratureType::INSIDE );
         const std::size_t numQuadraturePoints = quadInside.nop();
         for( std::size_t pt = 0; pt < numQuadraturePoints; ++pt )
         {
@@ -433,6 +444,7 @@ void DifferentiableEllipticOperator< JacobianOperator, Model >
       }
     }
   } // end grid traversal
-  jOp.communicate();
+  // std::cout << "   in assembly: final    " << timer.elapsed() << std::endl;;
+  jOp.flushAssembly();
 }
 #endif // #ifndef DUNE_FEM_SCHEMES_ELLIPTIC_HH

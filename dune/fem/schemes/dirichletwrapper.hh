@@ -17,48 +17,11 @@
 
 #include <dune/fem/schemes/dirichletconstraints.hh>
 #include <dune/fem/io/parameter.hh>
-#include <dune/fem/io/file/dataoutput.hh>
-
-#if 0
-struct NoConstraints
-{
-  enum Operation { set = 0, sub = 1 };
-
-  template <class ModelType, class DiscreteFunctionSpaceType>
-  NoConstraints( const ModelType&, const DiscreteFunctionSpaceType& )
-  {}
-
-  template < class DiscreteFunctionType >
-  void operator ()( const DiscreteFunctionType& u) const
-  {}
-
-  template < class DiscreteFunctionType >
-  void operator ()( const typename DiscreteFunctionType::RangeType& value, DiscreteFunctionType& w ) const
-  {}
-
-  template < class GridFunctionType, class DiscreteFunctionType >
-  void operator ()( const GridFunctionType& u, DiscreteFunctionType& w, Operation op ) const
-  {}
-
-  template <class LinearOperator>
-  void applyToOperator( LinearOperator& linearOperator ) const
-  {}
-};
-
-template< class DomainDiscreteFunction, class RangeDiscreteFunction, class Model>
-using DirichletBC = Dune::DirichletConstraints< Model, typename DomainDiscreteFunction::DiscreteFunctionSpaceType >;
-template< class DomainDiscreteFunction, class RangeDiscreteFunction, class Model>
-using NoBC = NoConstraints;
-template< class DomainDiscreteFunction, class RangeDiscreteFunction, class Model>
-using DefaultBC = std::conditional_t<
-    Model::dimD >= DomainDiscreteFunction::DiscreteFunctionSpaceType::localBlockSize
-    && std::is_same<DomainDiscreteFunction,RangeDiscreteFunction>::value,
-      DirichletBC<DomainDiscreteFunction,RangeDiscreteFunction,Model>,
-      NoBC<DomainDiscreteFunction,RangeDiscreteFunction,Model> >;
-#endif
 
 
-template< class Operator >
+template< class Operator,
+  class Constraints = Dune::DirichletConstraints< typename Operator::ModelType, typename Operator::RangeDiscreteFunctionSpaceType >
+  >
 struct DirichletWrapperOperator
 : public Dune::Fem::DifferentiableOperator< typename Operator::JacobianOperatorType >
 {
@@ -70,35 +33,33 @@ struct DirichletWrapperOperator
   typedef typename RangeFunctionType::DiscreteFunctionSpaceType RangeDiscreteFunctionSpaceType;
   typedef typename Operator::JacobianOperatorType JacobianOperatorType;
   typedef typename RangeDiscreteFunctionSpaceType::RangeType DomainRangeType;
-  typedef Dune::DirichletConstraints< ModelType, RangeDiscreteFunctionSpaceType > ConstraintsType;
+  typedef Constraints ConstraintsType;
 
   template <class... Args>
   DirichletWrapperOperator ( Args&&... args )
     : op_( std::forward<Args&>(args)... ) , constraints_( op_.model(), op_.rangeSpace() )
   {}
 
-  // prepare the solution vector
   void setConstraints( DomainFunctionType &u ) const
   {
-    // set boundary values for solution
+    // set boundary values for solution from model
     constraints()( u );
   }
-  // prepare the solution vector
   void setConstraints( const DomainRangeType &value, DomainFunctionType &u ) const
   {
-    // set boundary values for solution
+    // set values for solution to a given constant value
     constraints()( value, u );
   }
   template <class GF>
   void setConstraints( const GF &u, RangeFunctionType &w ) const
   {
-    // set boundary values for solution
+    // set boundary values for solution from a general grid function
     constraints()( u, w, ConstraintsType::Operation::set );
   }
   template <class GF>
   void subConstraints( const GF &u, RangeFunctionType &w ) const
   {
-    // set boundary values for solution
+    // subtract boundary values from solution
     constraints()( u, w, ConstraintsType::Operation::sub );
   }
 
@@ -120,6 +81,7 @@ struct DirichletWrapperOperator
   {
     op_.jacobian(u,jOp);
     constraints().applyToOperator( jOp );
+    jOp.flushAssembly();
   }
   template <class GridFunctionType>
   auto jacobian ( const GridFunctionType &u, JacobianOperatorType &jOp ) const
@@ -127,6 +89,7 @@ struct DirichletWrapperOperator
   {
     op_.jacobian(u,jOp);
     constraints().applyToOperator( jOp );
+    jOp.flushAssembly();
   }
 
   const DomainDiscreteFunctionSpaceType& domainSpace() const
@@ -136,6 +99,13 @@ struct DirichletWrapperOperator
   const RangeDiscreteFunctionSpaceType& rangeSpace() const
   {
     return op_.rangeSpace();
+  }
+
+  template <typename O = Operator>
+  auto setQuadratureOrders(unsigned int interior, unsigned int surface)
+  -> Dune::void_t< decltype( std::declval< O >().setQuadratureOrders(0,0) ) >
+  {
+    return op_.setQuadratureOrders(interior,surface);
   }
 
   ModelType &model () const { return op_.model(); }

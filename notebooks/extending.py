@@ -39,7 +39,7 @@ def p1Bubble(gridview, dimrange, storage=None):
 
     # Now add the information required for the binding - first the file containing the bindings
     includes = includes + ["dune/fempy/py/space.hh"]
-    spc = module("double", includes, typeName).Space(gridview)
+    spc = module("double", includes, typeName, ctorArgs=[gridview])
     addStorage(spc, storage)
     return spc
 
@@ -52,7 +52,7 @@ import dune.grid as grid
 grid = create.grid("ALUConform", grid.cartesianDomain([0, 0], [1, 1], [4, 4]), dimgrid=2)
 space = p1Bubble(grid,1)
 print("size of the discrete space: ", space.size)
-print("should be one per vertex and one per element: ", grid.size(0)+grid.size(2))
+print("should be one per vertex and one per element, i.e., equal to ", grid.size(0)+grid.size(2))
 
 
 # In the `load` method it is also possible to provide additional constructors and methods which will be added to the generated python class. Assume for example that our space takes in addition to the `GridView` instance an additional integer:

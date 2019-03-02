@@ -88,6 +88,13 @@ namespace Dune
         DUNE_THROW( NotImplemented, "SimpleLocalFunction::hessian not implemented" );
       }
 
+      template< class Quadrature, class Hessians >
+      void hessianQuadrature ( const Quadrature &quadrature, Hessians &hessians ) const
+      {
+        for( const auto qp : quadrature )
+          hessian( qp, hessians[ qp.index() ] );
+      }
+
       int order () const { return order_; }
 
       const EntityType &entity () const { assert( entity_ ); return *entity_; }
@@ -125,9 +132,13 @@ namespace Dune
     {
       typedef SimpleGridFunction< GridPart, LocalEvaluator > This;
       typedef Fem::Function< typename SimpleLocalFunction< GridPart, LocalEvaluator >::FunctionSpaceType, SimpleGridFunction< GridPart, LocalEvaluator > > Base;
+      // typedef typename SimpleLocalFunction< GridPart, LocalEvaluator >::FunctionSpaceType FunctionSpaceType;
 
       struct Space
       {
+        typedef typename SimpleLocalFunction< GridPart, LocalEvaluator >::FunctionSpaceType FunctionSpaceType;
+        typedef GridPart GridPartType;
+        static const int dimRange = FunctionSpaceType::RangeType::dimension;
         Space(const GridPart &gridPart, int o)
           : gp_(gridPart), o_(o) {}
         int order() const
@@ -142,6 +153,7 @@ namespace Dune
         int o_;
       };
     public:
+      typedef Space DiscreteFunctionSpaceType;
       typedef GridPart GridPartType;
 
       typedef SimpleLocalFunction< GridPart, LocalEvaluator > LocalFunctionType;
@@ -150,6 +162,7 @@ namespace Dune
 
       typedef typename Base::DomainType DomainType;
       typedef typename Base::RangeType RangeType;
+      typedef typename RangeType::field_type RangeFieldType;
       typedef typename Base::JacobianRangeType JacobianRangeType;
 
       static const int dimRange = RangeType::dimension;

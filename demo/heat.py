@@ -13,10 +13,7 @@ theta = 0.5
 deltaT = 0.01
 
 import dune.fem
-dune.fem.parameter.append({"fem.verboserank": 0,
-                           "istl.preconditioning.method": "ilu",
-                           "istl.preconditioning.iterations": 1,
-                           "istl.preconditioning.relaxation": 1.2})
+dune.fem.parameter.append({"fem.verboserank": 0})
 
 def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
@@ -51,11 +48,11 @@ def compute():
     model.setConstant(tau, deltaT)
 
     # setup structure for olver parameters
-    solverParameter={"fem.solver.newton.linabstol": 1e-13,
-                     "fem.solver.newton.linreduction": 1e-13,
-                     "fem.solver.newton.tolerance": 1e-12,
-                     "fem.solver.newton.verbose": "true",
-                     "fem.solver.newton.linear.verbose": "false"}
+    solverParameter = {"tolerance": 1e-10, "verbose": "true",
+                       "linear.absolutetol": 1e-11, "linear.reductiontol": 1e-11,
+                       "linear.preconditioning.method": "ilu",
+                       "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
+                       "linear.verbose": "false"}
     # create the solver using a standard fem scheme
     # scheme = create.scheme("h1", spc, model, parameters=solverParameter)
     # scheme = create.scheme("h1galerkin", spc, model, parameters=solverParameter)

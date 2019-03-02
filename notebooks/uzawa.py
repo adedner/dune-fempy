@@ -1,3 +1,5 @@
+# NOTE: there is some issue with failing convergence when using solver=cg -
+# it should work...
 import dune.create as create
 from dune.grid import cartesianDomain
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
@@ -5,12 +7,22 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import NamedConstant, DirichletBC
 import dune.fem
 from dune.fem import parameter
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+from dune.fem.space import lagrange  as lagrangeSpace
+from dune.fem.scheme import h1 as h1Scheme
+from dune.fem.operator import galerkin as galerkinOperator
+from dune.fem.operator import h1 as h1Operator
+from dune.fem.operator import linear as linearOperator
 
+parameter.append({"fem.verboserank": -1})
+
+storage="petsc"
+# storage="istl"
+# storage="fem"
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
-spcU = create.space("lagrange", grid, dimrange=grid.dimension, order=order, storage="istl")
-spcP = create.space("lagrange", grid, dimrange=1, order=order-1, storage="istl")
+
+spcU = lagrangeSpace(grid, dimrange=grid.dimension, order=order, storage=storage)
+spcP = lagrangeSpace(grid, dimrange=1, order=order-1, storage=storage)
 
 cell  = spcU.cell()
 x     = SpatialCoordinate(cell)
@@ -30,13 +42,20 @@ divModel    = -div(u)*q[0] * dx
 massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
+solverParameters = {}
+if storage == "istl" :
+    solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
+
 # can use 'h1' or 'galerkin'
-# mainOp      = create.scheme("h1",spcU,(mainModel==0,DirichletBC(spcU,exact_u,1)), solver="cg")
-mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)))
-gradOp      = create.operator("h1",gradModel)
-divOp       = create.operator("galerkin",divModel)
-massOp      = create.scheme("galerkin",massModel==0)
-preconOp    = create.scheme("h1",preconModel==0)
+mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
+# mainOp      = h1Scheme((mainModel==0,DirichletBC(spcU,exact_u,1),spcU),
+                        solver="cg", parameters=solverParameters)
+gradOp      = h1Operator(gradModel)
+divOp       = galerkinOperator(divModel)
+massOp      = h1Scheme(massModel==0,
+                       solver="gmres", parameters=solverParameters)
+preconOp    = h1Scheme(preconModel==0,
+                       solver="cg", parameters=solverParameters)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -51,16 +70,18 @@ d      = rhsPress.copy()
 precon = rhsPress.copy()
 xi     = rhsVelo.copy()
 
-# Question: should assemble method also provide the affine shift?
-A      = mainOp.assemble(velocity)
-G      = gradOp.assemble(pressure)
-D      = divOp.assemble(velocity)
-M      = massOp.assemble(pressure)
-P      = preconOp.assemble(pressure)
-solver = {"krylovmethod":"cg","fem.solver.verbose":0}
-Ainv   = mainOp.inverseLinearOperator(A,1e-10,parameters=solver)
-Minv   = massOp.inverseLinearOperator(M,1e-10,solver)
-Pinv   = preconOp.inverseLinearOperator(P,1e-10,solver)
+print("ASSEMBLE all matrices")
+A = linearOperator(mainOp)
+G = linearOperator(gradOp)
+D = linearOperator(divOp)
+M = linearOperator(massOp)
+P = linearOperator(preconOp)
+
+solver = {"method":"gmres","verbose":True,
+          "relativetol":1e-10,"absolutetol":1e-10}
+Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
+Minv   = massOp.inverseLinearOperator(M,solver)
+Pinv   = preconOp.inverseLinearOperator(P,solver)
 
 def plot(count=None):
     grid.writeVTK("Stokes",
@@ -113,8 +134,11 @@ for m in range(100):                      # for (int m=0;m<100;++m)
     oldDelta = delta                      #     double oldDelta = delta;
     delta = r.scalarProductDofs(rhsPress) #     delta = r_.scalarProductDofs(rhsP_);
     print("delta:",delta,flush=True)      #     std::cout << "delta: " << delta << std::endl;
-    if delta < 1e-14: break               #     if ( delta < solverEps_*10. ) break;
+    if delta < 1e-9: break                #     if ( delta < solverEps_*10. ) break;
     gamma = delta/oldDelta                #     double gamma = delta/oldDelta;
     d *= gamma                            #     d_ *= gamma;
     d += r                                #     d_ += r_;
 plot()
+
+# add a version that uses methods from petsc4py
+# if storage == "petsc" ...

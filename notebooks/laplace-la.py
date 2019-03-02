@@ -9,7 +9,7 @@
 # ~~~
 # spc = create.space("lagrange", grid, dimrange=1, order=1, storage="istl")
 # ~~~
-# in the above code will switch to the solvers from `dune-istl`, other options are for example `eigen` or `petsc`.
+# in the above code will switch to the solvers from `dune-istl`, other options are for example `petsc` or `eigen`.
 #
 # Using the internal `fem` storage structure or the `eigen` matrix/vector strorage
 # it is also possible to directly treate them as`numpy` vectors and an assembled system matrix can be stored in a `sympy` sparse matrix.
@@ -28,18 +28,25 @@ try:
     get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
 except:
     pass
+import sys
+import petsc4py
+from petsc4py import PETSc
+petsc4py.init(sys.argv)
+
 from dune.generator import builder
 import math
 import numpy as np
 import scipy.sparse.linalg
 import scipy.optimize
 import dune.grid
-import dune.fem
-from dune.fem.plotting import plotPointData as plot
+from dune.fem.operator import linear
 import dune.create as create
 
 from dune.ufl import Space
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, ds, dx, inner, grad
+
+import dune.fem
+dune.fem.parameter.append({"fem.verboserank": "0"})
 
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
@@ -55,10 +62,12 @@ x = SpatialCoordinate(spc.cell())
 rhs = (x[0] + x[1]) * v[0]
 a = (pow(d + inner(grad(u), grad(u)), (p-2)/2)*inner(grad(u), grad(v)) + inner(u, v)) * dx + 10*inner(u, v) * ds
 b = rhs * dx + 10*rhs * ds
-scheme = create.scheme("galerkin", a==b, spc,       parameters=       {"fem.solver.newton.linabstol": 1e-10,
-        "fem.solver.newton.linreduction": 1e-10,
-        "fem.solver.newton.verbose": 1,
-        "fem.solver.newton.linear.verbose": 0})
+parameters = {"newton.tolerance": 1e-10, "newton.verbose": True,
+              "newton.linear.tolerance": 1e-12,
+              "newton.linear.preconditioning.method": "ilu",
+              "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
+              "newton.linear.verbose": False}
+scheme = create.scheme("galerkin", a==b, spc, parameters=parameters)
 # create a discrete solution over this space - will be initialized with zero by default
 
 uh = create.function("discrete", spc, name="solution")
@@ -75,9 +84,9 @@ uh = create.function("discrete", spc, name="solution")
 # In[ ]:
 
 
-uh,info = scheme.solve(target = uh)
+info = scheme.solve(target = uh)
 print(info)
-plot(uh)
+uh.plot()
 
 
 # Instead of `scheme.solve` we now use the call operator on the `scheme` (to compute $S(u^n$) as  well as `scheme.assemble` to get a copy of the system matrix in form of a scipy sparse row matrix. Note that this method is only available if the `storage` in the space is set `eigen`.
@@ -100,18 +109,22 @@ sol_coeff = uh.as_numpy
 res_coeff = res.as_numpy
 n = 0
 
+matrix = linear(scheme)
+matrix_coeff = matrix.as_numpy
+
 while True:
     scheme(uh, res)
     absF = math.sqrt( np.dot(res_coeff,res_coeff) )
     print("iterations ("+str(n)+")",absF)
     if absF < 1e-10:
         break
-    matrix = scheme.assemble(uh).as_numpy
-    sol_coeff -= scipy.sparse.linalg.spsolve(matrix, res_coeff)
+    scheme.jacobian(uh,matrix)
+    sol_coeff -= scipy.sparse.linalg.spsolve(matrix_coeff, res_coeff)
+    # sol_coeff -= scipy.sparse.linalg.cg(matrix_coeff, res_coeff, tol=1e-10)[0]
+
     n += 1
 
-plot(uh)
-
+uh.plot()
 
 # We cam redo the above computation but now use the Newton solver available in sympy:
 
@@ -121,7 +134,7 @@ plot(uh)
 # let's first set the solution back to zero - since it already contains the right values
 uh.clear()
 def f(x_coeff):
-    x = spc.numpyFunction(x_coeff, "tmp")
+    x = spc.function("tmp", dofVector=x_coeff)
     scheme(x,res)
     return res_coeff
 # class for the derivative DS of S
@@ -129,28 +142,30 @@ class Df(scipy.sparse.linalg.LinearOperator):
     def __init__(self,x_coeff):
         self.shape = (sol_coeff.shape[0],sol_coeff.shape[0])
         self.dtype = sol_coeff.dtype
-        # the following converts a given numpy array
-        # into a discrete function over the given space
-        x = spc.numpyFunction(x_coeff, "tmp")
-        # store the assembled matrix
-        self.jac = scheme.assemble(x).as_numpy
+        # setup the assembled matrix
+        self.linOp = linear(scheme)
     # reassemble the matrix DF(u) gmiven a dof vector for u
     def update(self,x_coeff,f):
-        x = spc.numpyFunction(x_coeff, "tmp")
-        # Note: the following does produce a copy of the matrix
-        # and each call here will reproduce the full matrix
-        # structure - no reuse possible in this version
-        self.jac = scheme.assemble(x).as_numpy
+        # the following converts a given numpy array
+        # into a discrete function over the given space
+        x = spc.function("tmp", dofVector=x_coeff)
+        scheme.jacobian(x,self.linOp)
     # compute DS(u)^{-1}x for a given dof vector x
     def _matvec(self,x_coeff):
-        return scipy.sparse.linalg.spsolve(self.jac, x_coeff)
+        return scipy.sparse.linalg.cg(self.linOp.as_numpy, x_coeff, tol=1e-10)[0]
 
 # call the newton krylov solver from scipy
 sol_coeff[:] = scipy.optimize.newton_krylov(f, sol_coeff,
             verbose=1, f_tol=1e-8,
             inner_M=Df(sol_coeff))
 
-plot(uh)
+uh.plot()
+
+# import sys
+# import petsc4py
+# from petsc4py import PETSc
+# petsc4py.init(sys.argv)
+# sys.exit(0)
 
 
 # We can also use the package `petsc4py` to solve the problem.
@@ -165,20 +180,21 @@ plot(uh)
 
 
 try:
-    import petsc4py, sys
-    from petsc4py import PETSc
-    petsc4py.init(sys.argv)
+    # import petsc4py, sys
+    # from petsc4py import PETSc
+    # petsc4py.init(sys.argv)
     spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
+    parameters["newton.linear.preconditioning.method"] = "sor"
     scheme = create.scheme("galerkin", a==b, spc,
-                            parameters={"petsc.preconditioning.method":"sor"})
+                            parameters=parameters)
     # first we will use the petsc solver available in the `dune-fem` package (using the sor preconditioner)
-    uh, info = scheme.solve()
+    uh   = spc.interpolate([0],name="petsc")
+    info = scheme.solve(target=uh)
     print(info)
-    plot(uh)
+    uh.plot()
 except ImportError:
     print("petsc4py could not be imported")
     petsc4py = False
-
 
 # Next we will implement the Newton loop in Python using `petsc4py` to solve the linear systems
 # Need to auxiliary function and set `uh` back to zero.
@@ -203,19 +219,20 @@ if petsc4py:
     ksp.getPC().setType("icc")
 
     n = 0
+    linOp  = linear(scheme)
+    ksp.setOperators(linOp.as_petsc)
+    ksp.setFromOptions()
     while True:
         scheme(uh, res)
         absF = math.sqrt( res_coeff.dot(res_coeff) )
         print("iterations ("+str(n)+")",absF)
         if absF < 1e-10:
             break
-        matrix = scheme.assemble(uh).as_petsc
-        ksp.setOperators(matrix)
-        ksp.setFromOptions()
+        scheme.jacobian(uh,linOp)
         ksp.solve(res_coeff, res_coeff)
         sol_coeff -= res_coeff
         n += 1
-    plot(uh)
+    uh.plot()
 
 
 # Finally we weill use `petsc`'s non-linear solvers (the `snes` classes) directly:
@@ -225,27 +242,28 @@ if petsc4py:
 
 if petsc4py:
     uh.clear()
+    res.clear()
     def f(snes, X, F):
-        inDF = spc.petscFunction(X)
-        outDF = spc.petscFunction(F)
+        inDF  = spc.function("tmp", dofVector=X)
+        outDF = spc.function("tmp", dofVector=F)
         scheme(inDF,outDF)
     def Df(snes, x, m, b):
-        inDF = spc.petscFunction(x)
-        matrix = scheme.assemble(inDF).as_petsc
-        m.createAIJ(matrix.size, csr=matrix.getValuesCSR())
-        b.createAIJ(matrix.size, csr=matrix.getValuesCSR())
-        return PETSc. Mat. Structure.SAME_NONZERO_PATTERN
+        inDF = spc.function("tmp", dofVector=x)
+        scheme.jacobian(inDF, linOp)
+        return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
 
+    matrix = linOp.as_petsc
     snes = PETSc.SNES().create()
-    snes.setMonitor(lambda snes,i,r:print(i,r,flush=True))
-    snes.setFunction(f, res_coeff)
-    # snes.setUseMF(True)
+    snes.setMonitor(lambda snes,i,r: print(i,r,flush=True))
+    b = res_coeff.duplicate()
+    snes.setFunction(f, b)
+    snes.setUseMF(False)
     snes.setJacobian(Df,matrix,matrix)
     snes.getKSP().setType("cg")
     snes.setFromOptions()
-    snes.solve(None, sol_coeff)
-    plot(uh)
+    snes.solve(res_coeff, sol_coeff)
+    uh.plot()
 
 
 # __Note__:
-# The method `as_numpy, as_petsc` returning the`dof` vector either as a `numpy` or a `petsc` do not lead to a copy of the data and the same is true fr the `numpyFunction` and the `petscFunction` methods on the space. In the `numpy` case we can use `Python`'s buffer protocol to use the same underlying storage. In the case of `petsc` the underlying `Vec` can be shared. In the case of matrices the situation is not yet as clear: `scheme.assemble` returns a copy of the data in the `scipy` case while the `Mat` structure is shared between `c++` and  `Python` in the `petsc` case. But at the time of writting it is not possible to pass in the `Mat` structure to the `scheme.assemble` method from the outside. That is why it is necessary to copy the data when using the `snes` non linear solver as seen above.
+# The method `as_numpy, as_petsc` returning the `dof` vector either as a `numpy` or a `petsc` do not lead to a copy of the data and the same is true for the `function` method on the space. In the `numpy` case we can use `Python`'s buffer protocol to use the same underlying storage. In the case of `petsc` the underlying `Vec` can be shared. In the case of matrices the situation is not yet as clear: `scheme.assemble` returns a copy of the data in the `scipy` case while the `Mat` structure is shared between `c++` and  `Python` in the `petsc` case. But at the time of writting it is not possible to pass in the `Mat` structure to the `scheme.assemble` method from the outside. That is why it is necessary to copy the data when using the `snes` non linear solver as seen above.

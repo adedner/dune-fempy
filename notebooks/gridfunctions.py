@@ -23,6 +23,8 @@ import dune.ufl
 import dune.create as create
 from dune.fem.plotting import plotPointData as plot
 from dune.fem.plotting import plotComponents as plotComponents
+from dune.fem.space import lagrange as lagrangeSpace
+from dune.fem.function import globalFunction, localFunction, uflFunction, cppFunction
 
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[4,4]), dimgrid=2)
 
@@ -34,7 +36,7 @@ grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[4,4]), d
 
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(10*x[1]), math.cos(10*x[1])**2]
-gf_gl = create.function("global", grid, "expr_global", 3, expr_global)
+gf_gl = globalFunction(grid, "expr_global", 3, expr_global)
 # plot all components + the grid
 plotComponents(gf_gl, gridLines="black")
 # plot the absolute value of the compnents without the grid
@@ -43,7 +45,7 @@ plot(gf_gl,gridLines="")
 def expr_local(en,x):
     y = en.geometry.toGlobal(x)
     return [gf_gl.localFunction(en).evaluate(x)[1] - y.two_norm,10]
-gf_loc = create.function("local", grid, "expr_local", 3, expr_local)
+gf_loc = localFunction( grid, "expr_local", 3, expr_local)
 # here we show the solution (first component) overlayed with the grid (default)
 plot(gf_loc[0])
 
@@ -76,17 +78,17 @@ const = ufl.Constant(ufl.triangle)
 c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*c ])
-funcUFL = create.function("ufl", grid, "ufl", 1, expr)
-funcUFL.setConstant(const, [10])
+funcUFL = uflFunction(grid, "ufl", 1, expr)
+funcUFL.setConstant(const, 10)
 # in the case of a scalar function the actual values are plotted
 # and not the absolute values are for dimRange > 1
 plot(funcUFL)
 
 scalarUFLSpace = dune.ufl.Space(grid,1)
 coeff = ufl.Coefficient(scalarUFLSpace)
-coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [2])
+coeffFunc = globalFunction(grid, "global_velocity", 0, lambda x: [2])
 expr = ufl.as_vector([ s*s*coeff[0] ])
-funcUFL1 = create.function("ufl", grid, "ufl1", 4, expr,
+funcUFL1 = uflFunction(grid, "ufl1", 4, expr,
 #                           coefficients={coeff: funcUFL})
                            coefficients={coeff: coeffFunc})
 plot(funcUFL1)
@@ -120,11 +122,12 @@ value[ 2 ][ 1 ] = -2.*@const:fac*cy*sy;
 """
 code = { 'eval': func1, 'jac': func2 }
 
-coeffFunc = create.function("global", grid, "global_velocity", 1, lambda x: [1,2])
-func = create.function("cpp", grid, "code", 3, code, coefficients={"test": coeffFunc} )
-func.setConstant("fac", [10])
+# Not working at the moment
+# coeffFunc = globalFunction(grid, "global_velocity", 1, lambda x: [1,2])
+# func = cppFunction(grid, "code", 3, code, coefficients={"test": coeffFunc} )
+# func.setConstant("fac", 10)
 # show all components but not the grid
-plotComponents(func,gridLines="")
+# plotComponents(func,gridLines="")
 
 
 # Most of the methods available on the grid functions have been used above - mainly the `localfunction` method. There are a few more of interst are:
@@ -132,9 +135,9 @@ plotComponents(func,gridLines="")
 # In[ ]:
 
 
-print("dimension of range: ",func.dimRange)
-print("underlying grid instance: ",func.grid)
-print("name: ",func.name)
+# print("dimension of range: ",func.dimRange)
+# print("underlying grid instance: ",func.grid)
+# print("name: ",func.name)
 
 
 # The following two methods can be used together with the `grid.triangulation( level )` method to obtain a simple numpy vector representation of the solution:
@@ -142,8 +145,8 @@ print("name: ",func.name)
 # In[ ]:
 
 
-print("return array with values at cell centers: ", func.cellData(0))
-print("return array with values at nodes: ", func.pointData(0))
+# print("return array with values at cell centers: ", func.cellData(0))
+# print("return array with values at nodes: ", func.pointData(0))
 
 
 # The following method computes the integral of the function over the domain - a possible usage is to compute the approximation error of a function:
@@ -151,7 +154,7 @@ print("return array with values at nodes: ", func.pointData(0))
 # In[ ]:
 
 
-print("value of integral over whole domain: ", func.integrate())
+# print("value of integral over whole domain: ", func.integrate())
 
 
 # The above results in grid functions which are still identical to the global functions that they represent, i.e., no discretization is involved. The next examples use an underlying discrete function space and interpolates either global functions or grid functions into this space:
@@ -160,11 +163,11 @@ print("value of integral over whole domain: ", func.integrate())
 
 
 # first a constant function
-vector_space = create.space("lagrange", grid, dimrange=grid.dimension, order=2)
+vector_space = lagrangeSpace(grid, dimrange=grid.dimension, order=2)
 constant = vector_space.interpolate([1,1], name="constant")
 uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
 plot(uh,vectors=[0,1],gridLines="")
-scalar_space = create.space("lagrange", grid, dimrange=1, order=2)
+scalar_space = lagrangeSpace(grid, dimrange=1, order=2)
 # we can also use the grid function decorators to define the a grid function
 vorticity = gridFunction(scalar_space.grid)(
             lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
@@ -200,7 +203,7 @@ plot(copy)
 #
 # Underlying any discrete function is a vector containing the degrees of freedom. This can also retrieved using the `dofVector` property on the discrete function. In general this will not be of much help since there are no access methods provided at the moment.
 #
-# Accessing the dof vector becomes useful when the `eigen` backend is used for storing the dofs. In this case the
+# Accessing the dof vector becomes useful when the `fem` or `eigen` backend is used for storing the dofs. In this case the
 # python buffer protocol is used to convert the dof vector into an `numpy` array without requiring any copy.
 # This requires having the [Eigen package][1].
 #
@@ -210,7 +213,7 @@ plot(copy)
 
 
 import numpy as np
-spc = create.space("lagrange", grid, dimrange=1, order=1, storage='eigen')
+spc = lagrangeSpace(grid, dimrange=1, order=1, storage='fem')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
 uh_dofs = uh.as_numpy # equivalent to np.array( uh.dofVector, copy=False )
@@ -218,7 +221,7 @@ uh_dofs *= -2
 plot(uh)
 
 
-# We can also use an existing `numpy` array as basis of a discrete function (over space with `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
+# We can also use an existing `numpy` array as basis of a discrete function (over space with `fem` or `eigen` backend) - this makes it easy to use for example `scipy` solvers directly:
 
 # In[ ]:
 
@@ -231,7 +234,7 @@ def id(x):
 dofs = np.random.random(spc.size)
 print("id of numpy array: ", id(dofs))
 # reinterpret the numpy vector as a discrete function
-xh = spc.numpyFunction(dofs,"name")
+xh = spc.function("name", dofVector=dofs)
 # get the dof vector as numpy array
 xh_dofs = xh.as_numpy
 print("id of dof vector: ", id(xh_dofs))

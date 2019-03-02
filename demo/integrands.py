@@ -14,8 +14,6 @@ v = TestFunction(uflSpace)
 x = SpatialCoordinate(uflSpace.cell())
 n = FacetNormal(uflSpace.cell())
 
-print(outer(u, n))
-
 a = inner(grad(u), grad(v)) * dx
 a += u[0]*inner(u, v) * dx
 a -= inner(outer(u('+'), n('-')), grad(v)('-')) * dS
@@ -23,7 +21,6 @@ a -= inner(outer(u('+'), n('-')), grad(v)('-')) * dS
 b = v[0] * ds
 
 integrands = compileUFL(a - b, tempVars=True)
-
 
 # write model to file
 # -------------------
@@ -44,4 +41,4 @@ from dune.models.integrands import load
 domain = cartesianDomain([0, 0], [1, 1], [8, 8])
 grid = aluConformGrid(domain, dimgrid=2)
 
-integrands = load(grid, integrands).Integrands()
+integrands = load(grid, integrands)

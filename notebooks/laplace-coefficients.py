@@ -64,11 +64,11 @@ a = (inner(u - old_solution, v) +    tau * inner(grad(theta*u + (1-theta)*old_so
 model = create.model("integrands", grid, a == 0)
 
 # setup structure for olver parameters
-solverParameter={"fem.solver.newton.linabstol": 1e-13,
-                 "fem.solver.newton.linreduction": 1e-13,
-                 "fem.solver.newton.tolerance": 1e-12,
-                 "fem.solver.newton.verbose": "true",
-                 "fem.solver.newton.linear.verbose": "false"}
+solverParameter = {"newton.tolerance": 1e-5, "newton.verbose": "false",
+                   "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
+                   "newton.linear.preconditioning.method": "ilu",
+                   "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
+                   "newton.linear.verbose": "false"}
 # create the solver using a standard fem scheme
 scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
 

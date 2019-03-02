@@ -35,11 +35,13 @@ import dune.create as create
 # In[ ]:
 
 
+from dune.plotting import block, disable
 from matplotlib import pyplot
 from matplotlib.collections import PolyCollection
 from numpy import amin, amax, linspace
 
 def plotGrid(grid):
+    if disable: return
     if not grid.dimension == 2:
         print("inline plotting so far only available for 2d grids")
         return
@@ -51,7 +53,7 @@ def plotGrid(grid):
         pyplot.gca().add_collection(coll)
     fig.gca().set_aspect('equal')
     fig.gca().autoscale()
-    pyplot.show(block=False)
+    pyplot.show(block=block)
 
 
 # First the simplest approach - this simply results in a cube tesselated with a nicely structured grid:
@@ -246,7 +248,7 @@ phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])],
 
 for nr in range(101):
     hgrid.mark(lambda e: mark(e, nr/100.*2.*math.pi))
-    dune.fem.adapt(hgrid, [phi])
+    dune.fem.adapt(phi)
     if nr % 10 == 0:
         plot(phi)
 pyplot.close('all')
@@ -298,17 +300,19 @@ plot(phi,gridLines="white")
 
 
 from dune.fem.view import geometryGridView
+from dune.fem.function import globalFunction
+from dune.fem.space import lagrange as lagrangeSpace
 
 t = 0
 def expr_global(x):
     return [1.5*x[0],0.5*(x[0]+1.)*x[1]*math.cos(0.1+2.*math.pi*t)]
 
-gf = create.function("global", grid, "coordinates", 1, expr_global)
-spc = create.space("lagrange", grid, dimrange=2, order=1)
+gf = globalFunction(grid, "coordinates", 1, expr_global)
+spc = lagrangeSpace(grid, dimrange=2, order=1)
 df = spc.interpolate(gf, name="test")
 
 geogrid = geometryGridView(df)
-gfnew = create.function("global", geogrid, "expression", 1, expr_global)
+gfnew = globalFunction(geogrid, "expression", 1, expr_global)
 
 dt = 0.01
 count = 0

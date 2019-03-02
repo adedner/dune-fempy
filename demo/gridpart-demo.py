@@ -6,9 +6,10 @@ from dune.fem.view import geometryGridView, filteredGridView
 
 import dune.create as create
 
-from dune.plotting import block
+from dune.plotting import block, disable
 
 def plot(grid):
+    if disable: return
     try:
         from matplotlib import pyplot
         from numpy import amin, amax, linspace

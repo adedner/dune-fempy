@@ -26,4 +26,7 @@ b = rhs * dx + 10*rhs * ds
 model = create.model("integrands", grid, a==b)
 
 scheme = create.scheme("galerkin", model, spc)
-grid.writeVTK("p-laplace", pointdata=[scheme.solve(name="solution")[0]])
+
+uh = spc.interpolate([0],name="solution")
+scheme.solve(target=uh)
+grid.writeVTK("p-laplace", pointdata=[uh])

@@ -28,13 +28,13 @@ def boundary(x, on_boundary):
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-# f = Constant(-6.0)
+f = Constant(-6.0)
 a = inner(grad(u), grad(v))*dx
-# L = f*v*dx
+L = inner(f,v)*dx
 
 # Compute solution
 u = Function(V)
-solve(a == 0, u)
+solve(a == L, u)
 
 # Plot solution and mesh
 plot(u)

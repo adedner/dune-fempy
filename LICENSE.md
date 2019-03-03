@@ -2,11 +2,11 @@ Copyright holders:
 ==================
 
 2016          Matthew Collins
-2016--2017    Andreas Dedner
-2017          Robert Klöfkorn
+2016--2019    Andreas Dedner
+2017--2019    Robert Klöfkorn
 2016          Lloyd
-2016--2017    Martin Nolte
-2016--2017    lloyd.connellan
+2016--2018    Martin Nolte
+2016--2018    lloyd.connellan
 
 
 The DUNE library, headers and test programs are copyrighted free software. You

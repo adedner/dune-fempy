@@ -17,13 +17,15 @@ from dune.fenics import *
 mesh = UnitSquareMesh(8, 8)
 V = FunctionSpace(mesh, 'P', 1)
 
+x = SpatialCoordinate( V )
 # Define boundary condition
 # u_D = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2)
+u_D = as_vector( [1.0 + x[0]*x[0] + 2*x[1]*x[1]] )
 
-def boundary(x, on_boundary):
-    return on_boundary
+# def boundary(x, on_boundary):
+#    return on_boundary
 
-# bc = DirichletBC(V, u_D, boundary)
+bc = DirichletBC(V, u_D, 1)
 
 # Define variational problem
 u = TrialFunction(V)
@@ -34,7 +36,7 @@ L = inner(f,v)*dx
 
 # Compute solution
 u = Function(V)
-solve(a == L, u)
+solve(a == L, u, bc)
 
 # Plot solution and mesh
 plot(u)

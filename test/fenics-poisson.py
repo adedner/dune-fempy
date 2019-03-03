@@ -16,9 +16,8 @@ dune.fem.parameter.append({"fem.verboserank": 0})
 
 # Create mesh and define function space
 mesh = UnitSquareMesh(8, 8)
-V = FunctionSpace(mesh, 'P', 1)
+V = FunctionSpace(mesh, 'P', 1) # , storage="istl")
 
-x = SpatialCoordinate( V )
 # Define boundary condition
 # original
 # --------

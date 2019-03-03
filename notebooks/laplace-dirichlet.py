@@ -71,12 +71,13 @@ a = inner(grad(u), grad(v))*dx
 # In[ ]:
 
 
-newtonParameter = {"tolerance": 1e-5, "verbose": "false",
-                   "linear.absolutetol": 1e-8, "linear.reductiontol": 1e-8,
+newtonParameter = {"tolerance": 1e-5, "verbose": False,
+                   "linear.tolerance": 1e-8,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
-                   "linear.verbose": "false"}
+                   "linear.verbose": False}
 scheme = galerkinScheme([a==0,DirichletBC(spc,exact,1)], spc,
+                solver="cg",
                 parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 solution = spc.interpolate([0],name="solution")

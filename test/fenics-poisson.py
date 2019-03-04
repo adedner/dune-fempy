@@ -27,15 +27,7 @@ V = FunctionSpace(mesh, 'P', 1) # , storage="istl")
 # u_D = Expression(’1 + x[0]*x[0] + 2*x[1]*x[1]’, degree=2)
 # bc = DirichletBC(V, u_D, boundary)
 # dune-fempy:
-# We don't have `Expression` i.e. generating code directly from a string
-# Was implemented some time ago and could be revived (probably)
-# What would work now is - which I think is actually better :-)
-# What the Expression class allows you to do is
-# u_D.t = t (see heat example page 41/42
-# We could define an `Expression` class which looks similar, definig
-# `NamedConstants` for the argument like `t` and return a uflFunction - it
-# would still take a UFL expression instead of a string
-x = SpatialCoordinate(mesh)
+# x = SpatialCoordinate(mesh)
 # u_D = 1 + x[0]*x[0] + 2*x[1]*x[1]
 u_D = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2, view=mesh)
 bc = [DirichletBC(V, u_D, i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp

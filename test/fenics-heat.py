@@ -28,11 +28,13 @@ V = FunctionSpace(mesh, 'P', 1)
 # Define boundary condition
 # def boundary(x, on_boundary):
 #     return on_boundary
-bc = [DirichletBC(V, Constant(0), i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
+g_D = Expression("t/T*sin(pi/2*x[0]*x[1])",view=mesh,degree=5,t=0,T=T)
+bc = [DirichletBC(V, g_D, i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
+# bc = [DirichletBC(V, Constant(0), i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
 
 # Define initial value
-u_0 = Expression('exp(-a*pow(x[0], 2) - a*pow(x[1], 2))', view=mesh,
-                 degree=2, a=5)
+u_0 = Expression('exp(-a*pow(x[0], 2) - a*pow(x[1], 2)) + g_D', view=mesh,
+                 degree=2, a=5, g_D=g_D)
 u_n = interpolate(u_0, V)
 
 # Define variational problem
@@ -54,6 +56,7 @@ for n in range(num_steps):
 
     # Update current time
     t += dt
+    g_D.t = t
 
     # Compute solution
     solve(a == L, u, bc)
@@ -68,4 +71,4 @@ for n in range(num_steps):
     u_n.assign(u)
 
 # Hold plot
-interactive()
+# interactive()

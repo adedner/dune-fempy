@@ -83,10 +83,10 @@ error_L2 = errornorm(u_D, u, 'L2')
 # we can't do the first one since u_D in our case is simply a UFL
 # expression without any change - so need something like `Expression` but
 # without the string
-# vertex_values_u_D = u_D.compute_vertex_values.pointData()
+vertex_values_u_D = u_D.pointData()
 vertex_values_u = u.pointData()
 import numpy as np
-error_max = np.max(np.abs(vertex_values_u))
+error_max = np.max(np.abs(vertex_values_u_D-vertex_values_u))
 
 # Print errors
 print('error_L2  =', error_L2)

@@ -36,7 +36,8 @@ V = FunctionSpace(mesh, 'P', 1) # , storage="istl")
 # `NamedConstants` for the argument like `t` and return a uflFunction - it
 # would still take a UFL expression instead of a string
 x = SpatialCoordinate(mesh)
-u_D = 1 + x[0]*x[0] + 2*x[1]*x[1]
+# u_D = 1 + x[0]*x[0] + 2*x[1]*x[1]
+u_D = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2, view=mesh)
 bc = [DirichletBC(V, u_D, i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
 
 # Define variational problem

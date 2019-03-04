@@ -392,11 +392,11 @@ rectangular grids}
 \renewcommand{\pweavelabel}{lst:grid}
 ```python, label="grid", Fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
 from dune.grid import structuredGrid
-grid = structuredGrid([0, 0], [1, 1], [2, 2])
-grid.plot()
-grid.hierarchicalGrid.globalRefine(1)
-grid.plot()
-grid.hierarchicalGrid.globalRefine(-1)  # revert grid refinement
+gridView = structuredGrid([0, 0], [1, 1], [2, 2])
+gridView.plot()
+gridView.hierarchicalGrid.globalRefine(1)
+gridView.plot()
+gridView.hierarchicalGrid.globalRefine(-1)  # revert grid refinement
 ```
 Here we create a simple square domain by specifying two opposite
 corners $(0,0)$ and $(1,1)$, and the number
@@ -484,7 +484,7 @@ below, resulting in figure \ref{fig:forch-plot}.
 ```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
 from dune.fem.plotting import plotPointData as plot
 plot(initial, grid=grid)
-grid.writeVTK('initial', pointdata={'initial': initial})
+gridView.writeVTK('initial', pointdata={'initial': initial})
 ```
 For the vtk output the function needs to be assigned a name, which is given
 by the key argument of the dictionary passed as the \pyth{pointdata}
@@ -502,7 +502,7 @@ and for example compute a simple approximation of the mass
 from dune.fem.function import uflFunction
 initial_gf = uflFunction(grid, name="ufl", order=1, ufl=initial)
 mass = 0
-for element in grid.elements:
+for element in gridView.elements:
   mass += initial_gf(element,[0.5,0.5]) * element.geometry.volume
 print(mass)
 ```
@@ -867,7 +867,7 @@ solve step.
 error_old = error                               # store old error
 error = sqrt(integrate(grid, l2error, 5)[0]) # integrate
 eoc = log(error/error_old)/log(0.5)             # do the EOC calc
-grid.hierarchicalGrid.globalRefine(1)           # refine the grid
+gridView.hierarchicalGrid.globalRefine(1)           # refine the grid
 \end{pweavecode}
 Combining these concepts into one solve method in \dune[Fempy], we have the
 following program (with resulting figure \ref{fig:forch-main}).
@@ -888,14 +888,14 @@ for eocLoop in range(loops):
     else:
         eocs = [ round(log(e/e_old)/log(0.5),2) \
                  for e,e_old in zip(errors,errors_old) ]
-    print('step:', eocLoop, ', size:', grid.size(0))
+    print('step:', eocLoop, ', size:', gridView.size(0))
     print('\t |u_h - u| =', '{:0.5e}'.format(errors[0]), ', eoc =', eocs[0])
     print('\t |grad(u_h - u)| =', '{:0.5e}'.format(errors[1]), ', eoc =', eocs[1])
     u_h.plot()
-    grid.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
+    gridView.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
                   l2error, 'h1error': h1error}, number=eocLoop)
     if eocLoop < loops-1:
-        grid.hierarchicalGrid.globalRefine(1)
+        gridView.hierarchicalGrid.globalRefine(1)
         scheme.model.dt /= 2
 ```
 \Atodo{Possible increase the number of eoc loops for publication}
@@ -1025,7 +1025,7 @@ scheme_cls = Scheme(scheme)
 u_h.interpolate(initial)                # reset u_h to initial
 evolve(scheme_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
-print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 We can redo the above computation using a Newton-Krylov solver from
@@ -1085,7 +1085,7 @@ scheme2_cls = Scheme2(scheme)
 u_h.interpolate(initial)
 evolve(scheme2_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
-print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 
@@ -1124,7 +1124,7 @@ u_h = spacePetsc.interpolate(initial, name='u_h')
 u_h_n = u_h.copy(name="previous")
 evolve(schemePetsc, u_h, u_h_n, endTime)
 error = u_h - exact_end
-print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 Note how we have overrode the space used to construct the UFL equation by
@@ -1182,7 +1182,7 @@ u_h.interpolate(initial)
 scheme3_cls = Scheme3(schemePetsc)
 evolve(scheme3_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
-print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 Finally we we will use PETSc's nonlinear solvers (the \pyth{snes}
@@ -1229,7 +1229,7 @@ u_h.interpolate(initial)
 scheme4_cls = Scheme4(schemePetsc)
 evolve(scheme4_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
-print("size: ", grid.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 \noindent \textit{Remark.} The methods \pyth{as_numpy} and \pyth{as_petsc}
@@ -1806,7 +1806,7 @@ scheme = solutionScheme((inner(grad(u),grad(v))+inner(u,v))*dx ==
 uh = space.interpolate([0],name="solution")
 scheme.solve(target=uh)
 # note: plotting with matplotlib not available for 3d grids
-grid.writeVTK('3dexample', pointdata=[uh])
+gridView.writeVTK('3dexample', pointdata=[uh])
 ```
 \begin{figure}
 \centering

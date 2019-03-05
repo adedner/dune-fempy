@@ -21,8 +21,7 @@ def plot(*args,**kwargs):
 
 # grid and space
 grid  = structuredGrid([0, 0], [1, 1], [16, 16])
-space = lagrange(grid, order=1) # no dimrange set so scalar space constructed
-# space = lagrange(grid, order=1, dimrange=1) # no dimrange set so scalar space constructed
+space = lagrange(grid, order=1)
 
 # ufl
 u = ufl.TrialFunction(space)
@@ -32,8 +31,8 @@ x = ufl.SpatialCoordinate(space.cell())
 f = (8*pi*pi+1)*cos(2*pi*x[0])*cos(2*pi*x[1])
 
 # elliptic equation
-scheme = galerkin( ( u*v  + dot(grad(u),grad(v)) )*dx == f*v*dx )
-# scheme = galerkin( ( u[0]*v[0]  + dot(grad(u[0]),grad(v[0])) )*dx == f*v[0]*dx )
+scheme = galerkin( (
+         u*v  + dot(grad(u),grad(v)) )*dx == f*v*dx )
 
 solution = space.interpolate([0],name="solution")
 info = scheme.solve(target=solution)
@@ -43,7 +42,8 @@ plot(solution)
 exact = cos(2.*pi*x[0])*cos(2.*pi*x[1])
 error = solution - exact
 print("L^2 and H^1 error:",
-  [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
+  [ sqrt(e) for e in
+    integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 plot(error,grid=grid)
 
 # heat equation
@@ -51,7 +51,6 @@ solution.clear()
 un  = space.interpolate(-exact,name="oldSolution")
 tau = NamedConstant(space,name="tau")
 scheme = galerkin( ( u*v  + tau*dot(grad(u),grad(v)) )*dx == (un+tau*f)*v*dx )
-# scheme = galerkin( ( u[0]*v[0]  + tau*dot(grad(u[0]),grad(v[0])) )*dx == (un[0]+tau*f)*v[0]*dx )
 
 # compute until stationary solution reached (same final solution as above)
 t  = 0

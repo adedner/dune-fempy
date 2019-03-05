@@ -56,7 +56,7 @@ triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
 domain = {"vertices": vertices, "simplices": triangles}
 gridView = adaptiveGridView( hierachicalGrid(domain) )
 gridView.hierarchicalGrid.globalRefine(2)
-space  = solutionSpace(gridView, dimRange=1, order=order)
+space = solutionSpace(grid, order=order)
 
 # <markdowncell>
 # Next we define the model together with the exact solution.
@@ -72,12 +72,12 @@ x = SpatialCoordinate(space.cell())
 # exact solution for this angle
 Phi = cornerAngle / 180 * pi
 phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
-exact = as_vector([inner(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)])
-a = inner(grad(u), grad(v)) * dx
+exact = dot(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)
+a = dot(grad(u), grad(v)) * dx
 
 # set up the scheme
 laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)])
-uh = space.interpolate(lambda x: [0], name="solution")
+uh = space.interpolate([0], name="solution")
 
 
 # <markdowncell>
@@ -106,20 +106,20 @@ uh = space.interpolate(lambda x: [0], name="solution")
 
 # <codecell>
 # energy error
-h1error = inner(grad(uh - exact), grad(uh - exact))
+h1error = dot(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
 from dune.fem.space import finiteVolume as estimatorSpace
 from dune.fem.operator import galerkin as estimatorOp
 
-fvspace = estimatorSpace(gridView, dimRange=1)
+fvspace = estimatorSpace(grid)
 estimate = fvspace.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(space.cell())
 he = MaxFacetEdgeLength(space.cell())('+')
 n = FacetNormal(space.cell())
-estimator_ufl = hT**2 * (div(grad(u[0])))**2 * v[0] * dx +\
-        he * inner(jump(grad(u[0])), n('+'))**2 * avg(v[0]) * dS
+estimator_ufl = hT**2 * (div(grad(u)))**2 * v * dx +\
+        he * inner(jump(grad(u)), n('+'))**2 * avg(v) * dS
 estimator = estimatorOp(estimator_ufl, space, fvspace)
 # marking strategy (equidistribution)
 tolerance = 0.1

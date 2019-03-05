@@ -69,7 +69,7 @@ endTime = 0.1
 
 
 # <codecell>
-from dune.fem.view import geometryGridView     as geometryGridView
+from dune.fem.view import geometryGridView as geoGridView
 from dune.fem.space import lagrange as solutionSpace
 from dune.fem.scheme import galerkin as solutionScheme
 def calculate(use_cpp, gridView):
@@ -78,7 +78,7 @@ def calculate(use_cpp, gridView):
     positions = space.interpolate(lambda x: x, name="position")
 
     # space for discrete solution on Gamma(t)
-    surface = geometryGridView(positions)
+    surface = geoGridView(positions)
     space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
     solution  = space.interpolate(lambda x: x, name="solution")
 
@@ -175,9 +175,8 @@ def calculate(use_cpp, gridView):
 
 # <codecell>
 # set up reference domain Gamma_0
-from dune.alugrid import aluConformGrid as hierarchicalGrid
-from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
-gridView = adaptiveGridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
-calculate(True,  gridView)
-gridView = adaptiveGridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
+from dune.alugrid import aluConformGrid as aluGridView
+gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+calculate(True, gridView)
+gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
 calculate(False, gridView)

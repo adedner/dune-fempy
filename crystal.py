@@ -165,8 +165,8 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 
 
 # <codecell>
+from dune.grid import Marker
 def mark(element):
-    from dune.grid import Marker
     u_h_local = u_h.localFunction(element)
     grad = u_h_local.jacobian(element.geometry.
                               referenceElement.center)

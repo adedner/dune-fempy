@@ -28,9 +28,9 @@ import matplotlib.pyplot as pyplot
 from dune.fem.plotting import plotPointData as plot
 import dune.grid as grid
 import dune.fem as fem
-from dune.alugrid import aluConformGrid as leafGridView
 from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
+from dune.alugrid import aluConformGrid as leafGridView
 
 
 # set the angle for the corner (0<angle<=360)

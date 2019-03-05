@@ -458,7 +458,7 @@ We do this using the function \pyth{integrate} as follows:
 ```
 ```python, label = 'forch-integrate'
 from dune.fem.function import integrate
-mass = integrate(grid, initial, order=5)
+mass = integrate(gridView, initial, order=5)
 print(mass)
 ```
 The arguments to the function \pyth{integrate} are the grid describing the
@@ -483,7 +483,7 @@ below, resulting in figure \ref{fig:forch-plot}.
 ```
 ```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
 from dune.fem.plotting import plotPointData as plot
-plot(initial, grid=grid)
+plot(initial, grid=gridView)
 gridView.writeVTK('initial', pointdata={'initial': initial})
 ```
 For the vtk output the function needs to be assigned a name, which is given
@@ -500,7 +500,7 @@ coordinates. To this end we can use the function \pyth{uflFunction}
 and for example compute a simple approximation of the mass
 ```python, label = 'uflfunction'
 from dune.fem.function import uflFunction
-initial_gf = uflFunction(grid, name="ufl", order=1, ufl=initial)
+initial_gf = uflFunction(gridView, name="ufl", order=1, ufl=initial)
 mass = 0
 for element in gridView.elements:
   mass += initial_gf(element,[0.5,0.5]) * element.geometry.volume
@@ -557,14 +557,14 @@ polynomial basis functions}
 ```
 ```python, label = 'space'
 from dune.fem.space import lagrange as solutionSpace
-space = solutionSpace(grid, dimrange=1, order=2)
+space = solutionSpace(gridView, dimRange=1, order=2)
 ```
 We note that the above space with Lagrange basis functions as well as other discrete function spaces 
 are called with two default
 arguments and one keyword argument.
 \begin{itemize}
-  \item \pyth{grid} passes in the grid we constructed previously.
-  \item \pyth{dimrange=1} (optional) sets the dimension of the range
+  \item \pyth{gridView} passes in the grid we constructed previously.
+  \item \pyth{dimRange=1} (optional) sets the dimension of the range
   space to $r=1$
   \item \pyth{order=2} (optional) sets the order of the finite
   elements to 2 (1 is the default).
@@ -606,7 +606,7 @@ section:
 # <codecell>
 ```
 ```python, label = 'forch-plot-uh', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
-u_h.plot(grid=grid,gridLines="white")
+u_h.plot(grid=gridView,gridLines="white")
 ```
 
 To define the weak formulation given by (\ref{eqn:forch-roche}) we need two
@@ -865,7 +865,7 @@ solve step.
 \renewcommand{\pweavelabel}{lst:eoc}
 \begin{pweavecode}
 error_old = error                               # store old error
-error = sqrt(integrate(grid, l2error, 5)[0]) # integrate
+error = sqrt(integrate(gridView, l2error, 5)[0]) # integrate
 eoc = log(error/error_old)/log(0.5)             # do the EOC calc
 gridView.hierarchicalGrid.globalRefine(1)           # refine the grid
 \end{pweavecode}
@@ -882,7 +882,7 @@ for eocLoop in range(loops):
     u_h.interpolate(initial)
     evolve(scheme, u_h, u_h_n, endTime)
     errors_old = errors
-    errors = [sqrt(e) for e in integrate(grid, as_vector([l2error,h1error]), order=5)]
+    errors = [sqrt(e) for e in integrate(gridView, as_vector([l2error,h1error]), order=5)]
     if eocLoop == 0:
         eocs = ['-','-']
     else:
@@ -958,7 +958,7 @@ changed to use data structures provided by the module
 \renewcommand{\pweavelabel}{lst:storage}
 \begin{pweavecode}
 from dune.fem.space import lagrange as solutionSpace
-space = solutionSpace(grid, dimrange=1, order=2, storage='istl')
+space = solutionSpace(gridView, dimRange=1, order=2, storage='istl')
 \end{pweavecode}
 
 An advantage of the default \pyth{"fem"} storage is that we can
@@ -1026,7 +1026,7 @@ u_h.interpolate(initial)                # reset u_h to initial
 evolve(scheme_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
 print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 We can redo the above computation using a Newton-Krylov solver from
 SciPy. We do this by constructing a class \pyth{Df} containing the
@@ -1086,7 +1086,7 @@ u_h.interpolate(initial)
 evolve(scheme2_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
 print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 
 We can also use solvers from the PETSc package (see \cite{PETSc}) to solve
@@ -1114,7 +1114,7 @@ the same approximation as computed previously:
 # <codecell>
 ```
 ```python
-spacePetsc = solutionSpace(grid, dimrange=1, order=2, storage='petsc')
+spacePetsc = solutionSpace(gridView, dimRange=1, order=2, storage='petsc')
 # first we will use the petsc solver available in the `dune-fem` package
 # (using the sor preconditioner)
 schemePetsc = solutionScheme(a == b, space=spacePetsc,
@@ -1125,7 +1125,7 @@ u_h_n = u_h.copy(name="previous")
 evolve(schemePetsc, u_h, u_h_n, endTime)
 error = u_h - exact_end
 print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 Note how we have overrode the space used to construct the UFL equation by
 providing a different space to the constructor of the scheme.
@@ -1183,7 +1183,7 @@ scheme3_cls = Scheme3(schemePetsc)
 evolve(scheme3_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
 print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 Finally we we will use PETSc's nonlinear solvers (the \pyth{snes}
 classes) directly.
@@ -1230,7 +1230,7 @@ scheme4_cls = Scheme4(schemePetsc)
 evolve(scheme4_cls, u_h, u_h_n, endTime)
 error = u_h - exact_end
 print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ]))
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
 \noindent \textit{Remark.} The methods \pyth{as_numpy} and \pyth{as_petsc}
 (returning the DoF vector or system matrix either as a \pyth{numpy} or a \pyth{petsc}
@@ -1434,7 +1434,7 @@ We can separate the process into two steps as follows.
 \begin{pweavecode}
 from dune.fem.model  import integrands as discreteModel
 from dune.fem.scheme import galerkin   as solutionScheme
-model  = discreteModel(grid, a == b)
+model  = discreteModel(gridView, a == b)
 scheme = solutionScheme(model)
 \end{pweavecode}
 where \pyth{a == b} refers to the UFL equation used to represent weak form
@@ -1447,7 +1447,7 @@ that is more human readable is given by
 \begin{pweavecode}
 from dune.fem.model  import elliptic as discreteModel
 from dune.fem.scheme import h1       as solutionScheme
-model  = discreteModel(grid, a == b)
+model  = discreteModel(gridView, a == b)
 scheme = solutionScheme(model)
 \end{pweavecode}
 While the generated class is easier to read and change it is less flexible
@@ -1551,7 +1551,7 @@ model}
 \begin{pweavecode}
 a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
 b = rhs(A, exact)
-model = create.model("nvdg", grid, a == b)
+model = create.model("nvdg", gridView, a == b)
 \end{pweavecode}
 Thus it becomes possible to write schemes that expect different
 arguments from the operator.
@@ -1792,8 +1792,8 @@ except ImportError: # pygmsh not installed - use a simple cartesian domain
   domain = cartesianDomain([-0.25,-0.25,0],[0.25,0.25,1],[30,30,60])
 
 from dune.alugrid import aluSimplexGrid as Grid
-grid  = Grid(domain)
-space = solutionSpace(grid, dimrange=1, order=1)
+gridView  = Grid(domain)
+space = solutionSpace(gridView, dimRange=1, order=1)
 
 from ufl import conditional
 u = TrialFunction(space)
@@ -2027,7 +2027,7 @@ Now we move on to spaces. By default, they take the form
 \renewcommand{\pweavelabel}{lst:default-space}
 \begin{pweavecode}
 from dune.fem.space import solutionSpace
-space = solutionSpace(grid, dimrange=1, order=1,
+space = solutionSpace(gridView, dimRange=1, order=1,
                       storage='fem', field='double')
 \end{pweavecode}
 where \pyth{solutionSpace} is a function from the \pyth{dune.fem.space} module and the available 
@@ -2036,7 +2036,7 @@ All spaces are created with the following arguments.
 
 \begin{enumerate}
 \item \pyth{grid}: A grid view object from \ref{sec:grid-list}.
-\item \pyth{dimrange} (optional): The range dimension of the space.
+\item \pyth{dimRange} (optional): The range dimension of the space.
 \item \pyth{order} (optional): The polynomial order of the basis
 functions.
 \item \pyth{storage} (optional): \pyth{'fem'} by default. Other options for the storage used for discrete functions 
@@ -2075,7 +2075,7 @@ way to make a grid function is
 \renewcommand{\pweavelabel}{lst:default-function}
 \begin{pweavecode}
 from dune.fen.function import gridFunction
-f = gridFunction(grid, 'function-name', order, constructor)
+f = gridFunction(gridView, 'function-name', order, constructor)
 \end{pweavecode}
 where \pyth{gridFunction} is one of the functions listed in Table
 \ref{tab:functions} which is called with the following arguments.

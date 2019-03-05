@@ -26,8 +26,8 @@ order = 1
 dimDomain = 2     # we are solving this in 2D
 dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [3, 3])
-grid  = gridView( hierarchicalGrid( domain, dimgrid=dimDomain ) )
-space = solutionSpace(grid, dimrange=dimRange, order=order, storage="fem")
+gridView  = gridView( hierarchicalGrid( domain, dimgrid=dimDomain ) )
+space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
 
 
 # <markdowncell>
@@ -76,7 +76,7 @@ from dune.fem.function import globalFunction
 def initial(x):
     r  = (x - [6, 6]).two_norm
     return [ 0 if r > 0.3 else 1, -0.5 ]
-initial_gf = globalFunction(grid, "initial", order+1, initial)
+initial_gf = globalFunction(gridView, "initial", order+1, initial)
 u_h = space.interpolate(initial_gf, name="solution")
 u_h_n = u_h.copy()
 
@@ -182,14 +182,14 @@ def mark(element):
 
 # <codecell>
 maxLevel = 11
-hgrid    = grid.hierarchicalGrid
+hgrid    = gridView.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(0, maxLevel):
     hgrid.mark(mark)
     fem.adapt([u_h])
     fem.loadBalance([u_h])
     u_h.interpolate(initial_gf)
-    print(grid.size(0), end=" ")
+    print(gridView.size(0), end=" ")
 print()
 
 
@@ -202,8 +202,8 @@ from dune.fem.plotting import plotComponents as plotComponents
 import matplotlib.pyplot as pyplot
 from dune.fem.function import levelFunction, partitionFunction
 import matplotlib
-vtk = grid.sequencedVTK("crystal", pointdata=[u_h],
-       celldata=[levelFunction(grid), partitionFunction(grid)])
+vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
+       celldata=[levelFunction(gridView), partitionFunction(gridView)])
 
 matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams['figure.figsize'] = [10, 5]
@@ -228,7 +228,7 @@ endTime = 0.05
 while t < endTime:
     u_h_n.assign(u_h)
     scheme.solve(target=u_h)
-    print(t, grid.size(0), end="\r")
+    print(t, gridView.size(0), end="\r")
     t += scheme.model.dt
     hgrid.mark(mark)
     fem.adapt([u_h])

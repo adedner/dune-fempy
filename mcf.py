@@ -67,8 +67,8 @@ R0 = 2.
 # <codecell>
 from dune.fem.view import geometryGridView as geoGridView
 from dune.fem.space import lagrange as solutionSpace
-from dune.alugrid import aluConformGrid as aluGridView
-gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+from dune.alugrid import aluConformGrid as hierarchicalGrid
+gridView = hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3)
 space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
 positions = space.interpolate(lambda x:
             x * (1 + 0.5*math.sin(2*math.pi*x[0]*x[1])*\

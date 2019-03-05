@@ -175,8 +175,8 @@ def calculate(use_cpp, gridView):
 
 # <codecell>
 # set up reference domain Gamma_0
-from dune.alugrid import aluConformGrid as aluGridView
-gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+from dune.alugrid import aluConformGrid as hierarchicalGrid
+gridView = hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3)
 calculate(True, gridView)
-gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+gridView = hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3)
 calculate(False, gridView)

@@ -56,7 +56,7 @@ triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
 domain = {"vertices": vertices, "simplices": triangles}
 gridView = adaptiveGridView( hierachicalGrid(domain) )
 gridView.hierarchicalGrid.globalRefine(2)
-space = solutionSpace(grid, order=order)
+space = solutionSpace(gridView, order=order)
 
 # <markdowncell>
 # Next we define the model together with the exact solution.
@@ -112,7 +112,7 @@ h1error = dot(grad(uh - exact), grad(uh - exact))
 from dune.fem.space import finiteVolume as estimatorSpace
 from dune.fem.operator import galerkin as estimatorOp
 
-fvspace = estimatorSpace(grid)
+fvspace = estimatorSpace(gridView)
 estimate = fvspace.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(space.cell())
@@ -139,7 +139,7 @@ while count < 20:
         fig = pyplot.figure(figsize=(10,10))
     plot(uh, figure=(fig, 131+count%3), colorbar=False)
     # compute the actual error and the estimator
-    error = math.sqrt(fem.function.integrate(gridView, h1error, 5)[0])
+    error = math.sqrt(fem.function.integrate(gridView, h1error, 5))
     estimator(uh, estimate)
     eta = sum(estimate.dofVector)
     print(count, ": size=", gridView.size(0), "estimate=", eta,

@@ -25,13 +25,12 @@ except:
 import math
 import numpy
 import matplotlib.pyplot as pyplot
-from dune.fem.view import adaptiveLeafGridView
 from dune.fem.plotting import plotPointData as plot
 import dune.grid as grid
 import dune.fem as fem
+from dune.alugrid import aluConformGrid as leafGridView
 from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
-from dune.alugrid import aluConformGrid as hierachicalGrid
 
 
 # set the angle for the corner (0<angle<=360)
@@ -54,7 +53,7 @@ for i in range(0, 7):
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
                          [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-gridView = adaptiveGridView( hierachicalGrid(domain) )
+gridView = adaptiveGridView( leafGridView(domain) )
 gridView.hierarchicalGrid.globalRefine(2)
 space = solutionSpace(gridView, order=order)
 

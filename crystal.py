@@ -18,15 +18,15 @@ except:
 # <codecell>
 import dune.fem as fem
 from dune.grid import cartesianDomain
-from dune.alugrid import aluConformGrid as hierarchicalGrid
-from dune.fem.view import adaptiveLeafGridView as gridView
+from dune.alugrid import aluConformGrid as leafGridView
+from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
 
 order = 1
 dimDomain = 2     # we are solving this in 2D
 dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [3, 3])
-gridView  = gridView( hierarchicalGrid( domain, dimgrid=dimDomain ) )
+gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
 space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
 
 

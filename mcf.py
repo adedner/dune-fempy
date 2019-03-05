@@ -65,15 +65,15 @@ R0 = 2.
 
 
 # <codecell>
-from dune.fem.view import geometryGridView as geoGridView
+from dune.fem.view import geometryGridView
 from dune.fem.space import lagrange as solutionSpace
-from dune.alugrid import aluConformGrid as aluGridView
-gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+from dune.alugrid import aluConformGrid as leafGridView
+gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
 space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
 positions = space.interpolate(lambda x:
             x * (1 + 0.5*math.sin(2*math.pi*x[0]*x[1])*\
                         math.cos(math.pi*x[2])), name="position")
-surface = geoGridView(positions)
+surface = geometryGridView(positions)
 space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
 solution = space.interpolate(lambda x: x, name="solution")
 

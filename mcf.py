@@ -65,17 +65,17 @@ R0 = 2.
 
 
 # <codecell>
-from dune.fem.view import adaptiveLeafGridView as gridView
-from dune.fem.view import geometryGridView     as geoGridView
+from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
+from dune.fem.view import geometryGridView     as geometryGridView
 from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as hierarchicalGrid
-grid = gridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
-space = solutionSpace(grid, dimrange=grid.dimWorld, order=order)
+gridView = adaptiveGridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
+space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
 positions = space.interpolate(lambda x:
             x * (1 + 0.5*math.sin(2*math.pi*x[0]*x[1])*\
                         math.cos(math.pi*x[2])), name="position")
-surface = geoGridView(positions)
-space = solutionSpace(surface, dimrange=surface.dimWorld, order=order)
+surface = geometryGridView(positions)
+space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
 solution = space.interpolate(lambda x: x, name="solution")
 
 
@@ -191,9 +191,9 @@ for i in range(number_of_loops):
         display.display(pyplot.gcf())
     errors[i] = abs(R - Rexact)
     totalIterations[i] = iterations
-    gridSizes[i] = grid.size(2)
+    gridSizes[i] = gridView.size(2)
     if i < number_of_loops - 1:
-        grid.hierarchicalGrid.globalRefine(1)
+        gridView.hierarchicalGrid.globalRefine(1)
         scheme.model.dt /= 2
 
 

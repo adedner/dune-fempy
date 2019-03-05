@@ -864,10 +864,10 @@ solve step.
 \renewcommand{\pweavecaption}{Calculating the EOCs}
 \renewcommand{\pweavelabel}{lst:eoc}
 \begin{pweavecode}
-error_old = error                               # store old error
+error_old = error                                # store old error
 error = sqrt(integrate(gridView, l2error, 5)[0]) # integrate
-eoc = log(error/error_old)/log(0.5)             # do the EOC calc
-gridView.hierarchicalGrid.globalRefine(1)           # refine the grid
+eoc = log(error/error_old)/log(0.5)              # do the EOC calc
+gridView.hierarchicalGrid.globalRefine(1)        # refine the grid
 \end{pweavecode}
 Combining these concepts into one solve method in \dune[Fempy], we have the
 following program (with resulting figure \ref{fig:forch-main}).

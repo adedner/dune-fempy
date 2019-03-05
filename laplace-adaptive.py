@@ -29,7 +29,7 @@ from dune.fem.view import adaptiveLeafGridView
 from dune.fem.plotting import plotPointData as plot
 import dune.grid as grid
 import dune.fem as fem
-from dune.fem.view import adaptiveLeafGridView as gridView
+from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as hierachicalGrid
 
@@ -54,9 +54,9 @@ for i in range(0, 7):
 triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
                          [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
-grid = gridView( hierachicalGrid(domain) )
-grid.hierarchicalGrid.globalRefine(2)
-space  = solutionSpace(grid, dimrange=1, order=order)
+gridView = adaptiveGridView( hierachicalGrid(domain) )
+gridView.hierarchicalGrid.globalRefine(2)
+space  = solutionSpace(gridView, dimRange=1, order=order)
 
 # <markdowncell>
 # Next we define the model together with the exact solution.
@@ -112,7 +112,7 @@ h1error = inner(grad(uh - exact), grad(uh - exact))
 from dune.fem.space import finiteVolume as estimatorSpace
 from dune.fem.operator import galerkin as estimatorOp
 
-fvspace = estimatorSpace(grid, dimrange=1)
+fvspace = estimatorSpace(gridView, dimRange=1)
 estimate = fvspace.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(space.cell())
@@ -139,18 +139,18 @@ while count < 20:
         fig = pyplot.figure(figsize=(10,10))
     plot(uh, figure=(fig, 131+count%3), colorbar=False)
     # compute the actual error and the estimator
-    error = math.sqrt(fem.function.integrate(grid, h1error, 5)[0])
+    error = math.sqrt(fem.function.integrate(gridView, h1error, 5)[0])
     estimator(uh, estimate)
     eta = sum(estimate.dofVector)
-    print(count, ": size=", grid.size(0), "estimate=", eta,
+    print(count, ": size=", gridView.size(0), "estimate=", eta,
           "error=", error)
     if eta < tolerance:
         break
     if tolerance == 0.:
-        grid.hierarchicalGrid.globalRefine(2)
+        gridView.hierarchicalGrid.globalRefine(2)
         uh.interpolate([0])  # initial guess needed
     else:
-        marked = fem.mark(estimate,tolerance/grid.size(0))
+        marked = fem.mark(estimate,tolerance/gridView.size(0))
         fem.adapt([uh])
         fem.loadBalance([uh])
     laplace.solve( target=uh )
@@ -178,4 +178,4 @@ pyplot.close('all')
 
 # <codecell>
 from dune.fem.function import levelFunction
-plot(levelFunction(grid), xlim=(-0.2,1), ylim=(-0.2,1))
+plot(levelFunction(gridView), xlim=(-0.2,1), ylim=(-0.2,1))

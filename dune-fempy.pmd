@@ -1295,8 +1295,8 @@ positions = space.interpolate(lambda x: some_function(x), name="position")
 \end{lstlisting}
 \item Create a surface from \pyth{positions} using this function
 \begin{lstlisting}[style=pythonstyle]
-from dune.fem.view import geometryGridView as geoGridView
-surface = geoGridView(positions)
+from dune.fem.view import geometryGridView
+surface = geometryGridView(positions)
 \end{lstlisting}
 \item Create the scheme that describes the surface evolution and solve
 it in the usual way.

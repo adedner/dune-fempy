@@ -17,7 +17,7 @@ except:
 
 # <codecell>
 import dune.fem as fem
-from dune.grid import Marker, cartesianDomain
+from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid as hierarchicalGrid
 from dune.fem.view import adaptiveLeafGridView as gridView
 from dune.fem.space import lagrange as solutionSpace
@@ -99,7 +99,7 @@ dt = NamedConstant(space, "dt")    # time step
 # This gets us the following equation.
 #
 # \begin{equation}
-# \int \left( \alpha^2 \frac{dt}{\tau} (D_n\nabla \phi_1) \cdot \nabla v_0 + dt \ D_T \nabla T_1 \cdot \nabla v_1 + \textbf{u} \cdot \textbf{v} - \textbf{s} \cdot \textbf{v} \right) \ dx 
+# \int \left( \alpha^2 \frac{dt}{\tau} (D_n\nabla \phi_1) \cdot \nabla v_0 + dt \ D_T \nabla T_1 \cdot \nabla v_1 + \textbf{u} \cdot \textbf{v} - \textbf{s} \cdot \textbf{v} \right) \ dx
 # =
 # \int (\textbf{u}_n \cdot \textbf{v} - \phi_0 v_1) \ dx
 # \end{equation}
@@ -166,6 +166,7 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 
 # <codecell>
 def mark(element):
+    from dune.grid import Marker
     u_h_local = u_h.localFunction(element)
     grad = u_h_local.jacobian(element.geometry.
                               referenceElement.center)
@@ -198,7 +199,7 @@ print()
 
 
 # <codecell>
-from dune.fem.plotting import plotComponents as plotComponents
+from dune.fem.plotting import plotComponents
 import matplotlib.pyplot as pyplot
 from dune.fem.function import levelFunction, partitionFunction
 import matplotlib

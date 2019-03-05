@@ -391,8 +391,8 @@ in \dune[Fempy] and plot the result in figure \ref{fig:grid}.
 rectangular grids}
 \renewcommand{\pweavelabel}{lst:grid}
 ```python, label="grid", Fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
-from dune.grid import structuredGrid
-gridView = structuredGrid([0, 0], [1, 1], [2, 2])
+from dune.grid import structuredGrid as leafGridView
+gridView = leafGridView([0, 0], [1, 1], [2, 2])
 gridView.plot()
 gridView.hierarchicalGrid.globalRefine(1)
 gridView.plot()
@@ -562,7 +562,7 @@ We note that the above space with Lagrange basis functions as well as other disc
 are called with two default
 arguments and one keyword argument.
 \begin{itemize}
-  \item \pyth{gridView} passes in the grid we constructed previously.
+  \item \pyth{gridView} passes in the grid view we constructed previously.
   \item \pyth{dimRange=None} (optional) sets the dimension of the range
   space to $r=1$
   \item \pyth{order=2} (optional) sets the order of the finite

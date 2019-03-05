@@ -556,7 +556,7 @@ polynomial basis functions}
 ```
 ```python, label = 'space'
 from dune.fem.space import lagrange as solutionSpace
-space = solutionSpace(grid, order=2)
+space = solutionSpace(gridView, order=2)
 ```
 We note that the above space with Lagrange basis functions as well as other discrete function spaces 
 are called with two default
@@ -1616,7 +1616,7 @@ b = replace(a, {u: exact})
 
 F = a - b
 \end{pweavecode}
-\todoA{remark somewhere that we use \pyth{TrialFunction} also in the case
+\Atodo{remark somewhere that we use \pyth{TrialFunction} also in the case
 of non linear problems in contrast to Fenics. The only way to fix this
 would be to add a parameter \pyth{solution=u} during model/scheme/operator
 generation and then use \pyth{replace(form,dict(u=TrialFunction)}}
@@ -1804,12 +1804,12 @@ u = TrialFunction(space)
 v = TestFunction(space)
 x = SpatialCoordinate(space)
 scheme = solutionScheme((inner(grad(u),grad(v))+inner(u,v))*dx ==
-                        conditional(dot(x,x)<.01,100,0)*v[0]*dx,
+                        conditional(dot(x,x)<.01,100,0)*v*dx,
                         solver='cg')
 
 uh = space.interpolate([0],name="solution")
 scheme.solve(target=uh)
-# note: plotting with matplotlib not available for 3d grids
+# note: plotting with matplotlib not yet available for 3d grids
 gridView.writeVTK('3dexample', pointdata=[uh])
 ```
 \begin{figure}

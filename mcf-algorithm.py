@@ -69,17 +69,17 @@ endTime = 0.1
 
 
 # <codecell>
-from dune.fem.view import geometryGridView     as geoGridView
+from dune.fem.view import geometryGridView as geoGridView
 from dune.fem.space import lagrange as solutionSpace
 from dune.fem.scheme import galerkin as solutionScheme
-def calculate(use_cpp, grid):
+def calculate(use_cpp, gridView):
     # space on Gamma_0 to describe position of Gamma(t)
-    space = solutionSpace(grid, dimrange=grid.dimWorld, order=order)
+    space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
     positions = space.interpolate(lambda x: x, name="position")
 
     # space for discrete solution on Gamma(t)
     surface = geoGridView(positions)
-    space = solutionSpace(surface, dimrange=surface.dimWorld, order=order)
+    space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
     solution  = space.interpolate(lambda x: x, name="solution")
 
     # set up model using theta scheme
@@ -151,9 +151,9 @@ def calculate(use_cpp, grid):
         times[i] = time.time() - start
         errors[i] = abs(R-Rexact)
         totalIterations[i] = iterations
-        gridSizes[i] = grid.size(2)
+        gridSizes[i] = gridView.size(2)
         if i < numberOfLoops - 1:
-            grid.hierarchicalGrid.globalRefine(1)
+            gridView.hierarchicalGrid.globalRefine(1)
             scheme.model.dt /= 2
     eocs = np.log(errors[0:][:numberOfLoops-1] / errors[1:]) / math.log(math.sqrt(2))
     try:
@@ -175,9 +175,8 @@ def calculate(use_cpp, grid):
 
 # <codecell>
 # set up reference domain Gamma_0
-from dune.alugrid import aluConformGrid as hierarchicalGrid
-from dune.fem.view import adaptiveLeafGridView as gridView
-grid = gridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
-calculate(True, grid)
-grid = gridView( hierarchicalGrid("sphere.dgf", dimgrid=2, dimworld=3) )
-calculate(False, grid)
+from dune.alugrid import aluConformGrid as aluGridView
+gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+calculate(True, gridView)
+gridView = aluGridView("sphere.dgf", dimgrid=2, dimworld=3)
+calculate(False, gridView)

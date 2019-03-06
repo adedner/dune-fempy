@@ -1,0 +1,22 @@
+a) explain JIT compilation approach and require compilation time in Section 6
+b) Other packages (Fenics compatibility) - mention differences, e.g.,
+   use of TrialFunction instead of Function for ufl model - possibly change
+   "solve" so that TrialFunction is not rquired,
+   solution could be to add a parameter \pyth{solution=u}
+   during model/scheme/operator generation and then use
+   \pyth{replace(form,dict(u=TrialFunction)}}
+c) Show DBCs in 'Alternative Backends' or in a section before that
+   - how to define the boundary?
+d) solver parameter
+e) dof manager: set no entries to zero (Robert)
+f) plot of error/dofs in laplace-adaptive.py
+g) move C++ Forchheimer from Section 7 to Section 6 without too much detail
+   on the model generation (Andreas)
+h) NamedConstant -> Constant (Andreas)
+e) docker container
+
+Add to Introduction:
+follow the Fem interface,
+keep flexibility of adding C++ code also to extend models and due rapid
+prototyping - generate simple code which is easy to use in other C++
+algorithms 

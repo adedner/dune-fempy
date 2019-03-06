@@ -146,12 +146,11 @@ while count < 20:
     if eta < tolerance:
         break
     if tolerance == 0.:
-        gridView.hierarchicalGrid.globalRefine(2)
-        uh.interpolate([0])  # initial guess needed
+        fem.globalRefine(uh) # can also be a list or tuple of function to prolong/restrict
     else:
-        marked = fem.mark(estimate,tolerance/gridView.size(0))
-        fem.adapt([uh])
-        fem.loadBalance([uh])
+        marked = fem.doerflerMark(estimate,0.6)
+        fem.adapt(uh)        # can also be a list or tuple of function to prolong/restrict
+        fem.loadBalance(uh)
     laplace.solve( target=uh )
     count += 1
 pyplot.show()

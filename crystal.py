@@ -163,20 +163,9 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 # <markdowncell>
 # We set up the adaptive method. We start with a marking strategy based on the value of the gradient of the phase field variable.
 
-
 # <codecell>
-from dune.grid import Marker
-def mark(element):
-    u_h_local = u_h.localFunction(element)
-    grad = u_h_local.jacobian(element.geometry.
-                              referenceElement.center)
-    if grad[0].infinity_norm > 1.2:
-        return Marker.refine if element.level < maxLevel \
-                             else Marker.keep
-    else:
-        return Marker.coarsen
-
-
+from dune.ufl import expression2GF
+indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="indicator")
 # <markdowncell>
 # We do the initial refinement of the grid.
 
@@ -185,10 +174,10 @@ def mark(element):
 maxLevel = 11
 hgrid    = gridView.hierarchicalGrid
 hgrid.globalRefine(6)
-for i in range(0, maxLevel):
-    hgrid.mark(mark)
-    fem.adapt([u_h])
-    fem.loadBalance([u_h])
+for i in range(5, maxLevel):
+    fem.mark(indicator,1.4,1.2,0,maxLevel)
+    fem.adapt(u_h)
+    fem.loadBalance(u_h)
     u_h.interpolate(initial_gf)
     print(gridView.size(0), end=" ")
 print()
@@ -231,9 +220,9 @@ while t < endTime:
     scheme.solve(target=u_h)
     print(t, gridView.size(0), end="\r")
     t += scheme.model.dt
-    hgrid.mark(mark)
-    fem.adapt([u_h])
-    fem.loadBalance([u_h])
+    fem.mark(indicator,1.4,1.2,0,maxLevel)
+    fem.adapt(u_h)
+    fem.loadBalance(u_h)
 print()
 
 plotComponents(u_h, cmap=pyplot.cm.rainbow)

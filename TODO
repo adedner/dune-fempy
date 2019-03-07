@@ -12,7 +12,6 @@ CI) (RA) how to define the boundary?
    iii) use a hpdg space (if load balancing works?) (Robert)
     iv) pass callbacks to model (Andreas)
 dS) (Robert) solver parameter
-eI) (Robert) dof manager: set no entries to zero
 fI) (Andreas) plot of error/dofs in laplace-adaptive.py
 gS) (Andreas) move C++ Forchheimer from Section 7 to Section 6 without too much detail on the model generation
 hI) (Andreas) NamedConstant -> Constant (Andreas)
@@ -23,3 +22,11 @@ follow the Fem interface,
 keep flexibility of adding C++ code also to extend models and due rapid
 prototyping - generate simple code which is easy to use in other C++
 algorithms
+
+
+
+Done:
+-----
+
+eI) (Robert) dof manager: set no entries to zero
+

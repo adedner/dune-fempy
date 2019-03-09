@@ -17,7 +17,7 @@ from ufl import cos,sin,as_vector
 exact = as_vector( [sin(3*pi*x[0]), x[1]*x[1], x[0]*x[0], cos(3.*pi*x[1])]+[0]*(dimRange-4) )
 v1 = integrate(grid, exact, 5).two_norm
 
-space = create.space("Lagrange", grid, dimrange=dimRange, order=1)
+space = create.space("Lagrange", grid, dimRange=dimRange, order=1)
 u = space.interpolate(exact,name="u")
 v2 = integrate(grid, u, 5).two_norm
 

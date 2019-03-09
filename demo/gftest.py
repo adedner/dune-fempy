@@ -48,7 +48,7 @@ funcUFL.setConstant(const, factor)
 
 func = funcUFL # needed since cpp function doesn't work
 
-space = create.space("lagrange", grid, dimrange=3, order=2)
+space = create.space("lagrange", grid, dimRange=3, order=2)
 solution = space.interpolate(funcUFL, name="solution")
 
 def expr_global(x):

@@ -29,14 +29,20 @@ V = FunctionSpace(mesh, 'P', 1) # , storage="istl")
 # dune-fempy:
 # x = SpatialCoordinate(mesh)
 # u_D = 1 + x[0]*x[0] + 2*x[1]*x[1]
-u_D = Expression('1 + x[0]*x[0] + 2*x[1]*x[1]', degree=2, view=mesh)
+u_D = Expression('2 + x[0]*x[0] + 2*x[1]*x[1]', degree=2, mesh=mesh)
 bc = [DirichletBC(V, u_D, i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
 
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
 
-f = Constant(-6.0)
+# need to point out that 'Contant' doesn't quite work as it does in Fenics
+# at the moment 'Constant' has no assign method.
+# If change of the constant is requires to pass in a name
+# but that doesn't work with the `solve` method (no access to the model
+# to change the value)
+
+f = Constant(0.0)
 a = dot(grad(u), grad(v)) * dx
 L = f*v*dx
 
@@ -48,8 +54,7 @@ u = Function(V)
 solve(a == L, u, bc)
 
 # Plot solution and mesh
-plot(u)
-plot(mesh)
+plot(u, gridLine="black")
 
 # Save solution to file in VTK format
 # NOTE: might be possible - need to define a `File` class and add an
@@ -62,6 +67,12 @@ plot(mesh)
 
 # Compute error in L2 norm
 error_L2 = errornorm(u_D, u, 'L2')
+print('error_L2  =', error_L2)
+f.assign(-6.0)
+solve(a == L, u, bc)
+error_L2 = errornorm(u_D, u, 'L2')
+print('error_L2  =', error_L2)
+plot(u, gridLine="black")
 
 # Compute maximum error at vertices
 # original

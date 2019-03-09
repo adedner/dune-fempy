@@ -70,7 +70,7 @@ grid = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 # grid.hierarchicalGrid.globalRefine(1)
 
 # space on Gamma_0 to describe position of Gamma(t)
-spc = create.space("lagrange", grid, dimrange=grid.dimWorld, order=order)
+spc = create.space("lagrange", grid, dimRange=grid.dimWorld, order=order)
 # non spherical initial surgface
 positions = spc.interpolate(lambda x: x *
                       (1.+0.5*math.sin(2.*math.pi*x[0]*x[1])*
@@ -79,7 +79,7 @@ positions = spc.interpolate(lambda x: x *
 
 # space for discrete solution on Gamma(t)
 surface   = create.view("geometry",positions)
-spc = create.space("lagrange", surface, dimrange=surface.dimWorld, order=order)
+spc = create.space("lagrange", surface, dimRange=surface.dimWorld, order=order)
 solution  = spc.interpolate(lambda x: x, name="solution")
 
 

@@ -16,7 +16,7 @@ grid = adaptiveLeafGridView(aluConformGrid(domain, dimgrid=2))
 dune.fem.adapt(grid.hierarchicalGrid)
 
 # interpolate some data onto macro grid
-spc = lagrange(grid, dimrange=1, order=1)
+spc = lagrange(grid, dimRange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
 psi = spc.interpolate(lambda x: [math.cos(math.pi*x[0])*math.cos(math.pi*x[1])], name="psi")
 

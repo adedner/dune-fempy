@@ -11,7 +11,7 @@ from ufl import as_vector, dx, grad, inner, replace, exp, sqrt, dot
 from dune.ufl import NamedConstant, Space
 
 grid = structuredGrid([0, 0], [1, 1], [4, 4])
-space = create.space('lagrange', grid, dimrange=1, order=2, storage='istl')
+space = create.space('lagrange', grid, dimRange=1, order=2, storage='istl')
 
 u = TrialFunction(space)
 v = TestFunction(space)

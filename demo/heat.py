@@ -19,8 +19,8 @@ def compute():
     # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
     grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
     # set up a lagrange scalar space with polynomial order 2 over that grid
-    spc = create.space("lagrange", grid, dimrange=1, order=2, storage="istl")
-    # spc = create.space("dgonb", grid, dimrange=1, order=2)
+    spc = create.space("lagrange", grid, dimRange=1, order=2, storage="istl")
+    # spc = create.space("dgonb", grid, dimRange=1, order=2)
 
     # set up initial conditions
     solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")

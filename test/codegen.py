@@ -18,11 +18,11 @@ dimR      = 5
 quadOrder = 2*order+3
 spaceName = "lagrange"
 if use_codegen:
-    space = create.space(spaceName, grid, dimrange=dimR, order=order,
+    space = create.space(spaceName, grid, dimRange=dimR, order=order,
                          interiorQuadratureOrders=[quadOrder, 2*order],\
                          skeletonQuadratureOrders=[quadOrder] )
 else:
-    space = create.space(spaceName, grid, dimrange=dimR, order=order)
+    space = create.space(spaceName, grid, dimRange=dimR, order=order)
 
 x = SpatialCoordinate(space)
 

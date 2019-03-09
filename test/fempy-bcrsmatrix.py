@@ -17,7 +17,7 @@ assert(vec[0][0] == 1),"dune.istl blockvector not changing value correctly "
 
 view = create.grid("yasp", dune.grid.cartesianDomain([0,0],[1,1],[1,1]),dimgrid=2)
 
-spc = create.space("Lagrange", view, dimrange=2, order=3, storage='istl')
+spc = create.space("Lagrange", view, dimRange=2, order=3, storage='istl')
 
 #initialise all to 2
 uh = spc.interpolate([2,3], name="solution")

@@ -16,7 +16,7 @@ from dune.fem.function import integrate
 
 order = 1
 surface = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
-spc = create.space("Lagrange", surface, dimrange=1, order=order, storage="petsc")
+spc = create.space("Lagrange", surface, dimRange=1, order=order, storage="petsc")
 
 from ufl import as_vector, TestFunction, TrialFunction, SpatialCoordinate, dx, inner, grad
 from dune.ufl import NamedConstant

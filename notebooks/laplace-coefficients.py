@@ -25,10 +25,7 @@ import dune.create as create
 import dune.fem
 from dune.fem.plotting import plotPointData as plot
 
-dune.fem.parameter.append({"fem.verboserank": 0,
-                           "istl.preconditioning.method": "ilu",
-                           "istl.preconditioning.iterations": 1,
-                           "istl.preconditioning.relaxation": 1.2})
+dune.fem.parameter.append({"fem.verboserank": 0})
 
 
 # In[ ]:
@@ -40,7 +37,7 @@ theta = 0.5
 # set up a 2d simplex grid over the interval [0,1]^2 with h = 1/16
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
 # set up a lagrange scalar space with polynomial order 2 over that grid
-spc = create.space("lagrange", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("lagrange", grid, dimRange=1, order=2, storage="istl")
 
 # set up initial conditions
 solution = spc.interpolate(lambda x: [math.atan((10.0 * x[0] * (1-x[0]) * x[1] * (1-x[1]))**2)], name="u")
@@ -64,11 +61,11 @@ a = (inner(u - old_solution, v) +    tau * inner(grad(theta*u + (1-theta)*old_so
 model = create.model("integrands", grid, a == 0)
 
 # setup structure for olver parameters
-solverParameter = {"newton.tolerance": 1e-5, "newton.verbose": "false",
-                   "newton.linear.absolutetol": 1e-8, "newton.linear.reductiontol": 1e-8,
+solverParameter = {"newton.tolerance": 1e-5, "newton.verbose": False,
+                   "newton.linear.tolerance": 1e-8,
                    "newton.linear.preconditioning.method": "ilu",
                    "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
-                   "newton.linear.verbose": "false"}
+                   "newton.linear.verbose": False}
 # create the solver using a standard fem scheme
 scheme = create.scheme("galerkin", model, spc, parameters=solverParameter)
 

@@ -7,7 +7,7 @@ from dune.ufl import Space
 import dune.create as create
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("Lagrange", grid, dimrange=1, order=2, storage="fem")
+spc = create.space("Lagrange", grid, dimRange=1, order=2, storage="fem")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)

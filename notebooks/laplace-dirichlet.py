@@ -57,7 +57,7 @@ grid.hierarchicalGrid.globalRefine(4)
 # In[ ]:
 
 
-spc = lagrangeSpace(grid, dimrange=1, order=1, storage="istl")
+spc = lagrangeSpace(grid, dimRange=1, order=1, storage="istl")
 
 u = TrialFunction(spc)
 v = TestFunction(spc)

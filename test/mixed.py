@@ -33,8 +33,8 @@ left = conditional(x[0]<1e-5,1,0)
 equation = inner(grad(u), grad(v)) * dx + inner(u,v) * dx - inner(f,v) * dx \
            + 3*pi*x[1]**2*v[0] * left*ds == 0
 
-# spc = create.space("dgonb", grid, dimrange=dimRange, order=1)
-spc = create.space("lagrange", grid, dimrange=dimRange, order=1)
+# spc = create.space("dgonb", grid, dimRange=dimRange, order=1)
+spc = create.space("lagrange", grid, dimRange=dimRange, order=1)
 
 def test(operator):
     model = [equation,

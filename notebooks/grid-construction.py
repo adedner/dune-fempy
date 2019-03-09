@@ -243,7 +243,7 @@ plot(adaptiveGV)
 
 
 # interpolate some data onto grid
-spc = lagrange(adaptiveGV, dimrange=1, order=1)
+spc = lagrange(adaptiveGV, dimRange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
 
 for nr in range(101):
@@ -276,18 +276,18 @@ filter = lambda e: 1 if (e.geometry.center - [0.5, 0.5]).two_norm < 0.25 else 2
 subGrid = filteredGridView(grid, filter , 1, True)
 
 # interpolate some data onto the subgrid
-spc = lagrange(subGrid, dimrange=1, order=1)
+spc = lagrange(subGrid, dimRange=1, order=1)
 phi = spc.interpolate(lambda x: [math.sin(math.pi*x[0])*math.cos(math.pi*x[1])], name="phi")
 plot(phi)
 
 subGrid1 = filteredGridView(grid, filter, 1, True)
 subGrid2 = filteredGridView(grid, filter, 2, True)
 # interpolate some data onto the subgrid
-spc1 = lagrange(subGrid1, dimrange=1, order=1)
-spc2 = lagrange(subGrid2, dimrange=1, order=1)
+spc1 = lagrange(subGrid1, dimRange=1, order=1)
+spc2 = lagrange(subGrid2, dimRange=1, order=1)
 phi1 = spc1.interpolate(lambda x: [-1], name="phi1")
 phi2 = spc2.interpolate(lambda x: [ (x-[0.5,0.5] ).two_norm], name="phi2")
-spc = dgonb(grid, dimrange=1, order=1)
+spc = dgonb(grid, dimRange=1, order=1)
 phi = spc.interpolate(lambda en,x: [phi1.localFunction(en).evaluate(x) if subGrid1.contains(en) else phi2.localFunction(en).evaluate(x)], name="phi")
 plot(phi,gridLines="white")
 
@@ -308,7 +308,7 @@ def expr_global(x):
     return [1.5*x[0],0.5*(x[0]+1.)*x[1]*math.cos(0.1+2.*math.pi*t)]
 
 gf = globalFunction(grid, "coordinates", 1, expr_global)
-spc = lagrangeSpace(grid, dimrange=2, order=1)
+spc = lagrangeSpace(grid, dimRange=2, order=1)
 df = spc.interpolate(gf, name="test")
 
 geogrid = geometryGridView(df)

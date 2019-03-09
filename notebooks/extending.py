@@ -25,7 +25,7 @@ except:
 
 
 from dune.fem.space import module, addStorage
-def p1Bubble(gridview, dimrange, storage=None):
+def p1Bubble(gridview, dimRange, storage=None):
     # set the direct include path - all the include paths from the grid view used also need to be included
     includes = [ "dune/fem/space/p1bubble.hh" ] + gridview._includes
     dimw = gridview.dimWorld
@@ -35,7 +35,7 @@ def p1Bubble(gridview, dimrange, storage=None):
     #       also the correct C++ type name of that class
     # The wrapper `Dune::FemPy::GridPart` is needed to make it possible to either use
     # `dune-fem` GridPart classes on Dune core `GridView`
-    typeName = "Dune::Fem::BubbleElementSpace< " +      "Dune::Fem::FunctionSpace< double, double, " +          str(gridview.dimGrid) + ", " + str(dimrange) + " >, " +      "Dune::FemPy::GridPart< " + gridview._typeName + " > >"
+    typeName = "Dune::Fem::BubbleElementSpace< " +      "Dune::Fem::FunctionSpace< double, double, " +          str(gridview.dimGrid) + ", " + str(dimRange) + " >, " +      "Dune::FemPy::GridPart< " + gridview._typeName + " > >"
 
     # Now add the information required for the binding - first the file containing the bindings
     includes = includes + ["dune/fempy/py/space.hh"]

@@ -20,7 +20,7 @@ domain = {"vertices": vertices, "simplices": triangles}
 grid   = create.view("adaptive", grid="ALUConform", constructor=domain, dimgrid=2)
 grid.hierarchicalGrid.globalRefine(4)
 
-spc = create.space("Lagrange", grid, dimrange=1, order=1, storage="istl")
+spc = create.space("Lagrange", grid, dimRange=1, order=1, storage="istl")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
@@ -33,13 +33,13 @@ exact = as_vector([inner(x,x)**(0.5*180/270) * sin((180/270) * phi)])
 model = create.model("integrands", grid, inner(grad(u), grad(v))*dx == 0, DirichletBC(uflSpace,exact,1))
 
 newtonParameter = {"tolerance": 1e-10, "verbose": "false",
-                   "linear.absolutetol": 1e-11, "linear.reductiontol": 1e-11,
+                   "linear.tolerance": 1e-11,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}
 scheme = create.scheme("galerkin", model, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
-fvspc = create.space("finitevolume", grid, dimrange=1, storage="istl")
+fvspc = create.space("finitevolume", grid, dimRange=1, storage="istl")
 estimate = fvspc.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(uflSpace.cell())

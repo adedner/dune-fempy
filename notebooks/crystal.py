@@ -33,7 +33,7 @@ dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [3, 3])
 grid   = create.view("adaptive", grid="ALUConform",
                     constructor=domain, dimgrid=dimDomain)
-space  = create.space("lagrange", grid, dimrange=dimRange,
+space  = create.space("lagrange", grid, dimRange=dimRange,
                 order=order, storage="fem")
 
 
@@ -159,11 +159,11 @@ equation = a_im == a_ex
 
 
 model  = create.model("integrands", grid, equation, coefficients={un:solution_n} )
-solverParameters = {"tolerance": 1e-5, "verbose": "false",
-                    "linear.absolutetol": 1e-8, "linear.reductiontol": 1e-8,
+solverParameters = {"tolerance": 1e-5, "verbose": False,
+                    "linear.tolerance": 1e-8,
                     "linear.preconditioning.method": "ilu",
                     "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
-                    "linear.verbose": "false"}
+                    "linear.verbose": False}
 scheme = create.scheme("galerkin", model, space, solver="gmres",
         parameters=solverParameters)
 

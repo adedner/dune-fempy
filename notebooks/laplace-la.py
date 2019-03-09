@@ -7,7 +7,7 @@
 #
 # For the first example we used solvers available in dune-fem - simple Krylov solvers with only diagonal preconditioning. Changing the `storage` argument in the construction of the space makes it possible to use more sophisticated solvers (either better preconditioners or direct solvers). For example
 # ~~~
-# spc = create.space("lagrange", grid, dimrange=1, order=1, storage="istl")
+# spc = create.space("lagrange", grid, dimRange=1, order=1, storage="istl")
 # ~~~
 # in the above code will switch to the solvers from `dune-istl`, other options are for example `petsc` or `eigen`.
 #
@@ -50,7 +50,7 @@ dune.fem.parameter.append({"fem.verboserank": "0"})
 
 grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
 
-spc = create.space("lagrange", grid, dimrange=1, order=1, storage='fem')
+spc = create.space("lagrange", grid, dimRange=1, order=1, storage='fem')
 
 d = 0.001
 p = 1.7
@@ -183,7 +183,7 @@ try:
     # import petsc4py, sys
     # from petsc4py import PETSc
     # petsc4py.init(sys.argv)
-    spc = create.space("lagrange", grid, dimrange=1, order=1, storage='petsc')
+    spc = create.space("lagrange", grid, dimRange=1, order=1, storage='petsc')
     parameters["newton.linear.preconditioning.method"] = "sor"
     scheme = create.scheme("galerkin", a==b, spc,
                             parameters=parameters)

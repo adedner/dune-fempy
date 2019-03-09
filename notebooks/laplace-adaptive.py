@@ -56,7 +56,7 @@ triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0], [0,5,4], [6,5,0], [0,7,6]])
 domain = {"vertices": vertices, "simplices": triangles}
 view = gridView("ALUConform", domain)
 view.hierarchicalGrid.globalRefine(2)
-space  = solutionSpace( view, dimrange=1, order=order, storage="fem" )
+space  = solutionSpace( view, dimRange=1, order=order, storage="fem" )
 
 # <markdowncell>
 # Next define the model together with the exact solution.
@@ -104,7 +104,7 @@ uh = space.interpolate([0], name="solution")
 h1error = inner(grad(uh - exact), grad(uh - exact))
 
 # residual estimator
-fvspace = estimatorSpace(view, dimrange=1)
+fvspace = estimatorSpace(view, dimRange=1)
 estimate = fvspace.interpolate([0], name="estimate")
 
 hT = MaxCellEdgeLength(space.cell())

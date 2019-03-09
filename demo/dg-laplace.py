@@ -12,7 +12,7 @@ import dune.create as create
 parameter.append({"fem.verboserank": 0})
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("dgonb", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("dgonb", grid, dimRange=1, order=2, storage="istl")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)
@@ -32,7 +32,7 @@ b = sin(pi*x[0])*sin(pi*x[1])*v[0]*dx
 model = create.model("integrands", grid, a == b)
 
 newtonParameter = {"tolerance": 1e-10, "verbose": "true",
-                   "linear.absolutetol": 1e-11, "linear.reductiontol": 1e-11,
+                   "linear.tolerance": 1e-11,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
                    "linear.verbose": "false"}

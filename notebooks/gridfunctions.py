@@ -37,6 +37,7 @@ grid = create.grid("ALUConform", dune.grid.cartesianDomain([0,0],[1,1],[4,4]), d
 def expr_global(x):
     return [math.sin(x[0])**2, math.sin(x[0])*math.cos(10*x[1]), math.cos(10*x[1])**2]
 gf_gl = globalFunction(grid, "expr_global", 3, expr_global)
+print(expr_global([1,1]),gf_gl(grid.elements.__next__(),[0.5,0.5]))
 # plot all components + the grid
 plotComponents(gf_gl, gridLines="black")
 # plot the absolute value of the compnents without the grid
@@ -163,11 +164,11 @@ code = { 'eval': func1, 'jac': func2 }
 
 
 # first a constant function
-vector_space = lagrangeSpace(grid, dimrange=grid.dimension, order=2)
+vector_space = lagrangeSpace(grid, dimRange=grid.dimension, order=2)
 constant = vector_space.interpolate([1,1], name="constant")
 uh = vector_space.interpolate(lambda x: [math.sin(x[0]*x[1]*math.pi),math.cos(x[0]*x[1]*math.pi)], name="xy")
 plot(uh,vectors=[0,1],gridLines="")
-scalar_space = lagrangeSpace(grid, dimrange=1, order=2)
+scalar_space = lagrangeSpace(grid, dimRange=1, order=2)
 # we can also use the grid function decorators to define the a grid function
 vorticity = gridFunction(scalar_space.grid)(
             lambda en,x: [uh.localFunction(en).jacobian(x)[1][0]-uh.localFunction(en).jacobian(x)[0][0]])
@@ -213,7 +214,7 @@ plot(copy)
 
 
 import numpy as np
-spc = lagrangeSpace(grid, dimrange=1, order=1, storage='fem')
+spc = lagrangeSpace(grid, dimRange=1, order=1, storage='fem')
 uh = spc.interpolate(vorticity_h)
 plot(uh)
 uh_dofs = uh.as_numpy # equivalent to np.array( uh.dofVector, copy=False )

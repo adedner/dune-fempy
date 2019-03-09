@@ -112,7 +112,7 @@ initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 # domain = dune.grid.cartesianDomain([0,0],[3.5,3.5],[40,40])
 domain = dune.grid.cartesianDomain([0,0],[2.5,2.5],[30,30])
 grid = create.grid("ALUCube", domain, dimgrid=2)
-spc  = create.space( "lagrange", grid, dimrange=dimRange, order=1 )
+spc  = create.space( "lagrange", grid, dimRange=dimRange, order=1 )
 
 uh   = spc.interpolate( initial_u, name="u" )
 uh_n = uh.copy()
@@ -167,11 +167,11 @@ model = create.model("integrands", grid,  equation,  coefficients={un: uh_n, vn:
 
 solverParameters =\
        {"newton.tolerance": 1e-3,
-        "newton.verbose": "true",
-        "newton.linear.absolutetol": 1e-5, "newton.linear.reductiontol": 1e-5,
+        "newton.verbose": True,
+        "newton.linear.tolerance": 1e-5,
         "newton.linear.preconditioning.method": "ilu",
         "newton.linear.preconditioning.iterations": 1, "newton.linear.preconditioning.relaxation": 1.2,
-        "newton.linear.verbose": "true"}
+        "newton.linear.verbose": True}
 scheme = create.scheme("galerkin", model, spc, solver="cg",parameters=solverParameters)
 
 

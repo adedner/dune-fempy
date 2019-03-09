@@ -7,7 +7,7 @@ import ufl
 
 g = structuredGrid([0,0],[1,1],[2,3])
 
-s = create.space("lagrange",g,dimrange=2,storage="istl")
+s = create.space("lagrange",g,dimRange=2,storage="istl")
 f1 = s.interpolate(expr=[2,1], name="tmp")
 dofs = blockVector(int(s.size/s.localBlockSize), s.localBlockSize)
 # f2 = s.function("tmp", expr=[2,1], dofVector=dofs)
@@ -21,7 +21,7 @@ f1 = s.function("tmp", [2,1], blockVector(s.size//s.localBlockSize,s.localBlockS
 f2 = s.function("tmp", [2,1], blockVector(s.size//s.localBlockSize,s.localBlockSize) )
 operator(f1,f2)
 
-s = create.space("lagrange",g,dimrange=2,storage="fem")
+s = create.space("lagrange",g,dimRange=2,storage="fem")
 f1 = s.interpolate([2,1], name="tmp")
 dofs = numpy.ndarray(s.size)
 f2 = s.function("tmp", [2,1], dofs)
@@ -46,7 +46,7 @@ operator(f1,f2)
 try:
     import petsc4py
     from petsc4py import PETSc
-    petscs  = create.space("lagrange",g,dimrange=2,storage="petsc")
+    petscs  = create.space("lagrange",g,dimRange=2,storage="petsc")
     petscf1 = petscs.interpolate([2,1], name="tmp")
     petscDofs = PETSc.Vec().createSeq(petscs.size,bsize=2)
     # print("1.",petscDofs[0],petscDofs[1])

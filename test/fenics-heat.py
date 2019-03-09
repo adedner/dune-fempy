@@ -28,12 +28,13 @@ V = FunctionSpace(mesh, 'P', 1)
 # Define boundary condition
 # def boundary(x, on_boundary):
 #     return on_boundary
-g_D = Expression("t/T*sin(pi/2*x[0]*x[1])",view=mesh,degree=5,t=0,T=T)
+g_D = Expression("t/endTime*sin(pi/2*x[0]*x[1])",mesh=mesh,degree=5,t=0,endTime=T)
+print(g_D.endTime)
 bc = [DirichletBC(V, g_D, i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
 # bc = [DirichletBC(V, Constant(0), i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
 
 # Define initial value
-u_0 = Expression('exp(-a*pow(x[0], 2) - a*pow(x[1], 2)) + g_D', view=mesh,
+u_0 = Expression('exp(-a*pow(x[0], 2) - a*pow(x[1], 2)) + g_D', mesh=mesh,
                  degree=2, a=5, g_D=g_D)
 u_n = interpolate(u_0, V)
 

@@ -17,7 +17,7 @@ grid = structuredGrid([0, 0], [1, 1], [40, 40])
 order     = 2
 dimR      = 2
 spaceName = "lagrange"
-space = create.space(spaceName, grid, dimrange=dimR, order=order)
+space = create.space(spaceName, grid, dimRange=dimR, order=order)
 
 arg   = space.interpolate(as_vector([1,]*dimR), name='arg')
 destA = space.interpolate([0,]*dimR, name='destA')              # note: this uses an efficient approach in C++

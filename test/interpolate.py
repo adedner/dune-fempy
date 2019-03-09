@@ -7,7 +7,7 @@ from dune.alugrid import aluConformGrid as gridManager
 
 grid = gridManager(cartesianDomain([0,0],[1,1],[16,16]))
 # grid  = structuredGrid([0, 0], [1, 1], [16, 16])
-space = lagrange(grid, dimrange=1, order=1)
+space = lagrange(grid, dimRange=1, order=1)
 x = SpatialCoordinate(triangle)
 exact = as_vector([cos(2.*pi*x[0])*cos(2.*pi*x[1])])
 solution = space.interpolate(exact, name="solution")

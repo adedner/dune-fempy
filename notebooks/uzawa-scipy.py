@@ -10,8 +10,8 @@ from dune.fem.operator import linear as linearOperator
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
-spcU = create.space("lagrange", grid, dimrange=grid.dimension, order=order, storage="fem")
-spcP = create.space("lagrange", grid, dimrange=1, order=order-1, storage="fem")
+spcU = create.space("lagrange", grid, dimRange=grid.dimension, order=order, storage="fem")
+spcP = create.space("lagrange", grid, dimRange=1, order=order-1, storage="fem")
 
 cell  = spcU.cell()
 x     = SpatialCoordinate(cell)

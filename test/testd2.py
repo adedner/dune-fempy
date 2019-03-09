@@ -19,7 +19,7 @@ newtonParameter = {"tolerance": 1e-7, "verbose": "false",
                    "linear.verbose": "false"}
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[10,10]), dimgrid=2)
-spc = create.space("lagrange", grid, dimrange=1, order=2, storage="istl")
+spc = create.space("lagrange", grid, dimRange=1, order=2, storage="istl")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)

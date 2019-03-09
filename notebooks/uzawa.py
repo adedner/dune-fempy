@@ -21,8 +21,8 @@ storage="petsc"
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
 
-spcU = lagrangeSpace(grid, dimrange=grid.dimension, order=order, storage=storage)
-spcP = lagrangeSpace(grid, dimrange=1, order=order-1, storage=storage)
+spcU = lagrangeSpace(grid, dimRange=grid.dimension, order=order, storage=storage)
+spcP = lagrangeSpace(grid, dimRange=1, order=order-1, storage=storage)
 
 cell  = spcU.cell()
 x     = SpatialCoordinate(cell)
@@ -43,8 +43,6 @@ massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
 solverParameters = {}
-if storage == "istl" :
-    solverParameters = {"istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2}
 
 # can use 'h1' or 'galerkin'
 mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),
@@ -78,7 +76,7 @@ M = linearOperator(massOp)
 P = linearOperator(preconOp)
 
 solver = {"method":"gmres","verbose":True,
-          "relativetol":1e-10,"absolutetol":1e-10}
+          "tolerance":1e-10}
 Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
 Minv   = massOp.inverseLinearOperator(M,solver)
 Pinv   = preconOp.inverseLinearOperator(P,solver)

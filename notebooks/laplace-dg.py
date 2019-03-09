@@ -35,11 +35,11 @@ from dune.fem.plotting import plotPointData as plot
 
 import dune.create as create
 
-parameter.append({"fem.verboserank": 0, "istl.preconditioning.method": "ilu", "istl.preconditioning.iterations": 1, "istl.preconditioning.relaxation": 1.2})
+parameter.append({"fem.verboserank": 0})
 order = 2
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = dgSpace(grid, dimrange=1, order=order, storage="istl")
+spc = dgSpace(grid, dimRange=1, order=order, storage="istl")
 
 
 # The classical IPDG method for this problem reads
@@ -78,11 +78,11 @@ exact = as_vector([ sin(pi*x[0])*sin(pi*x[1]) ])
 # In[ ]:
 
 
-newtonParameter = {"tolerance": 1e-5, "verbose": "false",
-                   "linear.absolutetol": 1e-8, "linear.reductiontol": 1e-8,
+newtonParameter = {"tolerance": 1e-5, "verbose": False,
+                   "linear.tolerance": 1e-8,
                    "linear.preconditioning.method": "ilu",
                    "linear.preconditioning.iterations": 1, "linear.preconditioning.relaxation": 1.2,
-                   "linear.verbose": "false"}
+                   "linear.verbose": False}
 scheme = galerkinScheme(a == b, spc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
 uh = spc.interpolate([0],name="dg")
@@ -100,7 +100,7 @@ print("DG: L^2 and H^1 error:",
   [ sqrt(e) for e in integrate(grid,[error**2,inner(grad(error),grad(error))], order=5) ] )
 
 # We can simply produce a continuous projection of the discontinuous function
-lagSpc = lagrangeSpace(grid, dimrange=1, order=order+1, storage="istl")
+lagSpc = lagrangeSpace(grid, dimRange=1, order=order+1, storage="istl")
 contUh = lagSpc.project(uh, name="Vtx")
 plot(contUh)
 error = contUh - exact
@@ -109,7 +109,7 @@ print("Lag: L^2 and H^1 error:",
 
 # using averaged gradients
 from dune.ufl import DirichletBC
-gradSpc = lagrangeSpace(grid, dimrange=grid.dimension, order=order, storage="istl")
+gradSpc = lagrangeSpace(grid, dimRange=grid.dimension, order=order, storage="istl")
 contGrad = gradSpc.project(grad(uh[0]),name="ZZ")
 a = inner(grad(u[0])-contGrad, grad(v[0])) * dx
 scheme = galerkinScheme([a==0, DirichletBC(lagSpc,uh,1)],

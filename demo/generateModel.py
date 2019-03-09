@@ -70,7 +70,7 @@ def main(argv):
           g = dune.grid.create("ALUSimplex", dgf, dimgrid=2)
        print('get space')
        dimR = m.dimRange
-       sp = space.create( "Lagrange", g, dimrange=dimR )
+       sp = space.create( "Lagrange", g, dimRange=dimR )
 
        print('get scheme')
        try:
@@ -116,8 +116,8 @@ def main(argv):
        print("second scheme: ", s.error(s.solve()))
 
        # can we do the whole thing again?
-       # sp = space.create("Lagrange", g, dimrange=dimR, order=1 )
-       sp = space.create( "Lagrange", g, dimrange=dimR )
+       # sp = space.create("Lagrange", g, dimRange=dimR, order=1 )
+       sp = space.create( "Lagrange", g, dimRange=dimR )
        s = scheme.create( "FemScheme", sp, m, "solution", solver="fem" )
        # these are not needed anymore
        m = 0

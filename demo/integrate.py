@@ -25,7 +25,7 @@ def getUflSpace(grid,spc):
 
 def compute():
     grid = create.grid("ALUConform", dune.grid.cartesianDomain([0, 0], [1, 1], [8, 8]), dimgrid=2)
-    spc  = dune.create.space("Lagrange", grid, dimrange=1, order=2, storage="istl")
+    spc  = dune.create.space("Lagrange", grid, dimRange=1, order=2, storage="istl")
 
     uflSpace, x = getUflSpace(grid,spc)
 

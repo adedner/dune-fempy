@@ -4,7 +4,7 @@ import math
 from ufl import *
 
 from dune.grid import cartesianDomain
-from dune.ufl import Space
+from dune.ufl import Space, Constant
 
 import dune.create as create
 
@@ -37,15 +37,14 @@ def compute():
     u = TrialFunction(uflSpace)
     v = TestFunction(uflSpace)
     u_n = old_solution
-    tau = Constant(triangle)
+    tau = Constant(0)
     a = (inner(u - u_n, v) + tau * inner(grad(theta*u + (1-theta)*u_n), grad(v))) * dx
 
     # now generate the model code and compile
     #model = create.model("elliptic", grid, a == 0, coefficients={u_n:old_solution})
-    #model.setConstant(tau,[deltaT])
 
     model = create.model("integrands", grid, a == 0)
-    model.setConstant(tau, deltaT)
+    tau.value = deltaT
 
     # setup structure for olver parameters
     solverParameter = {"tolerance": 1e-10, "verbose": "true",

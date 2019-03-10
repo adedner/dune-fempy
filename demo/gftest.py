@@ -38,13 +38,13 @@ code = { 'eval': func1, 'jac': func2 }
 uflSpace = dune.ufl.Space((grid.dimGrid, grid.dimWorld), 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
 coeff = ufl.Coefficient(uflSpace)
-const = ufl.Constant(ufl.triangle)
+const = dune.ufl.Constant(0)
 c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*s*coeff[0], s*c, c*c ])
 coeffFunc = create.function("global", grid, "global_velocity", 0, lambda x: [1,2])
 funcUFL = create.function("ufl", grid, "ufl", 1, expr, coefficients={coeff: coeffFunc})
-funcUFL.setConstant(const, factor)
+const.value = factor
 
 func = funcUFL # needed since cpp function doesn't work
 

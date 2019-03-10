@@ -8,7 +8,7 @@ from dune.grid import structuredGrid
 from math import log
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, triangle
 from ufl import as_vector, dx, grad, inner, replace, exp, sqrt, dot
-from dune.ufl import NamedConstant, Space
+from dune.ufl import Constant, Space
 
 grid = structuredGrid([0, 0], [1, 1], [4, 4])
 space = create.space('lagrange', grid, dimRange=1, order=2, storage='istl')
@@ -16,8 +16,8 @@ space = create.space('lagrange', grid, dimRange=1, order=2, storage='istl')
 u = TrialFunction(space)
 v = TestFunction(space)
 x = SpatialCoordinate(space.cell())
-dt = NamedConstant(triangle, "dt")    # time step
-t  = NamedConstant(triangle, "t")     # current time
+dt = Constant(0, "dt")    # time step
+t  = Constant(0, "t")     # current time
 
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 u_h = space.interpolate(initial, name='u_h')

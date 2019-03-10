@@ -7,7 +7,6 @@ from ufl import TestFunction, TrialFunction, SpatialCoordinate, triangle, exp,\
                 dx, grad, inner, as_vector, replace, sqrt, dot,\
                 derivative, action
 from ufl.algorithms.apply_derivatives import apply_derivatives
-from dune.ufl import NamedConstant
 from dune.fem.operator import linear as linearOperator
 
 parameter.append({"fem.verboserank": -1})

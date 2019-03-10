@@ -19,12 +19,12 @@ surface = create.grid("ALUConform", "sphere.dgf", dimgrid=2, dimworld=3)
 spc = create.space("Lagrange", surface, dimRange=1, order=order, storage="petsc")
 
 from ufl import as_vector, TestFunction, TrialFunction, SpatialCoordinate, dx, inner, grad
-from dune.ufl import NamedConstant
+from dune.ufl import Constant
 u = TrialFunction(spc)
 v = TestFunction(spc)
 x = SpatialCoordinate(spc)
 f = as_vector( [(4*x[0]*x[0])-2*((x[2]*x[2])+(x[1]*x[1]))] )
-discreteMass = NamedConstant(spc,"discreteMass")
+discreteMass = Constant(0,"discreteMass")
 
 equation = inner(grad(u), grad(v)) * dx == (f[0]-discreteMass)*v[0] * dx
 scheme = create.scheme("galerkin", equation, spc,

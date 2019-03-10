@@ -4,7 +4,7 @@ import dune.create as create
 from dune.grid import cartesianDomain
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
                 inner, dot, div, grad, dx, as_vector, transpose, Identity
-from dune.ufl import NamedConstant, DirichletBC
+from dune.ufl import Constant, DirichletBC
 import dune.fem
 from dune.fem import parameter
 from dune.fem.space import lagrange  as lagrangeSpace
@@ -26,8 +26,8 @@ spcP = lagrangeSpace(grid, dimRange=1, order=order-1, storage=storage)
 
 cell  = spcU.cell()
 x     = SpatialCoordinate(cell)
-mu    = NamedConstant(cell, "mu")
-nu    = NamedConstant(cell, "nu")
+mu    = Constant(0, "mu")
+nu    = Constant(0, "nu")
 u     = TrialFunction(spcU)
 v     = TestFunction(spcU)
 p     = TrialFunction(spcP)

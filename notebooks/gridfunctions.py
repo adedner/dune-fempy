@@ -75,12 +75,12 @@ plot(gf_loc[0],level=3)
 
 uflSpace = dune.ufl.Space(grid, 2, field="double")
 x = ufl.SpatialCoordinate(ufl.triangle)
-const = ufl.Constant(ufl.triangle)
+const = dune.ufl.Constant(0)
 c = ufl.cos(const*x[1])
 s = ufl.sin(x[0])
 expr = ufl.as_vector([ s*c ])
 funcUFL = uflFunction(grid, "ufl", 1, expr)
-funcUFL.setConstant(const, 10)
+const.value = 10
 # in the case of a scalar function the actual values are plotted
 # and not the absolute values are for dimRange > 1
 plot(funcUFL)

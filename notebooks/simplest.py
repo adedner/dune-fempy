@@ -3,7 +3,7 @@ from __future__ import print_function, division
 import numpy as np
 from ufl import as_vector, inner, grad, sin, cos, pi, dx, atan_2, conditional, dot
 from math import sqrt, pi
-from dune.ufl import DirichletBC, NamedConstant
+from dune.ufl import DirichletBC, Constant
 
 import dune.create as create
 from dune.grid import structuredGrid
@@ -47,15 +47,14 @@ print("L^2 and H^1 error:",
 plot(error,grid=grid)
 
 # heat equation
+dt = 0.01
 solution.clear()
 un  = space.interpolate(-exact,name="oldSolution")
-tau = NamedConstant(space,name="tau")
+tau = Constant(dt,name="tau")
 scheme = galerkin( ( u*v  + tau*dot(grad(u),grad(v)) )*dx == (un+tau*f)*v*dx )
 
 # compute until stationary solution reached (same final solution as above)
 t  = 0
-dt = 0.01
-scheme.model.tau = dt
 dist = integrate(grid,error**2,order=5)[0]
 while dist > 0.01:
     info = scheme.solve(target=solution)

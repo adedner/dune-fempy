@@ -7,7 +7,7 @@ from dune.fem.operator import linear as linearOperator
 import dune.create as create
 from ufl import TestFunction, TrialFunction, SpatialCoordinate, triangle, exp,\
                 dx, grad, inner, as_vector, replace, sqrt
-from dune.ufl import NamedConstant
+from dune.ufl import Constant
 
 parameter.append({"fem.verboserank": -1})
 
@@ -33,8 +33,8 @@ u_h_n = u_h.copy(name="previous")
 
 u = TrialFunction(space)
 v = TestFunction(space)
-dt = NamedConstant(triangle, "dt")    # time step
-t  = NamedConstant(triangle, "t")     # current time
+dt = Constant(0, "dt")    # time step
+t  = Constant(0, "t")     # current time
 
 abs_du = sqrt(inner(grad(u), grad(u)))
 K = 2/(1 + sqrt(1 + 4*abs_du))

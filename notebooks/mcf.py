@@ -117,7 +117,7 @@ u = ufl.TrialFunction(spc)
 v = ufl.TestFunction(spc)
 x = ufl.SpatialCoordinate(spc.cell())
 I = ufl.Identity(3)
-tau = ufl.Constant(spc.cell())
+tau = dune.ufl.Constant(0)
 
 a = (ufl.inner(u - x, v) + tau * ufl.inner(
           theta*ufl.grad(u) + (1-theta)*I, ufl.grad(v)

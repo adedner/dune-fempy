@@ -213,17 +213,8 @@ we look at additional features in the context of more complex examples.
 Finally we discuss the comparison to C++ code in section
 \ref{sec:mcf-comparison}.
 
-\Rtodo{Include example of ellipticmodel.hh}
 \Atodo{do we want to add something on parallelism}
-\Rtodo{Parallelism only maybe for one example and only if it's already working.}
-\Atodo{which other features are missing? Should we include an example on
-non variational problems or bounding box dg? Perhaps we could show r
-adaptivity (also shows off the moving grid capability) and the use of
-dune-femnv?  twophaseflow example? p-adaptivity? Uzawa examples?}
-\Atodo{describe new 'dune.get(category=None,entry=None)' function listing all available
-       implementations of a given category, e.g., grid,space etc.}
-\Atodo{shuld we 'import' all spaces,function etc. into 'dune.fem' to allow
-       'from dune.fem import *'}
+\Atodo{3d two phase flow, navier stokes example for conclusions}
 
 %<*tag>
 
@@ -466,7 +457,7 @@ the parameter \pyth{order} giving the order of the quadrature to use.
 Note that at the time of writing \dune[Fempy] only operates with vectored
 valued expressions and forms.
 
-\Atodo{Here it would be nice to be able to provide a quadrature instead of only an order}
+%% \Atodo{Here it would be nice to be able to provide a quadrature instead of only an order}
 
 We can also plot functions fairly easily. The two main ways to do
 this in \dune[Fempy] are either a quick plot in \pyth{matplotlib}
@@ -521,6 +512,7 @@ kind of finite element we want to use, and by extension their space. In
 particular this is important because the order and type of elements used can
 dictate the solvability and the efficiency of the method.
 
+\begin{comment}
 Let us consider a simple case of Lagrange elements. Since we have a 2D
 domain with a quadrilateral mesh, we consider shape functions that are 1 on
 each separate node, and 0 on the others. For orders 2 and 3, the shape
@@ -540,11 +532,10 @@ shown in figure \ref{fig:lagrange-elements}).
   \label{fig:lagrange3}
 \end{subfigure}
 \caption{Node maps of two Lagrange reference elements
-\Atodo{should we (a) leave these in (b) replace them with something more
-interesting, i.e., non equidistant Lagrange points or (c) remove them?}}
 \label{fig:lagrange-elements}
 \end{figure}
-The creation of such a Lagrange space in \dune[Fempy] is done by the
+\end{comment}
+The creation of a Lagrange space in \dune[Fempy] is done by the
 following code.
 \renewcommand{\pweavecaption}{Creating a Lagrange space with
 polynomial basis functions}
@@ -564,7 +555,8 @@ arguments and one keyword argument.
 \begin{itemize}
   \item \pyth{gridView} passes in the grid view we constructed previously.
   \item \pyth{dimRange=None} (optional) sets the dimension of the range
-  space to $r=1$
+  space, not setting this parameter leads to a scalar space, setting
+  \pyth{dimRange}$\geq 0$  produces a vextor valued space.
   \item \pyth{order=2} (optional) sets the order of the finite
   elements to 2 (1 is the default).
 \end{itemize}
@@ -626,11 +618,6 @@ one to the other.
 the interpolation error for the initial conditions?}
 
 \subsection{Schemes} \label{sec:schemes}
-\Atodo{Explain that JIT compilation happens behind the scheme and show
-       \pyth{uflFunction} to make the process explicit}
-\Atodo{Show how to evaluate grid functions?}
-
-\Atodo{Note that grid function are ufl coefficients so can be directly used}
 
 In \dune[Fempy], we define schemes as the object combining a
 discretization of a given weak form, its boundary conditions and the method used
@@ -654,12 +641,6 @@ residual problem, e.g., $L[u_h]=0$ in the domain (and $u_h-g=0$ on the
 Dirichlet boundary if present). The \pyth{solve} method can take an
 optional argument \pyth{rhs} in which case $L[u_h]=$\pyth{rhs} will be
 solved.
-
-\Atodo{should we also mention the 'constraint' methods for handling Dirichlet bcs
-       we probably need to add an example of handling DirichletBCs in the
-       main part - they only appear without much explanation in the
-       reentrant corner problem. The issue of boundary ids is also not
-       addressed}
 
 Recall the parabolic equation (\ref{eqn:forch-roche}), which we will focus
 on in the following example. To begin with, it is
@@ -696,17 +677,18 @@ Finally $g$ is defined by assigning the
 value to the boundary term using the exact solution.
 ```python, label = 'forch-variables'
 from ufl import TestFunction, TrialFunction
-from dune.ufl import NamedConstant
+from dune.ufl import Constant
 u = TrialFunction(space)
 v = TestFunction(space)
-dt = NamedConstant(space, "dt")    # time step
-t  = NamedConstant(space, "t")     # current time
+dt = Constant(0, name="dt")    # time step
+t  = Constant(0, name="t")     # current time
 ```
 The trial function $u$ and the test function $v$ are defined on the
 same \pyth{space} as before. Additionally $\Delta t$ and $t$ are
-defined as \pyth{NamedConstant}, which is simply a UFL \pyth{Constant}
-variable that can be given a name so it can be more easily modified
-later on.
+defined as \pyth{Constant}, which can be simply used within UFL expressions
+and set to specific values later on if required either using the
+\pyth{value} attribute on the \pyth{Constant} instance or using the
+attribute given by the \pyth{name} as described below.
 
 Now for the equation (\ref{eqn:forch-roche}) itself,
 resulting in an implementation of the following form.
@@ -720,6 +702,10 @@ a = ( dot((u - u_h_n)/dt, v) \
     + 0.5*dot(K(u)*grad(u), grad(v)) \
     + 0.5*dot(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx
 ```
+Note that we can directly use the discrete function \pyth{u_h_n} as part of
+the UFL expression, changes to the degrees of freedom of this discrete
+functions do not require any recompilation.
+
 To define the forcing $f$, we put the exact
 solution into the strong form of the equation
 (i.e. $f = u_t - \nabla \cdot (K(\nabla u) \cdot \nabla u$).
@@ -763,9 +749,7 @@ a conjugate gradient method, since the PDE operator is
 self-adjoint). The default value for this argument is \pyth{gmres}.
 More details on how to choose and customize the solvers will be given later.
 
-\Atodo{reminder to discuss solver parameters in section 3}
-\Rtodo{The scheme and the model needs to be a bit more motivated here.}
-\Atodo{Any suggestions?}
+\Rtodo{The scheme and the model needs to be a bit more motivated here - Robert}
 
 
 Lastly we note that it is possible to explicitly define a model object
@@ -779,9 +763,9 @@ Let us begin by setting up the time step $\Delta t = 0.05$.
 The time step is part of the UFL equation passed to the constructor of the
 \pyth{scheme}. The scheme uses that equation to construct a model with
 methods to change any UFL constant found in the equation. Using an instance
-of \pyth{NamedConstant} we can easily assign values to these constant using
+of \pyth{Constant} we can easily assign values to these constant using
 the given name. Recall that we used
-\pyth{dt = NamedConstant(space, "dt")} in our UFL equation and setting this
+\pyth{dt = Constant(space, "dt")} in our UFL equation and setting this
 constant for example to \pyth{0.05} is achieved by the following code:
 \renewcommand{\pweavecaption}{Setting up time variables before the
 loop}
@@ -917,6 +901,13 @@ submission - or generated through the Makefile}
 \end{comment}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Setting boundary conditions}
+\Atodo{should we also mention the 'constraint' methods for handling Dirichlet bcs
+       we probably need to add an example of handling DirichletBCs in the
+       main part - they only appear without much explanation in the
+       reentrant corner problem. The issue of boundary ids is also not
+       addressed}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Using Alternative Linear Algebra Packages} \label{sec:solve}
 ```python, label="solve-methods", echo=False
@@ -926,6 +917,7 @@ submission - or generated through the Makefile}
 # packages and python functionality.
 # <codecell>
 ```
+
 We carry on our exploration of the \dune[Fempy] feature set by
 looking at the different methods of solving the PDE,
 facilitated by the different storage back ends which can be chosen while
@@ -936,12 +928,6 @@ a large number of solvers and preconditioners become availbale without loss
 of performance. Furthermore, for those packages providing Python bindings
 for their data structures, these can be directly accessed in Python
 scripts.
-
-\Rtodo{Motivate the different storage types, basically a result of the poor
-programming of the LA packages.}
-\Atodo{That is a bit harsh - I tried to point out above that the
-flexibility to directly use different packages is a strength of \dune[] not
-a weakness of others - mach nicht immer alles schlecht :-)}
 
 By default we use a very simple storage structure
 directly provided in \dune[fem] and consequently not requiring any
@@ -1241,13 +1227,14 @@ underlying C++ \pyth{Vec} and \pyth{Mat} structures can be shared using the
 bindings provided by \pyth{petsc4py}. At the time of writing it
 is not yet possible to pass in for example a \pyth{Mat} instance
 constructed on the Python side to the \pyth{scheme.jacobian} method.
-\Atodo{We should perahps add the issue with grid refinement invalidating a
-previously held \pyth{matrix = jacobian.as_numpy} since the underlying
-memory will have changed. Perhaps overal something on memory management,
-i.e., that (now) \pyth{globaleRefine} can leed to \pyth{NaN} values for new
-dofs so \pyth{clear} needs to be called or
-\pyth{dune.fem.globalRefine([uh])}
-should be used}
+
+Finally, we would like to point out that matrix and vector instances
+constructed for example by \pyth{vector = discreteFunction.as_numpy} will
+be invalidated during grid refinement. Any grid refinement will
+automatically resize the underlying degrees of freedom vector of any
+discrete function, consequently the memory address will have changed after
+grid refienement and the buffer underlying the numpy array \pyth{vector}
+will be invalid and its usage will lead to unspecified behaviour.
 
 \section{Adaptive Mesh Refinement} \label{sec:crystal}
 
@@ -1257,21 +1244,16 @@ allows for the targeted refinement of the computational domain in
 specific areas where there is greater turbulence or activity, for greater
 precision. In problems where uniform refinement of a mesh is not
 required, this allows for more precision of the results at less
-computational cost.  
-
-\Rtodo{What about exponential convergence rates, etc. }
+computational cost.
 
 The method considered here uses so-called h-adaptivity that adds
 additional mesh points to the grid at areas of small scale activity.
 It does so based on a marking procedure that
-evaluates the gradient of the solution at each element and determines
+evaluates an error indicator on each element and determines
 whether to refine the grid based on a level of tolerance.
-
-\Rtodo{Shouldn't just speak of error indicators here?}
 
 In this section we present two examples which use adaptive grid
 refinement in slightly different ways.
-\Atodo{add something on the new \pyth{dune.fem.mark} in the notebook}
 
 \input{laplace-adaptive.tex}
 
@@ -1458,8 +1440,13 @@ We note that this is a different approach to similar packages, like Fenics
 in general do not create a human readable C++ class that only depends on
 the PDE itself and not on discretization details, e.g., the discrete spaces
 or quadratures used. We are planning to adding this approach in the future
-to be able to generate more efficient code in some special cases.
+to be able to generate more efficient code in some special cases. Note that
+one advantage is that non standard discretization schemes can be easily
+implemented in C++ based on these generated classes, more
+details can be found in \cite{LloydsThesis} which also contains an example
+usage for non variational problems.
 
+\begin{comment}
 \subsection{Elliptic Models}
 
 First let us consider the simpler \pyth{elliptic} model. In mathematical
@@ -1555,11 +1542,6 @@ model = create.model("nvdg", gridView, a == b)
 Thus it becomes possible to write schemes that expect different
 arguments from the operator.
 
-\Rtodo{Here I would again explain a bit what is possible with this approach and
-what couldn't be done with Firedrake and Fenics. One has to be careful though. }
-\Rtodo{I didn't find the module nvdg. Maybe Andreas has to fix this line.}
-
-
 \subsection{Integrands Models}
 
 We note however that as mentioned before, there exists another way of
@@ -1583,8 +1565,9 @@ In addition as the above shows we can add a term
 defined only on the skeleton (the facets) of the mesh. Due to the
 ability to add such interior terms, the \pyth{integrands} class is
 for example useful to construct discontinuous Galerkin methods.
+\end{comment}
 
-\subsection{C++ Models} \label{sec:cpp-models}
+% \subsection{C++ Models} \label{sec:cpp-models}
 
 In addition to the automatic creation of a shared library object that
 is done when the model is imported into Python, it is
@@ -1603,8 +1586,8 @@ space = Space(2, 1)
 u = TrialFunction(space)
 v = TestFunction(space)
 x = SpatialCoordinate(space.cell())
-dt = NamedConstant(triangle, "dt")    # time step
-t  = NamedConstant(triangle, "t")     # current time
+dt = Constant(0, "dt")    # time step
+t  = Constant(0, "t")     # current time
 u_h_n = NamedCoefficient(space,"previous")
 
 initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
@@ -1616,11 +1599,6 @@ b = replace(a, {u: exact})
 
 F = a - b
 \end{pweavecode}
-\Atodo{remark somewhere that we use \pyth{TrialFunction} also in the case
-of non linear problems in contrast to Fenics. The only way to fix this
-would be to add a parameter \pyth{solution=u} during model/scheme/operator
-generation and then use \pyth{replace(form,dict(u=TrialFunction)}}
-
 Once the corresponding \cpp{forchheimer.hh} file has been generated,
 it can then be edited manually, and then used in place
 of a UFL expression in \dune[Fempy]. This choice of default shared library
@@ -1760,12 +1738,9 @@ approach is that evaluating some part of the form introduces a virtual
 function call. At the same time UFL coefficients are stored as type erased
 \pyth{VirtualizedGridFunction} in the model class again to avoid too much
 recompilation when changes to the UFL equations are made.
-\Atodo{
-explain that tests have shown that this is negligible and show some
+\Atodo{ explain that tests have shown that this is negligible and show some
 performance test. Mention virtualization parameter to
-disable type erasure if required.
-}
-\Atodo{We should add some information on typical compilation times}
+disable type erasure if required.}
 
 \section{Conclusions and Outlook}
 The example below shows an example of solving a simple laplace problem
@@ -1847,10 +1822,6 @@ The code examples from this paper are included in the notebook file
 Notice that this method works on Linux, MacOS, and Windows alike, although it
 might be necessary to increase the amount of system memory given to Docker to
 4~GB, e.g., on MacOS.
-
-\Atodo{mention the \pyth{dune.create.get} method - good name to be found, perhaps
-       \pyth{inspect,help,show}...}
-\Rtodo{I thought \pyth{dune.create} is deprecated?}       
 
 If you already have the \dune core modules either installed or in local
 space, it suffices to download the \dune[Python] module
@@ -1958,7 +1929,7 @@ added. To simplify determining what is available the following utility can
 be used:
 \renewcommand{\pweavecaption}{The default form for linearising an operator}
 \renewcommand{\pweavelabel}{lst:linearise-operator}
-```python, label="lst:componentsutility", echo=False
+```python, label="lst:componentsutility"
 from dune.utility import components
 # to get a list of all available components:
 components()
@@ -1968,7 +1939,7 @@ components("grid")
 % # constructing a `yaspGrid` instance can be done using
 % component("grid","yasp")(cartesianDomain([0,0],[1,1],[10,10]))
 
-\subsection{Grids} \label{sec:grid-list}
+\subsection{Gridviews} \label{sec:grid-list}
 
 Grids by default take the following form.
 \renewcommand{\pweavecaption}{The default form for grid creation}
@@ -2091,7 +2062,6 @@ function.
 \item \pyth{constructor}: An object described in the table below used
 to construct the function.
 \end{enumerate}
-\Rtodo{I removed cpp and I didn't find numpy function.}
 For the below table we list the available functions 
 together with the compatible argument for the
 \pyth{constructor} parameter.
@@ -2162,8 +2132,6 @@ influence the solving procedure. Most importantly tolerances for the
 iterative solvers can be provided and verbosity can be turned on and off.
 In addition preconditioners can be set via the parameters.
 
-\Atodo{discuss the scheme parameters at the end of section describing the
-backends or somewhere else?}
 \begin{comment}
 Available options depend on the
 \pyth{storage} backend used to construct the space.
@@ -2211,10 +2179,8 @@ construction.
 from dune.fem.operator import galerkin
 operator = galerkin(form, domainSpace, rangeSpace)
 \end{pweavecode}
+\Atodo{move the following to main part (Andreas)}
 Here the first argument is a UFL form.
-
-
-\Atodo{move the following to main part}
 such after calling
 \pyth{operator(d_h,r_h)} the degrees of freedom of the
 discrete function $r_h$ over the range

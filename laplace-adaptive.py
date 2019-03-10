@@ -14,8 +14,6 @@
 # \begin{gather*}
 #   u(r,\varphi) = r^{\frac{\pi}{\Phi}} \sin\big(\frac{\pi}{\Phi} \varphi \big)
 # \end{gather*}
-#
-# We first define the domain and set up the grid and space.
 
 # <codecell>
 try:
@@ -31,6 +29,8 @@ import dune.fem as fem
 from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as leafGridView
+from ufl import *
+from dune.ufl import DirichletBC
 
 
 # set the angle for the corner (0<angle<=360)
@@ -40,44 +40,65 @@ cornerAngle = 320.
 order = 2
 
 # <markdowncell>
-# define the grid for this domain (vertices are the origin and 4
+# We first define the domain and set up the grid and space.
+# We need this twice - once for a computation on a globally refined grid
+# and once for an adaptive one so we put the setup into a function:
+#
+# We first define the grid for this domain (vertices are the origin and 4
 # equally spaced points on the unit sphere starting with (1,0) and
 # ending at (cos(cornerAngle), sin(cornerAngle))
 
-# <codecell>
-vertices = numpy.zeros((8, 2))
-vertices[0] = [0, 0]
-for i in range(0, 7):
-    vertices[i+1] = [math.cos(cornerAngle/6*math.pi/180*i),
-                     math.sin(cornerAngle/6*math.pi/180*i)]
-triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
-                         [0,5,4], [6,5,0], [0,7,6]])
-domain = {"vertices": vertices, "simplices": triangles}
-gridView = adaptiveGridView( leafGridView(domain) )
-gridView.hierarchicalGrid.globalRefine(2)
-space = solutionSpace(gridView, order=order)
-
-# <markdowncell>
 # Next we define the model together with the exact solution.
 
 # <codecell>
-from ufl import *
-from dune.ufl import DirichletBC
-from dune.fem.scheme import galerkin as solutionScheme
-u = TrialFunction(space)
-v = TestFunction(space)
-x = SpatialCoordinate(space.cell())
+def setup():
+    vertices = numpy.zeros((8, 2))
+    vertices[0] = [0, 0]
+    for i in range(0, 7):
+        vertices[i+1] = [math.cos(cornerAngle/6*math.pi/180*i),
+                         math.sin(cornerAngle/6*math.pi/180*i)]
+    triangles = numpy.array([[2,1,0], [0,3,2], [4,3,0],
+                             [0,5,4], [6,5,0], [0,7,6]])
+    domain = {"vertices": vertices, "simplices": triangles}
+    gridView = adaptiveGridView( leafGridView(domain) )
+    gridView.hierarchicalGrid.globalRefine(2)
+    space = solutionSpace(gridView, order=order)
 
-# exact solution for this angle
-Phi = cornerAngle / 180 * pi
-phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
-exact = dot(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)
-a = dot(grad(u), grad(v)) * dx
+    from dune.fem.scheme import galerkin as solutionScheme
+    u = TrialFunction(space)
+    v = TestFunction(space)
+    x = SpatialCoordinate(space.cell())
 
-# set up the scheme
-laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)])
-uh = space.interpolate([0], name="solution")
+    # exact solution for this angle
+    Phi = cornerAngle / 180 * pi
+    phi = atan_2(x[1], x[0]) + conditional(x[1] < 0, 2*pi, 0)
+    exact = dot(x, x)**(pi/2/Phi) * sin(pi/Phi * phi)
+    a = dot(grad(u), grad(v)) * dx
 
+    # set up the scheme
+    laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)])
+    uh = space.interpolate([0], name="solution")
+    return uh, exact, laplace
+
+# <markdowncell>
+# We will start with computing the $H^1$ error on a sequence of globally
+# refined grids:
+
+# <codecell>
+uh, exact, laplace = setup()
+h1error = dot(grad(uh - exact), grad(uh - exact))
+errorGlobal = []
+dofsGlobal  = []
+for count in range(12):
+    laplace.solve(target=uh)
+    error = math.sqrt(fem.function.integrate(uh.space.grid, h1error, 5))
+    errorGlobal += [error]
+    dofsGlobal  += [uh.space.size]
+    # Note that by using `fem.globalRefine` instead of
+    # `hierarchicalGrid.globalRefine` we can prolongate discrete functions
+    # to the next level. The argument can also be a list/tuple
+    # of discrete functions to prolong
+    fem.globalRefine(1,uh)
 
 # <markdowncell>
 # Theory tells us that
@@ -103,34 +124,37 @@ uh = space.interpolate([0], name="solution")
 # define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
 # we have $L[u_h]|_{K} = \eta_K$.
 
-# <codecell>
-# energy error
-h1error = dot(grad(uh - exact), grad(uh - exact))
 
-# residual estimator
+# <codecell>
+uh, exact, laplace = setup()
+
 from dune.fem.space import finiteVolume as estimatorSpace
 from dune.fem.operator import galerkin as estimatorOp
 
-fvspace = estimatorSpace(gridView)
+fvspace = estimatorSpace(uh.space.grid)
 estimate = fvspace.interpolate([0], name="estimate")
 
-hT = MaxCellEdgeLength(space.cell())
-he = MaxFacetEdgeLength(space.cell())('+')
-n = FacetNormal(space.cell())
+u = TrialFunction(uh.space.as_ufl())
+v = TestFunction(fvspace)
+hT = MaxCellEdgeLength(fvspace.cell())
+he = MaxFacetEdgeLength(fvspace.cell())('+')
+n = FacetNormal(fvspace.cell())
 estimator_ufl = hT**2 * (div(grad(u)))**2 * v * dx +\
         he * inner(jump(grad(u)), n('+'))**2 * avg(v) * dS
-estimator = estimatorOp(estimator_ufl, space, fvspace)
-# marking strategy (equidistribution)
-tolerance = 0.1
-
+estimator = estimatorOp(estimator_ufl) # , space, fvspace)
+tolerance = 0.01
 
 # <markdowncell>
 # Let us solve over a loop (solve,estimate mark) and plot the solutions side by side.
 
 # <codecell>
+h1error = dot(grad(uh - exact), grad(uh - exact))
 fig = pyplot.figure(figsize=(10,10))
 count = 0
-while count < 20:
+errorVector    = []
+estimateVector = []
+dofs           = []
+while True:
     laplace.solve(target=uh)
     if count%3 == 0:
         pyplot.show()
@@ -138,20 +162,20 @@ while count < 20:
         fig = pyplot.figure(figsize=(10,10))
     plot(uh, figure=(fig, 131+count%3), colorbar=False)
     # compute the actual error and the estimator
-    error = math.sqrt(fem.function.integrate(gridView, h1error, 5))
+    error = math.sqrt(fem.function.integrate(uh.space.grid, h1error, 5))
     estimator(uh, estimate)
-    eta = sum(estimate.dofVector)
-    print(count, ": size=", gridView.size(0), "estimate=", eta,
+    eta = math.sqrt( sum(estimate.dofVector) )
+    dofs           += [uh.space.size]
+    errorVector    += [error]
+    estimateVector += [eta]
+    print(count, ": size=", uh.space.grid.size(0), "estimate=", eta,
           "error=", error)
     if eta < tolerance:
         break
-    if tolerance == 0.:
-        fem.globalRefine(uh) # can also be a list or tuple of function to prolong/restrict
-    else:
-        marked = fem.doerflerMark(estimate,0.6)
-        fem.adapt(uh)        # can also be a list or tuple of function to prolong/restrict
-        fem.loadBalance(uh)
-    laplace.solve( target=uh )
+    marked = fem.doerflerMark(estimate,0.6)
+    # marked = fem.mark(estimate,tolerance*tolerance/gridView.size(0))
+    fem.adapt(uh)        # can also be a list or tuple of function to prolong/restrict
+    fem.loadBalance(uh)
     count += 1
 pyplot.show()
 pyplot.close('all')
@@ -176,4 +200,9 @@ pyplot.close('all')
 
 # <codecell>
 from dune.fem.function import levelFunction
-plot(levelFunction(gridView), xlim=(-0.2,1), ylim=(-0.2,1))
+plot(levelFunction(uh.space.grid), xlim=(-0.2,1), ylim=(-0.2,1))
+
+pyplot.loglog(dofsGlobal,errorGlobal,label="H^1 error (global refine)")
+pyplot.loglog(dofs,errorVector,label=" H^1 error (adaptive)")
+pyplot.loglog(dofs,estimateVector,label="estimator (adaptive)")
+pyplot.show()

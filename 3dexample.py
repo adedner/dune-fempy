@@ -38,7 +38,7 @@ renderView1.AxesGrid.ZLabelColor = [0.0, 0.0, 0.0]
 # ----------------------------------------------------------------
 
 # create a new 'XML Unstructured Grid Reader'
-a3dexamplevtu = XMLUnstructuredGridReader(FileName=['figures/3dexample.vtu'])
+a3dexamplevtu = XMLUnstructuredGridReader(FileName=['3dexample.vtu'])
 a3dexamplevtu.PointArrayStatus = ['solution']
 
 # ----------------------------------------------------------------

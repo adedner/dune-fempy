@@ -42,7 +42,7 @@ except:
 import math
 
 from ufl import *
-from dune.ufl import NamedConstant
+from dune.ufl import Constant
 import dune.ufl
 import dune.geometry as geometry
 import dune.fem as fem
@@ -70,12 +70,13 @@ from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as leafGridView
 gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
 space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
-positions = space.interpolate(lambda x:
-            x * (1 + 0.5*math.sin(2*math.pi*x[0]*x[1])*\
-                        math.cos(math.pi*x[2])), name="position")
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space)
+positions = space.interpolate(x * (1 + 0.5*sin(2*pi*x[0]*x[1])* cos(pi*x[2])), name="position")
 surface = geometryGridView(positions)
 space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
-solution = space.interpolate(lambda x: x, name="solution")
+solution = space.interpolate(x, name="solution")
 
 
 # <markdowncell>
@@ -85,11 +86,8 @@ solution = space.interpolate(lambda x: x, name="solution")
 # <codecell>
 from dune.fem.scheme import galerkin as solutionScheme
 theta = 0.5
-u = TrialFunction(space)
-v = TestFunction(space)
-x = SpatialCoordinate(space)
 I = Identity(3)
-dt = NamedConstant(space, "dt")
+dt = Constant(0, "dt")
 
 a = (inner(u - x, v) + dt * inner(theta*grad(u) + (1 - theta)*I, grad(v))) * dx
 scheme = solutionScheme(a == 0, space, solver="cg")
@@ -165,13 +163,13 @@ errors = np.zeros(number_of_loops)
 totalIterations = np.zeros(number_of_loops, np.dtype(np.uint32))
 gridSizes = np.zeros(number_of_loops, np.dtype(np.uint32))
 for i in range(number_of_loops):
-    positions.interpolate(lambda x: x * (R0/x.two_norm))
-    solution.interpolate(lambda x: x)
+    positions.interpolate(x * (R0/sqrt(dot(x,x))))
+    solution.interpolate(x)
     t = 0.
     R = calcRadius(surface)
     Rexact = math.sqrt(R0**2 - 4.*t)
-    x = np.array([t])
-    y = np.array([R - Rexact])
+    tvec = np.array([t])
+    evec = np.array([abs(R - Rexact)])
     iterations = 0
     while t < end_time:
         info = scheme.solve(target=solution)
@@ -182,9 +180,9 @@ for i in range(number_of_loops):
         t += scheme.model.dt
         R = calcRadius( surface )
         Rexact = math.sqrt(R0*R0-4.*t)
-        x = np.append(x, [t])
-        y = np.append(y, [R - Rexact])
-        pyplot.semilogy(x, np.abs(y), label='i = '+ str(i) if t >= end_time                     else '')
+        tvec = np.append(tvec, [t])
+        evec = np.append(evec, [abs(R - Rexact)])
+        pyplot.semilogy(tvec, evec, label='i = '+ str(i) if t >= end_time                     else '')
         pyplot.legend()
         display.clear_output(wait=True)
         display.display(pyplot.gcf())

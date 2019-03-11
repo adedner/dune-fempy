@@ -75,21 +75,21 @@ from dune.fem.scheme import galerkin as solutionScheme
 def calculate(use_cpp, gridView):
     # space on Gamma_0 to describe position of Gamma(t)
     space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
-    positions = space.interpolate(lambda x: x, name="position")
+    u = TrialFunction(space)
+    v = TestFunction(space)
+    x = SpatialCoordinate(space.cell())
+    positions = space.interpolate(x, name="position")
 
     # space for discrete solution on Gamma(t)
     surface = geoGridView(positions)
     space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
-    solution  = space.interpolate(lambda x: x, name="solution")
+    solution  = space.interpolate(x, name="solution")
 
     # set up model using theta scheme
     theta = 0.5   # Crank-Nicholson
 
-    u = TrialFunction(space)
-    v = TestFunction(space)
-    x = SpatialCoordinate(space.cell())
     I = Identity(3)
-    dt = dune.ufl.NamedConstant(space,"dt")
+    dt = dune.ufl.Constant(0,"dt")
 
     a = (inner(u - x, v) + dt * inner(theta*grad(u)
         + (1 - theta)*I, grad(v))) * dx

@@ -87,10 +87,10 @@ u_h_n = u_h.copy()
 
 # <codecell>
 from ufl import TestFunction, TrialFunction, Constant
-from dune.ufl import NamedConstant
+from dune.ufl import Constant
 u = TrialFunction(space)
 v = TestFunction(space)
-dt = NamedConstant(space, "dt")    # time step
+dt = Constant(0, "dt")    # time step
 
 
 # <markdowncell>

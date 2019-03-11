@@ -5,7 +5,7 @@ PDF = dune-fempy.pdf
 PY = dune-fempy.py laplace-adaptive.ipynb crystal.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb
 TEX = laplace-adaptive.tex crystal.tex mcf.tex mcf-algorithm.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
-FIGURES = figures/mcf-comparison.png figures/3dexample.png
+FIGURES = figures/mcf-comparison.png
 
 .PHONY: all
 all: $(TABLES) $(FIGURES) $(PDF) $(PY)

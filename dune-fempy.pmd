@@ -2160,7 +2160,23 @@ module provides an \pyth{nvdg} scheme.
 There are a number of parameters that can be passed to the scheme to
 influence the solving procedure. Most importantly tolerances for the
 iterative solvers can be provided and verbosity can be turned on and off.
+
 In addition preconditioners can be set via the parameters.
+
+Some parameters are common to all solver backends and others are only available
+for a specific solver backend. 
+
+\renewcommand{\pweavecaption}{Solver parameters for nonlinear and linear
+  solvers.}
+parameters}
+\renewcommand{\pweavelabel}{lst:solverparameter}
+\begin{pweavecode}
+# linear solver parameter 
+from dune.fem import parameter
+parameter.append({"fem.solver.method": "gmres", 
+                  "istl.preconditioning.iterations": 1,
+                  "istl.preconditioning.relaxation": 1.2})
+\end{pweavecode}
 
 \Atodo{discuss the scheme parameters at the end of section describing the
 backends or somewhere else?}

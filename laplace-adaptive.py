@@ -153,7 +153,7 @@ he = MaxFacetEdgeLength(fvspace.cell())('+')
 n = FacetNormal(fvspace.cell())
 estimator_ufl = hT**2 * (div(grad(u)))**2 * v * dx +        he * inner(jump(grad(u)), n('+'))**2 * avg(v) * dS
 estimator = estimatorOp(estimator_ufl)
-tolerance = 0.08
+tolerance = 0.05
 
 
 # <markdowncell>
@@ -202,7 +202,7 @@ while True:
     ### modified equidistant strategy
     # marked = fem.mark(estimate,eta*eta/uh.space.grid.size(0))
     ### layered Doerfler strategy
-    marked = fem.doerflerMark(estimate,0.6,layered=0.01)
+    marked = fem.doerflerMark(estimate,0.6,layered=0.1)
     fem.adapt(uh)        # can also be a list or tuple of function to prolong/restrict
     fem.loadBalance(uh)
     count += 1

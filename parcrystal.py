@@ -30,9 +30,7 @@ dimDomain = 2     # we are solving this in 2D
 dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [40, 40])
 gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
-space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="petsc")
-adaptSpace = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
-adaptUh = adaptSpace.interpolate([0,0],name="adaptUh")
+space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="petscadapt")
 
 # <markdowncell>
 # We want to solve the following system of equations of variables $\phi$ (phase field) and $T$ (temperature field)
@@ -181,11 +179,8 @@ hgrid    = gridView.hierarchicalGrid
 hgrid.globalRefine(6)
 for i in range(5, maxLevel):
     fem.mark(indicator,1.4,1.2,0,maxLevel)
-    adaptUh.interpolate(u_h)
-    fem.adapt(adaptUh)
-    fem.loadBalance(adaptUh)
-    u_h.interpolate(adaptUh)
-    # print(gridView.size(0), end=" ")
+    fem.adapt(u_h)
+    fem.loadBalance(u_h)
     u_h.interpolate(initial_gf)
 # print()
 
@@ -229,10 +224,8 @@ while t < endTime:
     # print(t, gridView.size(0), info, end="\n")
     t += scheme.model.dt
     fem.mark(indicator,1.4,1.2,0,maxLevel)
-    adaptUh.interpolate(u_h)
-    fem.adapt(adaptUh)
-    fem.loadBalance(adaptUh)
-    u_h.interpolate(adaptUh)
+    fem.adapt(u_h)
+    fem.loadBalance(u_h)
 timing = time.time()-start
 print("\n runtime:", timing)
 

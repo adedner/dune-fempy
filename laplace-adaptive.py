@@ -171,7 +171,7 @@ tolerance = 0.05
 # restrict the finest and coarsest grid level used. A equal distribution
 # strategy can be implemented by taking `refineTolerance` to be
 # $\frac{\theta^2}{N}$ where $\theta$ is a given tolerance and $N$ is the
-# number of grid elements. Another method is a layered D\"orfler strategy:
+# number of grid elements. Another method is a layered Doerfler strategy:
 # ```
 # def doerflerMark(indicator, theta, maxLevel=None, layered=0.05):
 # ```
@@ -203,7 +203,7 @@ while True:
     # marked = fem.mark(estimate,eta*eta/uh.space.grid.size(0))
     ### layered Doerfler strategy
     marked = fem.doerflerMark(estimate,0.6,layered=0.1)
-    fem.adapt(uh)        # can also be a list or tuple of function to prolong/restrict
+    fem.adapt(uh) # can also be a list or tuple of function to prolong/restrict
     fem.loadBalance(uh)
     count += 1
 plot(uh, figure=(fig, 131+2), colorbar=False)

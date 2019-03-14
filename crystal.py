@@ -172,8 +172,8 @@ indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="ind
 
 # <codecell>
 maxLevel = 11
-hgrid    = gridView.hierarchicalGrid
-hgrid.globalRefine(6)
+gridView.hierarchicalGrid.globalRefine(startLevel)
+u_h.interpolate(initial_gf)
 for i in range(5, maxLevel):
     fem.mark(indicator,1.4,1.2,0,maxLevel)
     fem.adapt(u_h)

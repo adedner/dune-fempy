@@ -26,7 +26,7 @@ from dune.fem.space import lagrange as solutionSpace
 fem.parameter.append({"fem.verboserank":-1})
 
 # storage = "petscadapt"
-storage = "petscadapt"
+storage = "petsc"
 order = 1
 dimDomain = 2     # we are solving this in 2D
 dimRange = 2      # we have a system with two unknowns

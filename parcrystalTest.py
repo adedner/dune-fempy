@@ -33,12 +33,9 @@ dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [16, 16])  # fails with 20x20 in adapt due to petsc error
 gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
 
-if storage == "petsc":
-    space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="petsc")
-    adaptSpace = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
-    adaptUh = adaptSpace.interpolate([0,0],name="adaptUh")
-else:
-    space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="petscadapt")
+space = solutionSpace(gridView, dimRange=dimRange, order=order, storage=storage)
+adaptSpace = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
+adaptUh = adaptSpace.interpolate([0,0],name="adaptUh")
 
 # <markdowncell>
 # We want to solve the following system of equations of variables $\phi$ (phase field) and $T$ (temperature field)
@@ -189,14 +186,8 @@ u_h.interpolate(initial_gf)
 for i in range(startLevel, maxLevel):
     marked = fem.mark(indicator,1.4,1.2,0,maxLevel)
     print("marked:",marked,"from elements",gridView.size(0))
-    if storage == "petsc":
-        adaptUh.interpolate(u_h)
-        fem.adapt(gridView.hierarchicalGrid) # adaptUh) # (don't need to prolong)
-        fem.loadBalance(gridView.hierarchicalGrid) # adaptUh)
-        u_h.interpolate(adaptUh)
-    else:
-        fem.adapt(gridView.hierarchicalGrid) # u_h)
-        fem.loadBalance(gridView.hierarchicalGrid) # u_h)
+    fem.adapt(gridView.hierarchicalGrid)
+    fem.loadBalance(gridView.hierarchicalGrid)
     print(gridView.size(0), end="\n")
     u_h.interpolate(initial_gf)
 print()
@@ -216,7 +207,8 @@ vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
 
 matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams['figure.figsize'] = [10, 5]
-plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
+# plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
+gridView.writeVTK("parcrystal_start",pointdata=[u_h])
 
 
 # <markdowncell>
@@ -234,22 +226,20 @@ t = 0.0
 
 # <codecell>
 start = time.time()
-endTime = 0.05
+endTime = 0.04
 while t < endTime:
     u_h_n.assign(u_h)
     info = scheme.solve(target=u_h)
     print(t, gridView.size(0), info, end="\n")
     t += scheme.model.dt
     fem.mark(indicator,1.4,1.2,0,maxLevel)
-    if storage == "petsc":
-        adaptUh.interpolate(u_h)
-        fem.adapt(adaptUh)
-        fem.loadBalance(adaptUh)
-        u_h.interpolate(adaptUh)
-    else:
-        fem.adapt(u_h)
-        fem.loadBalance(u_h)
+    # plotComponents(u_h, cmap=pyplot.cm.rainbow)
+    fem.adapt(u_h)
+    # plotComponents(u_h, cmap=pyplot.cm.rainbow)
+    fem.loadBalance(u_h)
+    # plotComponents(u_h, cmap=pyplot.cm.rainbow)
 timing = time.time()-start
 print("\n runtime:", timing)
 
-plotComponents(u_h, cmap=pyplot.cm.rainbow)
+# plotComponents(u_h, cmap=pyplot.cm.rainbow)
+gridView.writeVTK("parcrystal_end",pointdata=[u_h])

@@ -63,7 +63,11 @@ t = 0
 
 # <markdowncell>
 # We use \emph{gmsh} to define the domain and then set up a first order
-# scalar Lagrange space which we will use both for $\psi$ and $p$
+# scalar Lagrange space which we will use both for $\psi$ and $p$. We can
+# construct general grids by either defining the grids directly in Python
+# (as demonstrated in the following example) or by reading the grid from
+# files using readers provided by Dune, e.g., Dune Grid Format (dgf) files
+# or Gmsh foles.
 
 # <codecell>
 domain = (reader.gmsh, "wave_tank.msh")

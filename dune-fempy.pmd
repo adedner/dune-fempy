@@ -1236,6 +1236,76 @@ discrete function, consequently the memory address will have changed after
 grid refienement and the buffer underlying the numpy array \pyth{vector}
 will be invalid and its usage will lead to unspecified behaviour.
 
+
+\section{Setting Boundary Conditions} \label{sec:bcs}
+The example studied so far involved only Neumann boundary conditions which
+are included in the bilinear form through boundary integrals. Another
+important class of boundary conditions are Dirichlet type boundary
+conditions $u=g$ which typically are included through constraints in the
+finite element method, i.e., by modifying the system such that
+$u_h = I_hg$ on the Dirichlet part of the boundary where $I_h$ is the
+interpolation operator associated with the discrete function space, e.g.,
+evaluation of $g$ at the Lagrange points on the boundary.
+
+In \dune[fempy] these type of boundary needs to be included in the
+construction of the scheme or the operator. So if for example the
+analytical problem is
+\begin{align*}
+  -\triangle u &= 0 && \text{in } \Omega \\
+  u &= sin(xy) && \text{on } \parital\Omega
+\end{align*}
+then we need to construct a corresponding scheme adding the boundary
+conditions to the weak form:
+\renewcommand{\pweavecaption}{Defining Dirichlet boundary conditions}
+\renewcommand{\pweavelabel}{lst:dbc}
+\begin{pweavecode}
+from dune.ufl import DirichletBC
+scheme = solutionScheme([dot(grad(u),grad(v))==0,
+                         DirichletBC(space, sin(x[0]*x[1], subDomain) ])
+\end{pweavecode}
+The \pyth{DirichletBC} class is used here to describe the boundary
+conditions, it takes a space, the function to use on the boundary, and as
+third argument a description of the portion of the boundary
+$\Gamma_D\subset\partial\Omega$ on which the
+boundary condition it to be applied. The simplest approach is to describe
+the domain using a ufl expression which evaluates to zero for
+$x\not\in\Gamma_D$. A second approach is to use integer identifiers
+which can be set during grid construction by using for example the
+\emph{dune grid format} (DGF). When using the \pyth{structuredGrid}
+function to construct the grid, the boundaries have the following
+identifiers: $1$ and $2$ for the left and right boundary, $3$ and $4$ for
+the bottom and top, and finally in the three dimensional setting $5$ and
+$6$ identify the front and back boundaries, respectively.
+Note, that an arbitrary number of instances of the \pyth{DirichletBC} class
+can be used during the construction of the \pyth{scheme}.
+
+Finally, in the case of vector valued spaces it is sometimes necessary to
+only provide conditions for a some of the components of the discrete
+function. For example assume that the problem consists of two coupled
+elliptic problems with Dirichlet conditions for the first unknown and
+Neuman conditions for the second, e.g., let the unkown be
+$u=(u_1,u_2)$ satisfying
+\begin{align*}
+  -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
+  -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
+  u_1               &= g && \text{on } \parital\Omega \\
+  \nabla u_2\cdot n &= 0 && \text{on } \parital\Omega \\
+\end{align*}
+in this case the scheme would have to be constructed as follows
+\renewcommand{\pweavecaption}{Defining boundary conditions for vector valued problems}
+\renewcommand{\pweavelabel}{lst:dbc}
+\begin{pweavecode}
+space  = solutionSpace(gridView, order=2, dimRange=2)
+u,v = TrialFunction(space), TestFunction(space)
+scheme = solutionScheme([dot(grad(u),grad(v))==f(u),
+                         DirichletBC(space, [g,None],subDomain) ])
+\end{pweavecode}
+We demonstrate the use of Dirichlet boundary conditions on part of the
+domain in the following exmaple.
+
+\Atodo{cite firedrake example}
+\input{wave.tex}
+
 \section{Adaptive Mesh Refinement} \label{sec:crystal}
 
 We shall now consider the implementation of adaptive mesh refinement
@@ -2136,9 +2206,7 @@ In addition preconditioners can be set via the parameters.
 Some parameters are common to all solver backends and others are only available
 for a specific solver backend. 
 
-\renewcommand{\pweavecaption}{Solver parameters for nonlinear and linear
-  solvers.}
-parameters}
+\renewcommand{\pweavecaption}{Solver parameters for nonlinear and linear solvers.}
 \renewcommand{\pweavelabel}{lst:solverparameter}
 \begin{pweavecode}
 # linear solver parameter 

@@ -3,7 +3,7 @@ PATH := bin:$(PATH)
 
 PDF = dune-fempy.pdf
 PY = dune-fempy.py laplace-adaptive.ipynb crystal.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb
-TEX = laplace-adaptive.tex crystal.tex mcf.tex mcf-algorithm.tex
+TEX = laplace-adaptive.tex crystal.tex mcf.tex mcf-algorithm.tex wave.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 FIGURES = figures/mcf-comparison.png
 
@@ -50,6 +50,15 @@ laplace-adaptive.md: laplace-adaptive.ipynb
 laplace-adaptive.tex: laplace-adaptive.md
 	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
 	@python3 pandoc-formatting.py laplace-adaptive.tex
+
+wave.ipynb: wave.py
+	@python3 py2ipynb.py wave.py wave.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace wave.ipynb
+wave.md: wave.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown wave.ipynb
+wave.tex: wave.md
+	@pandoc --listings -f markdown -t latex wave.md -o wave.tex --biblatex --bibliography=dune-fempy.bib
+	@python3 pandoc-formatting.py wave.tex
 
 crystal.ipynb: crystal.py
 	@python3 py2ipynb.py crystal.py crystal.ipynb

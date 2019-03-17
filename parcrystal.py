@@ -28,7 +28,7 @@ fem.parameter.append({"fem.verboserank":-1})
 order = 1
 dimDomain = 2     # we are solving this in 2D
 dimRange = 2      # we have a system with two unknowns
-domain = cartesianDomain([4, 4], [8, 8], [40, 40])
+domain = cartesianDomain([4, 4], [8, 8], [40, 40])  # fails with 20x20 in adapt due to petsc error
 gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
 space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="petscadapt")
 
@@ -156,9 +156,9 @@ from dune.fem.scheme import galerkin as solutionScheme
 solverParameters = {
         "newton.tolerance": 1e-8,
         "newton.linear.tolerance": 1e-10,
-        "newton.linear.preconditioning.method": "hypre",
-        "newton.verbose": False,
-        "newton.linear.verbose": False
+        "newton.linear.preconditioning.method": "sor",
+        "newton.verbose": True,
+        "newton.linear.verbose": True
     }
 scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverParameters)
 
@@ -174,15 +174,15 @@ indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="ind
 
 
 # <codecell>
-maxLevel = 8
+maxLevel = 9
+startLevel = 4
 hgrid    = gridView.hierarchicalGrid
-hgrid.globalRefine(6)
-for i in range(5, maxLevel):
+hgrid.globalRefine(startLevel)
+for i in range(startLevel, maxLevel):
     fem.mark(indicator,1.4,1.2,0,maxLevel)
     fem.adapt(u_h)
     fem.loadBalance(u_h)
     u_h.interpolate(initial_gf)
-# print()
 
 
 # <markdowncell>
@@ -197,9 +197,9 @@ import matplotlib
 vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
        celldata=[levelFunction(gridView), partitionFunction(gridView)])
 
-matplotlib.rcParams.update({'font.size': 10})
-matplotlib.rcParams['figure.figsize'] = [10, 5]
-plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
+# matplotlib.rcParams.update({'font.size': 10})
+# matplotlib.rcParams['figure.figsize'] = [10, 5]
+# plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
 
 
 # <markdowncell>
@@ -210,6 +210,7 @@ plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
 scheme.model.dt = 0.0005
 t = 0.0
 
+gridView.writeVTK("parcrystal_start",pointdata=[u_h])
 
 # <markdowncell>
 # Finally we set up the time loop and solve the problem - each time this cell is run the simulation will progress to the given ```endTime``` and then the result is shown. The simulation can be progressed further by rerunning the cell while increasing the ```endTime```.
@@ -217,16 +218,19 @@ t = 0.0
 
 # <codecell>
 start = time.time()
-endTime = 0.05
+endTime = 0.1
+iters = 0
 while t < endTime:
     u_h_n.assign(u_h)
     info = scheme.solve(target=u_h)
+    iters += info["linear_iterations"]
     # print(t, gridView.size(0), info, end="\n")
     t += scheme.model.dt
     fem.mark(indicator,1.4,1.2,0,maxLevel)
     fem.adapt(u_h)
     fem.loadBalance(u_h)
 timing = time.time()-start
-print("\n runtime:", timing)
+print("\n runtime:", timing, "iters:",iters)
 
-plotComponents(u_h, cmap=pyplot.cm.rainbow)
+# plotComponents(u_h, cmap=pyplot.cm.rainbow)
+gridView.writeVTK("parcrystal_end",pointdata=[u_h])

@@ -203,6 +203,8 @@ while True:
     # marked = fem.mark(estimate,eta*eta/uh.space.grid.size(0))
     ### layered Doerfler strategy
     marked = fem.doerflerMark(estimate,0.6,layered=0.1)
+    ### maximum strategy
+    # marked = fem.maximum(estimate,0.6)
     fem.adapt(uh) # can also be a list or tuple of function to prolong/restrict
     fem.loadBalance(uh)
     count += 1

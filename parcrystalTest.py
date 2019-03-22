@@ -25,13 +25,12 @@ from dune.fem.space import lagrange as solutionSpace
 
 fem.parameter.append({"fem.verboserank":-1})
 
-# storage = "istl"
-storage = "petscadapt"
-# storage = "petsc"
-order = 1
-dimDomain = 2     # we are solving this in 2D
-dimRange = 2      # we have a system with two unknowns
-domain = cartesianDomain([4, 4], [8, 8], [40, 40])  # fails with 20x20 in adapt due to petsc error
+# storage   = "istl"
+storage   = "petsc"
+order     = 1
+dimDomain = 2      # we are solving this in 2D
+dimRange  = 2      # we have a system with two unknowns
+domain    = cartesianDomain([4, 4], [8, 8], [40, 40])  # fails with 20x20 in adapt due to petsc error
 gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
 
 space = solutionSpace(gridView, dimRange=dimRange, order=order, storage=storage)
@@ -165,7 +164,7 @@ solverParameters = {
         "newton.linear.verbose": False
     }
 scheme = solutionScheme(a_im == a_ex, space, solver="bicgstab", parameters=solverParameters)
-scheme.model.dt = 0.0005
+scheme.model.dt = 0.0002
 
 
 # <markdowncell>
@@ -233,9 +232,10 @@ while t < endTime:
     if t > saveTime:
         saveTime += saveStep
         vtk()
+        # plotComponents(u_h, cmap=pyplot.cm.rainbow)
         print(t, gridView.size(0), info, end="\n")
     t += scheme.model.dt
-    fem.mark(indicator,1.4,1.2,0,maxLevel)
+    marked = fem.mark(indicator,1.4,1.2,0,maxLevel)
     # plotComponents(u_h, cmap=pyplot.cm.rainbow)
     fem.adapt(u_h)
     # plotComponents(u_h, cmap=pyplot.cm.rainbow)

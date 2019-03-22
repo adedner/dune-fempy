@@ -1252,7 +1252,7 @@ construction of the scheme or the operator. So if for example the
 analytical problem is
 \begin{align*}
   -\triangle u &= 0 && \text{in } \Omega \\
-  u &= sin(xy) && \text{on } \parital\Omega
+  u &= sin(xy) && \text{on } \partial\Omega
 \end{align*}
 then we need to construct a corresponding scheme adding the boundary
 conditions to the weak form:
@@ -1288,8 +1288,8 @@ $u=(u_1,u_2)$ satisfying
 \begin{align*}
   -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
   -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
-  u_1               &= g && \text{on } \parital\Omega \\
-  \nabla u_2\cdot n &= 0 && \text{on } \parital\Omega \\
+  u_1               &= g && \text{on } \partial\Omega \\
+  \nabla u_2\cdot n &= 0 && \text{on } \partial\Omega \\
 \end{align*}
 in this case the scheme would have to be constructed as follows
 \renewcommand{\pweavecaption}{Defining boundary conditions for vector valued problems}

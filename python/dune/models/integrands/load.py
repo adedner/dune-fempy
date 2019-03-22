@@ -99,9 +99,9 @@ class Source(object):
 
     def signature(self):
         return uflSignature(self.form,
-                *self.integrands._coefficients,
-                *self.integrands._constantNames,
-                *[a for a in self.args if isinstance(a,DirichletBC)])
+                *(list(self.integrands._coefficients)+
+                  list(self.integrands._constantNames)+
+                  list(a for a in self.args if isinstance(a,DirichletBC) ) ) )
 
     def name(self):
         from dune.common.hashit import hashIt

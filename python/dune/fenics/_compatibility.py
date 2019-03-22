@@ -99,7 +99,7 @@ def solve( equation, target, bc = None, solver=None, **kwargs):
         problem = equation
     else:
         try:
-            problem = [equation, *bc]
+            problem = [equation]+bc
         except TypeError:
             problem = [equation, bc]
 

@@ -419,4 +419,4 @@ def compileUFL(form, *args, tempVars=True, virtualize=True):
     integrands = Integrands((d.ufl_shape for d in derivatives_u), (d.ufl_shape for d in derivatives_phi),
                             uflExpr,virtualize)
 
-    return _compileUFL(integrands,form,*args,tempVars)
+    return _compileUFL(integrands,form,*args,tempVars=tempVars)

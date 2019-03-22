@@ -270,7 +270,7 @@ def module(field, includes, typeName, *args,
                             + "_" + hashlib.md5(dfTypeName.encode('utf-8')).hexdigest()
 
     module = generator.load(includes+dfIncludes, [typeName,dfTypeName], moduleName,
-                            ((*args,), (*dfArgs,)),
+                            (list(args),list(dfArgs),),
                             dynamicAttr=[True,True],
                             bufferProtocol=[False,True],
                             options=[["std::shared_ptr<DuneType>"],[]],

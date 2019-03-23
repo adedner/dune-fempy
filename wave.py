@@ -12,14 +12,14 @@
 # i.e., we have a wave channel which ends in two slits on the right and
 # forcing the wave on the left end by defining # $g=\frac{1}{10\pi}\cos(10\pi t)$.
 #
-# We descritize the wave equation by an explicit symplectic time stepping
+# We discretize the wave equation by an explicit symplectic time stepping
 # scheme for two unknowns $\psi^n$ and $p^n$ where $p=-\partial_t\psi$ based
 # on
 # \begin{align*}
 #   \partial_t \psi = -p, \\
 #   \partial_t p    = -\triangle\psi
 # \end{align*}
-# The descritization first updates $\psi$ by half a time step then updates
+# The discretization first updates $\psi$ by half a time step then updates
 # $p$ and concludes by another update step for $\psi$. So given
 # $(\psi^n,p^n)$ we compute
 # \begin{align*}
@@ -67,7 +67,7 @@ t = 0
 # construct general grids by either defining the grids directly in Python
 # (as demonstrated in the following example) or by reading the grid from
 # files using readers provided by Dune, e.g., Dune Grid Format (dgf) files
-# or Gmsh foles.
+# or Gmsh files.
 
 # <codecell>
 domain = (reader.gmsh, "wave_tank.msh")

@@ -2085,7 +2085,7 @@ All spaces are created with the following arguments.
 \item \pyth{order} (optional): The polynomial order of the basis
 functions.
 \item \pyth{storage} (optional): \pyth{'fem'} by default. Other options for the storage used for discrete functions 
- are \pyth{'istl'}, \pyth{'petsc'}, or \pyth{'petscadapt'} (as shown in Table \ref{tab:discrete-functions}).
+ are \pyth{'istl'} or \pyth{'petsc'} (as shown in Table \ref{tab:discrete-functions}).
 \item \pyth{field} (optional): The field of the range space
 (\pyth{'double'} or \pyth{'complex'}).
 \end{enumerate}

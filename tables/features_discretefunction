@@ -3,4 +3,4 @@
 'fem' & dune.fem.discretefunction & The default DUNE-Fem function \\ \hline
 'istl' & dune.fem.discretefunction & Function from DUNE-Istl \\ \hline
 'petsc' & dune.fem.discretefunction & Function from the PETSc package \\ \hline
-'petscadapt' & dune.fem.discretefunction & An adaptive function using PETSc \\ \hline
+%'petscadapt' & dune.fem.discretefunction & An adaptive function using PETSc \\ \hline

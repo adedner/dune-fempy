@@ -30,7 +30,7 @@ def module(grid):
 def _adaptArguments(first,*args):
     try: # first see if first argument is a discrete function (should be only method)
         hgrid = first.grid.hierarchicalGrid
-        args = list([*args,first])
+        args = [first]+args
         return hgrid,args
     except AttributeError:
         pass

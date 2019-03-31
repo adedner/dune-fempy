@@ -12,7 +12,7 @@ import dune.create as create
 parameter.append({"fem.verboserank": 0})
 
 grid = create.grid("ALUConform", cartesianDomain([0,0],[1,1],[16,16]), dimgrid=2)
-spc = create.space("dgonb", grid, dimRange=1, order=2, storage="istl")
+spc = create.space("dglagrange", grid, dimRange=1, order=2, storage="istl")
 
 uflSpace = Space((grid.dimGrid, grid.dimWorld), 1)
 u = TrialFunction(uflSpace)

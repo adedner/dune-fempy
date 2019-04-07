@@ -115,7 +115,7 @@ a = inner(grad(u[0])-contGrad, grad(v[0])) * dx
 scheme = galerkinScheme([a==0, DirichletBC(lagSpc,uh,1)],
     lagSpc, parameters={"newton." + k: v for k, v in newtonParameter.items()})
 
-zzUh = lagSpc.interpolate([0,]*grid.dimension,name="ZZ")
+zzUh = lagSpc.interpolate([0],name="ZZ")
 scheme.solve(target=zzUh)
 plot(zzUh)
 error = zzUh - exact

@@ -115,7 +115,7 @@ for i in range(levels):
     scheme.solve(target=uh)
     def l2error(en,x):
         val = uh.localFunction(en).evaluate(x) - exact_gf.localFunction(en).evaluate(x)
-        return [ val[0]*val[0] ];
+        return [ val[0]*val[0] ]
     l2error_gf = create.function("local", grid, "error", 5, l2error)
     error = sqrt(l2error_gf.integrate()[0])
 

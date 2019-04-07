@@ -95,7 +95,7 @@ def compute():
     print("Mass of solution (average removed):", uh.integrate()[0])
     print("residual:", math.sqrt( res.as_petsc.dot(res.as_petsc) ) )
 
-    error = math.sqrt(integrate(surface,(uh[0]-exact[0])**2,order=5)[0])
+    error = math.sqrt(integrate(surface,(uh[0]-exact[0])**2,order=5))
 
     l2error2 = inner(uh-exact, uh-exact)
     l2error2_gf = create.function("ufl", surface, "error", 5, l2error2)

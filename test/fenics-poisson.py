@@ -30,6 +30,8 @@ V = FunctionSpace(mesh, 'P', 1) # , storage="istl")
 # x = SpatialCoordinate(mesh)
 # u_D = 1 + x[0]*x[0] + 2*x[1]*x[1]
 u_D = Expression('2 + x[0]*x[0] + 2*x[1]*x[1]', degree=2, mesh=mesh)
+print(type(u_D))
+print(u_D)
 bc = [DirichletBC(V, u_D, i) for i in range(1,5)] # boundary ids are 1,..,4 or yasp
 
 # Define variational problem

@@ -42,14 +42,14 @@ dop  = create.operator("galerkin", da, space)
 dop(arg,destB)
 err = integrate(grid, (destA-destB)**2, 5)
 # print("error=",err)
-assert(err.two_norm < 1e-15)
+assert(err < 1e-15)
 
 A = linearOperator(dop)
 dop.jacobian(arg,A)
 A(arg,destC)
 err = integrate(grid, (destA-destC)**2, 5)
 # print("error=",err)
-assert(err.two_norm < 1e-15)
+assert(err < 1e-15)
 
 ###############################################################
 
@@ -61,13 +61,13 @@ linop = create.operator("galerkin", lina, space)
 linop(ubar,destD)
 err = integrate(grid, (destA-destD)**2, 5)
 # print("error=",err)
-assert(err.two_norm < 1e-15)
+assert(err < 1e-15)
 
 A = linearOperator(linop)
 linop.jacobian(arg,A)
 A(ubar,destE)
 err = integrate(grid, (destA-destE)**2, 5)
 # print("error=",err)
-assert(err.two_norm < 1e-15)
+assert(err < 1e-15)
 
 # grid.writeVTK('optest', pointdata=[destA,destB,destC,destD,destE])

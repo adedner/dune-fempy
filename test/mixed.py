@@ -45,14 +45,14 @@ def test(operator):
     parameters={"newton." + k: v for k, v in newtonParameter.items()}
 
     scheme = create.scheme(operator, model, spc, parameters=parameters)
-    solution = spc.interpolate([0],name="solution")
+    solution = spc.interpolate([0,0],name="solution")
     scheme.solve(target=solution)
-    l2errA = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
+    l2errA = sqrt( integrate(grid, (solution-exact)**2, 5) )
     grid.hierarchicalGrid.globalRefine(2)
     # note: without the `clear` the code can fail since the new dofs in 'solution' can be nan
     solution.clear()
     scheme.solve(target=solution)
-    l2errB = sqrt( integrate(grid, (solution-exact)**2, 5)[0] )
+    l2errB = sqrt( integrate(grid, (solution-exact)**2, 5) )
     return solution, l2errA,l2errB
 
 solution, l2errA, l2errB = test("galerkin")

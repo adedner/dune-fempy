@@ -51,7 +51,7 @@ def compute():
 
     # Approach 3
     l2error_gf = create.function("ufl", grid, "error", 5, (exact-uh)**2 )
-    error = math.sqrt( l2error_gf.integrate()[0] )
+    error = math.sqrt( l2error_gf.integrate() )
     print("Approach 4:",error)
 
 compute()

@@ -58,11 +58,12 @@ scheme = create.scheme("galerkin", model, spc, solver="cg",
 solB = spc.interpolate([0],name="solB")
 scheme.solve(solB)
 
-errA_sol = math.sqrt( integrate(grid, (solA-exact)**2, 5)[0] )
-errB_sol = math.sqrt( integrate(grid, (solB-exact)**2, 5)[0] )
-errA_B   = math.sqrt( integrate(grid, (solA-solB)**2, 5)[0] )
+errA_sol = math.sqrt( integrate(grid, (solA-exact)**2, 5) )
+errB_sol = math.sqrt( integrate(grid, (solB-exact)**2, 5) )
+errA_B   = math.sqrt( integrate(grid, (solA-solB)**2, 5) )
 
-# print( errA_sol, errB_sol, errA_B ) # 0.0004520603651576 0.013241522498765897 0.012944687615068362
+print( errA_sol, errB_sol, errA_B ) # 0.0004520603651576     0.013241522498765897 0.012944687615068362
+
 assert abs(errA_sol-0.00045)/0.00045 < 0.1
 assert abs(errB_sol-0.013)/0.013 < 0.1
 assert abs(errA_B-0.013)/0.013 < 0.1

@@ -136,7 +136,7 @@ while count < 20:
         fig = pyplot.figure(figsize=(10,10))
     plot(uh,figure=(fig,131+count%3), colorbar=False)
     # compute the actual error and the estimator
-    error = math.sqrt(fem.function.integrate(view, h1error, 5)[0])
+    error = math.sqrt(fem.function.integrate(view, h1error, 5))
     estimator(uh, estimate)
     eta = sum(estimate.dofVector)
     print(count, ": size=", gridSize, "estimate=", eta, "error=", error)

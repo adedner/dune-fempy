@@ -53,8 +53,8 @@ for eocLoop in range(3):
     evolve(scheme, u_h, u_h_n)
     l2error_old = l2error
     h1error_old = h1error
-    l2error = sqrt( integrate(grid, l2error_fn, 5)[0] )
-    h1error = sqrt( integrate(grid, h1error_fn, 5)[0] )
+    l2error = sqrt( integrate(grid, l2error_fn, 5) )
+    h1error = sqrt( integrate(grid, h1error_fn, 5) )
     if eocLoop == 0:
         l2eoc = '-'
         h1eoc = '-'

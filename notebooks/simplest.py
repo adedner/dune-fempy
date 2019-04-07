@@ -55,12 +55,12 @@ scheme = galerkin( ( u*v  + tau*dot(grad(u),grad(v)) )*dx == (un+tau*f)*v*dx )
 
 # compute until stationary solution reached (same final solution as above)
 t  = 0
-dist = integrate(grid,error**2,order=5)[0]
+dist = integrate(grid,error**2,order=5)
 while dist > 0.01:
     info = scheme.solve(target=solution)
     t += dt
     un.assign(solution)
-    dist = integrate(grid,error**2,order=5)[0]
+    dist = integrate(grid,error**2,order=5)
     print(t,dist,info)
 plot(solution)
 
@@ -81,6 +81,6 @@ solution = space.interpolate([0],name="solution")
 scheme.solve(target=solution)
 plot(solution)
 error = solution - exact
-print("L^2 error:", sqrt( integrate(grid,error**2,order=5)[0] ) )
+print("L^2 error:", sqrt( integrate(grid,error**2,order=5) ) )
 # problem with division by zero in the following
-print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5)[0] ) )
+print("H^1 error:", sqrt( integrate(grid,inner(grad(error),grad(error)),order=5) ) )

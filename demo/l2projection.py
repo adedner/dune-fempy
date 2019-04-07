@@ -27,7 +27,7 @@ f = sin(math.pi*x[0]) * sin(math.pi * x[1])
 b = inner(as_vector([f, f]), v) * dx
 
 scheme = create.scheme("h1", a==b, space)
-solution = space.interpolate([0],name="solution")
+solution = space.interpolate([0,0],name="solution")
 scheme.solve(target=solution)
 grid.writeVTK("l2projection", pointdata=[solution])
 

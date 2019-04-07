@@ -24,11 +24,11 @@
 # $(\psi^n,p^n)$ we compute
 # \begin{align*}
 #   \psi^{n+\frac{1}{2}} &= \psi^n - \frac{\Delta t}{2}p^n, \\
-#   p^{n+1}              &= \left\{
+#   p^{n+1}              &=
 #       \begin{cases}
 #            p^n - \triangle\psi^{n+\frac{1}{2}} & \text{in the interior}, \\
 #            g(t^{n+1}) & \text{on }\Gamma_D
-#       \end{cases}\right. \\
+#       \end{cases} \\
 #   \psi^{n+1}           &= \psi^{n+\frac{1}{2}} - \frac{\Delta t}{2}p^{n+1}.
 # \end{align*}
 # Note that the update for $\psi$ does not involve any spatial derivatives

@@ -2,7 +2,7 @@ SHELL := /bin/bash
 PATH := bin:$(PATH)
 
 PDF = dune-fempy.pdf
-PY = dune-fempy.py laplace-adaptive.ipynb crystal.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb
+PY = dune-fempy.py laplace-adaptive.ipynb crystal.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb wave.ipynb
 TEX = laplace-adaptive.tex crystal.tex mcf.tex mcf-algorithm.tex wave.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 FIGURES = figures/mcf-comparison.png

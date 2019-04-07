@@ -901,13 +901,6 @@ submission - or generated through the Makefile}
 \end{comment}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Setting boundary conditions}
-\Atodo{should we also mention the 'constraint' methods for handling Dirichlet bcs
-       we probably need to add an example of handling DirichletBCs in the
-       main part - they only appear without much explanation in the
-       reentrant corner problem. The issue of boundary ids is also not
-       addressed}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Using Alternative Linear Algebra Packages} \label{sec:solve}
 ```python, label="solve-methods", echo=False

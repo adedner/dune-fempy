@@ -73,11 +73,11 @@ N            = 6.
 
 # <codecell>
 from dune.fem.function import globalFunction
-def initial(x):
-    r  = (x - [6, 6]).two_norm
-    return [ 0 if r > 0.3 else 1, -0.5 ]
-initial_gf = globalFunction(gridView, "initial", order+1, initial)
-u_h = space.interpolate(initial_gf, name="solution")
+from ufl import dot,sqrt,conditional,as_vector, SpatialCoordinate
+x = SpatialCoordinate(space)
+r = sqrt( dot( x-as_vector([6,6]), x-as_vector([6,6])) )
+initial = as_vector( [conditional(r>0.3,0,1), -0.5] )
+u_h = space.interpolate(initial, name="solution")
 u_h_n = u_h.copy()
 
 
@@ -86,7 +86,7 @@ u_h_n = u_h.copy()
 
 
 # <codecell>
-from ufl import TestFunction, TrialFunction, Constant
+from ufl import TestFunction, TrialFunction
 from dune.ufl import Constant
 u = TrialFunction(space)
 v = TestFunction(space)
@@ -127,7 +127,7 @@ a_ex = (inner(u_h_n, v) - inner(u_h_n[0], v[1])) * dx
 
 
 # <codecell>
-from ufl import pi, atan, atan_2, tan, grad, as_vector, inner, dot
+from ufl import pi, atan, atan_2, tan, grad, inner
 psi        = pi/8.0 + atan_2(grad(u_h_n[0])[1], (grad(u_h_n[0])[0]))
 Phi        = tan(N / 2.0 * psi)
 beta       = (1.0 - Phi*Phi) / (1.0 + Phi*Phi)
@@ -174,12 +174,12 @@ indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="ind
 maxLevel = 11
 startLevel = 5
 gridView.hierarchicalGrid.globalRefine(startLevel)
-u_h.interpolate(initial_gf)
+u_h.interpolate(initial)
 for i in range(startLevel, maxLevel):
     fem.mark(indicator,1.4,1.2,0,maxLevel)
     fem.adapt(u_h)
     fem.loadBalance(u_h)
-    u_h.interpolate(initial_gf)
+    u_h.interpolate(initial)
     print(gridView.size(0), end=" ")
 print()
 
@@ -224,6 +224,7 @@ while t < endTime:
     fem.mark(indicator,1.4,1.2,0,maxLevel)
     fem.adapt(u_h)
     fem.loadBalance(u_h)
+    vtk()
 print()
 
 plotComponents(u_h, cmap=pyplot.cm.rainbow)

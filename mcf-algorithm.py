@@ -129,13 +129,11 @@ def calculate(use_cpp, gridView):
     totalIterations = np.zeros(numberOfLoops, np.dtype(np.uint32))
     gridSizes = np.zeros(numberOfLoops, np.dtype(np.uint32))
     for i in range(numberOfLoops):
-        positions.interpolate(lambda x: x * (R0/x.two_norm))
-        solution.interpolate(lambda x: x)
+        positions.interpolate(x * (R0/sqrt(dot(x,x))))
+        solution.interpolate(x)
         t = 0.
         R = radius( surface )
         Rexact = math.sqrt(R0*R0 - 4.*t)
-        x = np.array([t])
-        y = np.array([R - Rexact])
         iterations = 0
         start = time.time()
         while t < endTime:

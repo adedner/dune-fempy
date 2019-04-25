@@ -365,9 +365,14 @@ def lagrange(gridView, order=1, dimRange=None, field="double", storage=None,
 
     includes = gridView._includes + [ "dune/fem/space/lagrange.hh" ]
     dimw = gridView.dimWorld
-    typeName = "Dune::Fem::DynamicLagrangeDiscreteFunctionSpace< " +\
-      "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimRange) + " >, " +\
-      "Dune::FemPy::GridPart< " + gridView._typeName + " > >"
+    if order <= 6:
+        typeName = "Dune::Fem::DynamicLagrangeDiscreteFunctionSpace< " +\
+                   "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimRange) + " >, " +\
+                   "Dune::FemPy::GridPart< " + gridView._typeName + " > >"
+   else:
+        typeName = "Dune::Fem::DynamicLagrangeDiscreteFunctionSpace< " +\
+                   "Dune::Fem::FunctionSpace< double, " + field + ", " + str(dimw) + ", " + str(dimRange) + " >, " +\
+                   "Dune::FemPy::GridPart< " + gridView._typeName + " > >"
 
     spc = module(field, includes, typeName, storage=storage,
             scalar=scalar,

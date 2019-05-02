@@ -62,6 +62,15 @@ wave.tex: wave.md
 	@pandoc --filter svg2pdf.py --listings -f markdown -t latex wave.md -o wave.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py wave.tex
 
+twophaseflow.ipynb: twophaseflow.py
+	@python3 py2ipynb.py twophaseflow.py twophaseflow.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace twophaseflow.ipynb
+twophaseflow.md: twophaseflow.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown twophaseflow.ipynb
+twophaseflow.tex: twophaseflow.md
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex twophaseflow.md -o twophaseflow.tex --biblatex --bibliography=dune-fempy.bib
+	@python3 pandoc-formatting.py twophaseflow.tex
+
 crystal.ipynb: crystal.py
 	@python3 py2ipynb.py crystal.py crystal.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace crystal.ipynb

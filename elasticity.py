@@ -99,7 +99,13 @@ pyplot.show()
 
 
 # <markdowncell>
-# Finally we can plot the actual displaced beam
+# Finally we can plot the actual displaced beam using a grid view that
+# allows us to add a transformation of the geometry of each entity in the
+# grid by prociding a grid function to the constructor. Note that this also
+# allows for higher order transformation like in this case where the
+# transformation is given by a second order Lagrange discrete function.
+# We will highlight the flexibility of the # `GeometryGridView` in further
+# examples:
 
 
 # <codecell>

@@ -1810,6 +1810,17 @@ recompilation when changes to the UFL equations are made.
 performance test. Mention virtualization parameter to
 disable type erasure if required.}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Some Further examples}
+\subsection{Incompressible Navier Stokes solver}
+\subsection{Compressible Navier Stokes / Euler solver}
+\subsection{HP adaptive DG scheme for twophase flow problem}
+% \input{twophaseflow}
+\subsection{Solvers on 2D polygonal meshes}
+\subsection{Solvers for non-variational problems}
+\subsection{General framework for phasefield approximations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Conclusions and Outlook}
 The example below shows an example of solving a simple laplace problem
 using \pygmsh to define the unstructured mesh:

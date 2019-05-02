@@ -1294,9 +1294,12 @@ scheme = solutionScheme([dot(grad(u),grad(v))==f(u),
                          DirichletBC(space, [g,None],subDomain) ])
 \end{pweavecode}
 We demonstrate the use of Dirichlet boundary conditions on part of the
-domain in the following exmaple.
+domain in the following two exmaple.
 
 \Atodo{cite firedrake example}
+\subsection{Linear Elasticity: deformed beam}
+\input{elasticity.tex}
+\subsection{Wave Equation: slit domain problem}
 \input{wave.tex}
 
 \section{Adaptive Mesh Refinement} \label{sec:crystal}

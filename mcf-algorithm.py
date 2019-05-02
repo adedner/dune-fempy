@@ -47,7 +47,8 @@ import dune.geometry as geometry
 import dune.fem as fem
 from dune.fem.plotting import plotPointData as plot
 import matplotlib.pyplot as pyplot
-from IPython import display
+
+print("START",flush=True)
 
 # polynomial order of surface approximation
 order = 2
@@ -174,7 +175,11 @@ def calculate(use_cpp, gridView):
 # <codecell>
 # set up reference domain Gamma_0
 from dune.alugrid import aluConformGrid as leafGridView
+print("HALLO 1",flush=True)
 gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
+print("HALLO 2",flush=True)
 calculate(True, gridView)
+print("HALLO 3",flush=True)
 gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
+print("HALLO 4",flush=True)
 calculate(False, gridView)

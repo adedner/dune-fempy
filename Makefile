@@ -2,8 +2,8 @@ SHELL := /bin/bash
 PATH := bin:$(PATH)
 
 PDF = dune-fempy.pdf
-PY = dune-fempy.py laplace-adaptive.ipynb crystal.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb wave.ipynb
-TEX = laplace-adaptive.tex crystal.tex mcf.tex mcf-algorithm.tex wave.tex
+PY = dune-fempy.py laplace-adaptive.ipynb crystal.ipynb elasticity.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb wave.ipynb
+TEX = laplace-adaptive.tex crystal.tex elasticity.tex mcf.tex mcf-algorithm.tex wave.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 FIGURES = figures/mcf-comparison.png
 
@@ -69,6 +69,15 @@ crystal.tex: crystal.md
 	@pandoc --listings -f markdown -t latex crystal.md -o crystal.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py crystal.tex
 
+elasticity.ipynb: elasticity.py
+	@python3 py2ipynb.py elasticity.py elasticity.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace elasticity.ipynb
+elasticity.md: elasticity.ipynb
+	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown elasticity.ipynb
+elasticity.tex: elasticity.md
+	@pandoc --listings -f markdown -t latex elasticity.md -o elasticity.tex
+	@python3 pandoc-formatting.py elasticity.tex
+
 mcf.ipynb: mcf.py
 	@python3 py2ipynb.py mcf.py mcf.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace mcf.ipynb
@@ -93,8 +102,9 @@ battery.tex: battery.md
 	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py battery.tex
 
-cpp_time.p: mcf-algorithm.tex
-python_time.p: mcf-algorithm.tex
+cpp_time.p: mcf-algorithm.ipynb
+python_time.p: mcf-algorithm.ipynb
+
 figures/mcf-comparison.png: cpp_time.p python_time.p
 	@python3 mcf-comparison-plot.py
 figures/3dexample.png: dune-fempy.tex 3dexample.py

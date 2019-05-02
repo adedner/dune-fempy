@@ -193,8 +193,9 @@ from dune.fem.plotting import plotComponents
 import matplotlib.pyplot as pyplot
 from dune.fem.function import levelFunction, partitionFunction
 import matplotlib
-vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
-       celldata=[levelFunction(gridView), partitionFunction(gridView)])
+# can construct a vtk writer that generates a sequence of files
+# vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
+#           celldata=[levelFunction(gridView), partitionFunction(gridView)])
 
 matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams['figure.figsize'] = [10, 5]
@@ -224,7 +225,7 @@ while t < endTime:
     fem.mark(indicator,1.4,1.2,0,maxLevel)
     fem.adapt(u_h)
     fem.loadBalance(u_h)
-    vtk()
+    # vtk()                # store result in vtk file
 print()
 
 plotComponents(u_h, cmap=pyplot.cm.rainbow)

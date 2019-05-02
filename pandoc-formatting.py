@@ -52,13 +52,13 @@ for i in range(len(lines)):
     elif filename == 'laplace-adaptive.tex' and lines[i].startswith('\includegraphics'):
         if count == 0:
             output.write(lines[i])
-            output.write('\caption{The first three plots of the solution}\n')
+            output.write('\caption{Three plots of the solution on the locally adapted grid}\n')
         elif count == 1:
             output.write(lines[i])
-            output.write('\caption{The second three plots of the solution}\n')
+            output.write('\caption{Zoom into the corner singularity (left to right). Top row shows solution and the bottom row the refinement level of each cell}\n')
         elif count == 2:
             output.write(lines[i])
-            output.write('\caption{The final three plots of the solution}\n')
+            output.write('\caption{Error on sequence globally refined and adaptive grid}\n')
         elif count == 3:
             output.write(lines[i])
             output.write('\caption{Zooming in on the re-entrant corner}\n')
@@ -66,8 +66,21 @@ for i in range(len(lines)):
             output.write(lines[i])
             output.write('\caption{Plot of the level function of the grid}\n')
         count += 1
+    elif filename == 'elasticity.tex' and lines[i].startswith('\includegraphics'):
+        if count == 0:
+            output.write(lines[i])
+            output.write('\caption{The magnitude of the displacement field (left) and stress (right)}\n')
+        elif count == 1:
+            output.write(lines[i])
+            output.write('\caption{The displaced beam}\n')
+        count += 1
+    elif filename == 'wave.tex' and lines[i].startswith('\includegraphics'):
+        if count == 0:
+            output.write(lines[i])
+            output.write('\caption{Wave amplitude at the final time}\n')
+        count += 1
     # remove empty captions
-    elif 'caption{png}' in lines[i]:
+    elif 'caption{svg}' in lines[i]:
         pass
     elif lines[i] == '\n':
         # remove empty lines either side of equations

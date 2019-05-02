@@ -6,7 +6,7 @@
 # <codecell>
 from __future__ import print_function
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline inline')
 except:
     pass
 
@@ -206,7 +206,7 @@ vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
 
 matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams['figure.figsize'] = [10, 5]
-# plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
+# plotComponents(u_h, cmap=pyplot.cm.jet, show=[0])
 gridView.writeVTK("parcrystal_start",pointdata=[u_h])
 
 
@@ -232,17 +232,17 @@ while t < endTime:
     if t > saveTime:
         saveTime += saveStep
         vtk()
-        # plotComponents(u_h, cmap=pyplot.cm.rainbow)
+        # plotComponents(u_h, cmap=pyplot.cm.jet)
         print(t, gridView.size(0), info, end="\n")
     t += scheme.model.dt
     marked = fem.mark(indicator,1.4,1.2,0,maxLevel)
-    # plotComponents(u_h, cmap=pyplot.cm.rainbow)
+    # plotComponents(u_h, cmap=pyplot.cm.jet)
     fem.adapt(u_h)
-    # plotComponents(u_h, cmap=pyplot.cm.rainbow)
+    # plotComponents(u_h, cmap=pyplot.cm.jet)
     fem.loadBalance(u_h)
-    # plotComponents(u_h, cmap=pyplot.cm.rainbow)
+    # plotComponents(u_h, cmap=pyplot.cm.jet)
 timing = time.time()-start
 print("\n runtime:", timing, "iters:",iters)
 
-# plotComponents(u_h, cmap=pyplot.cm.rainbow)
+# plotComponents(u_h, cmap=pyplot.cm.jet)
 gridView.writeVTK("parcrystal_end",pointdata=[u_h])

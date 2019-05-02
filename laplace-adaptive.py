@@ -18,7 +18,7 @@
 
 # <codecell>
 try:
-    get_ipython().magic(u'matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic(u'matplotlib inline inline')
 except:
     pass
 import math
@@ -32,6 +32,12 @@ from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as leafGridView
 from ufl import *
 from dune.ufl import DirichletBC
+try:
+    %config InlineBackend.figure_format = 'svg'
+    import matplotlib
+    matplotlib.rc( 'image', cmap='jet' )
+except:
+    pass
 
 
 # set the angle for the corner (0<angle<=360)
@@ -197,14 +203,7 @@ while True:
         print(count, ": size=", uh.space.grid.size(0), "estimate=", eta, "error=", error)
     if eta < tolerance:
         break
-    ### equidistant strategy
-    # marked = fem.mark(estimate,tolerance*tolerance/uh.space.grid.size(0))
-    ### modified equidistant strategy
-    # marked = fem.mark(estimate,eta*eta/uh.space.grid.size(0))
-    ### layered Doerfler strategy
     marked = fem.doerflerMark(estimate,0.6,layered=0.1)
-    ### maximum strategy
-    # marked = fem.maximum(estimate,0.6)
     fem.adapt(uh) # can also be a list or tuple of function to prolong/restrict
     fem.loadBalance(uh)
     count += 1
@@ -249,4 +248,5 @@ pyplot.loglog(dofs,errorVector,label=" H^1 error (adaptive)")
 pyplot.loglog(dofs,estimateVector,label="estimator (adaptive)")
 pyplot.grid(b=True, which='major', color='black', linestyle='-')
 pyplot.grid(b=True, which='minor', color='black', linestyle='--')
+pyplot.legend(frameon=True,facecolor="white",framealpha=1)
 pyplot.show()

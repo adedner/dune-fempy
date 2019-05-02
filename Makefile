@@ -13,6 +13,8 @@ all: $(TABLES) $(FIGURES) $(PDF) $(PY)
 .PHONY: clean distclean
 clean:
 	@rm -f *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES) $(PDF) $(PY)
+	@rm -rf battery_files  elasticity_files mcf_files wave_files \
+         crystal_files  laplace-adaptive_files  mcf-algorithm_files
 distclean: clean
 	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu
 
@@ -48,7 +50,7 @@ laplace-adaptive.ipynb: laplace-adaptive.py
 laplace-adaptive.md: laplace-adaptive.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown laplace-adaptive.ipynb
 laplace-adaptive.tex: laplace-adaptive.md
-	@pandoc --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex laplace-adaptive.md -o laplace-adaptive.tex
 	@python3 pandoc-formatting.py laplace-adaptive.tex
 
 wave.ipynb: wave.py
@@ -57,7 +59,7 @@ wave.ipynb: wave.py
 wave.md: wave.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown wave.ipynb
 wave.tex: wave.md
-	@pandoc --listings -f markdown -t latex wave.md -o wave.tex --biblatex --bibliography=dune-fempy.bib
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex wave.md -o wave.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py wave.tex
 
 crystal.ipynb: crystal.py
@@ -66,7 +68,7 @@ crystal.ipynb: crystal.py
 crystal.md: crystal.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown crystal.ipynb
 crystal.tex: crystal.md
-	@pandoc --listings -f markdown -t latex crystal.md -o crystal.tex --biblatex --bibliography=dune-fempy.bib
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex crystal.md -o crystal.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py crystal.tex
 
 elasticity.ipynb: elasticity.py
@@ -75,7 +77,7 @@ elasticity.ipynb: elasticity.py
 elasticity.md: elasticity.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown elasticity.ipynb
 elasticity.tex: elasticity.md
-	@pandoc --listings -f markdown -t latex elasticity.md -o elasticity.tex
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex elasticity.md -o elasticity.tex
 	@python3 pandoc-formatting.py elasticity.tex
 
 mcf.ipynb: mcf.py
@@ -84,7 +86,7 @@ mcf.ipynb: mcf.py
 mcf.md: mcf.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown mcf.ipynb
 mcf.tex: mcf.md
-	@pandoc --listings -f markdown -t latex mcf.md -o mcf.tex
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex mcf.md -o mcf.tex
 	@python3 pandoc-formatting.py mcf.tex
 
 mcf-algorithm.ipynb: mcf-algorithm.py
@@ -93,13 +95,13 @@ mcf-algorithm.ipynb: mcf-algorithm.py
 mcf-algorithm.md: mcf-algorithm.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --to markdown mcf-algorithm.ipynb
 mcf-algorithm.tex: mcf-algorithm.md
-	@pandoc --listings -f markdown -t latex mcf-algorithm.md -o mcf-algorithm.tex
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex mcf-algorithm.md -o mcf-algorithm.tex
 	@python3 pandoc-formatting.py mcf-algorithm.tex
 
 battery.md: battery.ipynb
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to markdown battery.ipynb
 battery.tex: battery.md
-	@pandoc --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex battery.md -o battery.tex --biblatex --bibliography=dune-fempy.bib
 	@python3 pandoc-formatting.py battery.tex
 
 cpp_time.p: mcf-algorithm.ipynb

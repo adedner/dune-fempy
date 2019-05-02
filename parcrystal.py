@@ -6,7 +6,7 @@
 # <codecell>
 from __future__ import print_function
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline inline')
 except:
     pass
 
@@ -199,7 +199,7 @@ vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
 
 # matplotlib.rcParams.update({'font.size': 10})
 # matplotlib.rcParams['figure.figsize'] = [10, 5]
-# plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
+# plotComponents(u_h, cmap=pyplot.cm.jet, show=[0])
 
 
 # <markdowncell>
@@ -232,5 +232,5 @@ while t < endTime:
 timing = time.time()-start
 print("\n runtime:", timing, "iters:",iters)
 
-# plotComponents(u_h, cmap=pyplot.cm.rainbow)
+# plotComponents(u_h, cmap=pyplot.cm.jet)
 gridView.writeVTK("parcrystal_end",pointdata=[u_h])

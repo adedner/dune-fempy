@@ -6,7 +6,7 @@
 # <codecell>
 from __future__ import print_function
 try:
-    get_ipython().magic('matplotlib inline # can also use notebook or nbagg')
+    get_ipython().magic('matplotlib inline inline')
 except:
     pass
 
@@ -28,6 +28,12 @@ dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [3, 3])
 gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
 space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
+try:
+    %config InlineBackend.figure_format = 'svg'
+    import matplotlib
+    matplotlib.rc( 'image', cmap='jet' )
+except:
+    pass
 
 
 # <markdowncell>
@@ -167,7 +173,17 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 from dune.ufl import expression2GF
 indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="indicator")
 # <markdowncell>
-# We do the initial refinement of the grid.
+# We do the initial refinement of the grid using the general form of the `mark' method
+# ```
+# def mark(indicator, refineTolerance, coarsenTolerance=0,
+#     minLevel=0, maxLevel=None):
+# ```
+# which can be used for both refinement and coarsening.
+# An element $T$ is marked for refinement if the value value of
+# `indicator` on $T$ is greater then `refineTolerance` and coarsened if the
+# value is less then `coarsenTolerance`. The element $T$ is not refined if
+# its level is already at `maxLevel` and not coarsened if its level it at
+# `minLevel`.
 
 
 # <codecell>
@@ -199,7 +215,7 @@ import matplotlib
 
 matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams['figure.figsize'] = [10, 5]
-plotComponents(u_h, cmap=pyplot.cm.rainbow, show=[0])
+plotComponents(u_h, cmap=pyplot.cm.jet, show=[0])
 
 
 # <markdowncell>
@@ -228,4 +244,4 @@ while t < endTime:
     # vtk()                # store result in vtk file
 print()
 
-plotComponents(u_h, cmap=pyplot.cm.rainbow)
+plotComponents(u_h, cmap=pyplot.cm.jet)

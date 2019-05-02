@@ -59,6 +59,12 @@ fem.parameter.append({"fem.verboserank":-1})
 T = 3
 dt = 0.005
 t = 0
+try:
+    %config InlineBackend.figure_format = 'svg'
+    import matplotlib
+    matplotlib.rc( 'image', cmap='jet' )
+except:
+    pass
 
 
 # <markdowncell>

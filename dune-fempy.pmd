@@ -99,6 +99,8 @@ except:
     petsc4py = False
 import dune.plotting
 dune.plotting.block = False
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 ```
 
 \begin{abstract}

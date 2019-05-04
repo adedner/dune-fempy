@@ -1,5 +1,5 @@
 # <markdowncell>
-# ## Re-entrant Corner Problem
+# # Re-entrant Corner Problem
 #
 # Here we will consider the classic _re-entrant corner_ problem,
 # \begin{align*}

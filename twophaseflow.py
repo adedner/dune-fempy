@@ -1,3 +1,6 @@
+# <markdowncell>
+# # HP adaptive DG scheme for twophase flow problem
+# Describe model and scheme here...
 # <codecell>
 try:
     get_ipython().magic(u'matplotlib inline')

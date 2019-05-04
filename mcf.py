@@ -1,5 +1,6 @@
 # <markdowncell>
-# ## Mean Curvature Flow
+# # Mean Curvature Flow
+#
 # Mean curvature flow is a specific example of a geometric evolution
 # equation where the evolution is governed by the mean curvature $H$.
 # One real-life example of this is in how soap films change over time,

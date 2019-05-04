@@ -1,5 +1,5 @@
 # <markdowncell>
-# ## Wave equation
+# # Wave equation in a slit domain
 #
 # In the following we will consider the wave equation
 # \begin{align*}

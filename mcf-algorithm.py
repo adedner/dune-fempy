@@ -1,5 +1,5 @@
 # <markdowncell>
-# ## Mean Curvature Flow
+# # Mean Curvature Flow
 #
 # In this example we compute the mean curvature flow of a surface:
 # \begin{align}

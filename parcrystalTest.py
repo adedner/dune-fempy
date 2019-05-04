@@ -1,5 +1,5 @@
 # <markdowncell>
-# ## Crystal Growth
+# # Crystal Growth
 # Here we demonstrate crystallisation on the surface of a liquid due to cooling from [@Guyer].
 
 

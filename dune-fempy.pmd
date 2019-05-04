@@ -1263,7 +1263,7 @@ domain in the following two exmaple.
 \Atodo{cite firedrake example}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{The Full \dune Grid Interface}
+\chapter{Working with the Full Grid Interface}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:corebindings}
 ```python, label="Intro", echo=False
@@ -2077,6 +2077,13 @@ We shall now look at a model for crystallization on the surface of a
 liquid.
 
 \input{crystal.tex}
+
+\section{A p-adaptive example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \chapter{Moving Meshes} \label{sec:mcf}
 
 In this section we will consider an example where the grid itself
@@ -2116,7 +2123,7 @@ As another application of grid techniques, we look at a problem where
  we want to divide the grid into three regions. We do this using an
 \pyth{'adaptive'} grid that allows for grid filters to be applied. We
 note that another way of creating multi-domain grids in \dune is
-described in \cite{Muthing} (though \dune[Fempy] bindings are not yet
+described in \cite{Muthing} (though \dune[Python] bindings are not yet
 available).
 
 \input{battery.tex}
@@ -2134,6 +2141,8 @@ design, to the point where translating between the two is relatively painless. I
 particular this allows for rapid prototyping of methods in Python with
 its relative ease of use, after which code can be ported to C++ for
 efficiency if necessary in large-scale computation.
+
+\section{A simple example}
 
 Here we will demonstrate this translation process, and additionally
 provide comparisons for the difference in efficiency timewise. We will
@@ -2214,6 +2223,15 @@ scale this is not a significant change, but it shows that it can be
 worth the extra coding time for longer running simulations. Naturally
 a full C++ version would see a further improvement in runtime, though
 whether that is justified depends on a case-by-case basis.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{uzawa-scipy}
+{\bf TODO:} show a C++ version
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{comment}
 \section{Model C++ Header Generation} \label{sec:header}
@@ -2575,7 +2593,6 @@ disable type erasure if required.}
 \section{Solvers for non-variational problems}
 \section{General framework for phasefield approximations}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 %</tag>
 

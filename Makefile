@@ -13,7 +13,7 @@ all: $(TABLES) $(FIGURES) $(PDF) $(PY)
 .PHONY: clean distclean
 clean:
 	@rm -f *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES) $(PDF) $(PY)
-	@rm -rf battery_files  elasticity_files mcf_files wave_files \
+	@rm -rf battery_files  elasticity_files mcf_files wave_files  uzawa-scipy_files \
          crystal_files  laplace-adaptive_files  mcf-algorithm_files
 distclean: clean
 	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu

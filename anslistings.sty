@@ -125,6 +125,7 @@ morestring=[d][stringstyle]'
 \newcommand{\inputcpp}[3]{\lstinputlisting[style=cppstyle, title={\codetitlestyle{C++ code}}, belowcaptionskip=\belowtitleskip,caption={#2},label=#3]{#1}}
 \lstnewenvironment{c++}[2]{\lstset{escapechar=`,moredelim=[il][]{//tex},style=cppstyle, title={\codetitlestyle{C++ code}},belowcaptionskip=\belowtitleskip,caption={#1},label=#2}}{}
 \newcommand{\cpp}{\lstinline[style=cppstyle,basicstyle=\ttfamily]}
+\newcommand{\inputcpprange}[5]{\lstinputlisting[firstline=#4,lastline=#5,style=cppstyle, title={\codetitlestyle{C++ code}}, belowcaptionskip=\belowtitleskip,caption={#2},label=#3]{#1}}
 
 %--- Typesetting Python ---
 

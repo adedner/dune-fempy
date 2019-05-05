@@ -27,6 +27,7 @@
 \usepackage{subcaption}
 \usepackage{xspace}
 \usepackage{comment}
+\usepackage{pdflscape}
 
 \newcommand{\dune}[1][]{\textsc{Dune}\ifx&#1&\else\textsc{-{#1}}\fi\xspace}
 \newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
@@ -109,6 +110,7 @@ import dune.plotting
 dune.plotting.block = False
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )
+from matplotlib import pyplot
 ```
 
 \chapter{Finite Elements Methods and the \dune Project}
@@ -859,6 +861,76 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Setting Boundary Conditions} \label{sec:bcs}
+The example studied so far involved only Neumann boundary conditions which
+are included in the bilinear form through boundary integrals. Another
+important class of boundary conditions are Dirichlet type boundary
+conditions $u=g$ which typically are included through constraints in the
+finite element method, i.e., by modifying the system such that
+$u_h = I_hg$ on the Dirichlet part of the boundary where $I_h$ is the
+interpolation operator associated with the discrete function space, e.g.,
+evaluation of $g$ at the Lagrange points on the boundary.
+
+In \dune[fempy] these type of boundary needs to be included in the
+construction of the scheme or the operator. So if for example the
+analytical problem is
+\begin{align*}
+  -\triangle u &= 0 && \text{in } \Omega \\
+  u &= sin(xy) && \text{on } \partial\Omega
+\end{align*}
+then we need to construct a corresponding scheme adding the boundary
+conditions to the weak form:
+\renewcommand{\pweavecaption}{Defining Dirichlet boundary conditions}
+\renewcommand{\pweavelabel}{lst:dbc}
+\begin{pweavecode}
+from dune.ufl import DirichletBC
+scheme = solutionScheme([dot(grad(u),grad(v))==0,
+                         DirichletBC(space, sin(x[0]*x[1], subDomain) ])
+\end{pweavecode}
+The \pyth{DirichletBC} class is used here to describe the boundary
+conditions, it takes a space, the function to use on the boundary, and as
+third argument a description of the portion of the boundary
+$\Gamma_D\subset\partial\Omega$ on which the
+boundary condition it to be applied. The simplest approach is to describe
+the domain using a ufl expression which evaluates to zero for
+$x\not\in\Gamma_D$. A second approach is to use integer identifiers
+which can be set during grid construction by using for example the
+\emph{dune grid format} (DGF). When using the \pyth{structuredGrid}
+function to construct the grid, the boundaries have the following
+identifiers: $1$ and $2$ for the left and right boundary, $3$ and $4$ for
+the bottom and top, and finally in the three dimensional setting $5$ and
+$6$ identify the front and back boundaries, respectively.
+Note, that an arbitrary number of instances of the \pyth{DirichletBC} class
+can be used during the construction of the \pyth{scheme}.
+
+Finally, in the case of vector valued spaces it is sometimes necessary to
+only provide conditions for a some of the components of the discrete
+function. For example assume that the problem consists of two coupled
+elliptic problems with Dirichlet conditions for the first unknown and
+Neuman conditions for the second, e.g., let the unkown be
+$u=(u_1,u_2)$ satisfying
+\begin{align*}
+  -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
+  -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
+  u_1               &= g && \text{on } \partial\Omega \\
+  \nabla u_2\cdot n &= 0 && \text{on } \partial\Omega \\
+\end{align*}
+in this case the scheme would have to be constructed as follows
+\renewcommand{\pweavecaption}{Defining boundary conditions for vector valued problems}
+\renewcommand{\pweavelabel}{lst:dbc}
+\begin{pweavecode}
+space  = solutionSpace(gridView, order=2, dimRange=2)
+u,v = TrialFunction(space), TestFunction(space)
+scheme = solutionScheme([dot(grad(u),grad(v))==f(u),
+                         DirichletBC(space, [g,None],subDomain) ])
+\end{pweavecode}
+We demonstrate the use of Dirichlet boundary conditions on part of the
+domain in the following two exmaple.
+
+\input{elasticity.tex}
+\input{wave.tex}
+\Atodo{cite firedrake example}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Using Alternative Linear Algebra Packages} \label{sec:solve}
@@ -1188,79 +1260,11 @@ discrete function, consequently the memory address will have changed after
 grid refienement and the buffer underlying the numpy array \pyth{vector}
 will be invalid and its usage will lead to unspecified behaviour.
 
+\input{uzawa-scipy}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\chapter{Setting Boundary Conditions} \label{sec:bcs}
-The example studied so far involved only Neumann boundary conditions which
-are included in the bilinear form through boundary integrals. Another
-important class of boundary conditions are Dirichlet type boundary
-conditions $u=g$ which typically are included through constraints in the
-finite element method, i.e., by modifying the system such that
-$u_h = I_hg$ on the Dirichlet part of the boundary where $I_h$ is the
-interpolation operator associated with the discrete function space, e.g.,
-evaluation of $g$ at the Lagrange points on the boundary.
-
-In \dune[fempy] these type of boundary needs to be included in the
-construction of the scheme or the operator. So if for example the
-analytical problem is
-\begin{align*}
-  -\triangle u &= 0 && \text{in } \Omega \\
-  u &= sin(xy) && \text{on } \partial\Omega
-\end{align*}
-then we need to construct a corresponding scheme adding the boundary
-conditions to the weak form:
-\renewcommand{\pweavecaption}{Defining Dirichlet boundary conditions}
-\renewcommand{\pweavelabel}{lst:dbc}
-\begin{pweavecode}
-from dune.ufl import DirichletBC
-scheme = solutionScheme([dot(grad(u),grad(v))==0,
-                         DirichletBC(space, sin(x[0]*x[1], subDomain) ])
-\end{pweavecode}
-The \pyth{DirichletBC} class is used here to describe the boundary
-conditions, it takes a space, the function to use on the boundary, and as
-third argument a description of the portion of the boundary
-$\Gamma_D\subset\partial\Omega$ on which the
-boundary condition it to be applied. The simplest approach is to describe
-the domain using a ufl expression which evaluates to zero for
-$x\not\in\Gamma_D$. A second approach is to use integer identifiers
-which can be set during grid construction by using for example the
-\emph{dune grid format} (DGF). When using the \pyth{structuredGrid}
-function to construct the grid, the boundaries have the following
-identifiers: $1$ and $2$ for the left and right boundary, $3$ and $4$ for
-the bottom and top, and finally in the three dimensional setting $5$ and
-$6$ identify the front and back boundaries, respectively.
-Note, that an arbitrary number of instances of the \pyth{DirichletBC} class
-can be used during the construction of the \pyth{scheme}.
-
-Finally, in the case of vector valued spaces it is sometimes necessary to
-only provide conditions for a some of the components of the discrete
-function. For example assume that the problem consists of two coupled
-elliptic problems with Dirichlet conditions for the first unknown and
-Neuman conditions for the second, e.g., let the unkown be
-$u=(u_1,u_2)$ satisfying
-\begin{align*}
-  -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
-  -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
-  u_1               &= g && \text{on } \partial\Omega \\
-  \nabla u_2\cdot n &= 0 && \text{on } \partial\Omega \\
-\end{align*}
-in this case the scheme would have to be constructed as follows
-\renewcommand{\pweavecaption}{Defining boundary conditions for vector valued problems}
-\renewcommand{\pweavelabel}{lst:dbc}
-\begin{pweavecode}
-space  = solutionSpace(gridView, order=2, dimRange=2)
-u,v = TrialFunction(space), TestFunction(space)
-scheme = solutionScheme([dot(grad(u),grad(v))==f(u),
-                         DirichletBC(space, [g,None],subDomain) ])
-\end{pweavecode}
-We demonstrate the use of Dirichlet boundary conditions on part of the
-domain in the following two exmaple.
-
-\input{elasticity.tex}
-\input{wave.tex}
-\Atodo{cite firedrake example}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Working with the Full Grid Interface}
@@ -2225,9 +2229,168 @@ a full C++ version would see a further improvement in runtime, though
 whether that is justified depends on a case-by-case basis.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Saddle point solver}
+{\bf TODO}: explain Uzawa scheme
 
-\input{uzawa-scipy}
-{\bf TODO:} show a C++ version
+\renewcommand{\pweavecaption}%
+{Setup for the preconditioned Uzawa algorithm}
+\renewcommand{\pweavelabel}{lstUzawaIntro}
+```python, label="UzawaIntro", results = 'hidden'
+from dune.grid import structuredGrid
+from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
+                inner, dot, div, grad, dx, as_vector, transpose, Identity
+from dune.ufl import Constant, DirichletBC
+from dune.alugrid import aluCubeGrid as leafGridView
+from dune.fem.space import lagrange  as lagrangeSpace
+from dune.fem.operator import galerkin as galerkinOperator
+from dune.fem.operator import linear as linearOperator
+from dune.fem.scheme import galerkin as galerkinScheme
+
+grid = leafGridView( cartesianDomain([0,0],[3,1],[30,10]) )
+
+order = 2
+spcU = lagrangeSpace(grid, dimRange=grid.dimension, order=order, storage="fem")
+spcP = lagrangeSpace(grid, dimRange=1, order=order-1, storage="fem")
+
+cell  = spcU.cell()
+x     = SpatialCoordinate(cell)
+mu    = Constant(0.1,  "mu")
+nu    = Constant(0.01, "nu")
+u     = TrialFunction(spcU)
+v     = TestFunction(spcU)
+p     = TrialFunction(spcP)
+q     = TestFunction(spcP)
+exact_u     = as_vector( [x[1] * (1.-x[1]), 0] )
+exact_p     = as_vector( [ (-2*x[0] + 2)*mu ] )
+f           = as_vector( [0,]*grid.dimension )
+f          += nu*exact_u
+mainModel   = (nu*dot(u,v) + mu*inner(grad(u)+grad(u).T, grad(v)) - dot(f,v)) * dx
+gradModel   = -inner( p[0]*Identity(grid.dimension), grad(v) ) * dx
+divModel    = -div(u)*q[0] * dx
+massModel   = inner(p,q) * dx
+preconModel = inner(grad(p),grad(q)) * dx
+
+mainOp      = galerkinScheme([mainModel==0,DirichletBC(spcU,exact_u,1)])
+gradOp      = galerkinOperator(gradModel)
+divOp       = galerkinOperator(divModel)
+massOp      = galerkinScheme(massModel==0)
+preconOp    = galerkinScheme(preconModel==0)
+
+velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
+pressure = spcP.interpolate([0], name="pressure")
+rhsVelo  = velocity.copy()
+rhsPress = pressure.copy()
+
+r      = rhsPress.copy()
+d      = rhsPress.copy()
+precon = rhsPress.copy()
+xi     = rhsVelo.copy()
+
+A = linearOperator(mainOp)
+G = linearOperator(gradOp)
+D = linearOperator(divOp)
+M = linearOperator(massOp)
+P = linearOperator(preconOp)
+
+solver = {"method":"cg", "tolerance":1e-10}
+Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
+Minv   = massOp.inverseLinearOperator(M,solver)
+Pinv   = preconOp.inverseLinearOperator(P,solver)
+
+# get main forcing and set constraints
+mainOp(velocity,rhsVelo)
+rhsVelo *= -1
+G(pressure,xi)
+rhsVelo -= xi
+mainOp.setConstraints(rhsVelo)
+mainOp.setConstraints(velocity)
+```
+{\bf TODO}: explain some of the new functionality used (perhaps should be
+explainer earlier, e.g., \pyth{inverseLinearOperator}
+
+For the C++ code we implement a function with the following signature
+\inputcpprange{uzawa.hh}{lstUzawaHH}%
+         {Header file for C++ version of preconditioned Uzawa algorithm}
+         {1}{11}
+
+\begin{landscape}
+\begin{minipage}{0.475\linewidth}
+\renewcommand{\pweavecaption}%
+{Python version of preconditioned Uzawa algorithm}
+\renewcommand{\pweavelabel}{lstUzawaPY}
+```python, label="UzawaPY", results = 'hidden'
+Ainv(rhsVelo, velocity)
+D(velocity,rhsPress)
+Minv(rhsPress, r)
+if mainOp.model.nu > 0:
+    precon.clear()
+    Pinv(rhsPress, precon)
+    r *= mainOp.model.mu
+    r.axpy(mainOp.model.nu,precon)
+d.assign(r)
+delta = r.scalarProductDofs(rhsPress)
+for m in range(100):
+    xi.clear()
+    G(d,rhsVelo)
+    mainOp.setConstraints(\
+        [0,]*grid.dimension, rhsVelo)
+    Ainv(rhsVelo, xi)
+    D(xi,rhsPress)
+    rho = delta /\
+       d.scalarProductDofs(rhsPress)
+    pressure.axpy(rho,d)
+    velocity.axpy(-rho,xi)
+    D(velocity, rhsPress)
+    Minv(rhsPress,r)
+    if mainOp.model.nu > 0:
+        precon.clear()
+        Pinv(rhsPress,precon)
+        r *= mainOp.model.mu
+        r.axpy(mainOp.model.nu,precon)
+    oldDelta = delta
+    delta = r.scalarProductDofs(rhsPress)
+    if delta < 1e-9: break
+    gamma = delta/oldDelta
+    d *= gamma
+    d += r
+```
+\end{minipage}
+\hfill
+\begin{minipage}{0.475\linewidth}
+\inputcpprange{uzawa.hh}{lstUzawaHH}%
+         {Header file for C++ version of preconditioned Uzawa algorithm}
+         {14}{66}
+\end{minipage}
+\end{landscape}
+
+\renewcommand{\pweavecaption}%
+{Execute C++ version of preconditioned Uzawa algorithm}
+\renewcommand{\pweavelabel}{lstUzawaCPP}
+```python, label="UzawaCPP"
+# Note: the models are virtualize so op.model().nu() will not work on the C++ side
+#       so we either need to 'devirtualize' or pass in nu,mu
+from dune.generator import algorithm
+velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
+pressure = spcP.interpolate([0], name="pressure")
+
+# get main forcing and set constraints
+mainOp(velocity,rhsVelo)
+rhsVelo *= -1
+G(pressure,xi)
+rhsVelo -= xi
+mainOp.setConstraints(rhsVelo)
+mainOp.setConstraints(velocity)
+
+uzawa = algorithm.run('uzawa', 'uzawa.hh',
+            mainOp.model.nu,mainOp.model.mu,
+            mainOp, G, D, Ainv, Minv, Pinv, rhsVelo, xi, rhsPress, r, d,
+            precon, velocity, pressure)
+fig = pyplot.figure(figsize=(20,10))
+velocity.plot(colorbar="horizontal", figure=(fig, 121))
+pressure.plot(colorbar="horizontal", figure=(fig, 122))
+pyplot.show()
+```
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

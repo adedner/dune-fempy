@@ -3,6 +3,11 @@
 # Explain uzawa algoirthm, show scipy version (here), dune-fempy version
 # (other script) and an algorithm implementation
 # <codecell>
+try:
+    get_ipython().magic(u'matplotlib inline')
+except:
+    pass
+
 import numpy
 from scipy.sparse import bmat, linalg
 import dune.create as create
@@ -12,6 +17,14 @@ from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
 from dune.ufl import Constant, DirichletBC
 import dune.fem
 from dune.fem.operator import linear as linearOperator
+
+try:
+    get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
+    import matplotlib
+    matplotlib.rc( 'image', cmap='jet' )
+except:
+    pass
+from matplotlib import pyplot
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
@@ -69,55 +82,74 @@ def Ainv(rhs,target): target[:] = linalg.spsolve(A,rhs)
 def Minv(rhs,target): target[:] = linalg.spsolve(M,rhs)
 def Pinv(rhs,target): target[:] = linalg.spsolve(P,rhs)
 
-mainOp(velocity,rhsVelo)                # assembleRHS ( mainModel_, mainModel_.rightHandSide(), mainModel_.neumanBoundary(), rhsU_ );
+mainOp(velocity,rhsVelo)
 rhs_u *= -1
-xi[:] = G*sol_p                         # gradOperator_(pressure_, xi_);
-rhs_u -= xi                             # rhs_ -= xi_;
-mainOp.setConstraints(rhsVelo)          # mainOperator_.prepare( velocity_, rhsU_ );
+xi[:] = G*sol_p
+rhs_u -= xi
+mainOp.setConstraints(rhsVelo)
 
-def plot(count):
-    grid.writeVTK("stokes",
-            pointdata={"pressure":pressure, "rhsPress":rhsPress,
-                       "exact_p":exact_p},
-            pointvector={"velocity":velocity, "rhsVelo":rhsVelo,
-                         "exact_velo":exact_u},
-            number=count
-    )
-
-
-Ainv(rhs_u[:], sol_u[:])                # invMainOp( rhsU_, velocity_ );
-rhs_p[:] = D*sol_u                      # divLinearOperator_( velocity_, rhsP_ );
-Minv(rhs_p, r)                          # invMassOp( rhsP_, r_ );
-if mainOp.model.nu > 0:                 # if (usePrecond_ && nu_>0.)
-    precon.fill(0)                      #     precond_.clear();
-    Pinv(rhs_p, precon)                 #   invPrecondOp( rhsP_, precond_ );
-    r *= mainOp.model.mu                #   r_ *= mu_;
-    r += mainOp.model.nu*precon         #   r_.axpy(nu_,precond_);
-d[:] = r[:]                             # d_.assign(r_);
-delta = numpy.dot(r,rhs_p)              # double delta = r_.scalarProductDofs(rhsP_);
-assert delta >= 0                       # assert( delta >= 0 );
-for m in range(100):                    # for (int m=0;m<100;++m)
-    xi.fill(0)                          #   xi_.clear();
-    rhs_u[:] = G*d                      #   gradLinearOperator_(d_, rhsU_);
-    mainOp.setConstraints(\
-       [0,]*grid.dimension, rhsVelo)    #   mainOperator_.prepare( mainModel_.zeroVelocity(), rhsU_ );
-    Ainv(rhs_u[:], xi[:])               #   invMainOp( rhsU_, xi_ );
-    rhs_p[:] = D*xi                     #   divLinearOperator_( xi_, rhsP_ );
-    rho = delta / numpy.dot(d,rhs_p)    #   double rho = delta / d_.scalarProductDofs(rhsP_);
-    sol_p += rho*d                      #   pressure_.axpy(rho,d_);
-    sol_u -= rho*xi                     #   velocity_.axpy(-rho,xi_);
-    rhs_p[:] = D*sol_u                  #   divLinearOperator_( velocity_, rhsP_ );
-    Minv(rhs_p[:],r[:])                 #   invMassOp( rhsP_, r_ );
-    if mainOp.model.nu > 0:             #   if (usePrecond_ && nu_>0.)
-        precon.fill(0)                  #     precond_.clear();
-        Pinv(rhs_p,precon)              #     invPrecondOp( rhsP_, precond_ );
-        r *= mainOp.model.mu            #     r_ *= mu_;
-        r += mainOp.model.nu*precon     #     r_.axpy(nu_,precond_);
-    oldDelta = delta                    #     double oldDelta = delta;
-    delta = numpy.dot(r,rhs_p)          #     delta = r_.scalarProductDofs(rhsP_);
+Ainv(rhs_u[:], sol_u[:])
+rhs_p[:] = D*sol_u
+Minv(rhs_p, r)
+if mainOp.model.nu > 0:
+    precon.fill(0)
+    #     precond_.clear();
+    Pinv(rhs_p, precon)
+    #   invPrecondOp( rhsP_, precond_ );
+    r *= mainOp.model.mu
+    #   r_ *= mu_;
+    r += mainOp.model.nu*precon
+    #   r_.axpy(nu_,precond_);
+d[:] = r[:]
+# d_.assign(r_);
+delta = numpy.dot(r,rhs_p)
+# double delta = r_.scalarProductDofs(rhsP_);
+for m in range(100):
+    # for (int m=0;m<100;++m)
+    xi.fill(0)
+    #   xi_.clear();
+    rhs_u[:] = G*d
+    #   gradLinearOperator_(d_, rhsU_);
+    mainOp.setConstraints([0,]*grid.dimension, rhsVelo)
+    #   mainOperator_.prepare( mainModel_.zeroVelocity(), rhsU_ );
+    Ainv(rhs_u[:], xi[:])
+    #   invMainOp( rhsU_, xi_ );
+    rhs_p[:] = D*xi
+    #   divLinearOperator_( xi_, rhsP_ );
+    rho = delta / numpy.dot(d,rhs_p)
+    #   double rho = delta / d_.scalarProductDofs(rhsP_);
+    sol_p += rho*d
+    #   pressure_.axpy(rho,d_);
+    sol_u -= rho*xi
+    #   velocity_.axpy(-rho,xi_);
+    rhs_p[:] = D*sol_u
+    #   divLinearOperator_( velocity_, rhsP_ );
+    Minv(rhs_p[:],r[:])
+    #   invMassOp( rhsP_, r_ );
+    if mainOp.model.nu > 0:
+        #   if (usePrecond_ && nu_>0.)
+        precon.fill(0)
+        #     precond_.clear();
+        Pinv(rhs_p,precon)
+        #     invPrecondOp( rhsP_, precond_ );
+        r *= mainOp.model.mu
+        #     r_ *= mu_;
+        r += mainOp.model.nu*precon
+        #     r_.axpy(nu_,precond_);
+    oldDelta = delta
+    #     double oldDelta = delta;
+    delta = numpy.dot(r,rhs_p)
+    #     delta = r_.scalarProductDofs(rhsP_);
     print("delta:",delta)               #     std::cout << "delta: " << delta << std::endl;
-    if delta < 1e-14: break             #     if ( delta < solverEps_*10. ) break;
-    gamma = delta/oldDelta              #     double gamma = delta/oldDelta;
-    d *= gamma                          #     d_ *= gamma;
-    d += r                              #     d_ += r_;
-plot(0)
+    if delta < 1e-14: break
+    #     if ( delta < solverEps_*10. ) break;
+    gamma = delta/oldDelta
+    #     double gamma = delta/oldDelta;
+    d *= gamma
+    #     d_ *= gamma;
+    d += r
+    #     d_ += r_;
+fig = pyplot.figure(figsize=(20,10))
+velocity.plot(colorbar="horizontal", figure=(fig, 121))
+pressure.plot(colorbar="horizontal", figure=(fig, 122))
+pyplot.show()

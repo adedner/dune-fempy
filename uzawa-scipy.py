@@ -1,7 +1,9 @@
 # <markdowncell>
-# # Saddle point solver
+# ## Saddle point solver
 # Explain uzawa algoirthm, show scipy version (here), dune-fempy version
 # (other script) and an algorithm implementation
+#
+# Need to remove 'create'
 # <codecell>
 try:
     get_ipython().magic(u'matplotlib inline')
@@ -51,11 +53,10 @@ preconModel = inner(grad(p),grad(q)) * dx
 
 # can also use 'operator' everywhere
 mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
-# mainOp      = create.scheme("h1",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
-gradOp      = create.operator("h1",gradModel,spcP,spcU)
+gradOp      = create.operator("galerkin",gradModel,spcP,spcU)
 divOp       = create.operator("galerkin",divModel,spcU,spcP)
 massOp      = create.scheme("galerkin",massModel==0,spcP)
-preconOp    = create.scheme("h1",preconModel==0,spcP)
+preconOp    = create.scheme("galerkin",preconModel==0,spcP)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01
@@ -93,62 +94,33 @@ rhs_p[:] = D*sol_u
 Minv(rhs_p, r)
 if mainOp.model.nu > 0:
     precon.fill(0)
-    #     precond_.clear();
     Pinv(rhs_p, precon)
-    #   invPrecondOp( rhsP_, precond_ );
     r *= mainOp.model.mu
-    #   r_ *= mu_;
     r += mainOp.model.nu*precon
-    #   r_.axpy(nu_,precond_);
 d[:] = r[:]
-# d_.assign(r_);
 delta = numpy.dot(r,rhs_p)
-# double delta = r_.scalarProductDofs(rhsP_);
 for m in range(100):
-    # for (int m=0;m<100;++m)
     xi.fill(0)
-    #   xi_.clear();
     rhs_u[:] = G*d
-    #   gradLinearOperator_(d_, rhsU_);
     mainOp.setConstraints([0,]*grid.dimension, rhsVelo)
-    #   mainOperator_.prepare( mainModel_.zeroVelocity(), rhsU_ );
     Ainv(rhs_u[:], xi[:])
-    #   invMainOp( rhsU_, xi_ );
     rhs_p[:] = D*xi
-    #   divLinearOperator_( xi_, rhsP_ );
     rho = delta / numpy.dot(d,rhs_p)
-    #   double rho = delta / d_.scalarProductDofs(rhsP_);
     sol_p += rho*d
-    #   pressure_.axpy(rho,d_);
     sol_u -= rho*xi
-    #   velocity_.axpy(-rho,xi_);
     rhs_p[:] = D*sol_u
-    #   divLinearOperator_( velocity_, rhsP_ );
     Minv(rhs_p[:],r[:])
-    #   invMassOp( rhsP_, r_ );
     if mainOp.model.nu > 0:
-        #   if (usePrecond_ && nu_>0.)
         precon.fill(0)
-        #     precond_.clear();
         Pinv(rhs_p,precon)
-        #     invPrecondOp( rhsP_, precond_ );
         r *= mainOp.model.mu
-        #     r_ *= mu_;
         r += mainOp.model.nu*precon
-        #     r_.axpy(nu_,precond_);
     oldDelta = delta
-    #     double oldDelta = delta;
     delta = numpy.dot(r,rhs_p)
-    #     delta = r_.scalarProductDofs(rhsP_);
-    print("delta:",delta)               #     std::cout << "delta: " << delta << std::endl;
     if delta < 1e-14: break
-    #     if ( delta < solverEps_*10. ) break;
     gamma = delta/oldDelta
-    #     double gamma = delta/oldDelta;
     d *= gamma
-    #     d_ *= gamma;
     d += r
-    #     d_ += r_;
 fig = pyplot.figure(figsize=(20,10))
 velocity.plot(colorbar="horizontal", figure=(fig, 121))
 pressure.plot(colorbar="horizontal", figure=(fig, 122))

@@ -1,3 +1,9 @@
+# <markdowncell>
+# ## Linear elasticity: deformed beam
+# We first setup the domain and solution space, together with the
+# vector valued discrete function $u$ which describes the displacement
+# field:
+
 # <codecell>
 try:
     get_ipython().magic(u'matplotlib inline')
@@ -19,13 +25,6 @@ except:
     pass
 
 
-# <markdowncell>
-# # Linear elasticity: deformed beam
-# We first setup the domain and solution space, together with the
-# vector valued discrete function $u$ which describes the displacement
-# field:
-
-# <codecell>
 gridView = leafGridView([0, 0], [1, 0.15], [100, 15])
 space = solutionSpace(gridView, dimRange=2, order=2, storage="istl")
 displacement = space.interpolate([0,0], name="displacement")

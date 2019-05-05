@@ -806,62 +806,10 @@ submission - or generated through the Makefile}
 \end{center}
 \end{comment}
 
-\section{A concluding example}
-The example below shows an example of solving a simple laplace problem
-using \pygmsh to define the unstructured mesh:
-\renewcommand{\pweavecaption}{3D Laplace equation using a \pygmsh tetrahedral mesh}
-\renewcommand{\pweavelabel}{lst:3dgmsh}
-```python, label="lst:3dgmsh-md", echo=False
-# <markdowncell>
-# In this example we use pygmsh to construct a tetrahedral mesh and olve a
-# simple laplace problem
-# <codecell>
-```
-```python, label='lst:3dgmsh', results='hidden'
-try:
-  import pygmsh
-  geom = pygmsh.built_in.Geometry()
-  poly = geom.add_polygon([
-      [ 0.0,  0.5, 0.0], [-0.1,  0.1, 0.0], [-0.5,  0.0, 0.0],
-      [-0.1, -0.1, 0.0], [ 0.0, -0.5, 0.0], [ 0.1, -0.1, 0.0],
-      [ 0.5,  0.0, 0.0], [ 0.1,  0.1, 0.0] ], lcar=0.05)
-  axis = [0, 0, 1]
-  geom.extrude( poly, translation_axis=axis, rotation_axis=axis,
-      point_on_axis=[0, 0, 0], angle=2.0 / 6.0 * numpy.pi)
-  mesh = pygmsh.generate_mesh(geom)
-  points, cells = mesh.points, mesh.cells
-  domain3d = {"vertices":points, "simplices":cells["tetra"]}
-except ImportError: # pygmsh not installed - use a simple cartesian domain
-  from dune.grid import cartesianDomain
-  domain3d = cartesianDomain([-0.25,-0.25,0],[0.25,0.25,1],[30,30,60])
 
-from dune.alugrid import aluSimplexGrid as leafGridView3d
-gridView3d  = leafGridView3d(domain3d)
-space3d = solutionSpace(gridView3d, order=1)
-
-from ufl import conditional
-u = TrialFunction(space3d)
-v = TestFunction(space3d)
-x = SpatialCoordinate(space3d)
-scheme3d = solutionScheme((inner(grad(u),grad(v))+inner(u,v))*dx ==
-                        conditional(dot(x,x)<.01,100,0)*v*dx,
-                        solver='cg')
-
-uh3d = space3d.interpolate([0],name="solution")
-scheme3d.solve(target=uh3d)
-# note: plotting with matplotlib not yet available for 3d grids
-gridView3d.writeVTK('3dexample', pointdata=[uh3d])
-```
-\begin{figure}
-\centering
-\includegraphics[width=0.4\textwidth]{figures/3dexample.png}
-\caption{Result from 3D example}
-\label{fig:3dgmsh}
-\end{figure}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Setting Boundary Conditions} \label{sec:bcs}
+\section{Setting Boundary Conditions} \label{sec:bcs}
 The example studied so far involved only Neumann boundary conditions which
 are included in the bilinear form through boundary integrals. Another
 important class of boundary conditions are Dirichlet type boundary
@@ -924,16 +872,9 @@ u,v = TrialFunction(space), TestFunction(space)
 scheme = solutionScheme([dot(grad(u),grad(v))==f(u),
                          DirichletBC(space, [g,None],subDomain) ])
 \end{pweavecode}
-We demonstrate the use of Dirichlet boundary conditions on part of the
-domain in the following two exmaple.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\input{elasticity.tex}
-\input{wave.tex}
-\Atodo{cite firedrake example}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\chapter{Using Alternative Linear Algebra Packages} \label{sec:solve}
+\section{Using Alternative Linear Algebra Packages} \label{sec:solve}
 ```python, label="solve-methods", echo=False
 # <markdowncell>
 # ## Alternate Solve Methods
@@ -1259,7 +1200,67 @@ automatically resize the underlying degrees of freedom vector of any
 discrete function, consequently the memory address will have changed after
 grid refienement and the buffer underlying the numpy array \pyth{vector}
 will be invalid and its usage will lead to unspecified behaviour.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Some concluding examples}
+\subsection{A 3d Laplace problem on a complex domain}
+The example below shows an example of solving a simple laplace problem
+using \pygmsh to define the unstructured mesh:
+\renewcommand{\pweavecaption}{3D Laplace equation using a \pygmsh tetrahedral mesh}
+\renewcommand{\pweavelabel}{lst:3dgmsh}
+```python, label="lst:3dgmsh-md", echo=False
+# <markdowncell>
+# In this example we use pygmsh to construct a tetrahedral mesh and olve a
+# simple laplace problem
+# <codecell>
+```
+```python, label='lst:3dgmsh', results='hidden'
+try:
+  import pygmsh
+  geom = pygmsh.built_in.Geometry()
+  poly = geom.add_polygon([
+      [ 0.0,  0.5, 0.0], [-0.1,  0.1, 0.0], [-0.5,  0.0, 0.0],
+      [-0.1, -0.1, 0.0], [ 0.0, -0.5, 0.0], [ 0.1, -0.1, 0.0],
+      [ 0.5,  0.0, 0.0], [ 0.1,  0.1, 0.0] ], lcar=0.05)
+  axis = [0, 0, 1]
+  geom.extrude( poly, translation_axis=axis, rotation_axis=axis,
+      point_on_axis=[0, 0, 0], angle=2.0 / 6.0 * numpy.pi)
+  mesh = pygmsh.generate_mesh(geom)
+  points, cells = mesh.points, mesh.cells
+  domain3d = {"vertices":points, "simplices":cells["tetra"]}
+except ImportError: # pygmsh not installed - use a simple cartesian domain
+  from dune.grid import cartesianDomain
+  domain3d = cartesianDomain([-0.25,-0.25,0],[0.25,0.25,1],[30,30,60])
+
+from dune.alugrid import aluSimplexGrid as leafGridView3d
+gridView3d  = leafGridView3d(domain3d)
+space3d = solutionSpace(gridView3d, order=1)
+
+from ufl import conditional
+u = TrialFunction(space3d)
+v = TestFunction(space3d)
+x = SpatialCoordinate(space3d)
+scheme3d = solutionScheme((inner(grad(u),grad(v))+inner(u,v))*dx ==
+                        conditional(dot(x,x)<.01,100,0)*v*dx,
+                        solver='cg')
+
+uh3d = space3d.interpolate([0],name="solution")
+scheme3d.solve(target=uh3d)
+# note: plotting with matplotlib not yet available for 3d grids
+gridView3d.writeVTK('3dexample', pointdata=[uh3d])
+```
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/3dexample.png}
+\caption{Result from 3D example}
+\label{fig:3dgmsh}
+\end{figure}
+
+\input{elasticity.tex}
+\input{wave.tex}
+\Atodo{cite firedrake example}
 \input{uzawa-scipy}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

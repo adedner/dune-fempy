@@ -23,7 +23,7 @@ try:
     import dune.vem
 except:
     import sys
-    sys.exit(1)
+    sys.exit(0)
 try:
     get_ipython().magic(u'matplotlib inline')
 except:

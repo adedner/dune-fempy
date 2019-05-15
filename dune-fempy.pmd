@@ -2754,6 +2754,7 @@ disable type erasure if required.}
 % \section{HP adaptive DG scheme for twophase flow problem}
 \input{twophaseflow}
 \section{Solvers on 2D polygonal meshes}
+\input{vemdemo}
 \section{Solvers for non-variational problems}
 \section{General framework for phasefield approximations}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

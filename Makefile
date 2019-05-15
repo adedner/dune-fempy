@@ -2,8 +2,8 @@ SHELL := /bin/bash
 PATH := bin:$(PATH)
 
 PDF = dune-fempy.pdf
-PY = uzawa-scipy.ipynb laplace-adaptive.ipynb crystal.ipynb elasticity.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb wave.ipynb twophaseflow.ipynb dune-fempy.py
-TEX = uzawa-scipy.tex laplace-adaptive.tex crystal.tex elasticity.tex mcf.tex mcf-algorithm.tex wave.tex dune-fempy.tex twophaseflow.tex
+PY = vemdemo.ipynb uzawa-scipy.ipynb laplace-adaptive.ipynb crystal.ipynb elasticity.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb wave.ipynb twophaseflow.ipynb dune-fempy.py
+TEX = vemdemo.tex uzawa-scipy.tex laplace-adaptive.tex crystal.tex elasticity.tex mcf.tex mcf-algorithm.tex wave.tex dune-fempy.tex twophaseflow.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 FIGURES = figures/3dexample.png figures/mcf-comparison.png figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png
 
@@ -12,8 +12,8 @@ all: $(TABLES) $(FIGURES) $(PDF) $(PY)
 
 .PHONY: clean distclean
 clean:
-	@rm -f *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES) $(PDF) $(PY)
-	@rm -rf battery_files  elasticity_files mcf_files wave_files  uzawa-scipy_files \
+	@rm -f *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES) $(PY)
+	@rm -rf vemdemo_files battery_files  elasticity_files mcf_files wave_files  uzawa-scipy_files \
          crystal_files  laplace-adaptive_files  mcf-algorithm_files
 distclean: clean
 	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu

@@ -21,7 +21,7 @@ from dune.plotting import plotPointData as plot
 
 from limit import createOrderRedcution, createLimiter
 try:
-    %config InlineBackend.figure_format = 'svg'
+    # %config InlineBackend.figure_format = 'svg'
     import matplotlib
     matplotlib.rc( 'image', cmap='jet' )
 except:
@@ -415,17 +415,15 @@ print("final pre adaptive (",i,"): ",dt,grid.size(0),end="\n")
 
 
 # <markdowncell>
-# Setup output (vtk) and define the constant for the h adaptivity
+# Define the constant for the h adaptivity
 
 
 # <codecell>
-vtk = grid.sequencedVTK("results", pointdata=[solution], celldata=[estimate])
 solution.interpolate( as_vector([p_0,s_0]) )
 limit(solution)
 estimator(solution, estimate)
 timeTol = sum(estimate.dofVector) / endTime
 print('Using timeTol = ',timeTol, end='\n')
-vtk()
 
 
 # <markdowncell>
@@ -454,7 +452,6 @@ while t < endTime:
     if t>=saveStep:
         print(t,grid.size(0),sum(estimate.dofVector),hTol,"# timestep",flush=True)
         plot(solution[1],figsize=(15,4))
-        vtk()
         saveStep += 100
 
 

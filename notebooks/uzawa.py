@@ -1,25 +1,26 @@
 # NOTE: there is some issue with failing convergence when using solver=cg -
 # it should work...
 import dune.create as create
-from dune.grid import cartesianDomain
+from dune.grid import cartesianDomain, structuredGrid
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
                 inner, dot, div, grad, dx, as_vector, transpose, Identity
 from dune.ufl import Constant, DirichletBC
 import dune.fem
-from dune.fem import parameter
 from dune.fem.space import lagrange  as lagrangeSpace
 from dune.fem.scheme import h1 as h1Scheme
 from dune.fem.operator import galerkin as galerkinOperator
 from dune.fem.operator import h1 as h1Operator
 from dune.fem.operator import linear as linearOperator
 
-parameter.append({"fem.verboserank": -1})
+from dune.fem import parameter
+parameter.append({"fem.verboserank": 0})
 
 storage="petsc"
 # storage="istl"
 # storage="fem"
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
+# grid = structuredGrid([0,0],[3,1],[30,10])
 
 spcU = lagrangeSpace(grid, dimRange=grid.dimension, order=order, storage=storage)
 spcP = lagrangeSpace(grid, dimRange=1, order=order-1, storage=storage)
@@ -75,8 +76,7 @@ D = linearOperator(divOp)
 M = linearOperator(massOp)
 P = linearOperator(preconOp)
 
-solver = {"method":"gmres","verbose":True,
-          "tolerance":1e-10}
+solver = {"method":"cg","verbose":True, "tolerance":1e-10}
 Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
 Minv   = massOp.inverseLinearOperator(M,solver)
 Pinv   = preconOp.inverseLinearOperator(P,solver)

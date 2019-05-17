@@ -39,10 +39,12 @@ except:
 # <markdowncell>
 # We want to solve the following system of equations of variables $\phi$ (phase field) and $T$ (temperature field)
 #
-# \begin{gather*}
-# \tau \frac{\partial \phi}{\partial t} = \nabla \cdot D \nabla \phi + \phi(1-\phi)m(\phi, T), \\
-# \frac{\partial T}{\partial t} = D_T \nabla^2 T + \frac{\partial \phi}{\partial t},
-# \end{gather*}
+# \begin{equation}
+# \begin{aligned}
+# \tau \frac{\partial \phi}{\partial t} &= \nabla \cdot D \nabla \phi + \phi(1-\phi)m(\phi, T), \\
+# \frac{\partial T}{\partial t} &= D_T \nabla^2 T + \frac{\partial \phi}{\partial t},
+# \end{aligned}
+# \end{equation}
 #
 # where $D_T$ = 2.25, m is given by
 #

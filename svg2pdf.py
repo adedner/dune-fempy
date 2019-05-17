@@ -17,7 +17,8 @@ fmt_to_option = {
     "latex": ("--export-pdf", "pdf"),
     "beamer": ("--export-pdf", "pdf"),
     # because of IE
-    "html": ("--export-png", "png")
+    "html": ("--export-png", "png"),
+    "markdown": ("--export-png", "png")
 }
 
 

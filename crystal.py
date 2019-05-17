@@ -6,7 +6,7 @@
 # <codecell>
 from __future__ import print_function
 try:
-    get_ipython().magic('matplotlib inline inline')
+    get_ipython().magic('matplotlib inline')
 except:
     pass
 

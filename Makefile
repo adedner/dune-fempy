@@ -53,7 +53,7 @@ dune-fempy.py: dune-fempy.pmd
 	@jupyter nbconvert --to markdown $<
 %_gl.md: %.ipynb
 	@jupyter nbconvert --to markdown $< --output $*_gl
-	# @pandoc --filter svg2pdf.py --listings -f markdown -t markdown $< -o $@
+	@pandoc --filter svg2pdf.py --listings -f markdown -t markdown $*_gl.md -o $*_gl.md
 	@python3 gitlab-formatting.py $@
 %.tex: %.md
 	@pandoc --filter svg2pdf.py --listings -f markdown -t latex $< -o $@

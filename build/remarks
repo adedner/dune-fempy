@@ -1,7 +1,0 @@
-When building an image using a remote Git repository as build context, Docker performs a git clone of the repository on the local machine, and sends those files as build context to the daemon. This feature requires git to be installed on the host where you run the docker build command.
-To exclude files not relevant to the build (without restructuring your source repository) use a .dockerignore file. This file supports exclusion patterns similar to .gitignore files. For information on creating one, see the .dockerignore file.
-
-replacement for sudo https://github.com/tianon/gosu/blob/master/INSTALL.md
-see also 'gosu' https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
-
-

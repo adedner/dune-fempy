@@ -22,6 +22,8 @@ distclean: clean
 
 %.tex: %.pmd
 	@$(PYTHON_ENV) pweave -f texpweave $<
+%.md: %.pmd
+	@$(PYTHON_ENV) pweave -f markdown $<
 
 dune-fempy-doc.tex: dune-fempy.pmd
 	@pweave -f texpweave -d -o dune-fempy-doc.tex $<
@@ -49,6 +51,9 @@ dune-fempy.py: dune-fempy.pmd
 	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace $@
 %.md: %.ipynb
 	@jupyter nbconvert --to markdown $<
+%_gl.md: %.ipynb
+	@jupyter nbconvert --to markdown $< --output $*_gl
+	@python3 gitlab-formatting.py $@
 %.tex: %.md
 	@pandoc --filter svg2pdf.py --listings -f markdown -t latex $< -o $@
 	@python3 pandoc-formatting.py $@

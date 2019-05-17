@@ -152,7 +152,8 @@ fig = pyplot.figure(figsize=(40,10))
 for i,m in enumerate(methods):
     space = create.space(m[0], polyGrid, order=3, dimRange=1, storage="istl", **m[2])
     dfs,errors = compute(polyGrid, space, m[1])
-    print("Size: ",space.size, "L^2: ", errors[0], "H^1: ", errors[1])
+    print("method:(",m[0],m[2],")",
+          "Size: ",space.size, "L^2: ", errors[0], "H^1: ", errors[1], flush=True)
     dfs.plot(figure=(fig,141+i),gridLines=None, colorbar="horizontal")
 pyplot.show()
 

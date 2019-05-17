@@ -3,19 +3,15 @@
 # Here we demonstrate crystallisation on the surface of a liquid due to cooling from [@Guyer].
 
 
-# <codecell>
-from __future__ import print_function
-try:
-    get_ipython().magic('matplotlib inline')
-except:
-    pass
-
-
 # <markdowncell>
 # Before anything else let us set up the grid and the function space. We use the default DoF storage available in ```dune-fem``` - this can be changed for example to ```istl``` or ```petsc```.
 
 
 # <codecell>
+get_ipython().magic(u'matplotlib inline')
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
+# %config InlineBackend.figure_format = 'svg'
 import dune.fem as fem
 from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid as leafGridView
@@ -28,12 +24,6 @@ dimRange = 2      # we have a system with two unknowns
 domain = cartesianDomain([4, 4], [8, 8], [3, 3])
 gridView  = adaptiveGridView( leafGridView( domain, dimgrid=dimDomain ) )
 space = solutionSpace(gridView, dimRange=dimRange, order=order, storage="fem")
-try:
-    %config InlineBackend.figure_format = 'svg'
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 
 # <markdowncell>
@@ -176,7 +166,7 @@ from dune.ufl import expression2GF
 indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="indicator")
 # <markdowncell>
 # We do the initial refinement of the grid using the general form of the `mark' method
-# ```
+# ```python
 # def mark(indicator, refineTolerance, coarsenTolerance=0,
 #     minLevel=0, maxLevel=None):
 # ```

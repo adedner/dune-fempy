@@ -47,13 +47,12 @@ dune-fempy.py: dune-fempy.pmd
 	@ptangle $<
 
 %.ipynb: %.py
-	@python3 py2ipynb.py $< $@
-	@jupyter nbconvert --ExecutePreprocessor.timeout=-1 --execute --to notebook --inplace $@
+	@python3 py2ipynb.py $< $@ --image="svg"
 %.md: %.ipynb
 	@jupyter nbconvert --to markdown $<
-%_gl.md: %.ipynb
-	@jupyter nbconvert --to markdown $< --output $*_gl
-	@pandoc --filter svg2pdf.py --listings -f markdown -t markdown-fenced_code_attributes $*_gl.md -o $*_gl.md
+%_gl.md: %.py
+	@python3 py2ipynb.py $< $*_gl.ipynb --image="png"
+	@jupyter nbconvert --to markdown $*_gl.ipynb --output $*_gl
 	@python3 gitlab-formatting.py $@
 %.tex: %.md
 	@pandoc --filter svg2pdf.py --listings -f markdown -t latex $< -o $@

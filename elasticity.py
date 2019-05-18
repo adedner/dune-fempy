@@ -5,10 +5,8 @@
 # field:
 
 # <codecell>
-try:
-    get_ipython().magic(u'matplotlib inline')
-except:
-    pass
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
 from dune.fem.plotting import plotPointData as plot
 from dune.grid import structuredGrid as leafGridView
@@ -17,13 +15,6 @@ from dune.fem.scheme import galerkin as solutionScheme
 
 from ufl import *
 import dune.ufl
-try:
-    get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
-
 
 gridView = leafGridView([0, 0], [1, 0.15], [100, 15])
 space = solutionSpace(gridView, dimRange=2, order=2, storage="istl")

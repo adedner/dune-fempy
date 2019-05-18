@@ -1,9 +1,7 @@
 # NOTE: there is some issue with failing convergence when using solver=cg -
 # it should work...
-try:
-    get_ipython().magic(u'matplotlib inline')
-except:
-    pass
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
 from dune.grid import structuredGrid, cartesianDomain
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
@@ -17,12 +15,6 @@ from dune.fem.scheme import galerkin as galerkinScheme
 from dune.fem import parameter
 parameter.append({"fem.verboserank": 0})
 
-try:
-    get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 order = 2
 # Note: structuredGrid fails in precon step!

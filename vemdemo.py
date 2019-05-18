@@ -24,11 +24,8 @@ try:
 except:
     import sys
     sys.exit(0)
-try:
-    get_ipython().magic(u'matplotlib inline')
-except:
-    pass
-
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
 import math
 from dune import create
@@ -41,12 +38,6 @@ from dune.vem import voronoiCells
 from ufl import *
 import dune.ufl
 
-try:
-    get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 dune.fem.parameter.append({"fem.verboserank": 0})
 

@@ -2,10 +2,8 @@
 # # HP adaptive DG scheme for twophase flow problem
 # Describe model and scheme here...
 # <codecell>
-try:
-    get_ipython().magic(u'matplotlib inline')
-except:
-    pass
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 import math
 
 from ufl import *
@@ -20,12 +18,6 @@ from dune.fem.function import levelFunction, integrate
 from dune.plotting import plotPointData as plot
 
 from limit import createOrderRedcution, createLimiter
-try:
-    # %config InlineBackend.figure_format = 'svg'
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 
 # <markdowncell>

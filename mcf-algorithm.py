@@ -31,12 +31,6 @@
 # <img src="mcf.gif" style="height:228px;">
 
 # <codecell>
-from __future__ import print_function
-try:
-    get_ipython().magic('matplotlib inline inline')
-except:
-    pass
-
 import math, time
 import pickle
 

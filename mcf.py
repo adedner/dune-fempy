@@ -34,12 +34,8 @@
 # <img src="mcf.gif" style="height:228px;">
 
 # <codecell>
-from __future__ import print_function
-try:
-    get_ipython().magic('matplotlib inline inline')
-except:
-    pass
-
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 import math
 
 from ufl import *
@@ -50,12 +46,6 @@ import dune.fem as fem
 from dune.fem.plotting import plotPointData as plot
 import matplotlib.pyplot as pyplot
 from IPython import display
-try:
-    %config InlineBackend.figure_format = 'svg'
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 
 # <markdowncell>

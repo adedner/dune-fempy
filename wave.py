@@ -47,11 +47,12 @@
 # is required.
 
 # <codecell>
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 import math
 import dune.fem as fem
 from dune.grid import reader
 from dune.alugrid import aluConformGrid as leafGridView
-from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
 from ufl import TrialFunction, TestFunction, grad, dot, dx
 from dune.ufl import Constant, BoxDirichletBC
@@ -59,12 +60,6 @@ fem.parameter.append({"fem.verboserank":-1})
 T = 3
 dt = 0.005
 t = 0
-try:
-    %config InlineBackend.figure_format = 'svg'
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 
 # <markdowncell>
@@ -77,7 +72,7 @@ except:
 
 # <codecell>
 domain = (reader.gmsh, "wave_tank.msh")
-gridView  = adaptiveGridView( leafGridView( domain, dimgrid=2 ) )
+gridView  = leafGridView( domain, dimgrid=2 )
 gridView.hierarchicalGrid.loadBalance()
 V = solutionSpace(gridView, order=1, storage="fem")
 

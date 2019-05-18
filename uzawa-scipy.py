@@ -5,11 +5,9 @@
 #
 # Need to remove 'create'
 # <codecell>
-try:
-    get_ipython().magic(u'matplotlib inline')
-except:
-    pass
-
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
+from matplotlib import pyplot
 import numpy
 from scipy.sparse import bmat, linalg
 import dune.create as create
@@ -20,13 +18,6 @@ from dune.ufl import Constant, DirichletBC
 import dune.fem
 from dune.fem.operator import linear as linearOperator
 
-try:
-    get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg'")
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
-from matplotlib import pyplot
 
 order = 2
 grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))

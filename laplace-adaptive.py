@@ -17,10 +17,8 @@
 
 
 # <codecell>
-try:
-    get_ipython().magic(u'matplotlib inline inline')
-except:
-    pass
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 import math
 import numpy
 import matplotlib.pyplot as pyplot
@@ -32,12 +30,6 @@ from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as leafGridView
 from ufl import *
 from dune.ufl import DirichletBC
-try:
-    %config InlineBackend.figure_format = 'svg'
-    import matplotlib
-    matplotlib.rc( 'image', cmap='jet' )
-except:
-    pass
 
 
 # set the angle for the corner (0<angle<=360)

@@ -8,10 +8,9 @@
 
 
 # <codecell>
-get_ipython().magic(u'matplotlib inline')
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )
-# %config InlineBackend.figure_format = 'svg'
+
 import dune.fem as fem
 from dune.grid import cartesianDomain
 from dune.alugrid import aluConformGrid as leafGridView
@@ -200,7 +199,7 @@ print()
 from dune.fem.plotting import plotComponents
 import matplotlib.pyplot as pyplot
 from dune.fem.function import levelFunction, partitionFunction
-import matplotlib
+
 # can construct a vtk writer that generates a sequence of files
 # vtk = gridView.sequencedVTK("crystal", pointdata=[u_h],
 #           celldata=[levelFunction(gridView), partitionFunction(gridView)])

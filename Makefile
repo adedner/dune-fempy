@@ -6,9 +6,11 @@ PY = vemdemo.ipynb uzawa-scipy.ipynb laplace-adaptive.ipynb crystal.ipynb elasti
 TEX = vemdemo.tex uzawa-scipy.tex laplace-adaptive.tex crystal.tex elasticity.tex mcf.tex mcf-algorithm.tex wave.tex dune-fempy.tex twophaseflow.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 FIGURES = figures/3dexample.png figures/mcf-comparison.png figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png
+GL= vemdemo_gl.md uzawa-scipy_gl.md laplace-adaptive_gl.md crystal_gl.md elasticity_gl.md mcf_gl.md mcf-algorithm_gl.md dune-fempy_gl.md wave_gl.md twophaseflow_gl.md
 
-.PHONY: all
-all: $(TABLES) $(FIGURES) $(PDF) $(PY)
+.PHONY: all gitlab
+all: $(TABLES) $(FIGURES) $(PDF)
+gitlab: $(GL)
 
 .PHONY: clean distclean
 clean:
@@ -47,14 +49,16 @@ dune-fempy.py: dune-fempy.pmd
 	@ptangle $<
 
 %.ipynb: %.py
-	@python3 py2ipynb.py $< $@ --image="svg"
+	@python3 py2ipynb.py $< $@ --image="png"
 %.md: %.ipynb
 	@jupyter nbconvert --to markdown $<
 %_gl.md: %.py
 	@python3 py2ipynb.py $< $*_gl.ipynb --image="png"
 	@jupyter nbconvert --to markdown $*_gl.ipynb --output $*_gl
 	@python3 gitlab-formatting.py $@
-%.tex: %.md
+%.tex: %.py
+	@python3 py2ipynb.py $< $@ --image="svg"
+	@jupyter nbconvert --to markdown $<
 	@pandoc --filter svg2pdf.py --listings -f markdown -t latex $< -o $@
 	@python3 pandoc-formatting.py $@
 

@@ -556,6 +556,7 @@ necessary to define the variables that are used in the equation.
 ```python, label="fem4", echo=False
 # <markdowncell>
 # Now we can set up our PDE model
+# <codecell>
 ```
 Recall that the semi discrete problem was
 \begin{equation}

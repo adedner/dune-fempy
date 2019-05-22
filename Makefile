@@ -20,11 +20,12 @@ sphinx-latex: $(RST) dune-fempy.pmd $(TABLE) $(FIGURES)
 
 .PHONY: clean distclean
 clean:
-	@rm -f *.ipynb *.rst *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES)
+	@rm -f *.ipynb $(RST) *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES)
 	@rm -rf spiral_files  vemdemo_files battery_files  elasticity_files mcf_files wave_files  uzawa-scipy_files \
-         crystal_files  laplace-adaptive_files  mcf-algorithm_files
+         crystal_files  laplace-adaptive_files  mcf-algorithm_files \
+				 html
 distclean: clean
-	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu
+	@rm -f *.bbl $(PDF) $(PY) $(TEX)
 
 .PRECIOUS: %.tex
 
@@ -64,8 +65,9 @@ dune-fempy-doc.pdf: $(TEX) dune-fempy-doc.tex dune-fempy.pmd $(TABLE) $(FIGURES)
 	@python3 pandoc-formatting.py $@
 %.rst: %.ipynb
 	@jupyter nbconvert --to rst $*_nb.ipynb --output $*
+	@sed -i '/----------/a :download:`(notebook) <$*_nb.ipynb>` :download:`(script) <$*.py>`' $*.rst
 	@sed -i "s/raw:: latex/math::/g" $*.rst
-	@sed -i "s/raw-latex/math/g"  wave.rst
+	@sed -i "s/raw-latex/math/g" $*.rst
 
 
 cpp_time.p: mcf-algorithm_nb.ipynb

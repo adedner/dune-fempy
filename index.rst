@@ -116,12 +116,19 @@ chapter (see more details here).
 Notebooks/Script and other files for download
 =============================================
 
-============================================= ============================================= =============================================
-Example                                       Notebooks                                     Scripts
-============================================= ============================================= =============================================
-Bending beam (linear elasticity)              :download:`notebook <elasticity_nb.ipynb>`    :download:`script <elasticity.py>`
-Crystal growth (phase field model)            :download:`notebook <crystal_nb.ipynb>`       :download:`script <crystal_nb.ipynb>`
-============================================= ============================================= =============================================
+================================================= ================================================= =================================================
+Example                                           Notebooks                                         Scripts
+================================================= ================================================= =================================================
+Bending beam (linear elasticity)                  :download:`notebook <elasticity_nb.ipynb>`        :download:`script <elasticity.py>`
+Spiral wave (reaction diffusion system)           :download:`notebook <spiral_nb.ipynb>`            :download:`script <spiral.py>`
+Slit domain (wave equation)                       :download:`notebook <wave_nb.ipynb>`              :download:`script <wave.py>`
+Saddle point solver (stokes flow)                 :download:`notebook <uzawa-scipy_nb.ipynb>`       :download:`script <uzawa-scipy.py>`
+Adaptive FE (laplace problem)                     :download:`notebook <laplace-adaptive_nb.ipynb>`  :download:`scipt <laplace-adaptive.py>`
+Crystal growth (phase field model)                :download:`notebook <crystal_nb.ipynb>`           :download:`script <crystal.py>`
+Time dependent surface (mean curvature flow)      :download:`notebook <mcf_nb.ipynb>`               :download:`script <mcf.py>`
+HP adaptive DG (two phase flow)                   :download:`notebook <twophaseflow_nb.ipynb>`      :download:`script <twophaseflow.py>`
+Virtual element method                            :download:`notebook <vemdemo_nb.ipynb>`           :download:`script <vemdemo.py>`
+================================================= ================================================= =================================================
 
 :download:`unit cube grid file <unitcube-2d.dgf>`
 :download:`sphere grid file <sphere.dgf>`

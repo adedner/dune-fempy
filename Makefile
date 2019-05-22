@@ -13,7 +13,7 @@ all: $(TABLES) $(FIGURES) $(PDF)
 tex: $(TEX)
 gitlab: $(GL)
 rst: $(RST)
-sphinx-html: $(RST) dune-fempy.pmd $(TABLE) $(FIGURES)
+sphinx-html: $(RST) dune-fempy.pmd $(TABLE) $(FIGURES) index.rst installation.rst gettingstarted.rst adaptivity.rst moving.rst furtherexamples.rst furtherprojects.rst
 	@sphinx-build -b html . html
 sphinx-latex: $(RST) dune-fempy.pmd $(TABLE) $(FIGURES)
 	@sphinx-build -b latex . latex

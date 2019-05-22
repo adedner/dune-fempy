@@ -32,7 +32,7 @@ nbook = v3.reads_py(text)
 nb = v4.upgrade(nbook)  # Upgrade v3 to v4
 if args.execute:
     ep = ExecutePreprocessor(timeout=-1,\
-            extra_arguments=["--InlineBackend.figure_format="+args.image])
+             extra_arguments=["--InlineBackend.figure_format="+args.image])
     ep.preprocess(nb,{})
 with open(outputFile, 'w', encoding='utf-8') as f:
     nbformat.write(nb, f)

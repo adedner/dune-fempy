@@ -1213,6 +1213,7 @@ using \pygmsh to define the unstructured mesh:
 \renewcommand{\pweavelabel}{lst:3dgmsh}
 ```python, label="lst:3dgmsh-md", echo=False
 # <markdowncell>
+# ## A 3D example
 # In this example we use pygmsh to construct a tetrahedral mesh and olve a
 # simple laplace problem
 # <codecell>
@@ -1258,8 +1259,14 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 \caption{Result from 3D example}
 \label{fig:3dgmsh}
 \end{figure}
+```python, label="lst:3dgmsh-md", echo=False
+# <markdowncell>
+![title](figures/3dexample.png)
+# <codecell>
+```
 
 \input{elasticity.tex}
+\input{spiral.tex}
 \input{wave.tex}
 \Atodo{cite firedrake example}
 \input{uzawa-scipy}
@@ -1274,7 +1281,8 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 \label{sec:corebindings}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ## Python Bindings for the Core Dune Modules
+# Python Bindings for the Core Dune Modules
+# ======================================
 # We now show how the features of the Dune core modules can be used in a
 # Python script. Our main focus is on the grid interface which is defined
 # in the Dune-Grid module. This depends on two other modules which we will
@@ -1318,7 +1326,7 @@ element methods.
 \label{sec:CommonAndGeometry}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ### A quick survey of Dune-Common and Dune-Geometry
+# ## A quick survey of Dune-Common and Dune-Geometry
 # The core module Dune-Common provides some classes for dense linear algebra.
 # The `FieldVector` and `FieldMatrix` classes are heavily used in the grid
 # geometry realizations. The conceptional basis for these geometries is
@@ -1386,7 +1394,7 @@ for p in dune.geometry.quadratureRule(geometryType, 3):
 \label{sec:gridconstruction}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ### Grid Construction
+# ## Grid Construction
 # We now move on to the Dune-Grid module. First let us discuss different
 # possibilities of constructing a grid.
 # <codecell>
@@ -1566,7 +1574,7 @@ C++.
 \label{sec:basicgridusage}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ### Basic Grid Usage
+# ## Basic Grid Usage
 # We next discuss how to retrieve basic information from a constructed grid
 # and iterate over its entities (i.e., elements, faces, edges, vertices, etc.).
 # <codecell>
@@ -1653,7 +1661,7 @@ In addition, some properties of the mapping's image are exported: \pyth{center},
 \label{sec:gridfunctions}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ### Grid Functions
+# ## Grid Functions
 # This is a fundamental concept in any grid based discretization package.
 # These are functions that can be evaluated given an entity in the grid and
 # a local coordinate within the reference element of that entity. 
@@ -1822,7 +1830,7 @@ hat0.plot()
 \label{sec:attachingdata}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ### Attaching Data to the Grid
+# ## Attaching Data to the Grid
 # To attach data to the entities in a grid, each Dune grid has an
 # `IndexSet` which provides a consecutive, zero starting integer for the
 # set of entities of a given geometry type, i.e., entities sharing the same
@@ -1945,7 +1953,7 @@ print(max(error(e, hatx) for e in aluView.elements))
 \label{sec:output}
 ```python, label="Intro", echo=False
 # <markdowncell>
-# ### Output
+# ## Output
 # We already used `matplotlib` to plot the grid and grid functions. For more
 # flexible plotting Dune relies on `vtk` and Dune-Python makes it easy to
 # write suitable files.

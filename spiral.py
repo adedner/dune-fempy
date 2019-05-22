@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Spiral Wave
+# ## Spiral Wave
 #
 # This demonstrates the simulation of spiral waves in an excitable media. It consists of system of reaction diffusion equations with two components. Both the model parameters and the approach for discretizing the system are taken from http://www.scholarpedia.org/article/Barkley_model.
 #
@@ -137,41 +137,60 @@ solverParameters =\
         "newton.linear.verbose": False}
 scheme = dune.fem.scheme.galerkin( equation, space, solver="cg", parameters=solverParameters)
 
-
 # <markdowncell>
-# To show the solution we make use of the _animate_ module of _matplotlib_:
+# To show the solution we make use of the _animate_ module of _matplotlib_.
+# Here is the `stepping` functions:
 # <codecell>
 
-
-import matplotlib.pyplot as plt
-from numpy import linspace
-from matplotlib import animation, rc
-rc('animation', html='html5')
-fig, ax = plt.subplots()
-ax.set_xlim(( 0, 2.5))
-ax.set_ylim(( 0, 2.5))
-triangulation = gridView.triangulation(1)
-levels = linspace(-0.1, 1.1, 256)
-ax.set_aspect('equal')
-t        = 0.
-stepsize = 0.5
-nextstep = 0.
-iterations = 0
-
+def init():
+    data = uh.pointData(1)
+    C = plt.tricontourf(triangulation, data[:,0], cmap=plt.cm.rainbow, levels=levels)
+    return C.collections
 def animate(count):
-    global t, stepsize, nextstep, iterations, dt
-    # print('frame',count,t,flush=True)
+    global t,stepsize,nextstep
+    nextstep += stepsize
+    # print(count,t,stepsize,nextstep)
     while t < nextstep:
         uh_n.assign(uh)
         vh_n.assign(vh)
         info = scheme.solve(target=uh)
         vh.interpolate( ode_update )
-        # print("Computing solution a t = " + str(t + dt), "iterations: " + info["linear_iterations"] )
-        iterations += int( info["linear_iterations"] )
-        t     += dt
+        # print("Computing solution a t = " + str(t + dt), "iterations: " + str(info["linear_iterations"]) )
+        t += dt
     data = uh.pointData(1)
-    plt.tricontourf(triangulation, data[:,0], cmap=plt.cm.rainbow, levels=levels)
-    gridView.writeVTK("spiral", pointdata=[uh], number=count)
-    nextstep += stepsize
+    C = plt.tricontourf(triangulation, data[:,0], cmap=plt.cm.rainbow, levels=levels)
+    # gridView.writeVTK("spiral", pointdata=[uh], number=count)
+    return C.collections
 
-animation.FuncAnimation(fig, animate, frames=25, interval=100, blit=False)
+# <markdowncell>
+# And generate the movie:
+# <codecell>
+import matplotlib.pyplot as plt
+from matplotlib import animation, rc
+
+from numpy import linspace
+fig, ax = plt.subplots()
+ax.set_xlim(( 0, 2.5))
+ax.set_ylim(( 0, 2.5))
+triangulation = gridView.triangulation(1)
+levels = linspace(-0.1, 1.1, 256)
+ax.set_aspect('equal');
+t        = 0.
+stepsize = 0.5
+nextstep = 0.
+anim = animation.FuncAnimation(fig, animate, init_func=init, frames=20, interval=100, blit=True)
+
+try:
+    movie = anim.to_html5_video()
+    from IPython.display import HTML, display
+    display( HTML(movie) )
+except: # ffmpeg probably missing
+    anim.save("spiral.html")
+    try:
+        from IPython.display import IFrame
+        IFrame(src='./nice.html', width=700, height=600)
+    except:
+        pass
+# <markdowncell>
+# ... if the movie is not showing you might have to rerun the notebook ...
+# <codecell>

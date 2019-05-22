@@ -112,6 +112,9 @@ for m in range(100):
     gamma = delta/oldDelta
     d *= gamma
     d += r
+# <markdowncell>
+# Now we can easily plot the velocity magnitude and pressure
+# <codecell>
 fig = pyplot.figure(figsize=(20,10))
 velocity.plot(colorbar="horizontal", figure=(fig, 121))
 pressure.plot(colorbar="horizontal", figure=(fig, 122))

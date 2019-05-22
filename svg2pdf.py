@@ -14,7 +14,8 @@ from pandocfilters import toJSONFilter, Image
 
 # TODO add emf export if fmt=="docx" ?
 fmt_to_option = {
-    "latex": ("--export-pdf", "pdf"),
+    # "latex": ("--export-pdf", "pdf"),
+    "latex": ("--export-png", "png"),
     "beamer": ("--export-pdf", "pdf"),
     # because of IE
     "html": ("--export-png", "png"),
@@ -26,7 +27,8 @@ def svg_to_any(key, value, fmt, meta):
     if key == 'Image':
         attrs, alt, [src, title] = value
         mimet, _ = mimetypes.guess_type(src)
-        option = fmt_to_option.get(fmt, ("--export-pdf", "pdf"))
+        # option = fmt_to_option.get(fmt, ("--export-pdf", "pdf"))
+        option = fmt_to_option.get(fmt, ("--export-png", "png"))
         if mimet == 'image/svg+xml' and option:
             base_name, _ = os.path.splitext(src)
             eps_name = base_name + "." + option[1]

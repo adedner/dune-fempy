@@ -2,20 +2,26 @@ SHELL := /bin/bash
 PATH := bin:$(PATH)
 
 PDF = dune-fempy.pdf
-PY = vemdemo.ipynb uzawa-scipy.ipynb laplace-adaptive.ipynb crystal.ipynb elasticity.ipynb mcf.ipynb mcf-algorithm.ipynb dune-fempy.ipynb wave.ipynb twophaseflow.ipynb dune-fempy.py
-TEX = vemdemo.tex uzawa-scipy.tex laplace-adaptive.tex crystal.tex elasticity.tex mcf.tex mcf-algorithm.tex wave.tex dune-fempy.tex twophaseflow.tex
+TEX = spiral.tex vemdemo.tex uzawa-scipy.tex laplace-adaptive.tex crystal.tex elasticity.tex mcf.tex mcf-algorithm.tex wave.tex dune-fempy.tex twophaseflow.tex
 TABLE = tables/features_discretefunction tables/features_grid tables/features_operator tables/features_solver tables/features_view tables/features_function tables/features_model tables/features_scheme tables/features_space
 FIGURES = figures/3dexample.png figures/mcf-comparison.png figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png
-GL= vemdemo_gl.md uzawa-scipy_gl.md laplace-adaptive_gl.md crystal_gl.md elasticity_gl.md mcf_gl.md mcf-algorithm_gl.md dune-fempy_gl.md wave_gl.md twophaseflow_gl.md
+GL = spiral_gl.md vemdemo_gl.md uzawa-scipy_gl.md laplace-adaptive_gl.md crystal_gl.md elasticity_gl.md mcf_gl.md mcf-algorithm_gl.md dune-fempy_gl.md wave_gl.md twophaseflow_gl.md
+RST = spiral.rst vemdemo.rst uzawa-scipy.rst laplace-adaptive.rst crystal.rst elasticity.rst mcf.rst mcf-algorithm.rst dune-fempy.rst wave.rst twophaseflow.rst
 
-.PHONY: all gitlab
+.PHONY: all gitlab tex rst sphinx
 all: $(TABLES) $(FIGURES) $(PDF)
+tex: $(TEX)
 gitlab: $(GL)
+rst: $(RST)
+sphinx-html: $(RST) dune-fempy.pmd $(TABLE) $(FIGURES)
+	@sphinx-build -b html . html
+sphinx-latex: $(RST) dune-fempy.pmd $(TABLE) $(FIGURES)
+	@sphinx-build -b latex . latex
 
 .PHONY: clean distclean
 clean:
-	@rm -f *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES) $(PY)
-	@rm -rf vemdemo_files battery_files  elasticity_files mcf_files wave_files  uzawa-scipy_files \
+	@rm -f *.ipynb *.rst *.vtu *.pvtu *.p *.aux *.blg *.fdb_latexmk *.fls *.log *.out *.png *.tex *.md *.bbl *.toc $(TABLES) $(FIGURES)
+	@rm -rf spiral_files  vemdemo_files battery_files  elasticity_files mcf_files wave_files  uzawa-scipy_files \
          crystal_files  laplace-adaptive_files  mcf-algorithm_files
 distclean: clean
 	@rm -f *.bbl $(PDF) $(PY) $(TEX) *.vtu
@@ -26,6 +32,8 @@ distclean: clean
 	@$(PYTHON_ENV) pweave -f texpweave $<
 %.md: %.pmd
 	@$(PYTHON_ENV) pweave -f markdown $<
+%.py: %.pmd
+	@ptangle $<
 
 dune-fempy-doc.tex: dune-fempy.pmd
 	@pweave -f texpweave -d -o dune-fempy-doc.tex $<
@@ -42,29 +50,26 @@ dune-fempy-doc.pdf: $(TEX) dune-fempy-doc.tex dune-fempy.pmd $(TABLE) $(FIGURES)
 	@pdflatex --interaction=nonstopmode dune-fempy-doc
 	@pdflatex --interaction=nonstopmode dune-fempy-doc
 
-dune-fempy.ipynb: dune-fempy.py
-	@python3 py2ipynb.py dune-fempy.py dune-fempy.ipynb
-
-dune-fempy.py: dune-fempy.pmd
-	@ptangle $<
-
 %.ipynb: %.py
-	@python3 py2ipynb.py $< $@ --image="png"
+	@python3 py2ipynb.py $< $*_nb.ipynb --image="png"
 %.md: %.ipynb
 	@jupyter nbconvert --to markdown $<
 %_gl.md: %.py
 	@python3 py2ipynb.py $< $*_gl.ipynb --image="png"
 	@jupyter nbconvert --to markdown $*_gl.ipynb --output $*_gl
 	@python3 gitlab-formatting.py $@
-%.tex: %.py
-	@python3 py2ipynb.py $< $@ --image="svg"
-	@jupyter nbconvert --to markdown $<
-	@pandoc --filter svg2pdf.py --listings -f markdown -t latex $< -o $@
+%.tex: %.ipynb
+	@jupyter nbconvert --to markdown $*_nb.ipynb --output $*
+	@pandoc --filter svg2pdf.py --listings -f markdown -t latex $*.md -o $@
 	@python3 pandoc-formatting.py $@
+%.rst: %.ipynb
+	@jupyter nbconvert --to rst $*_nb.ipynb --output $*
+	@sed -i "s/raw:: latex/math::/g" $*.rst
+	@sed -i "s/raw-latex/math/g"  wave.rst
 
 
-cpp_time.p: mcf-algorithm.ipynb
-python_time.p: mcf-algorithm.ipynb
+cpp_time.p: mcf-algorithm_nb.ipynb
+python_time.p: mcf-algorithm_nb.ipynb
 
 figures/mcf-comparison.png: cpp_time.p python_time.p
 	@python3 mcf-comparison-plot.py

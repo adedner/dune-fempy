@@ -34,8 +34,6 @@ for current in ['discrete', 'exact', 'error']:
     display.EdgeColor = [1./3., 1./3., 1./3.]
 
     colorbar = GetScalarBar(display.LookupTable, view)
-    print(dir(colorbar))
-    print(type(colorbar))
     colorbar.Position = [0.9, 0.2]
     # colorbar.Position2 = [0.1, 0.6]
     colorbar.LabelFontSize = 12

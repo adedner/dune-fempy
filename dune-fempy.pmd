@@ -89,15 +89,6 @@
 
 ```python, label="Intro", echo=False
 # <markdowncell>
-# Python code from the Dune-FemPy paper
-# ======================================
-# This Jupyter notebook contains the code examples shown in the
-# Dune-Python paper.
-# The sectioning reflects that of the paper and, while some introductory
-# comments are given, we refer to it for the details.
-#
-# __Note__: Some of the code cells depend on previous ones and cannot be
-# executed in arbitrary order.
 # <codecell>
 import time, numpy, math, sys
 try:
@@ -127,7 +118,7 @@ from matplotlib import pyplot
 
 ```python, label="fem-in-fempy", echo=False
 # <markdowncell>
-# ## Finite Element Methods in \dune[Fempy]
+# ## Finite Element Methods
 # In this section we introduce the basic components of a finite
 # element method when applied to the Forchheimer problem.
 # <codecell>
@@ -349,6 +340,7 @@ We do this using the function \pyth{integrate} as follows:
 \renewcommand{\pweavelabel}{lst:forch-integrate}
 ```python, label="fem2", echo=False
 # <markdowncell>
+# ### Grid Functions
 # We can easily easily integrate grid function
 # <codecell>
 ```
@@ -448,6 +440,7 @@ polynomial basis functions}
 \renewcommand{\pweavelabel}{lst:space}
 ```python, label="fem1", echo=False
 # <markdowncell>
+# ### Discrete Spaces
 # Setting up a discrete function space and some grid function
 # <codecell>
 ```
@@ -555,6 +548,7 @@ necessary to define the variables that are used in the equation.
 \renewcommand{\pweavelabel}{lst:forch-variables}
 ```python, label="fem4", echo=False
 # <markdowncell>
+# ### Models and Schemes
 # Now we can set up our PDE model
 # <codecell>
 ```
@@ -720,6 +714,7 @@ computed at the final time}
 \renewcommand{\pweavelabel}{lst:forch-error}
 ```python, label="fem6", echo=False
 # <markdowncell>
+# ### Solving the System
 # Since we have forced the system towards a given solution, we can compute
 # the discretization error. First we define ufl expressions for the $L^2$
 # and $H^1$ norms and will use those to compute the experimental order of
@@ -809,76 +804,14 @@ submission - or generated through the Makefile}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Setting Boundary Conditions} \label{sec:bcs}
-The example studied so far involved only Neumann boundary conditions which
-are included in the bilinear form through boundary integrals. Another
-important class of boundary conditions are Dirichlet type boundary
-conditions $u=g$ which typically are included through constraints in the
-finite element method, i.e., by modifying the system such that
-$u_h = I_hg$ on the Dirichlet part of the boundary where $I_h$ is the
-interpolation operator associated with the discrete function space, e.g.,
-evaluation of $g$ at the Lagrange points on the boundary.
 
-In \dune[fempy] these type of boundary needs to be included in the
-construction of the scheme or the operator. So if for example the
-analytical problem is
-\begin{align*}
-  -\triangle u &= 0 && \text{in } \Omega \\
-  u &= sin(xy) && \text{on } \partial\Omega
-\end{align*}
-then we need to construct a corresponding scheme adding the boundary
-conditions to the weak form:
-\renewcommand{\pweavecaption}{Defining Dirichlet boundary conditions}
-\renewcommand{\pweavelabel}{lst:dbc}
-\begin{pweavecode}
-from dune.ufl import DirichletBC
-scheme = solutionScheme([dot(grad(u),grad(v))==0,
-                         DirichletBC(space, sin(x[0]*x[1], subDomain) ])
-\end{pweavecode}
-The \pyth{DirichletBC} class is used here to describe the boundary
-conditions, it takes a space, the function to use on the boundary, and as
-third argument a description of the portion of the boundary
-$\Gamma_D\subset\partial\Omega$ on which the
-boundary condition it to be applied. The simplest approach is to describe
-the domain using a ufl expression which evaluates to zero for
-$x\not\in\Gamma_D$. A second approach is to use integer identifiers
-which can be set during grid construction by using for example the
-\emph{dune grid format} (DGF). When using the \pyth{structuredGrid}
-function to construct the grid, the boundaries have the following
-identifiers: $1$ and $2$ for the left and right boundary, $3$ and $4$ for
-the bottom and top, and finally in the three dimensional setting $5$ and
-$6$ identify the front and back boundaries, respectively.
-Note, that an arbitrary number of instances of the \pyth{DirichletBC} class
-can be used during the construction of the \pyth{scheme}.
-
-Finally, in the case of vector valued spaces it is sometimes necessary to
-only provide conditions for a some of the components of the discrete
-function. For example assume that the problem consists of two coupled
-elliptic problems with Dirichlet conditions for the first unknown and
-Neuman conditions for the second, e.g., let the unkown be
-$u=(u_1,u_2)$ satisfying
-\begin{align*}
-  -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
-  -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
-  u_1               &= g && \text{on } \partial\Omega \\
-  \nabla u_2\cdot n &= 0 && \text{on } \partial\Omega \\
-\end{align*}
-in this case the scheme would have to be constructed as follows
-\renewcommand{\pweavecaption}{Defining boundary conditions for vector valued problems}
-\renewcommand{\pweavelabel}{lst:dbc}
-\begin{pweavecode}
-space  = solutionSpace(gridView, order=2, dimRange=2)
-u,v = TrialFunction(space), TestFunction(space)
-scheme = solutionScheme([dot(grad(u),grad(v))==f(u),
-                         DirichletBC(space, [g,None],subDomain) ])
-\end{pweavecode}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Using Alternative Linear Algebra Packages} \label{sec:solve}
 ```python, label="solve-methods", echo=False
 # <markdowncell>
 # ## Alternate Solve Methods
+# ### Using Scipy
 # Here we look at different ways of solving PDEs using external
 # packages and python functionality.
 # <codecell>
@@ -979,18 +912,18 @@ error = u_h - exact_end
 print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 ```
-We can redo the above computation using a Newton-Krylov solver from
-SciPy. We do this by constructing a class \pyth{Df} containing the
-derivative of the operator. This would normally be done within DUNE,
-but here we do it purely through Python:
-%, giving figure \ref{fig:forch-df} which is identical to before.
-\renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with SciPy}
-\renewcommand{\pweavelabel}{lst:forch-df}
+
 ```python, label="solve-methods2", echo=False
 # <markdowncell>
 # Using a non linear solver from the Scipy package
 # <codecell>
 ```
+We can redo the above computation using a Newton-Krylov solver from
+SciPy. We do this by constructing a class \pyth{Df} containing the
+derivative of the operator. This would normally be done within DUNE,
+but here we do it purely through Python:
+\renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with SciPy}
+\renewcommand{\pweavelabel}{lst:forch-df}
 ```python, label='forch-df'
 from scipy.optimize import newton_krylov
 from scipy.sparse.linalg import LinearOperator
@@ -1060,6 +993,7 @@ the same approximation as computed previously:
 \renewcommand{\pweavelabel}{lst:forch-petsc}
 ```python, label="solve-methods2", echo=False
 # <markdowncell>
+# ### Using Petsc and Petsc4Py
 # Switching to a storage based on the PETSc solver package and solving the
 # system using the dune-fem bindings
 # <codecell>
@@ -1201,7 +1135,131 @@ automatically resize the underlying degrees of freedom vector of any
 discrete function, consequently the memory address will have changed after
 grid refienement and the buffer underlying the numpy array \pyth{vector}
 will be invalid and its usage will lead to unspecified behaviour.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Setting Boundary Conditions} \label{sec:bcs}
+```python, label="solve-methods", echo=False
+# <markdowncell>
+# ## More General Boundary Conditions
+# So far we only used natural boundary conditions. Here we discuss how to
+# set Dirichlet boundary conditions and use different conditions for
+# different components of the solution.
+#
+# To fix Dirichlet boundary conditions $u=g$ on part of the boundary
+# $\Gamma\subset\partial\Omega$ the central class is
+# `dune.ufl.DirichletBC` which takes three arguments:
+# the discrete function space for $u$, the function $g$ given by a UFL
+# expression, and a description of $\Gamma$. There are different ways to
+# do this. If it is omitted or `None` the condition is applied to the whole
+# domain, a integer $s>0$ can be provided which can be set to describe a
+# part of the boundary during grid construction as described in another
+# place. Finally a UFL condition can be used, i.e., `x[0]<0`.
+#
+# For vector valued functions $u$ the value function $g$ can be a UFL
+# vector or a list. In the later case a component of `None` can be used to
+# describe components which are not to be constrained by the boundary
+# condition.
+# <codecell>
+```
+The example studied so far involved only Neumann boundary conditions which
+are included in the bilinear form through boundary integrals. Another
+important class of boundary conditions are Dirichlet type boundary
+conditions $u=g$ which typically are included through constraints in the
+finite element method, i.e., by modifying the system such that
+$u_h = I_hg$ on the Dirichlet part of the boundary where $I_h$ is the
+interpolation operator associated with the discrete function space, e.g.,
+evaluation of $g$ at the Lagrange points on the boundary.
+
+In \dune[fempy] these type of boundary needs to be included in the
+construction of the scheme or the operator. So if for example the
+analytical problem is
+\begin{align*}
+  -\triangle u &= 0 && \text{in } \Omega \\
+  u &= sin(xy) && \text{on } \partial\Omega
+\end{align*}
+then we need to construct a corresponding scheme adding the boundary
+conditions to the weak form:
+\renewcommand{\pweavecaption}{Defining Dirichlet boundary conditions}
+\renewcommand{\pweavelabel}{lst:dbc}
+\begin{pweavecode}
+from dune.ufl import DirichletBC
+scheme = solutionScheme([dot(grad(u),grad(v))==0,
+                         DirichletBC(space, sin(x[0]*x[1], subDomain) ])
+\end{pweavecode}
+
+The \pyth{DirichletBC} class is used to describe the boundary
+conditions, it takes a space, the function to use on the boundary, and as
+third argument a description of the portion of the boundary
+$\Gamma_D\subset\partial\Omega$ on which the
+boundary condition is to be applied. If no \pyth{subDomain} is provided (or
+it is \pyth{None}) then this boundary condition will be applied to the
+whole boundary. Only one boundary condition without \pyth{subDomain} can be
+passed to the scheme and it will be applied after all other Dirichlet
+conditions have been evaluated, i.e., it applies to the remaining part of
+the boundary. The simplest approach to single out a specific part of the
+boundary is to describe the domain using a ufl expression which evaluates
+to zero for $x\not\in\Gamma_D$. A second approach is to use integer identifiers
+which can be set during grid construction by using for example the
+\emph{dune grid format} (DGF). When using the \pyth{structuredGrid}
+function to construct the grid, the boundaries have the following
+identifiers: $1$ and $2$ for the left and right boundary, $3$ and $4$ for
+the bottom and top, and finally in the three dimensional setting $5$ and
+$6$ identify the front and back boundaries, respectively.
+Note, that an arbitrary number of instances of the \pyth{DirichletBC} class
+can be used during the construction of the \pyth{scheme}.
+
+Finally, in the case of vector valued spaces it is sometimes necessary to
+only provide conditions for some of the components of the discrete
+function. For example assume that the problem consists of two coupled
+elliptic problems with Dirichlet conditions for the first unknown and
+Neuman conditions for the second, e.g., let the unknown be
+$u=(u_1,u_2)$ satisfying
+\begin{align*}
+  -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
+  -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
+  u_1               &= g && \text{on } \partial\Omega \\
+  \nabla u_2\cdot n &= h && \text{on } \partial\Omega \\
+\end{align*}
+A single \pyth{DirichletBC} class can be provided to the scheme with no
+\pyth{subDomain} and where the value argument is a list of length two where
+the first component is $g$ and the second component is \pyth{None}. 
+
+Here is an example:
+
+\renewcommand{\pweavecaption}{A system with mixed boundary conditions}
+\renewcommand{\pweavelabel}{lst:mixedbc}
+```python, label='mixedbc', fig=True, caption='Plot of solutions of mixed boundary condition problem', width='0.32\\textwidth'
+from ufl import sin
+from dune.ufl import DirichletBC
+from dune.fem.plotting import plotComponents
+
+vecSpace = solutionSpace(gridView, dimRange=2, order=2)
+x = SpatialCoordinate(vecSpace)
+vec = vecSpace.interpolate([0,0], name='u_h')
+uVec,vVec = TrialFunction(vecSpace), TestFunction(vecSpace)
+a  = ( inner(grad(uVec), grad(vVec)) + inner(uVec,vVec) ) * dx
+f  = ( uVec[0]*(1-uVec[1])*vVec[0] + uVec[1]*(1-uVec[0])*vVec[1] ) * dx
+f  = f + uVec[0]*uVec[0] * vVec[1] * ds
+bc = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),None])
+vecScheme = solutionScheme( [a == f, bc],
+        parameters={"newton.linear.tolerance": 1e-9} )
+vecScheme.solve(target=vec)
+plotComponents(vec, gridLines=None, subSampling=2)
+
+```
+To prescribe $u_2=0$ at the bottom boundary is also straightforward
+\renewcommand{\pweavecaption}{A second system with mixed boundary conditions}
+\renewcommand{\pweavelabel}{lst:mixedbc2}
+```python, label='mixedbc2', fig=True, caption='Plot of solutions of the second mixed boundary condition problem', width='0.32\\textwidth'
+bcBottom = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),0],x[1]<1e-10)
+vecScheme = solutionScheme( [a == f, bc, bcBottom],
+        parameters={"newton.linear.tolerance": 1e-9} )
+vecScheme.solve(target=vec)
+plotComponents(vec, gridLines=None, subSampling=2)
+
+```
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1219,6 +1277,7 @@ using \pygmsh to define the unstructured mesh:
 # <codecell>
 ```
 ```python, label='lst:3dgmsh', results='hidden'
+# The following code is taken from the `pygmsh` homepage
 try:
   import pygmsh
   geom = pygmsh.built_in.Geometry()
@@ -1229,7 +1288,7 @@ try:
   axis = [0, 0, 1]
   geom.extrude( poly, translation_axis=axis, rotation_axis=axis,
       point_on_axis=[0, 0, 0], angle=2.0 / 6.0 * numpy.pi)
-  mesh = pygmsh.generate_mesh(geom)
+  mesh = pygmsh.generate_mesh(geom, verbose=False)
   points, cells = mesh.points, mesh.cells
   domain3d = {"vertices":points, "simplices":cells["tetra"]}
 except ImportError: # pygmsh not installed - use a simple cartesian domain
@@ -1261,7 +1320,7 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 \end{figure}
 ```python, label="lst:3dgmsh-md", echo=False
 # <markdowncell>
-![title](figures/3dexample.png)
+# ![3d laplace problem](figures/3dexample.png)
 # <codecell>
 ```
 
@@ -1273,798 +1332,13 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Working with the Full Grid Interface}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \label{sec:corebindings}
-```python, label="Intro", echo=False
-# <markdowncell>
-# Python Bindings for the Core Dune Modules
-# ======================================
-# We now show how the features of the Dune core modules can be used in a
-# Python script. Our main focus is on the grid interface which is defined
-# in the Dune-Grid module. This depends on two other modules which we will
-# only briefly touch on.
-# <codecell>
-```
+\input{dune-corepy}
 
-In this section we show how the approach for exporting statically polymorphic
-interfaces presented in Section~\ref{sec:PythonBindings} is used to provide bindings for the
-core \dune interfaces. To this end we discuss the central components for
-implementing grid based numerical scheme in Python based on \dune[Python].
-In Section \ref{sec:gridconstruction} we discuss grid construction,
-followed by a discussion of the central parts of the grid interface in
-Section~\ref{sec:basicgridusage}.
-The central concept of defining functions over a given grid
-is discussed in Section \ref{sec:gridfunctions}, which are functions that
-can be evaluated on a given element of the grid. We present both the
-\emph{bind/unbind} approach used on the C++ side, as well as
-a more direct evaluation method. Grid functions can be easily constructed
-using decorators. A central part of any numerical scheme
-is the construction of discrete grid function requiring to attach degrees
-of freedom to different parts of the grid; this is discussed in Section
-\ref{sec:attachingdata}.
-While visualization of the grid and of grid functions  using
-\matplotlib is used throughout this section, more details on output,
-e.g., to \vtk files is discussed in Section~\ref{sec:output}.
-We conclude this section by discussing parallelization support.
-
-A full Python script containing all the example code shown in the following
-can be found in the \dune[Python] module in the folder \file{doc/paper}.
-
-The central classes we want to describe are contained in the \pyth{dune.grid} module.
-The \dune[Grid] module depends on \dune[Common] and \dune[Geometry]. The
-first contains some dense matrix-vector routines and some other helper
-classes, e.g., for parallelization support. \dune[Geometry] contains the reference
-elements and quadrature rules required, for example, to implement in finite
-element methods.
-
-
-\section{A quick survey of \dune[Common] and \dune[Geometry]}
-\label{sec:CommonAndGeometry}
-```python, label="Intro", echo=False
-# <markdowncell>
-# ## A quick survey of Dune-Common and Dune-Geometry
-# The core module Dune-Common provides some classes for dense linear algebra.
-# The `FieldVector` and `FieldMatrix` classes are heavily used in the grid
-# geometry realizations. The conceptional basis for these geometries is
-# provided by Dune-Geometry, providing, for example, reference elements and
-# quadrature rules.
-# <codecell>
-```
-
-% \Mtodo{better splitting of introduction and this section}
-
-In the following we will only describe the
-corresponding Python modules \pyth{dune.common} and \pyth{dune.geometry} without
-going into detail.
-
-The python module \pyth{dune.common} provides access to the
-fixed sized vectors and matrix classes
-\pyth{FieldVector} and \pyth{FieldMatrix}:
-\renewcommand{\pweavecaption}%
-{Instantiating a \dune \cpp{FieldVector} defined in \dune[Common]}
-\renewcommand{\pweavelabel}{lstDuneCommon}
-```python
-from dune.common import FieldVector, FieldMatrix
-x = FieldVector([0.25,0.25,0.25])
-```
-These dense vectors and matrices are used in many places within the dune
-interface, especially for geometrical representations of grid elements.
-In general, a list or tuple of correct length can be passed to any function or
-method expecting a \cpp{FieldVector} in the \dune C++ interface.
-
-The \pyth{dune.geometry} module provides a class representing a \dune reference
-element. It is constructed from a \emph{geometry type}, which encodes the
-dimension and a basic shape, e.g., simplex or (hyper)cube.
-%for given geometry types. A geometry type consists of two parts:
-%the dimension and the type e.g. \cpp{cube,simplex} etc.
-The following code snippet shows how to obtain the reference element for a
-two-dimensional simplex and print all its corners.
-\renewcommand{\pweavecaption}%
-{Reference elements for a 2d triangle}
-\renewcommand{\pweavelabel}{lstDuneGeometry}
-```python
-import dune.geometry
-geometryType = dune.geometry.simplex(2)
-referenceElement = dune.geometry.referenceElement(geometryType)
-print("\t".join(str(c) for c in referenceElement.corners))
-```
-Note that, for convenience, we could have used \pyth{triangle} instead of
-\pyth{simplex(2)}.
-Experienced \dune users will also note a slight deviation for the C++ interface
-in the above code snippet.
-The Python property \pyth{corners} returns a tuple of corners while the C++ method
-with the same name returns the number of corners.
-
-Similarly, it is straightforward to write a quadrature loop for the reference
-element of a given geometry type:
-\renewcommand{\pweavecaption}%
-{Print quadrature rule for a triangle}
-\renewcommand{\pweavelabel}{lstDuneQuadRule}
-```python
-for p in dune.geometry.quadratureRule(geometryType, 3):
-    print(p.position, p.weight)
-```
-
-
-\section{Grid Construction}
-\label{sec:gridconstruction}
-```python, label="Intro", echo=False
-# <markdowncell>
-# ## Grid Construction
-# We now move on to the Dune-Grid module. First let us discuss different
-# possibilities of constructing a grid.
-# <codecell>
-```
-
-The \dune[Grid] interface can be implemented in various ways and there is hardly
-a common denominator to the data required to construct a grid.
-Therefore, \dune traditionally does not require any specific constructor for a
-grid implementation.
-However, basic data formats are suitable to construct various grid
-implementations.
-For example, most grid implementations are able to represent a Cartesian grid
-and most unstructured grid implementations can be constructed from a Gmsh file,
-given support for the used geometry types.
-On the C++ side, \dune provides rather complicated factory concepts to support
-different construction mechanisms in addition to custom grid constructors.
-
-To unify the grid constructors, \dune[Python] uses Python's dynamic type system
-and requires constructs a grid from an abstract \emph{domain} description.
-Conceptually, this can be anything from a file, e.g., in the \dune grid
-format (DGF) or the Gmsh format, to a highly specialized data structure
-supported by exactly one grid implementation.
-
-The simplest such domain is the \pyth{cartesianDomain}, which can be used to
-construct a 2d grid as follows:
-\renewcommand{\pweavecaption}{Grid construction of a Cartian grid using the \yaspgrid implementation}
-\renewcommand{\pweavelabel}{lstYaspGridConstruction}
-```python label="CartesianGridConstruction"
-from dune.grid import cartesianDomain, yaspGrid
-domain = cartesianDomain([0, 0], [1, 0.25], [15, 4])
-yaspView = yaspGrid(domain)
-```
-This constructs a new \yaspgrid, which is an efficient Cartesian grid implementation
-provided by \dune[Grid], on the domain $[0,1]\times[0,0.25]$,
-subdivided into $15 \times 4$ cells.
-For convenience, the same result can be achieved by \\
-\pyth{dune.grid.structuredGrid([0,0],[1,0.25],[15,4])}, if any structured grid
-implementation will do.
-
-%The resulting grid has $60$ elements:
-%\renewcommand{\pweavecaption}%
-%{Accessing the number of elements (codimension zero entities)}
-%\renewcommand{\pweavelabel}{lstNumberOfElements}
-%```python, label="ObtainNumberOfElements"
-%print("Number of elements: ",yaspView.size(0))
-%print("Number of vertices: ",yaspView.size(yaspView.dimension))
-%```
-%The argument to the size method is the required codimension of the
-%entity, e.g. zero are elements.
-
-In the C++ interface, a \dune grid is hierarchical.
-Refining a grid globally or locally does not result in a new grid but adds
-child elements to the grid hierarchy.
-Frequently, only the leaf level of the hierarchy is used in numerical
-computations, e.g., using a finite element method.
-%In the C++ interface, a \dune grid represents a tree structure. A globally or
-%locally refined grid, results in a tree where the root nodes are the
-%coarsest grid elements (those provided during the construction of the grid)
-%and the leaf nodes in the tree represent the finest grid elements. 
-For convenience, the \dune[Python] grid construction functions always return
-this leaf view of the underlying hierarchical grid, i.e., iterating over the
-elements of a refined grid will return the finest elements in the grid.
-As a view, however, this object cannot be modified directly and the hierarchical
-grid has to be modified instead..
-For example, globally refining the grid is done as follows:
-\renewcommand{\pweavecaption}{Globally refining a hierarchical grid given its leaf view \pyth{grid}}
-\renewcommand{\pweavelabel}{lstGlobalRefine}
-```python, label="AccessingHGrid", fig=True, caption="refinement of a cartesian grid", width="0.475\\textwidth"
-yaspView.plot()
-yaspView.hierarchicalGrid.globalRefine()
-yaspView.plot()
-```
-To visualize the leaf view, we have used a utility method \pyth{plot}.
-This is a convenience extension to the \dune \cpp{GridView} interface,
-plotting the grid using \matplotlib.
-Note how modifying the hierarchical grid affected its leaf view.
-
-The way \pyth{globalRefine} modifies the grid depends on the grid
-implementation.
-For example, the following snippet instantiates a triangular grid provided by
-the \dune[ALUGrid] module \cite{dune:alugrid} by subdividing each square into
-two triangles.
-Upon global refinement, this grid implementation uses bisection to conformingly
-split each triangle in two.
-\renewcommand{\pweavecaption}{Constructing a triangular grid with bisection refinement on $[0,0.25]\times[0,1]$}
-\renewcommand{\pweavelabel}{lstALUConformGridConstruction}
-```python, label="SimplexGridConstruction", fig=True, caption='Refinement of a simplex grid using bisection', width="0.475\\textwidth"
-from dune.alugrid import aluConformGrid
-aluView = aluConformGrid(domain)
-aluView.plot()
-aluView.hierarchicalGrid.globalRefine()
-aluView.plot()
-```
-%Here, we make use another grid implementation from the \dune[ALUGrid] module,
-%which is not part of the \dune core.
-%It provides unstructured purely triangular, quadrilateral, tetrahedral, or
-%hexahedral grids.
-Notice that, although \dune[ALUGrid] is not part of the \dune core but exports
-Python bindings on its own, this only differes from the construction of a
-\cpp{YaspGrid} in the name of the construction function.
-
-The simplest way to set up an unstructured grid is by passing in the vertex
-coordinates and the vertex numbers for each element in the grid:
-\renewcommand{\pweavecaption}%
-{Setting up an unstructed triangular grid}
-\renewcommand{\pweavelabel}{lstConstructUnstructuredGrid}
-```python, label="ConstructUnstructuredGrid", fig=True, caption='An unstructed grid before (left) and after (right) refinement', width='0.4\\textwidth'
-vertices = [(0,0), (1,0), (1,0.6), (0,0.6), (-1,0.6), (-1,0), (-1,-0.6), (0,-0.6)]
-triangles = [(2,0,1), (0,2,3), (4,0,3), (0,4,5), (6,0,5), (0,6,7)]
-aluView = aluConformGrid({"vertices": vertices, "simplices": triangles})
-aluView.plot(figsize=(5,5))
-aluView.hierarchicalGrid.globalRefine(2)
-aluView.plot(figsize=(5,5))
-```
-While we use lists here, any iterable structure is possible.
-However, for performance reasons we recommend the use of \numpy arrays
-for larger grids.
-
-```python, label="Intro", echo=False
-# <markdowncell>
-# In addition to global refinement we can also pre process the grid by
-# marking a subset of elements for local refinement.
-# <codecell>
-```
-
-So far, we have been refining every element in our constructed grids.
-When preparing a grid, we might also want to refine it locally.
-Let us, for example, consider the above grid and focus refinement around the
-corner at the origin:
-
-\renewcommand{\pweavecaption}{Local refining around the origin}
-\renewcommand{\pweavelabel}{lstLocalRefinement}
-```python, label="LocalRefinement", fig=True, caption='Local refined grid', width='0.195\\linewidth'
-from dune.grid import Marker
-aluView.plot(figsize=(5,5))
-for i in range(1,4):
-    def mark(e):
-        x = e.geometry.center
-        return Marker.refine if x.two_norm < 0.64**i else Marker.keep
-    aluView.hierarchicalGrid.adapt(mark)
-    aluView.plot(figsize=(5,5))
-```
-Here, we used the \pyth{geometry} property of the element to determine
-the distance of its barycenter to the origin.
-Obtaining geometrical and topological information from the grid is described
-in detail in Section~\ref{sec:basicgridusage}.
-
-Let us assume we want to use this conforming grid as a macro grid to a triangular
-grid quartering each element on refinement, e.g., \pyth{aluSimplexGrid}.
-To do so, we simply obtain the \pyth{vertices} and \pyth{triangles} arrays
-from our grid implementation, e.g.,
-\renewcommand{\pweavecaption}{Creating a grid from a leaf view}
-\renewcommand{\pweavelabel}{lstCreateFromGrid}
-```python, label="CreateFromGrid", fig=False
-from dune.alugrid import aluSimplexGrid
-vertices = aluView.coordinates()
-triangles = [aluView.indexSet.subIndices(e, 2) for e in aluView.elements]
-aluView = aluSimplexGrid({"vertices": vertices, "simplices": triangles})
-```
-Here, \pyth{coordinates} is another convenience function returning the coordinates
-of all vertices as a two-dimensional \numpy array.
-Of course, we could also have manipulated the coordinates before passing
-them on to \pyth{aluSimplexGrid}.
-The \pyth{indexSet} property will be described in more detail in Section
-\ref{sec:attachingdata}.
-
-All steps taken to construct our triangular grid could also have been done in
-C++.
-However, the \dune[Python] convenience methods and direct plotting through
-\matplotlib make the manual construction of desired macro grids much more
-efficient.
-After all, dumping the grid into, e.g., a DGF file, we could still load it from
-C++.
-
-
-\section{Basic Grid Usage}
-\label{sec:basicgridusage}
-```python, label="Intro", echo=False
-# <markdowncell>
-# ## Basic Grid Usage
-# We next discuss how to retrieve basic information from a constructed grid
-# and iterate over its entities (i.e., elements, faces, edges, vertices, etc.).
-# <codecell>
-```
-
-Now that we know how to construct a grid, let's see what we can do with it.
-For the sake of presentation, let us consider a tessellation of the unit square
-into two triangles:
-\renewcommand{\pweavecaption}{Triangulation of the unit square}
-\renewcommand{\pweavelabel}{lstUnitSquare}
-```python, label="UnitSquare"
-vertices = [(0,0), (1,0), (1,1), (0,1)]
-triangles = [(2,0,1), (0,2,3)]
-unitSquare = aluSimplexGrid({"vertices": vertices, "simplices": triangles})
-print(unitSquare.size(0),"elements and",unitSquare.size(2),"vertices")
-```
-
-A \dune grid can be considered as a container of \emph{entities} together with
-their relation to each other.
-Here, the term entity collectively refers to any topological object in the grid,
-e.g., a vertex, an edge, facet, or an element.
-Entities are differentiated by their codimension w.r.t.\ the grid dimension, i.e.,
-the dimension of its elements.
-For example, in a tetrahedral grid, the codimension of a facet is 1 and the
-codimension of a vertex is 3. So in the above code
-\pyth{unitSquare.size(0)} returns the number of entities of codimension
-zero, i.e., the number of triangles.
-We can iterate over all entities in the (leaf) grid as follows:
-\renewcommand{\pweavecaption}{Iterating over all entities in a grid}
-\renewcommand{\pweavelabel}{lstGridIterateAllEntities}
-```python, label="GridIterateAllEntities"
-for codim in range(0, unitSquare.dimension+1):
-    for entity in unitSquare.entities(codim):
-        print(", ".join(str(c) for c in entity.geometry.corners))
-```
-As an example, we have printed the position of the corner for each entity.
-Geometrical information on entities will be discussed later in this section.
-
-In general, we define \emph{elements} to be entities of codimension 0,
-\emph{facets} to be entities of codimension 1, \emph{edges} to be
-entities of dimension 1, and \emph{vertices} to be entities of dimension 0.
-Using this notation, we can also perform the iteration over all edges as follows:
-\renewcommand{\pweavecaption}{Iterating over all edges in a grid}
-\renewcommand{\pweavelabel}{lstGridIterateAllEdges}
-```python, label="GridIterateAllEdges", results='hidden'
-for edge in unitSquare.edges:
-    print(", ".join(str(c) for c in edge.geometry.corners))
-```
-Just for comparison the following listing shows the same loop based on the C++
-interface:
-\begin{c++}{Iterating over all edges in a grid using the \dune C++ interface}{lstGridIterateEdgesCPP}
-for( edge : edges( unitSquare ) )
-{
-  const auto geo = edge.geometry();
-  std::cout << geo.corner( 0 ) << ", " << geo.corner( 1 ) << std::endl;
-}
-\end{c++}
-
-In \dune, entities are view-only objects providing the properties \pyth{geometry},
-\pyth{level}, \pyth{type}, and \pyth{partitionType}.
-In addition these objects have a \pyth{referenceElement} property, returning the
-reference element of the entity. The same method is also available on the
-\pyth{Geometry} classes.
-
-The \pyth{geometry} property models the geometric realization of the entity, i.e.,
-a mapping from the local coordinates within the reference element to the global
-coordinates in Euclidean space.
-The global coordinates of a local point are returned by the method
-\pyth{toGlobal}; the local coordinates of a global point can be obtained
-via \pyth{toLocal}.
-To transform tangential vectors, the Jacobian of the reference mapping and its
-inverse are provided by the methods \pyth{jacobianTransposed} and
-\pyth{jacobianInverseTransposed}, which are constant if the property \pyth{affine}
-is \pyth{True}.
-In addition, some properties of the mapping's image are exported: \pyth{center},
-\pyth{corners}, and \pyth{volume}.
-
-% \Mtodo{This is a first blah; it needs further refining and maybe some references to the \dune papers.}
-
-% \Atodo{Another stupid code snippet perhaps? Perhaps printing the local and
-% global midpoint of each edge or something?}
-
-\section{Another Look at Grid Functions}
-\label{sec:gridfunctions}
-```python, label="Intro", echo=False
-# <markdowncell>
-# ## Grid Functions
-# This is a fundamental concept in any grid based discretization package.
-# These are functions that can be evaluated given an entity in the grid and
-# a local coordinate within the reference element of that entity. 
-# <codecell>
-```
-
-Having a computational grid, we can define functions on it, e.g., a piecewise
-constant function.
-%We refer to such functions as \emph{grid functions}.
-To evaluate a piecewise constant function in an arbitrary point $x$, we
-would first need to find the element $T$ containing $x$.
-However, in practice we usually derive $x$ from a given $T$ and a local position
-$\hat x$ in the reference element of $T$, i.e., $T$ is in most cases already available.
-
-Many \dune modules therefore use the concept of \emph{localizable} or
-\emph{bindable} grid functions.
-These functions are associated with a grid and can be localized to an element
-in some manner; this localization is usually referred to as a
-\emph{local function}. In the following we will use the term
-\emph{grid function} to refer to this specific class of functions.
-
-On the C++ side, \dune[Python] adopts the following interface: For any grid
-function, there must be a free-standing function \cpp{localFunction}, which
-must be accessible by argument-dependent lookup, to construct a localizable
-view of the function.
-This view can then be bound to an element and evaluated in a local position
-$\hat x$.
-An example use could look as follows:
-%A grid function consists of a grid and a function that can be evaluated
-%locally on each element of the grid. More precisely, the approach used
-%in many \dune modules is that from a grid function object, a local grid
-%function can be constructed which when bound to an element $E$ of the
-%grid can be evaluated in local coordinates, i.e., given points
-%$\hat{x}$ in the reference element of $E$. In the C++ code,
-%the local function object is obtained using a free standing function
-%\cpp{localFunction}, which takes a \cpp{gridFunction} instance:
-\begin{c++}{}{}
-auto lf = localFunction( gridFunction );
-lf.bind( element );
-auto y = lf( hatx );
-lf.unbind();
-\end{c++}
-The same concept is also accepted by the \cpp{VTKWriter} class available in
-\dune[Grid].
-
-We replicate this concept in Python as closely as possible.
-As Python does not have the concept of an argument-dependent lookup, we expect
-the grid function to provide a method \pyth{localFunction} instead:
-\begin{python}
-lf = gridFunction.localFunction()
-lf.bind(element)
-y = lf(hatx)
-lf.unbind()
-\end{python}
-
-% \Atodo{mention vectorization here}
-As mentioned above this approach follows the C++ interface as closely as
-possible. It is especially useful in the case that multiple evaluations on
-one element are required and the \pyth{bind} method
-is expensive, e.g., because local degree of freedoms have to be retrieved
-from a global vector for a finite element function. For single evaluations
-or non time critical code the approach given above is cumbersome and leads
-to a high number of inefficient calls between Python and C++. Thus we
-provide a simplified interface to evaluate grid functions:
-\begin{python}
-gridFunction(element, hatx)
-\end{python}
-
-Any function on the grid's domain can be easily turned into a grid
-function by using the geometric mapping from the reference element.
-\dune[Python] provide a \pyth{gridFunction} decorator to add the
-\pyth{localFunction} method to a given function:
-\renewcommand{\pweavecaption}{Decorating a globally defined function as a grid function}
-\renewcommand{\pweavelabel}{lstGF1}
-```python, label="GlobalGridFunctions"
-@dune.grid.gridFunction(aluView)
-def f(x):
-    return math.cos(2.*math.pi/(0.3+abs(x[0]*x[1])))
-```
-On the other hand, we might want to implement a piecewise function, i.e., a
-function $f(T, \hat x)$ and use it as a grid function.
-This works in the same manner:
-\renewcommand{\pweavecaption}{Decorating a locally defined function as a grid function}
-\renewcommand{\pweavelabel}{lstGF2}
-```python, label="LocalGridFunctions"
-@dune.grid.gridFunction(aluView)
-def hat0(element,hatx):
-    return 1-hatx[0]-hatx[1]
-```
-Now we can, for example, compute the maximum value of \pyth{f} at
-the barycenter of all elements using the extended grid function interface
-for direct evaluation provided by the decorator:
-\renewcommand{\pweavecaption}%
-{Using a direct evaluate method on grid function objects}
-\renewcommand{\pweavelabel}{lstGF4}
-```python, label="GlobalGridFunctions3"
-hatx = FieldVector([1./3., 1./3.])
-maxValue = max(f(e, hatx) for e in f.grid.elements)
-```
-In fact, since \pyth{function} is based on a globally defined function,
-the following also works
-\renewcommand{\pweavecaption}%
-{Using a global evaluate method on grid function objects}
-\renewcommand{\pweavelabel}{lstGF5}
-```python, label="GlobalGridFunctions3"
-maxValue = max(f(e.geometry.toGlobal(hatx)) for e in f.grid.elements)
-```
-Note, that the evaluation in a global coordinate will not be available
-for the \pyth{hat0} object defined in Listing~\ref{lstGF1}.
-
-There is also a decorator \pyth{dune.grid.GridFunction} available to
-decorate a class providing either a method \pyth{__call__(self, x)}
-or \pyth{__call__(self, element, hatx)}.
-In general, however, it will be more efficient to implement the full grid
-function interface to cache element information upon \pyth{bind}.
-
-For convenience, grid functions can be easily plotted using the \matplotlib:
-\renewcommand{\pweavecaption}{Plotting grid functions}
-\renewcommand{\pweavelabel}{lstGF6}
-```python, label="GlobalGridFunctions4", fig=True, caption='Plot of \pyth{f} (left) and \pyth{hat0} (right)', width='0.45\\textwidth'
-f.plot()
-hat0.plot()
-```
-
-% \Mtodo{I think the following example is not necessary}
-
-% Now we can for example compute the maximum value of \pyth{f} at
-% the bary center of all elements:
-% \renewcommand{\pweavecaption}%
-% {Using the \pyth{localFunction} concept to compute the maximum value over
-% the bary centers of all elements}
-% \renewcommand{\pweavelabel}{lstGF3}
-% ```python, label="GlobalGridFunctions2"
-% maxValue = 0
-% localgf = f.localFunction()
-% for element in f.grid.elements:
-%     localgf.bind(element)
-%     maxValue = max(maxValue, localgf([1./3.,1./3.]))
-%     localgf.unbind()
-% print(maxValue)
-% ```
-% In Python one would like the option to write this in a single line.
-% The \pyth{gridFunction} decorator adds some extra functionality which
-% is not directly available using the \dune C++ concepts:
-% \renewcommand{\pweavecaption}%
-% {Using a direct evaluate method on grid function objects}
-% \renewcommand{\pweavelabel}{lstGF4}
-% ```python, label="GlobalGridFunctions3"
-% maxValue = max(f(e,[1./3.,1./3.]) for e in f.grid.elements)
-% print(maxValue)
-% ```
-% In fact since \pyth{f} is based on a globally defined function
-% the following also works
-% \renewcommand{\pweavecaption}%
-% {Using a global evaluate method on grid function objects}
-% \renewcommand{\pweavelabel}{lstGF5}
-% ```python, label="GlobalGridFunctions3"
-% maxValue = max(f(e.geometry.toGlobal([1./3.,1./3.])) for e in f.grid.elements)
-% print(maxValue)
-% ```
-% Note, that the evaluation in a global coordinate will not be available
-% for \pyth{hat0} object defined in Listing \ref{lstGF1}.
-
-
-\section{Attaching Data to the Grid}
-\label{sec:attachingdata}
-```python, label="Intro", echo=False
-# <markdowncell>
-# ## Attaching Data to the Grid
-# To attach data to the entities in a grid, each Dune grid has an
-# `IndexSet` which provides a consecutive, zero starting integer for the
-# set of entities of a given geometry type, i.e., entities sharing the same
-# reference element, like all triangles or all cubes. This can be used to attach
-# data to the these entities stored in random access containers like
-# `numpy` arrays. To simplify the process further a `mapper` can be used
-# which is initialized with the data layout, i.e., the number of degrees of
-# freedom that is supposed to be attached to every entity with a given
-# geometry type.
-# <codecell>
-```
-
-In \dune grid structure and user data are cleanly separated, i.e.,
-user data is stored in separate containers.
-The grid provides index maps assigning a unique index to each entity,
-which can be used to address containers of user data.
-
-Each grid has an \pyth{indexSet} property, which assigns an index to each
-entity that is unique within its geometry type.
-For each geometry type, the index range is $[0, N)$, where $N$ is the number
-of entities of this type within the grid.
-Note that \dune does not prescribe any correlation between the iteration order
-and the order of the indices. Recall, for example, the code snippet from
-Listing~\ref{lstCreateFromGrid}, where the \pyth{indexSet} property was used to
-define the elements of a triangulation. The function call
-\pyth{aluView.indexSet.subIndices(e, 2)} for a given element \pyth{e} returns
-the list of indices for all the corners of $e$ (the second argument being the codimension of the
-vertices in a 2d grid; the indices for all the edges for example are obtained by calling
-\pyth{subIndices(e,1)}).
-
-To simplify attaching data to entities of different type
-(e.g., different codimension), \dune[Grid] provides the
-\cpp{MultipleCodimMultipleGeomTypeMapper} class.
-It combines the ranges in an index set such that each entity in the grid is
-assigned a fixed number $n$ of array indices, where $n$ depends only on the
-geometry type.
-
-In Python, the grid provides a convenience method \pyth{mapper} to construct
-such a mapper.
-The mapping from geometry type to the number of requested array indices can be
-passed either as a function, as a callable, as a \pyth{dict}, or as a list or
-tuple.
-In the latter case, the number is assigned by codimension only.
-For example, to assign 2 indices to each element and 3 indices to each vertex in
-the grid, we construct the mapper as follows:
-\setpweavecaption{Example mapper construction}{lstMapperConstruction}
-```python, label="MapperConstruction"
-mapper = unitSquare.mapper([2, 0, 3])
-```
-The above approach is convenient if the same number of degrees of freedom
-is attached to all subentities of a given codimension.
-In many cases, however, the number depends on the geometry type of the entity.
-For example, to attach 4 degrees of freedom to a quadrilateral but only 1 to a
-triangle we use the following \pyth{dict}:
-\setpweavecaption{Example mapper construction using a dictionary}{lstMapperConstructionDict}
-```python, label="MapperConstructionDict"
-layout = {dune.geometry.quadrilateral: 4, dune.geometry.triangle: 1}
-mapper = unitSquare.mapper(layout)
-```
-The abbreviations \pyth{dune.geometry.triangle} and
-\pyth{dune.geometry.quadrilateral} can be used for
-\pyth{dune.geometry.simplex(2)} and
-\pyth{dune.geometry.cube(2)}, respectively, as discussed in
-Section~\ref{sec:CommonAndGeometry}.
-
-Implementing a Lagrange type interpolation into a piecewise linear
-finite element space can now be easily done:
-\setpweavecaption{Lagrange interpolation}{lstLagrangeInterpolation}
-```python, label="LagrangeInterpolation"
-def interpolate(grid):
-    mapper = grid.mapper({dune.geometry.vertex: 1})
-    data = numpy.zeros(mapper.size)
-    for v in grid.vertices:
-        data[mapper.index(v)] = f(v.geometry.center)
-    return mapper, data
-```
-For a triangular grid, implementing the linear interpolation elementwise is now
-straightforward using the \pyth{gridFunction} decorator to obtain a
-grid function:
-\renewcommand{\pweavecaption}%
-{Defining the local interpolation and the interpolation error}
-\renewcommand{\pweavelabel}{lstInterpolationAndError}
-```python, label="LagrangeInterpolationDef"
-mapper, data = interpolate(aluView)
-@dune.grid.gridFunction(aluView)
-def p12dEvaluate(e, x):
-    bary = 1-x[0]-x[1], x[0], x[1]
-    idx = mapper.subIndices(e, 2)
-    return sum(b * data[i] for b, i in zip(bary, idx))
-```
-In the above code we have used the \pyth{subIndices} method, which takes an
-element \pyth{e} of the grid and a codimension \pyth{c} and returns the indices of all
-degrees of freedom attached to subentities of \pyth{e} of the given
-codimension (here, 2 for the vertices). Previously, we used the
-\pyth{index} method providing an entity of the grid (a vertex) which
-returns the indices of the degrees of freedom attached to that entity.
-
-Finally, the mapper is callable with an element \pyth{e} to obtain
-the indices of \emph{all} degrees of freedoms attached to that
-element, i.e., including all subentities. The order of the returned indices
-is in decreasing order of codimension, i.e., starting with the indices for
-vertices.
-Within a given codimension the indices are ordered according
-to the order of the subentities in the reference element of \pyth{e}.
-
-The maximum error at element barycenters can now be quite easily computed:
-\renewcommand{\pweavecaption}%
-{Maximum error of Lagrange interpolation using local coordinate object}
-\renewcommand{\pweavelabel}{lstMaxErrorLagrangeInterpolation1}
-```python, label="LagrangeInterpolationError1"
-@dune.grid.gridFunction(aluView)
-def error(e, x):
-    return abs(p12dEvaluate(e, x)-f(e, x))
-hatx = FieldVector([1./3., 1./3.])
-print(max(error(e, hatx) for e in aluView.elements))
-```
-
-
-\section{Output}
-\label{sec:output}
-```python, label="Intro", echo=False
-# <markdowncell>
-# ## Output
-# We already used `matplotlib` to plot the grid and grid functions. For more
-# flexible plotting Dune relies on `vtk` and Dune-Python makes it easy to
-# write suitable files.
-# <codecell>
-```
-
-Let us first visualize the result using \matplotlib. We have already
-used the \pyth{plot} method on the grid class. The \pyth{gridFunction}
-decorated also adds a plot method that can be used to plot a piecewise
-linear interpolation of the data:
-\renewcommand{\pweavecaption}%
-{Plotting the Lagrange interpolation}
-\renewcommand{\pweavelabel}{lstPlotLagrangeInterpolation}
-```python, label="LagrangeInterpolationFig", fig=True, caption='Lagrange interpolation on the locally adapted grid (full domain on left and on $[0,0.4]^2$ on right)', width='0.32\\textwidth'
-p12dEvaluate.plot(figsize=(9,9), gridLines=None)
-p12dEvaluate.plot(figsize=(9,9), gridLines='black',
-             xlim=[0,0.4], ylim=[0,0.4])
-f.plot(level=2, figsize=(9,9), gridLines=None)
-```
-In the final line we plot the actual function we are interpolating. We used
-an additional argument \pyth{level} to get a more accurate representation.
-If we had set \pyth{level=0} we would have reproduced the picture of the
-linear interpolation, i.e., the figure on the left;
-by using \pyth{level>0} the result is shown on a
-refined grid. Note that both the locally defined function
-\pyth{p12dEvaluate} and the globally defined function are handled in the
-same way.
-
-The capabilities of \matplotlib are limited to two-dimensional grids at most.
-Moreover at the time of writing, only the grid's wireframe and piecewise linear
-functions can be plotted (albeit also on a refined grid) using the provided
-methods.
-For more complex data analysis, e.g., in three space dimensions, external
-programs like \paraview are more flexible.
-Thus, \dune[Grid] provides output of grid and data using the \vtk file format.
-The following code snippet produces a \vtk file with the piecewise linear
-interpolation and the actual smooth function we interpolated:
-\renewcommand{\pweavecaption}%
-{\vtk output}
-\renewcommand{\pweavelabel}{lstVTKOutput}
-```python, label="VTKOutput", results = 'hidden'
-pd = {"exact": f, "discrete": p12dEvaluate, "error": error}
-aluView.writeVTK("interpolation", pointdata=pd)
-```
-As with \matplotlib, the error would be zero and we can use subsampling to see
-the difference between the exact function and the linear interpolation in more
-detail:
-\renewcommand{\pweavecaption}%
-{Subsampling \vtk output}
-\renewcommand{\pweavelabel}{lstSubsamplingVTKOutput}
-```python, label="VTKSubsamplingOutput", results = 'hidden'
-aluView.writeVTK("interpolation_subsampled", subsampling=2, pointdata=pd)
-```
-\begin{figure}[htpb]
-\center
-\includegraphics[width=0.32\textwidth]{figures/interpolation_discrete.png}
-\includegraphics[width=0.32\textwidth]{figures/interpolation_exact.png}
-\includegraphics[width=0.32\textwidth]{figures/interpolation_error.png}
-\caption{Interpolation, exact function, and error using the vtk output}
-\label{fig:interpolSubSampled}
-\end{figure}
-
-```python, label="Intro", echo=False
-# <markdowncell>
-# Mayavi can also be used to plot grid function in Python. This approach
-# relies on methods to extract `numpy` representations of the grid data
-# structure and values of a given grid function.
-#
-# __Note__: mayavi is not installed in the Docker image and, therefore,
-# this feature is not available the Docker container.
-# <codecell>
-```
-It is also directly possible to extract a representation of the
-tessellation using \numpy structures using the \pyth{triangulation}
-method, which returns a \\
-\pyth{matplotlib.tri.triangulation.Triangulation} \\
-object.
-A \numpy array containing the values of a grid function, e.g., the Lagrange
-interpolation defined in Listing~\ref{lstLagrangeInterpolation},
-%(i.e., the grid function \pyth{u_h} representing the Lagrange interpolation
-%defined in Listing~\ref{lstLagrangeInterpolation})
-at the nodes of the (subsampled) grid can be obtained using the method
-\pyth{pointData} on the grid function.
-The following example shows how this can be used to plot grid functions using
-\mayavi \cite{mayavi}:
-\renewcommand{\pweavecaption}%
-{Converting tessellation and interpolation to \numpy}
-\renewcommand{\pweavelabel}{lstToNumpy}
-```python, label="ToMayavi", results = 'hidden'
-level = 3
-triangulation = f.grid.triangulation(level)
-z = f.pointData(level)[:,0]
-try:
-    from mayavi import mlab
-    from mayavi.tools.notebook import display
-    mlab.init_notebook()
-    mlab.figure(bgcolor = (1,1,1))
-    s = mlab.triangular_mesh(triangulation.x, triangulation.y, z*0.5,
-                             triangulation.triangles)
-    display(s)
-    mlab.savefig("mayavi.png", size=(400,300))
-    mlab.close(all=True)
-except ImportError:
-    pass
-```
-\begin{figure}[htpb]
-\center
-\includegraphics[width=0.6\textwidth]{mayavi.png}
-\caption{Visualization using mayavi}
-\label{fig:mayavi}
-\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \chapter{Adaptive Mesh Refinement} \label{sec:crystal}
 
@@ -2142,615 +1416,9 @@ available).
 
 \input{battery.tex}
 \end{comment}
-
-\chapter{Translating Python Code to C++} \label{sec:mcf-comparison}
-
-Having looked at some of the functionality available for solving
-various FEM problems, we now shift our focus towards more in-depth
-features that concern efficiency and C++ development. Here we consider
-the idea of moving sections of Python code
-over to C++ for efficiency. A key aspect of the design of \dune[Fempy] has
-been about keeping the structure of the C++ code in the Python code's
-design, to the point where translating between the two is relatively painless. In
-particular this allows for rapid prototyping of methods in Python with
-its relative ease of use, after which code can be ported to C++ for
-efficiency if necessary in large-scale computation.
-
-\section{A simple example}
-
-Here we will demonstrate this translation process, and additionally
-provide comparisons for the difference in efficiency timewise. We will
-examine the function used for calculating the averaged radius of a
-surface used in section \ref{sec:mcf}.
-\renewcommand{\pweavecaption}{A pythonic function for calculating the
-radius of a surface}
-\renewcommand{\pweavelabel}{lst:calcR}
-\begin{pweavecode}
-def calcRadius(surface):
-    # compute R = int_x |x| / int_x 1
-    R   = 0
-    vol = 0
-    for e in surface.elements:
-        rule = geometry.quadratureRule(e.type, 4)
-        for p in rule:
-            geo = e.geometry
-            weight = geo.volume * p.weight
-            R   += geo.toGlobal(p.position).two_norm * weight
-            vol += weight
-    return R/vol
-\end{pweavecode}
-As a relatively simple example, this code is not particularly slow in
-python, however the existence of callbacks inside a looped statement
-are not insignificant. Now let us look at a C++ translation of the above
-code.
-\renewcommand{\pweavecaption}{The C++ version of the calcRadius
-function}
-\renewcommand{\pweavelabel}{lst:calcR-cpp}
-\begin{pweavecode}
-#include <dune/geometry/quadraturerules.hh>
-
-template< class Surface >
-double calcRadius( const Surface &surface )
-{
-  double R = 0.;
-  double vol = 0.;
-  for( const auto &entity : elements( surface ) )
-  {
-    const auto& rule = Dune::QuadratureRules<double, 2>::rule(entity.type(), 4);
-    for ( const auto &p : rule )
-    {
-      const auto geo = entity.geometry();
-      const double weight = geo.volume() * p.weight();
-      R   += geo.global(p.position()).two_norm() * weight;
-      vol += weight;
-    }
-  }
-  return R/vol;
-}
-\end{pweavecode}
-We note that we take advantage of C++11 features such as \cpp{auto}
-and range based for loops to keep a similar structure to the Python
-code.
-
-Supposing we save the above as \cpp{radius.hh}, we can then call it
-in a Python script and use it like a regular function as follows.
-\renewcommand{\pweavecaption}{Calling our C++ function using algorithm}
-\renewcommand{\pweavelabel}{lst:calcR-algorithm}
-\begin{pweavecode}
-from dune.generator import algorithm
-calcRadius = algorithm.load('calcRadius', 'radius.hh', surface)
-\end{pweavecode}
-Doing this, we can quite easily swap between the two versions and
-compare the runtime of the solve method. We show these results in
-figure \ref{fig:mcf-comparison}.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\textwidth, height=8cm,
-keepaspectratio]{figures/mcf-comparison.png}
-\caption{Comparison of time taken between the two calcRadius methods}
-\label{fig:mcf-comparison}
-\end{figure}
-
-What we see is that the C++ version is roughly 18\% faster. On a small
-scale this is not a significant change, but it shows that it can be
-worth the extra coding time for longer running simulations. Naturally
-a full C++ version would see a further improvement in runtime, though
-whether that is justified depends on a case-by-case basis.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Saddle point solver}
-{\bf TODO}: explain Uzawa scheme
-
-\renewcommand{\pweavecaption}%
-{Setup for the preconditioned Uzawa algorithm}
-\renewcommand{\pweavelabel}{lstUzawaIntro}
-```python, label="UzawaIntro", results = 'hidden'
-from dune.grid import structuredGrid
-from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
-                inner, dot, div, grad, dx, as_vector, transpose, Identity
-from dune.ufl import Constant, DirichletBC
-from dune.alugrid import aluCubeGrid as leafGridView
-from dune.fem.space import lagrange  as lagrangeSpace
-from dune.fem.operator import galerkin as galerkinOperator
-from dune.fem.operator import linear as linearOperator
-from dune.fem.scheme import galerkin as galerkinScheme
-
-grid = leafGridView( cartesianDomain([0,0],[3,1],[30,10]) )
-
-order = 2
-spcU = lagrangeSpace(grid, dimRange=grid.dimension, order=order, storage="fem")
-spcP = lagrangeSpace(grid, dimRange=1, order=order-1, storage="fem")
-
-cell  = spcU.cell()
-x     = SpatialCoordinate(cell)
-mu    = Constant(0.1,  "mu")
-nu    = Constant(0.01, "nu")
-u     = TrialFunction(spcU)
-v     = TestFunction(spcU)
-p     = TrialFunction(spcP)
-q     = TestFunction(spcP)
-exact_u     = as_vector( [x[1] * (1.-x[1]), 0] )
-exact_p     = as_vector( [ (-2*x[0] + 2)*mu ] )
-f           = as_vector( [0,]*grid.dimension )
-f          += nu*exact_u
-mainModel   = (nu*dot(u,v) + mu*inner(grad(u)+grad(u).T, grad(v)) - dot(f,v)) * dx
-gradModel   = -inner( p[0]*Identity(grid.dimension), grad(v) ) * dx
-divModel    = -div(u)*q[0] * dx
-massModel   = inner(p,q) * dx
-preconModel = inner(grad(p),grad(q)) * dx
-
-mainOp      = galerkinScheme([mainModel==0,DirichletBC(spcU,exact_u,1)])
-gradOp      = galerkinOperator(gradModel)
-divOp       = galerkinOperator(divModel)
-massOp      = galerkinScheme(massModel==0)
-preconOp    = galerkinScheme(preconModel==0)
-
-velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
-pressure = spcP.interpolate([0], name="pressure")
-rhsVelo  = velocity.copy()
-rhsPress = pressure.copy()
-
-r      = rhsPress.copy()
-d      = rhsPress.copy()
-precon = rhsPress.copy()
-xi     = rhsVelo.copy()
-
-A = linearOperator(mainOp)
-G = linearOperator(gradOp)
-D = linearOperator(divOp)
-M = linearOperator(massOp)
-P = linearOperator(preconOp)
-
-solver = {"method":"cg", "tolerance":1e-10}
-Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
-Minv   = massOp.inverseLinearOperator(M,solver)
-Pinv   = preconOp.inverseLinearOperator(P,solver)
-
-# get main forcing and set constraints
-mainOp(velocity,rhsVelo)
-rhsVelo *= -1
-G(pressure,xi)
-rhsVelo -= xi
-mainOp.setConstraints(rhsVelo)
-mainOp.setConstraints(velocity)
-```
-{\bf TODO}: explain some of the new functionality used (perhaps should be
-explainer earlier, e.g., \pyth{inverseLinearOperator}
-
-For the C++ code we implement a function with the following signature
-\inputcpprange{uzawa.hh}{lstUzawaHH}%
-         {Header file for C++ version of preconditioned Uzawa algorithm}
-         {1}{11}
-
-\begin{landscape}
-\begin{minipage}{0.475\linewidth}
-\renewcommand{\pweavecaption}%
-{Python version of preconditioned Uzawa algorithm}
-\renewcommand{\pweavelabel}{lstUzawaPY}
-```python, label="UzawaPY", results = 'hidden'
-Ainv(rhsVelo, velocity)
-D(velocity,rhsPress)
-Minv(rhsPress, r)
-if mainOp.model.nu > 0:
-    precon.clear()
-    Pinv(rhsPress, precon)
-    r *= mainOp.model.mu
-    r.axpy(mainOp.model.nu,precon)
-d.assign(r)
-delta = r.scalarProductDofs(rhsPress)
-for m in range(100):
-    xi.clear()
-    G(d,rhsVelo)
-    mainOp.setConstraints(\
-        [0,]*grid.dimension, rhsVelo)
-    Ainv(rhsVelo, xi)
-    D(xi,rhsPress)
-    rho = delta /\
-       d.scalarProductDofs(rhsPress)
-    pressure.axpy(rho,d)
-    velocity.axpy(-rho,xi)
-    D(velocity, rhsPress)
-    Minv(rhsPress,r)
-    if mainOp.model.nu > 0:
-        precon.clear()
-        Pinv(rhsPress,precon)
-        r *= mainOp.model.mu
-        r.axpy(mainOp.model.nu,precon)
-    oldDelta = delta
-    delta = r.scalarProductDofs(rhsPress)
-    if delta < 1e-9: break
-    gamma = delta/oldDelta
-    d *= gamma
-    d += r
-```
-\end{minipage}
-\hfill
-\begin{minipage}{0.475\linewidth}
-\inputcpprange{uzawa.hh}{lstUzawaHH}%
-         {Header file for C++ version of preconditioned Uzawa algorithm}
-         {14}{66}
-\end{minipage}
-\end{landscape}
-
-\renewcommand{\pweavecaption}%
-{Execute C++ version of preconditioned Uzawa algorithm}
-\renewcommand{\pweavelabel}{lstUzawaCPP}
-```python, label="UzawaCPP"
-# Note: the models are virtualize so op.model().nu() will not work on the C++ side
-#       so we either need to 'devirtualize' or pass in nu,mu
-from dune.generator import algorithm
-velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
-pressure = spcP.interpolate([0], name="pressure")
-
-# get main forcing and set constraints
-mainOp(velocity,rhsVelo)
-rhsVelo *= -1
-G(pressure,xi)
-rhsVelo -= xi
-mainOp.setConstraints(rhsVelo)
-mainOp.setConstraints(velocity)
-
-uzawa = algorithm.run('uzawa', 'uzawa.hh',
-            mainOp.model.nu,mainOp.model.mu,
-            mainOp, G, D, Ainv, Minv, Pinv, rhsVelo, xi, rhsPress, r, d,
-            precon, velocity, pressure)
-fig = pyplot.figure(figsize=(20,10))
-velocity.plot(colorbar="horizontal", figure=(fig, 121))
-pressure.plot(colorbar="horizontal", figure=(fig, 122))
-pyplot.show()
-```
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\begin{comment}
-\section{Model C++ Header Generation} \label{sec:header}
-
-After having looked at the basics of the Python
-interface, let us now consider features more aimed at C++
-integration and code extensibility.
-
-In section \ref{sec:schemes}, we briefly alluded to the fact that the UFL
-equation passed to the \pyth{scheme} constructor is used to create a
-\pyth{model} class. To this end a C++ class is generated and JIT
-compilation is used to export this class to Python.
-We can separate the process into two steps as follows.
-\renewcommand{\pweavecaption}{A simple integrands model}
-\renewcommand{\pweavelabel}{lst:integrands}
-\begin{pweavecode}
-from dune.fem.model  import integrands as discreteModel
-from dune.fem.scheme import galerkin   as solutionScheme
-model  = discreteModel(gridView, a == b)
-scheme = solutionScheme(model)
-\end{pweavecode}
-where \pyth{a == b} refers to the UFL equation used to represent weak form
-of the PDE, i.e., the bilinear and linear form,
-and \pyth{integrands} refers to form of C++ class used to represent
-second order operators in \dune[Fem]. A form of this C++ representation
-that is more human readable is given by
-\renewcommand{\pweavecaption}{A simple elliptic model}
-\renewcommand{\pweavelabel}{lst:elliptic}
-\begin{pweavecode}
-from dune.fem.model  import elliptic as discreteModel
-from dune.fem.scheme import h1       as solutionScheme
-model  = discreteModel(gridView, a == b)
-scheme = solutionScheme(model)
-\end{pweavecode}
-While the generated class is easier to read and change it is less flexible
-then the \pyth{integrands} model, e.g., interior facet integrals can not be
-directly represented in this class.
-
-We note that this is a different approach to similar packages, like Fenics
-\cite{FEniCS} and Firedrake \cite{Firedrake}, which
-in general do not create a human readable C++ class that only depends on
-the PDE itself and not on discretization details, e.g., the discrete spaces
-or quadratures used. We are planning to adding this approach in the future
-to be able to generate more efficient code in some special cases. Note that
-one advantage is that non standard discretization schemes can be easily
-implemented in C++ based on these generated classes, more
-details can be found in \cite{LloydsThesis} which also contains an example
-usage for non variational problems.
-
-% \begin{comment}
-\subsection{Elliptic Models}
-
-First let us consider the simpler \pyth{elliptic} model. In mathematical
-terms, consider the same general operator we defined previously.
-\begin{equation}
-  L[u] = -\nabla \cdot D(x, u) \nabla u + m(x, u, \nabla u).
-  \tag{\ref{eqn:elliptic}}
-\end{equation}
-In variational form, after multiplying with a test function and
-integration by parts (ignoring boundary terms for now), we arrive at
-\[
-  L[u] = \int_{\Omega}D(x, u) \nabla u \cdot \nabla v + m(x, u, \nabla u)
-  v \diff x.
-\]
-Possibly with an additional boundary integral representing non trivial
-boundary conditions.
-Now the elliptic model class in \dune[Fempy] has methods that represent
-the above form in general terms. Most importantly it has four methods, two
-to compute $D(x, u) \nabla u$ and the corresponding linearization
-and a second pair to compute $m(x, u, \nabla u)$ and its linearization.
-Additionally there are
-methods for the associated Dirichlet or Neumann boundary conditions.
-Together these form the \pyth{elliptic} model class templated over the underlying
-type of the grid. As mention above this is only
-one way of expressing bilinear forms in \dune[Fempy].
-% Generally this
-% class is then used to create a shared object file that is exported to
-% python using pybind11 for use in python scripts and notebooks.
-
-As an example assume for instance we were to take
-the case of $m(x, u, \nabla u) = u$ above. In the model class, this would be
-defined under the method \cpp{source}.
-\renewcommand{\pweavecaption}{A function in the elliptic model C++
-class}
-\renewcommand{\pweavelabel}{lst:elliptic-cpp}
-\begin{pweavecode}
-template< class Point >
-void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
-{
-  result = u[ 0 ];
-}
-\end{pweavecode}
-
-Another possibility provided for by the modular design of
-\dune[python] and the simple structure of the class representing the
-elliptic model, is the creation of alternate
-models. This approach involves the writing of additional C++
-classes (one example would be an elliptic discontinuous Galerkin model) based on
-the elliptic model class except with extra modifications that one
-might want to make to the underlying structure.
-Whilst this approach is more in-depth than simply editing
-an elliptic header file, it allows one to change the functions
-themselves beyond what the default elliptic model accepts.
-\Atodo{the above is not too clear, i.e., what is actually needed?}
-
-\Atodo{Do we keep the following or just chite Lloyd's thesis a future paper?
-We could even consider leaving the elliptic model out of the paper and only
-show how to use the integrands model in a C++ code...}
-An example of this approach is the \textit{nonvariational} model
-for the \dune[femnv] module (\cite{NVPAPER}). This comes
-from the desire to write bilinear forms that can accept a Hessian as
-as argument as follows.
-\begin{equation*}
-  L[u] = \nabla \cdot D(x, u) \nabla \varphi(x) + m(x, u, \nabla
-  u, D^2 u)\varphi.
-\end{equation*}
-Such a change would require different arguments to be made available
-to the methods from the elliptic model. Suppose we wanted to
-implement the nonvariational Poisson equation, i.e. taking $m = -\Delta u$
-above. Then we would need the following method.
-\renewcommand{\pweavecaption}{A nonvariational method}
-\renewcommand{\pweavelabel}{lst:nvop}
-\begin{pweavecode}
-template< class Point >
-void source ( const Point &x, const RangeType &u, const
-JacobianRangeType &du, const HessianRangeType &d2u, RangeType &result ) const
-{
-  result[ 0 ] = d2u[ 0 ][ 0 ] + d2u[ 1 ][ 1 ];
-}
-\end{pweavecode}
-Whilst this may not be immediately possible with the standard elliptic
-model, it is possible to create a model \cpp{'nvdg'} that can
-use such functions, which results in the ability to write functional
-\dune[Fempy] code as follows.
-\renewcommand{\pweavecaption}{The \dune[Fempy] code for a nonvariational
-model}
-\renewcommand{\pweavelabel}{lst:fempy_nv}
-\begin{pweavecode}
-a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
-b = rhs(A, exact)
-model = create.model("nvdg", gridView, a == b)
-\end{pweavecode}
-Thus it becomes possible to write schemes that expect different
-arguments from the operator.
-
-\subsection{Integrands Models}
-
-We note however that as mentioned before, there exists another way of
-constructing operators, by using \pyth{'integrands'}.
-% This method
-% bypasses the virtual methods used in the elliptic operator class and
-% creates methods purely using the UFL expressions given to it.
-This allows for a more general description of second order operators not
-expressible by the \pyth{elliptic} model class. For example we can express
-a non variational second order problem directly:
-\renewcommand{\pweavecaption}{Usage of integrands operators for skeleton terms}
-\renewcommand{\pweavelabel}{lst:fempy_integrands}
-\begin{pweavecode}
-from dune.fem.model import integrands
-a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
-    + jump(A*grad(u[0]), n)*avg(v[0])*dS
-b = rhs(A, exact)
-scheme = integrands(space, a == b)
-\end{pweavecode}
-In addition as the above shows we can add a term
-defined only on the skeleton (the facets) of the mesh. Due to the
-ability to add such interior terms, the \pyth{integrands} class is
-for example useful to construct discontinuous Galerkin methods.
-% \end{comment}
-
-% \subsection{C++ Models} \label{sec:cpp-models}
-
-In addition to the automatic creation of a shared library object that
-is done when the model is imported into Python, it is
-possible to generate a stand alone header file containing the model class
-That is, it is possible to generate a C++ file (e.g. \cpp{'model.hh'}) that can be
-used flexibly in both \dune[Fempy] and regular C++ compatible \dune code.
-Within a \dune[] module depending on \dune[Fempy], we can do this by
-writing a pure UFL file and calling cmake on it.
-
-Let us examine what this file looks like for the Forchheimer model:
-\renewcommand{\pweavecaption}{UFL file used for C++ header file generation}
-\renewcommand{\pweavelabel}{lst:header}
-\begin{pweavecode}
-from dune.fem import Space
-space = Space(2, 1)
-u = TrialFunction(space)
-v = TestFunction(space)
-x = SpatialCoordinate(space.cell())
-dt = Constant(0, "dt")    # time step
-t  = Constant(0, "t")     # current time
-u_h_n = NamedCoefficient(space,"previous")
-
-initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-abs_du = sqrt(inner(grad(u), grad(u)))
-K = 2/(1 + sqrt(1 + 4*abs_du))
-a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
-exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
-b = replace(a, {u: exact})
-
-F = a - b
-\end{pweavecode}
-Once the corresponding \cpp{forchheimer.hh} file has been generated,
-it can then be edited manually, and then used in place
-of a UFL expression in \dune[Fempy]. This choice of default shared library
-generation or usable header files falls in line with
-attempts we have made to improve extensibility of the code, since in
-particular it allows for the user to write in more complex features in
-C++ that do not necessarily have Python bindings written for them. An
-additional advantage is that this header file can be directly used within a
-traditional \dune[] C++ program.
-
-What the above allows us to do is to easily investigate,
-the difference in efficiency between using the
-full \dune[Fempy] interface to run problems and writing a pure C++ version
-to solve the same problem. The model file needed to run the C++ \dune[Fem]
-code can be generated using a UFL expression as explained above.
-To look at this in more detail we constructed
-an identical Forchheimer example in C++ which can be found in section
-\ref{sec:forch-cpp}. We compare the runtime of the two solve-steps
-below.
-\begin{center}
-  \captionof{table}{Runtimes for Forchheimer solve time}
-  \begin{tabular}{l | l}
-    \hline
-     & Runtime (s) \\ \hline
-    C++ & 78.3 \\
-    Python & 83.0
-  \end{tabular}
-\end{center}
-Thus we see there is not a sizable difference between the \dune[Fem] and
-\dune[Fempy] versions.
-
-\Rtodo{When I tested this the run times were the same. So double check please.}
-
-\noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
-speaking is negligible for long-running simulations. We also note that
-the most \textit{costly} aspect of pure Python code are generally
-callbacks, and in this example this amounts to just the solve call. An
-additional example that taxes the two versions differently can be
-found in section \ref{sec:mcf-comparison}.
-
-\section{Virtualization} \label{sec:virtualization}
-
-One final topic we want to discuss is virtualization and the
-rationalities behind various design decisions. In the development of the
-python bindings for \dune[Python], one decision that was made was to
-avoid introducing a virtual layer when exporting classes from C++ to Python or
-vice versa. Such a layer would introduce additional code maintenance
-and more importantly perhaps lead to loss in performance when a C++ object
-is passed through Python back into C++. In this case code optimization
-steps like inlining or loop unrolling could not be utilized to their
-full potential.
-
-Take as an example a discrete function which is constructed
-using 
-\begin{lstlisting}[style=pythonstyle]
-df = space.interpolate([0], name="df")
-\end{lstlisting}
-The call to
-\pyth{interpolate} goes back to the corresponding function in \dune[fem] and
-returns an instance of the discrete function. To store the solution to a PDE
-problem in \pyth{df}, the \pyth{solve} method on a \pyth{scheme} is
-called. While executing \pyth{scheme.solve(target=df)} the discrete
-function instance is passed back to another \dune[fem] function. If \pyth{df}
-were virtualized (i.e. type erased) in either of the two steps, i.e. when
-passed to or from Python, then the \pyth{solve} method could not work with
-the same efficiency as when used in a pure C++ environment. The number of
-degrees of freedom, local structure, etc. of the discrete function would
-only be known as dynamic properties, making code optimization by the compiler
-or the \dune developer implementing the \pyth{solve} method more difficult
-or even impossible. Note that virtualizing the discrete function for
-example, would almost certainly also require virtualization of the
-underlying discrete function spaces (with mapper and basis function set),
-and the underlying grid view (with its iterators). The cumulative effect
-of this would be a quite severe hit on performance.
-
-To avoid this issue, no type erasure is carried out
-when an object is passed into Python. So in the above example the call to
-\pyth{interpolate} returns an object which still contains the full type
-information of the underlying \dune[fem] function. This approach leads to
-compilation overhead the first time a new type of discrete function is used
-since a new Python module needs to be generated. But this overhead occurs only
-the first time the discrete function is used during the development of a
-project and is thus negligible. Since no type erasure has occurred,
-any \dune object can now be passed back to it. The \pyth{solve} method on the scheme is
-exported in such a way that the target argument has to be of the same discrete
-function type that was defined by the \pyth{storage} argument provided during the
-space construction. Consequently a scheme over a given space (e.g. a
-Lagrange space of a fixed order using an \pyth{istl} storage)
-will only accept one type of discrete function as \pyth{target} argument
-for its solve method. As described before the advantage of this is that the
-full static type information is available at the cost of more compilation
-requirements when changes (e.g. to the storage back end) are made.
-
-There are a few exceptions to the above rule, where Python objects
-passed as arguments to C++ functions undergo type erasure
-if their type does not match the exact type of the arguments of that
-function.
-
-An example is the \pyth{__call__} method on an \pyth{operator}.
-When calling \pyth{op(arg,dest)}, the destination parameter
-(\pyth{dest}) has to be of the correct discrete function type, but for
-the argument parameter (\pyth{arg}) it can make
-sense to allow for a wide range of grid functions, e.g. an exact solution
-given by a UFL expression or a different type of discrete function. In many
-cases the implementation of the operator does not require the argument to even
-be discrete since only the evaluation of \pyth{arg} at quadrature points is
-required; in this case any grid function is a valid argument.
-On the C++ side the operator call is simply implemented as a template
-method on the operator class with the signature
-\begin{lstlisting}[style=cppstyle]
-template <class GF> Operator::operator()(const GF &arg, typename Operator::DiscreteFunction &dest);
-\end{lstlisting}
-We note that it is not possible to export a template method to Python without
-fixing all of its arguments. Since an optimized version of such a method
-is often implemented for the case that \pyth{arg} is of the same type as
-\pyth{dest}, the default method that will always be exported to Python
-has \cpp{GF=Operator::DiscreteFunction}. In addition, a second version is
-exported where \cpp{GF=VirtualizedGridFunction<...>}, which is a
-type erased implementation of a grid function. Any grid function exported
-to Python (e.g. UFL expressions, discrete function etc.) will implicitly
-convert to a \cpp{VirtualizedGridFunction} so that \pyth{op(arg,dest)} can
-be used in Python even in the case that \pyth{arg} is not of the same type
-as \cpp{dest}. Optimal code is still produced in the case where both
-parameters are of the same type.
-
-A second use of type erasure where objects are passed back to C++ occurs
-when an \pyth{operator} or \pyth{scheme} is constructed from a given model.
-Since the development of a new model can involve repeated changes
-being made to it (e.g. its underlying UFL form) we aimed to avoid the
-situation of each change requiring a recompilation of the \pyth{operator} or
-\pyth{scheme}. To this end the model is virtualized when it is passed to
-the constructor of the \pyth{operator} or \pyth{scheme} class.
-Consequently, these classes only depend on some type information like the
-underlying type of the grid view and the range dimension of the model but
-not on the actual details of the bilinear form. The consequence of this
-approach is that evaluating some part of the form introduces a virtual
-function call. At the same time UFL coefficients are stored as type erased
-\pyth{VirtualizedGridFunction} in the model class again to avoid too much
-recompilation when changes to the UFL equations are made.
-\Atodo{ explain that tests have shown that this is negligible and show some
-performance test. Mention virtualization parameter to
-disable type erasure if required.}
-\end{comment}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\include{dune-algorithm}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Parallel Execution}
@@ -2901,6 +1569,14 @@ can add additional components, those available in a given \dune[]
 installation may warry and of course additional features are constantly
 added. To simplify determining what is available the following utility can
 be used:
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Listing installed components
+# The available realization of a given interface, i.e., the available
+# grid implementations, depends on the modules found during configuration.
+# Getting access to all available components is straightforward:
+# <codecell>
+```
 \renewcommand{\pweavecaption}{The default form for linearising an operator}
 \renewcommand{\pweavelabel}{lst:linearise-operator}
 ```python, label="lst:componentsutility"

@@ -39,34 +39,54 @@ It serves three purposes:
 .. _UFL: http://fenicsproject.org/documentation/ufl/1.0-beta2/ufl.html
 
 
-*************
-This Document
-*************
+****************************
+An Overwiew of this Document
+****************************
 
-1. A simple scalar, non linear time dependent partial differential equation
+This document tries to describe the main concepts needed to get a new user
+started on solving complex partial differential equations using the
+`Dune-Fem`_ python bindings. Some parts are still quite raw and we would
+greatly appreciate any help improving this document. In addition if you
+would like to promote your own work then please upload a script showcasing
+some simulation you did bases on this package - it is possibly as easy as
+providing us with a Python script. More details on how to help
+us improve and extend this document see the section on :ref:`contributing`.
+
+Here is a quick summary of the different parts of this document - all of
+the code is available for download in form of both :ref:`scripts`.
+
+#. First off some remarks on getting the package to work: an easy way of testing
+   but also developing code within the `Dune`_ python framework is to use
+   `docker`_. Working from the git sources is also discussed.
+#. A simple scalar, non linear time dependent partial differential equation
    is used to describe the basic concepts. This leads through the steps
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
    different solver backends (including for example `scipy`_ and `petsc`_).
-   Finally we provide more detail on how to use the `Dune`_ grid interface,
+#. We provide more detail on how to use the `Dune`_ grid interface,
    attach data to the grid entities and define general grid functions.
-2. The examples in this section build in the general concepts described
+#. The examples in this section build in the general concepts described
    in the first part,
    introducing only a few new features. The :ref:`scripts`
    used for each of these and the following examples can be downloaded
    and are hopefully useful as starting point for new projects.
-3. Local grid refinement and coarsening is a central feature of
+#. Local grid refinement and coarsening is a central feature of
    `Dune-Fem`_. Here we show how to use it for stationary and
    time dependent problems.
-4. Finally other projects are presented some of them developed by
+#. Grid adaptivity makes use of special grid views. Other views are also
+   available, one of these can be used to deform the grid given an
+   arbitrary (discrete) vector field. This is used to compute the evolution
+   of a surface under mean curvature flow.
+#. Finally other projects are presented some of them developed by
    the authors of this document, some contributed by other
    users. If you have used this package then we would like to
    hear about it and would ask you to contribute to this
    chapter. Doing so is quite easy (see :ref:`contributing` for details).
 
 .. _scipy: https://www.scipy.org
-.. _petsc: https://www.mcs.anl.gov/petsc/
+.. _petsc: https://www.mcs.anl.gov/petsc
 .. _petsc4py: https://bitbucket.org/petsc/petsc4py
+.. _docker: https://www.docker.com
 
 .. toctree::
    :maxdepth: 1
@@ -77,13 +97,20 @@ This Document
 
 .. toctree::
    :maxdepth: 3
-   :caption: A first example and general concepts
+   :caption: A first Example and General Concepts
 
    gettingstarted
 
 
 .. toctree::
-   :caption: Some further examples
+   :maxdepth: 3
+   :caption: Using the Dune Grid Interface
+
+   dunegrid
+
+
+.. toctree::
+   :caption: Some Further Examples
    :maxdepth: 3
 
    furtherexamples
@@ -119,7 +146,7 @@ This Document
 
 
 ******************
-Indices and tables
+Indices and Tables
 ******************
 
 * :ref:`genindex`

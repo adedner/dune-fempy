@@ -779,8 +779,8 @@ for eocLoop in range(loops):
         eocs = [ round(log(e/e_old)/log(0.5),2) \
                  for e,e_old in zip(errors,errors_old) ]
     print('step:', eocLoop, ', size:', gridView.size(0))
-    print('\t |u_h - u| =', '{:0.5e}'.format(errors[0]), ', eoc =', eocs[0])
-    print('\t |grad(u_h - u)| =', '{:0.5e}'.format(errors[1]), ', eoc =', eocs[1])
+    print('\t | u_h - u | =', '{:0.5e}'.format(errors[0]), ', eoc =', eocs[0])
+    print('\t | grad(uh - u) | =', '{:0.5e}'.format(errors[1]), ', eoc =', eocs[1])
     u_h.plot()
     gridView.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
                   l2error, 'h1error': h1error}, number=eocLoop)

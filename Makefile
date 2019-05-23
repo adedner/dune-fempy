@@ -65,7 +65,7 @@ dune-fempy-doc.pdf: $(TEX) dune-fempy-doc.tex dune-fempy.pmd $(TABLE) $(FIGURES)
 	@python3 pandoc-formatting.py $@
 %.rst: %.ipynb
 	@jupyter nbconvert --to rst $*_nb.ipynb --output $*
-	@sed -i '/----------/a :download:`(notebook) <$*_nb.ipynb>` :download:`(script) <$*.py>`' $*.rst
+	@sed -i '/^----------/a :download:`(notebook) <$*_nb.ipynb>` :download:`(script) <$*.py>`' $*.rst
 	@sed -i "s/raw:: latex/math::/g" $*.rst
 	@sed -i "s/raw-latex/math/g" $*.rst
 

@@ -1,0 +1,507 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Re-entrant Corner Problem &mdash; dune-fempy 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Crystal Growth" href="crystal.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="adaptivity.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation (out of date)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#building-the-dune-core-modules">Building the Dune Core modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#setting-up-the-python-module">Setting up the python module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">A first Example and General Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html">Finite Element Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#alternate-solve-methods">Alternate Solve Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#more-general-boundary-conditions">More General Boundary Conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#a-3d-example">A 3D example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#listing-installed-components">Listing installed components</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Using the Dune Grid Interface</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html">A quick survey of Dune-Common and Dune-Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#grid-construction">Grid Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#basic-grid-usage">Basic Grid Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#grid-functions">Grid Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#attaching-data-to-the-grid">Attaching Data to the Grid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#output">Output</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Some Further Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="elasticity.html">Linear elasticity: deformed beam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiral.html">Spiral Wave</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wave.html">Wave equation in a slit domain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uzawa-scipy.html">Saddle point solver (using Scipy)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grid Adaptivity</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Re-entrant Corner Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="crystal.html">Crystal Growth</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Moving Grids</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcf.html">Mean Curvature Flow</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo.html">Demonstration notebook for the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#contributing-to-this-documentation">Contributing to this Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#reporting-a-bug">Reporting a Bug</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="adaptivity.html">&lt;no title&gt;</a> &raquo;</li>
+        
+      <li>Re-entrant Corner Problem</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/laplace-adaptive.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="re-entrant-corner-problem">
+<h1>Re-entrant Corner Problem<a class="headerlink" href="#re-entrant-corner-problem" title="Permalink to this headline">¶</a></h1>
+<p>Here we will consider the classic <em>re-entrant corner</em> problem,</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{align*}
+  -\Delta u &amp;= f, &amp;&amp; \text{in } \Omega, \\
+          u &amp;= g, &amp;&amp; \text{on } \partial\Omega,
+\end{align*}\end{split}\]</div>
+<p>where the domain is given using polar coordinates,</p>
+<div class="math notranslate nohighlight">
+\[\begin{gather*}
+  \Omega = \{ (r,\varphi)\colon r\in(0,1), \varphi\in(0,\Phi) \}~.
+\end{gather*}\]</div>
+<p>For the boundary condition <span class="math notranslate nohighlight">\(g\)</span>, we set it to the trace of the
+function <span class="math notranslate nohighlight">\(u\)</span>, given by</p>
+<div class="math notranslate nohighlight">
+\[\begin{gather*}
+  u(r,\varphi) = r^{\frac{\pi}{\Phi}} \sin\big(\frac{\pi}{\Phi} \varphi \big)
+\end{gather*}\]</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span> <span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span> <span class="p">)</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pyplot</span>
+<span class="kn">from</span> <span class="nn">dune.fem.plotting</span> <span class="k">import</span> <span class="n">plotPointData</span> <span class="k">as</span> <span class="n">plot</span>
+<span class="kn">import</span> <span class="nn">dune.grid</span> <span class="k">as</span> <span class="nn">grid</span>
+<span class="kn">import</span> <span class="nn">dune.fem</span> <span class="k">as</span> <span class="nn">fem</span>
+<span class="kn">from</span> <span class="nn">dune.fem.view</span> <span class="k">import</span> <span class="n">adaptiveLeafGridView</span> <span class="k">as</span> <span class="n">adaptiveGridView</span>
+<span class="kn">from</span> <span class="nn">dune.fem.space</span> <span class="k">import</span> <span class="n">lagrange</span> <span class="k">as</span> <span class="n">solutionSpace</span>
+<span class="kn">from</span> <span class="nn">dune.alugrid</span> <span class="k">import</span> <span class="n">aluConformGrid</span> <span class="k">as</span> <span class="n">leafGridView</span>
+<span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">dune.ufl</span> <span class="k">import</span> <span class="n">DirichletBC</span>
+
+
+<span class="c1"># set the angle for the corner (0&lt;angle&lt;=360)</span>
+<span class="n">cornerAngle</span> <span class="o">=</span> <span class="mf">320.</span>
+
+<span class="c1"># use a second order space</span>
+<span class="n">order</span> <span class="o">=</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>We first define the domain and set up the grid and space. We need this
+twice - once for a computation on a globally refined grid and once for
+an adaptive one so we put the setup into a function:</p>
+<p>We first define the grid for this domain (vertices are the origin and 4
+equally spaced points on the unit sphere starting with (1,0) and ending
+at (cos(cornerAngle), sin(cornerAngle))</p>
+<p>Next we define the model together with the exact solution.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">setup</span><span class="p">():</span>
+    <span class="n">vertices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">vertices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+        <span class="n">vertices</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">cornerAngle</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">180</span><span class="o">*</span><span class="n">i</span><span class="p">),</span>
+                         <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">cornerAngle</span><span class="o">/</span><span class="mi">6</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">180</span><span class="o">*</span><span class="n">i</span><span class="p">)]</span>
+    <span class="n">triangles</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                             <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">6</span><span class="p">]])</span>
+    <span class="n">domain</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;vertices&quot;</span><span class="p">:</span> <span class="n">vertices</span><span class="p">,</span> <span class="s2">&quot;simplices&quot;</span><span class="p">:</span> <span class="n">triangles</span><span class="p">}</span>
+    <span class="n">gridView</span> <span class="o">=</span> <span class="n">adaptiveGridView</span><span class="p">(</span> <span class="n">leafGridView</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">gridView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">solutionSpace</span><span class="p">(</span><span class="n">gridView</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;istl&quot;</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">dune.fem.scheme</span> <span class="k">import</span> <span class="n">galerkin</span> <span class="k">as</span> <span class="n">solutionScheme</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">cell</span><span class="p">())</span>
+
+    <span class="c1"># exact solution for this angle</span>
+    <span class="n">Phi</span> <span class="o">=</span> <span class="n">cornerAngle</span> <span class="o">/</span> <span class="mi">180</span> <span class="o">*</span> <span class="n">pi</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">atan_2</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">conditional</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">pi</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">exact</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="o">/</span><span class="n">Phi</span><span class="p">)</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">pi</span><span class="o">/</span><span class="n">Phi</span> <span class="o">*</span> <span class="n">phi</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span>
+
+    <span class="c1"># set up the scheme</span>
+    <span class="n">laplace</span> <span class="o">=</span> <span class="n">solutionScheme</span><span class="p">([</span><span class="n">a</span><span class="o">==</span><span class="mi">0</span><span class="p">,</span> <span class="n">DirichletBC</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">exact</span><span class="p">,</span> <span class="mi">1</span><span class="p">)],</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;cg&quot;</span><span class="p">,</span>
+                <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;newton.linear.preconditioning.method&quot;</span><span class="p">:</span><span class="s2">&quot;amg-ilu&quot;</span><span class="p">})</span>
+    <span class="n">uh</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solution&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">uh</span><span class="p">,</span> <span class="n">exact</span><span class="p">,</span> <span class="n">laplace</span>
+</pre></div>
+</div>
+<p>We will start with computing the <span class="math notranslate nohighlight">\(H^1\)</span> error on a sequence of
+globally refined grids</p>
+<p>Note that by using <code class="docutils literal notranslate"><span class="pre">fem.globalRefine</span></code> instead of
+<code class="docutils literal notranslate"><span class="pre">hierarchicalGrid.globalRefine</span></code> we can prolongate discrete functions
+to the next level. The second argument can also be a list/tuple of
+discrete functions to prolong. With this approach we optain a good
+initial guess for solving the problem on the refined grid.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">uh</span><span class="p">,</span> <span class="n">exact</span><span class="p">,</span> <span class="n">laplace</span> <span class="o">=</span> <span class="n">setup</span><span class="p">()</span>
+<span class="n">h1error</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">uh</span> <span class="o">-</span> <span class="n">exact</span><span class="p">),</span> <span class="n">grad</span><span class="p">(</span><span class="n">uh</span> <span class="o">-</span> <span class="n">exact</span><span class="p">))</span>
+<span class="n">errorGlobal</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">dofsGlobal</span>  <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">count</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">laplace</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">uh</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fem</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">h1error</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="n">errorGlobal</span> <span class="o">+=</span> <span class="p">[</span><span class="n">error</span><span class="p">]</span>
+    <span class="n">dofsGlobal</span>  <span class="o">+=</span> <span class="p">[</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">size</span><span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="s2">&quot;: size=&quot;</span><span class="p">,</span> <span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;error=&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">uh</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">24</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.16712344009166388</span>
+<span class="mi">1</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">48</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.14711976142612884</span>
+<span class="mi">2</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">96</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.11241382403045251</span>
+<span class="mi">3</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">192</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.09913242160785005</span>
+<span class="mi">4</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">384</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.07589928535968847</span>
+<span class="mi">5</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">768</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.0669639269425892</span>
+<span class="mi">6</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">1536</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.05132207757187717</span>
+<span class="mi">7</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">3072</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.04529205625699552</span>
+<span class="mi">8</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">6144</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.03472907035106893</span>
+<span class="mi">9</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">12288</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.030652565513696356</span>
+</pre></div>
+</div>
+<p>Theory tells us that</p>
+<div class="math notranslate nohighlight">
+\[\begin{align*}
+  \int_\Omega |\nabla(u-u_h)|^2 \leq \sum_K \eta_K,
+\end{align*}\]</div>
+<p>where on each element <span class="math notranslate nohighlight">\(K\)</span> of the grid the local estimator is given
+by</p>
+<div class="math notranslate nohighlight">
+\[\begin{align*}
+  \eta_K = h_K^2 \int_K |\triangle u_h|^2 +
+    \frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2.
+\end{align*}\]</div>
+<p>Here <span class="math notranslate nohighlight">\([\cdot]\)</span> is the jump in normal direction over the edges of
+the grid.</p>
+<p>We compute the elementwise indicator by defining a bilinear form</p>
+<div class="math notranslate nohighlight">
+\[\begin{align*}
+  \eta(u,v) = \int_\Omega h^2 |\triangle u_h|^2 v +
+    \int_{I_h} h_S [\nabla u_h]^2 \{v\},
+\end{align*}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\{\cdot\}\)</span> is the average over the cell edges and
+<span class="math notranslate nohighlight">\([\cdot]\)</span> the jump. With <span class="math notranslate nohighlight">\(h\)</span> and <span class="math notranslate nohighlight">\(h_S\)</span> we denote local
+grid spacings and with <span class="math notranslate nohighlight">\(I_h\)</span> the set of all facets in the grid.
+This bilinear form can be easily written in UFL and by using it to
+define a discrete operator <span class="math notranslate nohighlight">\(L\)</span> from the second order Lagrange
+space into a space containing piecewise constant functions we have
+<span class="math notranslate nohighlight">\(L[u_h]|_{K} = \eta_K\)</span>.</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">uh</span><span class="p">,</span> <span class="n">exact</span><span class="p">,</span> <span class="n">laplace</span> <span class="o">=</span> <span class="n">setup</span><span class="p">()</span>
+
+<span class="kn">from</span> <span class="nn">dune.fem.space</span> <span class="k">import</span> <span class="n">finiteVolume</span> <span class="k">as</span> <span class="n">estimatorSpace</span>
+<span class="kn">from</span> <span class="nn">dune.fem.operator</span> <span class="k">import</span> <span class="n">galerkin</span> <span class="k">as</span> <span class="n">estimatorOp</span>
+
+<span class="n">fvspace</span> <span class="o">=</span> <span class="n">estimatorSpace</span><span class="p">(</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">grid</span><span class="p">)</span>
+<span class="n">estimate</span> <span class="o">=</span> <span class="n">fvspace</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;estimate&quot;</span><span class="p">)</span>
+
+<span class="n">u</span> <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">as_ufl</span><span class="p">())</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">fvspace</span><span class="p">)</span>
+<span class="n">hT</span> <span class="o">=</span> <span class="n">MaxCellEdgeLength</span><span class="p">(</span><span class="n">fvspace</span><span class="o">.</span><span class="n">cell</span><span class="p">())</span>
+<span class="n">he</span> <span class="o">=</span> <span class="n">MaxFacetEdgeLength</span><span class="p">(</span><span class="n">fvspace</span><span class="o">.</span><span class="n">cell</span><span class="p">())(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">FacetNormal</span><span class="p">(</span><span class="n">fvspace</span><span class="o">.</span><span class="n">cell</span><span class="p">())</span>
+<span class="n">estimator_ufl</span> <span class="o">=</span> <span class="n">hT</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">div</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">)))</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span>        <span class="n">he</span> <span class="o">*</span> <span class="n">inner</span><span class="p">(</span><span class="n">jump</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">)),</span> <span class="n">n</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">avg</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">*</span> <span class="n">dS</span>
+<span class="n">estimator</span> <span class="o">=</span> <span class="n">estimatorOp</span><span class="p">(</span><span class="n">estimator_ufl</span><span class="p">)</span>
+<span class="n">tolerance</span> <span class="o">=</span> <span class="mf">0.05</span>
+</pre></div>
+</div>
+<p>Let us solve over a loop (solve,estimate,mark) and plot the solutions
+side by side. There are a few common strategies for marking grid
+elements based on the elementwise constant estimator <span class="math notranslate nohighlight">\((\eta_T)_T\)</span>
+preimplemented. One of them is a very simple strategy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span> <span class="n">refineTolerance</span><span class="p">,</span> <span class="n">coarsenTolerance</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+         <span class="n">minLevel</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxLevel</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>In this approach elements are marked if <span class="math notranslate nohighlight">\(\eta_T\)</span> is greater as the
+given <code class="docutils literal notranslate"><span class="pre">refineTolerance</span></code> and coarsened if it is smaller then the
+provided <code class="docutils literal notranslate"><span class="pre">coarsenTolerance</span></code>. A minimum and a maximum grid level can be
+provided to restrict the finest and coarsest grid level used. A equal
+distribution strategy can be implemented by taking <code class="docutils literal notranslate"><span class="pre">refineTolerance</span></code>
+to be <span class="math notranslate nohighlight">\(\frac{\theta^2}{N}\)</span> where <span class="math notranslate nohighlight">\(\theta\)</span> is a given
+tolerance and <span class="math notranslate nohighlight">\(N\)</span> is the number of grid elements. Another method
+is a layered Doerfler strategy:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">doerflerMark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">maxLevel</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">layered</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">h1error</span> <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">uh</span> <span class="o">-</span> <span class="n">exact</span><span class="p">),</span> <span class="n">grad</span><span class="p">(</span><span class="n">uh</span> <span class="o">-</span> <span class="n">exact</span><span class="p">))</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+<span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">errorVector</span>    <span class="o">=</span> <span class="p">[]</span>
+<span class="n">estimateVector</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">dofs</span>           <span class="o">=</span> <span class="p">[]</span>
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">laplace</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">uh</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">count</span><span class="o">%</span><span class="k">9</span> == 8:
+        <span class="n">plot</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">131</span><span class="o">+</span><span class="n">count</span><span class="o">//</span><span class="mi">9</span><span class="p">),</span> <span class="n">colorbar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fem</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="n">h1error</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+    <span class="n">estimator</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span> <span class="n">estimate</span><span class="p">)</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="nb">sum</span><span class="p">(</span><span class="n">estimate</span><span class="o">.</span><span class="n">dofVector</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">dofs</span>           <span class="o">+=</span> <span class="p">[</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">size</span><span class="p">]</span>
+    <span class="n">errorVector</span>    <span class="o">+=</span> <span class="p">[</span><span class="n">error</span><span class="p">]</span>
+    <span class="n">estimateVector</span> <span class="o">+=</span> <span class="p">[</span><span class="n">eta</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">count</span><span class="o">%</span><span class="k">3</span> == 2:
+        <span class="nb">print</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="s2">&quot;: size=&quot;</span><span class="p">,</span> <span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="s2">&quot;estimate=&quot;</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="s2">&quot;error=&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">eta</span> <span class="o">&lt;</span> <span class="n">tolerance</span><span class="p">:</span>
+        <span class="k">break</span>
+    <span class="n">marked</span> <span class="o">=</span> <span class="n">fem</span><span class="o">.</span><span class="n">doerflerMark</span><span class="p">(</span><span class="n">estimate</span><span class="p">,</span><span class="mf">0.6</span><span class="p">,</span><span class="n">layered</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">uh</span><span class="p">)</span> <span class="c1"># can also be a list or tuple of function to prolong/restrict</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">loadBalance</span><span class="p">(</span><span class="n">uh</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">131</span><span class="o">+</span><span class="mi">2</span><span class="p">),</span> <span class="n">colorbar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">34</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.8690256805073876</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.11221970888081521</span>
+<span class="mi">5</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">48</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.6508740928913382</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.07598644417123844</span>
+<span class="mi">8</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">70</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.484180352994079</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.05176032793637976</span>
+<span class="mi">11</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">100</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.3449992651635168</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.0393511191346774</span>
+<span class="mi">14</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">162</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.21512693648774628</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.02346465758053777</span>
+<span class="mi">17</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">222</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.1596946594667911</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.01759014905956088</span>
+<span class="mi">20</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">358</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.09547041500029724</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.010689245705173957</span>
+<span class="mi">23</span> <span class="p">:</span> <span class="n">size</span><span class="o">=</span> <span class="mi">650</span> <span class="n">estimate</span><span class="o">=</span> <span class="mf">0.05281806955787307</span> <span class="n">error</span><span class="o">=</span> <span class="mf">0.006112308575269029</span>
+</pre></div>
+</div>
+<img alt="_images/laplace-adaptive_9_1.png" src="_images/laplace-adaptive_9_1.png" />
+<p>Let’s have a look at the center of the domain:</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">pyplot</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">231</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+        <span class="n">gridLines</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shrink&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">})</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">232</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+        <span class="n">gridLines</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shrink&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">})</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">uh</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">233</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span>
+        <span class="n">gridLines</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shrink&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">})</span>
+
+<span class="kn">from</span> <span class="nn">dune.fem.function</span> <span class="k">import</span> <span class="n">levelFunction</span>
+<span class="n">levels</span> <span class="o">=</span> <span class="n">levelFunction</span><span class="p">(</span><span class="n">uh</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">grid</span><span class="p">)</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">234</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
+        <span class="n">gridLines</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shrink&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">})</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">235</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+        <span class="n">gridLines</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shrink&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">})</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">levels</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="mi">236</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">),</span>
+        <span class="n">gridLines</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="n">colorbar</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;shrink&quot;</span><span class="p">:</span> <span class="mf">0.75</span><span class="p">})</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="_images/laplace-adaptive_11_0.png" src="_images/laplace-adaptive_11_0.png" />
+<p>Finally, let us compare the globally refined solution and the adaptive
+one plotting number of degrees of freedom versus the error and the
+estimator</p>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pyplot</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">dofsGlobal</span><span class="p">,</span><span class="n">errorGlobal</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;H^1 error (global refine)&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">dofs</span><span class="p">,</span><span class="n">errorVector</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot; H^1 error (adaptive)&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">loglog</span><span class="p">(</span><span class="n">dofs</span><span class="p">,</span><span class="n">estimateVector</span><span class="p">,</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;estimator (adaptive)&quot;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;major&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s1">&#39;minor&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;white&quot;</span><span class="p">,</span><span class="n">framealpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/laplace-adaptive_13_0.png" src="_images/laplace-adaptive_13_0.png" />
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="crystal.html" class="btn btn-neutral float-right" title="Crystal Growth" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="adaptivity.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

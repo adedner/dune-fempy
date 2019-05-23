@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Notebooks and Scripts &mdash; dune-fempy 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Demonstration notebook for the DUNE-VEM module" href="vemdemo.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation (out of date)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#building-the-dune-core-modules">Building the Dune Core modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#setting-up-the-python-module">Setting up the python module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">A first Example and General Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html">Finite Element Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#alternate-solve-methods">Alternate Solve Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#more-general-boundary-conditions">More General Boundary Conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#a-3d-example">A 3D example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#listing-installed-components">Listing installed components</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Using the Dune Grid Interface</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html">A quick survey of Dune-Common and Dune-Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#grid-construction">Grid Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#basic-grid-usage">Basic Grid Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#grid-functions">Grid Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#attaching-data-to-the-grid">Attaching Data to the Grid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#output">Output</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Some Further Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="elasticity.html">Linear elasticity: deformed beam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiral.html">Spiral Wave</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wave.html">Wave equation in a slit domain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uzawa-scipy.html">Saddle point solver (using Scipy)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grid Adaptivity</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="laplace-adaptive.html">Re-entrant Corner Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="crystal.html">Crystal Growth</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Moving Grids</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcf.html">Mean Curvature Flow</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo.html">Demonstration notebook for the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#contributing-to-this-documentation">Contributing to this Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#reporting-a-bug">Reporting a Bug</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#citing-this-project">Citing this project</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Notebooks and Scripts</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/additional.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="notebooks-and-scripts">
+<span id="scripts"></span><h1>Notebooks and Scripts<a class="headerlink" href="#notebooks-and-scripts" title="Permalink to this headline">¶</a></h1>
+<table class="docutils align-center">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Example</p></th>
+<th class="head"><p>Notebooks</p></th>
+<th class="head"><p>Scripts</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Bending beam (linear elasticity)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/aad4665e84de1b068f625835b9d58d83/elasticity_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/cb3b08520cc67b7f7ec854365baa1cff/elasticity.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Spiral wave (reaction diffusion system)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/854b89998a3dd1796a89f9834c35556f/spiral_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/b93288d084ff9e389284f44d7601e5bc/spiral.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Slit domain (wave equation)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/17039fae08775438cd5cce5b20b7cc82/wave_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/24946d838925629824a9fa5865761ad7/wave.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Saddle point solver (stokes flow)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/55ac5fb04a8d9f5904e012b1f08b37c0/uzawa-scipy_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/8163a5ae38cb274ea38175ec56badf03/uzawa-scipy.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Adaptive FE (laplace problem)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/aa9a6ec66b30330a14749289b7b05503/laplace-adaptive_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/1be8b66b5fb27952470f962b147d7286/laplace-adaptive.py"><code class="xref download docutils literal notranslate"><span class="pre">scipt</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Crystal growth (phase field model)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/ec7481bd0e200cf3764f6770be684f4a/crystal_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/c228a9dfcacd621cf4e47385d481e26d/crystal.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Time dependent surface (mean curvature flow)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/663bc7f2427d6733a1fab6531d88b393/mcf_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/babd35576b34bf69c00823bbe294e2da/mcf.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>HP adaptive DG (two phase flow)</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/f3cb9d2062d92e4a9517ada128cae8c9/twophaseflow_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/3a83a1eb52f7fe5dba7e026579eacf59/twophaseflow.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p>Virtual element method</p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/af119c3f6f0d7d8af52f1c085ec691b2/vemdemo_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<td><p><a class="reference download internal" download="" href="_downloads/410be6fbc10891438739973787c3b7dd/vemdemo.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="mesh-files-used-in-the-examples">
+<h1>Mesh Files used in the Examples<a class="headerlink" href="#mesh-files-used-in-the-examples" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference download internal" download="" href="_downloads/5c7863ddeb875cdfaf93a4cba8a55921/unitcube-2d.dgf"><code class="xref download docutils literal notranslate"><span class="pre">unit</span> <span class="pre">cube</span> <span class="pre">grid</span> <span class="pre">file</span></code></a>
+<a class="reference download internal" download="" href="_downloads/ad20abaddb08e90de18ffdf2d2e82cda/sphere.dgf"><code class="xref download docutils literal notranslate"><span class="pre">sphere</span> <span class="pre">grid</span> <span class="pre">file</span></code></a>
+<a class="reference download internal" download="" href="_downloads/18ae0d826c81c955cdd4a9ea47bc8bd7/wave_tank.msh"><code class="xref download docutils literal notranslate"><span class="pre">slit</span> <span class="pre">domain</span> <span class="pre">mesh</span></code></a></p>
+</div>
+<div class="section" id="contributing-to-this-documentation">
+<span id="contributing"></span><h1>Contributing to this Documentation<a class="headerlink" href="#contributing-to-this-documentation" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="reporting-a-bug">
+<h1>Reporting a Bug<a class="headerlink" href="#reporting-a-bug" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="citing-this-project">
+<h1>Citing this project<a class="headerlink" href="#citing-this-project" title="Permalink to this headline">¶</a></h1>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="vemdemo.html" class="btn btn-neutral float-left" title="Demonstration notebook for the DUNE-VEM module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

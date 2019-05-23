@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Requirements &mdash; dune-fempy 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="gettingstarted.html" />
+    <link rel="prev" title="Welcome to dune-fempy’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation (out of date)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Requirements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#building-the-dune-core-modules">Building the Dune Core modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#setting-up-the-python-module">Setting up the python module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+<p class="caption"><span class="caption-text">A first Example and General Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html">Finite Element Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#alternate-solve-methods">Alternate Solve Methods</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#more-general-boundary-conditions">More General Boundary Conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#a-3d-example">A 3D example</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy.html#listing-installed-components">Listing installed components</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Using the Dune Grid Interface</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html">A quick survey of Dune-Common and Dune-Geometry</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#grid-construction">Grid Construction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#basic-grid-usage">Basic Grid Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#grid-functions">Grid Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#attaching-data-to-the-grid">Attaching Data to the Grid</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy.html#output">Output</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Some Further Examples</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="elasticity.html">Linear elasticity: deformed beam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiral.html">Spiral Wave</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wave.html">Wave equation in a slit domain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uzawa-scipy.html">Saddle point solver (using Scipy)</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Grid Adaptivity</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="laplace-adaptive.html">Re-entrant Corner Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="crystal.html">Crystal Growth</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Moving Grids</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcf.html">Mean Curvature Flow</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Additional Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo.html">Demonstration notebook for the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#contributing-to-this-documentation">Contributing to this Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#reporting-a-bug">Reporting a Bug</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Requirements</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="requirements">
+<span id="installation"></span><h1>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h1>
+<p>The following dependencies are needed for Dune-Fempy:</p>
+<ul class="simple">
+<li><p>At least C++11 compatible C++ compiler (e.g. gcc 4.9 or later)</p></li>
+<li><p>python2.7 or later</p>
+<ul>
+<li><p>mpi4py</p></li>
+<li><p>ufl       (strongly recommended)</p></li>
+<li><p>sphinx    (strongly recommended)</p></li>
+</ul>
+</li>
+<li><p>Dune2.5 or later</p>
+<ul>
+<li><p>dune-common</p></li>
+<li><p>dune-geometry</p></li>
+<li><p>dune-grid</p></li>
+<li><p>dune-istl</p></li>
+<li><p>dune-localfunctions</p></li>
+<li><p>dune-fem</p></li>
+<li><p>dune-corepy</p></li>
+<li><p>dune-alugrid  (strongly recommended)</p></li>
+</ul>
+</li>
+<li><p>Open MPI</p></li>
+</ul>
+<p>The above can all be automatically installed using the install script found in the
+main folder of the Dune-Fempy module, i.e.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ sh linuxinstall.sh
+</pre></div>
+</div>
+</div>
+<div class="section" id="building-the-dune-core-modules">
+<h1>Building the Dune Core modules<a class="headerlink" href="#building-the-dune-core-modules" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="setting-up-the-python-module">
+<h1>Setting up the python module<a class="headerlink" href="#setting-up-the-python-module" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<ul>
+<li><p>The compiler version needs to be 4.9 or later. This can be checked in terminal with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ g++ --version
+</pre></div>
+</div>
+<p>If your version is out of date, you will need to upgrade your system to run Dune-fempy.</p>
+</li>
+<li><p>It is possible that the python version may be an issue. The script uses python3.5m since that is the latest version available at the time of writing. If during the Dune installation you get the error</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>fatal error: pyconfig.h: No such file or directory
+</pre></div>
+</div>
+<p>This can probably be fixed by installing additional python3.5 libraries with e.g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo apt-get install libpython3.5-dev
+</pre></div>
+</div>
+<p>If python3.5 is not available on your system, you can simply change 3.5 for another appropriate version everywhere in the script (e.g. 3.4 or 2.7 (untested)). Otherwise, consider upgrading your system.</p>
+</li>
+<li><p>One other problem is that a default version of Open MPI may already be installed. This will lead to errors where Dune appears to be looking in the wrong directory for Open MPI (e.g. usr/lib/openmpi instead of the home directory where the script installs it). This can be solved by running</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ make uninstall
+</pre></div>
+</div>
+<p>in the original MPI install directory, followed by removing the folder. It will then be necessary to reinstall Open MPI and Dune. It may also be necessary to direct mpi4py to the new MPI installation. It is possible to check whether this is a problem by running python and trying out</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+</pre></div>
+</div>
+<p>If it comes up with an error, this can be fixed by installing mpi4py manually using the following commands</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://bitbucket.org/mpi4py/mpi4py.git
+$ cd mpi4py
+$ python setup.py build --mpicc=/path/to/openmpi/bin/mpicc
+$ python setup.py install --user
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="gettingstarted.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to dune-fempy’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

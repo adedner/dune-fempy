@@ -119,8 +119,37 @@ from matplotlib import pyplot
 ```python, label="fem-in-fempy", echo=False
 # <markdowncell>
 # ## Finite Element Methods
-# In this section we introduce the basic components of a finite
-# element method when applied to the Forchheimer problem.
+# In the foloowing we introduce the basic components of a finite
+# element method when applied to the Forchheimer problem:
+# A scalar, nonlinear parabolic equation
+# \begin{equation}
+# \partial_t - \nabla\cdot K(\nabla u)\nabla u = f
+# \end{equation}
+# where the diffusion tensor is given by
+# \begin{equation}
+#   K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+# \end{equation}
+# and $f=f(x,t)$ is some forcing term.
+# On the boundary we prescribe Neumann boundary conditions
+# $\nabla u \cdot n = g$ and initial conditions $u=u_0$.
+#
+# We will solve this problem in variational form and using Crank Nicholson in time
+# \begin{equation}
+# \begin{split}
+#   \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
+#   + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
+#   + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v\ dx \\
+#   - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi\ dx
+#   - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v\ ds
+#   = 0.
+# \end{split}
+# \end{equation}
+# on a domain $\Omega=[0,1]^2$. We choose $f,g$ so that the exact solution
+# is given by
+# \begin{equation}
+#   u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
+#                         \frac{1}{3}(x^3 - y^3)\right) + 1
+# \end{equation}
 # <codecell>
 ```
 
@@ -252,6 +281,11 @@ and $m_I=\frac{1}{2}f(x,t),m_E=\frac{1}{2}f(x,t)$.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Grids} \label{sec:grids}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ### Setting up the Mesh
+# <codecell>
+```
 
 The first aspect of FEMs that we consider is probably the most
 fundamental aspect, that of the grid (or mesh). Naturally, before looking at the
@@ -280,11 +314,7 @@ rectangular grids}
 \renewcommand{\pweavelabel}{lst:grid}
 ```python, label="grid", Fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
 from dune.grid import structuredGrid as leafGridView
-gridView = leafGridView([0, 0], [1, 1], [2, 2])
-gridView.plot()
-gridView.hierarchicalGrid.globalRefine(1)
-gridView.plot()
-gridView.hierarchicalGrid.globalRefine(-1)  # revert grid refinement
+gridView = leafGridView([0, 0], [1, 1], [4, 4])
 ```
 Here we create a simple square domain by specifying two opposite
 corners $(0,0)$ and $(1,1)$, and the number
@@ -811,9 +841,21 @@ submission - or generated through the Makefile}
 ```python, label="solve-methods", echo=False
 # <markdowncell>
 # ## Alternate Solve Methods
-# ### Using Scipy
 # Here we look at different ways of solving PDEs using external
 # packages and python functionality.
+# Different linear algebra backends can be accessed by changing setting the
+# `storage` parameter during construction of the discrete space. All
+# discrete functions and operators/schemes based on this space will then
+# use this backend. Available backends are `fem,istl,petsc`. The default is
+# `fem` which uses simple data structures and linear solvers implemented in
+# the `dune-fem` package. The simplicity of the data structure makes it
+# possible to use the buffer protocol to seamlessly move between C++ and
+# Numpy/Scipy data structures on the python side. A degrees of freedom
+# vector (dof vector) can be retrieved # from a discrete function over the
+# `fem` space by using the `as_numpy` method. Similar methods are available
+# for the other storages, i.e., `as_istl,as_petsc`. The same methods are
+# also available to retrieve the underlying matrix structures of linear
+# operators. 
 # <codecell>
 ```
 
@@ -874,7 +916,13 @@ solve method}
 \renewcommand{\pweavelabel}{lst:forch-newton}
 ```python, label="solve-methods1", echo=False
 # <markdowncell>
-# Implementing a simple Newton Krylov solver using the dune-fem linear solvers
+# ### Using Scipy
+# We implement a simple Newton Krylov solver using a linear solver from
+# Scipy. We can use the `as_numpy` method to access the degrees of freedom as
+# Numpy vector based on the `python buffer protocol`. So no data is copied
+# and changes to the dofs made on the python side are automatically carried
+# over to the C++ side.
+# from Scipy.
 # <codecell>
 ```
 ```python, label='forch-newton'
@@ -1234,6 +1282,7 @@ Here is an example:
 from ufl import sin
 from dune.ufl import DirichletBC
 from dune.fem.plotting import plotComponents
+from matplotlib import ticker
 
 vecSpace = solutionSpace(gridView, dimRange=2, order=2)
 x = SpatialCoordinate(vecSpace)
@@ -1246,10 +1295,16 @@ bc = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),None])
 vecScheme = solutionScheme( [a == f, bc],
         parameters={"newton.linear.tolerance": 1e-9} )
 vecScheme.solve(target=vec)
-plotComponents(vec, gridLines=None, subSampling=2)
+plotComponents(vec, gridLines=None, level=2,
+               colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 
 ```
 To prescribe $u_2=0$ at the bottom boundary is also straightforward
+```python, label="solve-methods", echo=False
+# <markdowncell>
+To prescribe $u_2=0$ at the bottom boundary is also straightforward
+# <codecell>
+```
 \renewcommand{\pweavecaption}{A second system with mixed boundary conditions}
 \renewcommand{\pweavelabel}{lst:mixedbc2}
 ```python, label='mixedbc2', fig=True, caption='Plot of solutions of the second mixed boundary condition problem', width='0.32\\textwidth'
@@ -1257,8 +1312,8 @@ bcBottom = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),0],x[1]<1e-10)
 vecScheme = solutionScheme( [a == f, bc, bcBottom],
         parameters={"newton.linear.tolerance": 1e-9} )
 vecScheme.solve(target=vec)
-plotComponents(vec, gridLines=None, subSampling=2)
-
+plotComponents(vec, gridLines=None, level=2,
+               colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 ```
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,8 +1,8 @@
 .. _installation:
 
-############
+************
 Requirements
-############
+************
 
 The following dependencies are needed for Dune-Fempy:
 
@@ -34,17 +34,17 @@ main folder of the Dune-Fempy module, i.e.
 
   $ sh linuxinstall.sh
 
-##############################
+******************************
 Building the Dune Core modules
-##############################
+******************************
 
-############################
+****************************
 Setting up the python module
-############################
+****************************
 
-###############
+***************
 Troubleshooting
-###############
+***************
 
 * The compiler version needs to be 4.9 or later. This can be checked in terminal with :: 
 

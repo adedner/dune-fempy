@@ -1,2 +1,5 @@
-.. include:: twophaseflow.rst
-.. include:: vemdemo.rst
+.. toctree::
+   :maxdepth: 2
+
+   twophaseflow.rst
+   vemdemo.rst

@@ -1,1 +1,4 @@
-.. include:: mcf.rst
+.. toctree::
+   :maxdepth: 3
+
+   mcf.rst

@@ -19,20 +19,15 @@ It serves three purposes:
    using classes from the `Dune`_ core and from `Dune-Fem`_.
    The unified form language `UFL`_ is used to describe the mathematical
    model, all realizations of the `Dune`_ grid interface can be used to
-   describe the domain tesselation, and the finite element spaces,
-   operator, and solvers provided by `Dune-Fem`_ for the descritizations 
+   work with the domain tesselation, and the finite element spaces,
+   operator, and solvers provided by `Dune-Fem`_ for the descritizations
    and solving steps. All of this is available within to be used in python
    scripts or through jupyter notebooks.
-2. Rapid prototyping of the model classes used in the `Dune-Fem-Howto`_.
-   These classes provide the mathematical description of the partial
-   differential equation to solve. Dune-Fempy uses `UFL`_ as input language
-   and generates the corresponding model class.
-   A simple python script provides
-   the stand-alone option to generate model classes from `UFL`_ input and
-   to do simple unit testing of the generated classes. For users and
-   developers of code based on the `Dune-Fem-Howto`_ this script provides a
-   fast and easy approach for generating code for new mathematical models.
-   of this documentation.
+2. Rapid prototyping of new methods or other parts of a simulation is easy
+   since the interfaces provided are very similar to the `Dune`_ C++
+   interface. This makes it easy to transfer a working prototype from
+   python (easy to develop) to C++ (high efficiency). Small C++ code
+   snippets can be easy called from python using just in time compilation.
 3. Rapid prototyping of new implementations of `Dune`_ interfaces. So
    new implementations of the `Dune`_ grid interface can be easily
    tested. For `Dune-Fem`_ developers, new grid views, discrete function spaces, and
@@ -43,102 +38,90 @@ It serves three purposes:
 .. _Dune-Fem: http://www.dune-project.org/fem/index.html
 .. _UFL: http://fenicsproject.org/documentation/ufl/1.0-beta2/ufl.html
 
-**************************
-Installation (out of date)
-**************************
+
+*************
+This Document
+*************
+
+1. A simple scalar, non linear time dependent partial differential equation
+   is used to describe the basic concepts. This leads through the steps
+   required to set up the problem, solve the system of equations, and
+   visualize the results. After this introduction we discuss how to use
+   different solver backends (including for example `scipy`_ and `petsc`_).
+   Finally we provide more detail on how to use the `Dune`_ grid interface,
+   attach data to the grid entities and define general grid functions.
+2. The examples in this section build in the general concepts described
+   in the first part,
+   introducing only a few new features. The :ref:`scripts`
+   used for each of these and the following examples can be downloaded
+   and are hopefully useful as starting point for new projects.
+3. Local grid refinement and coarsening is a central feature of
+   `Dune-Fem`_. Here we show how to use it for stationary and
+   time dependent problems.
+4. Finally other projects are presented some of them developed by
+   the authors of this document, some contributed by other
+   users. If you have used this package then we would like to
+   hear about it and would ask you to contribute to this
+   chapter. Doing so is quite easy (see :ref:`contributing` for details).
+
+.. _scipy: https://www.scipy.org
+.. _petsc: https://www.mcs.anl.gov/petsc/
+.. _petsc4py: https://bitbucket.org/petsc/petsc4py
 
 .. toctree::
    :maxdepth: 1
+   :caption: Installation (out of date)
 
    installation
 
-************************************
-A first example and general concepts
-************************************
 
 .. toctree::
    :maxdepth: 3
+   :caption: A first example and general concepts
 
    gettingstarted
 
-*********************
-Some further examples
-*********************
-
-These examples build in the general concepts described above,
-introducing only a few new features. The Python scripts
-(jupyter notebooks) used for each example can be downloaded
-and are hopefully useful as starting point for new projects.
 
 .. toctree::
+   :caption: Some further examples
    :maxdepth: 3
 
    furtherexamples
 
-***************
-Grid Adaptivity
-***************
-
-Local grid refinement and coarsening is a central feature of
-`Dune-Fem`_. Here we show how to use it for stationary and
-time dependent problems.
 
 .. toctree::
    :maxdepth: 3
+   :caption: Grid Adaptivity
 
    adaptivity
 
-***************
-Grid Adaptivity
-***************
 
 .. toctree::
    :maxdepth: 3
+   :caption: Moving Grids
 
    moving
 
-*******************
-Additional Projects
-*******************
-
-Here are some other projects some of them developed by
-the authors of this document, some contributed by other
-users. If you have used this package then we would like to
-hear about it and would ask you to contribute to this
-chapter (see more details here).
 
 .. toctree::
    :maxdepth: 3
+   :caption: Additional Projects
 
    furtherprojects
 
 
-Notebooks/Script and other files for download
-=============================================
+.. toctree::
+   :maxdepth: 3
+   :caption: Information and Resources
 
-================================================= ================================================= =================================================
-Example                                           Notebooks                                         Scripts
-================================================= ================================================= =================================================
-Bending beam (linear elasticity)                  :download:`notebook <elasticity_nb.ipynb>`        :download:`script <elasticity.py>`
-Spiral wave (reaction diffusion system)           :download:`notebook <spiral_nb.ipynb>`            :download:`script <spiral.py>`
-Slit domain (wave equation)                       :download:`notebook <wave_nb.ipynb>`              :download:`script <wave.py>`
-Saddle point solver (stokes flow)                 :download:`notebook <uzawa-scipy_nb.ipynb>`       :download:`script <uzawa-scipy.py>`
-Adaptive FE (laplace problem)                     :download:`notebook <laplace-adaptive_nb.ipynb>`  :download:`scipt <laplace-adaptive.py>`
-Crystal growth (phase field model)                :download:`notebook <crystal_nb.ipynb>`           :download:`script <crystal.py>`
-Time dependent surface (mean curvature flow)      :download:`notebook <mcf_nb.ipynb>`               :download:`script <mcf.py>`
-HP adaptive DG (two phase flow)                   :download:`notebook <twophaseflow_nb.ipynb>`      :download:`script <twophaseflow.py>`
-Virtual element method                            :download:`notebook <vemdemo_nb.ipynb>`           :download:`script <vemdemo.py>`
-================================================= ================================================= =================================================
-
-:download:`unit cube grid file <unitcube-2d.dgf>`
-:download:`sphere grid file <sphere.dgf>`
+   additional
+.. API reference <api/modules>
 
 
+******************
 Indices and tables
-==================
+******************
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-

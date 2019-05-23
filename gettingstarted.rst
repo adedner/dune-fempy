@@ -1,1 +1,4 @@
-.. include:: dune-fempy.rst
+.. toctree::
+   :maxdepth: 3
+
+   dune-fempy.rst

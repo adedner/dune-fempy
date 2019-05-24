@@ -784,12 +784,12 @@ z = f.pointData(level)[:,0]
 try:
     from mayavi import mlab
     from mayavi.tools.notebook import display
-    mlab.init_notebook()
+    mlab.init_notebook("png")
     mlab.figure(bgcolor = (1,1,1))
     s = mlab.triangular_mesh(triangulation.x, triangulation.y, z*0.5,
                              triangulation.triangles)
     display( s )
-    mlab.savefig("mayavi.png", size=(400,300))
+    # mlab.savefig("mayavi.png", size=(400,300))
     mlab.close(all=True)
 except ImportError:
     pass
@@ -800,8 +800,3 @@ except ImportError:
 \caption{Visualization using mayavi}
 \label{fig:mayavi}
 \end{figure}
-```python, label="lst:3dgmsh-md", echo=False
-# <markdowncell>
-# ![3d plotting example](mayavi.png)
-# <codecell>
-```

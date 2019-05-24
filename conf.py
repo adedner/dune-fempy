@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinxcontrib.apidoc',
+    'sphinxcontrib.bibtex',
 #    'sphinx.ext.autosectionlabel',
 #    'nbsphinx',
 ]

@@ -120,7 +120,7 @@ from matplotlib import pyplot
 # <markdowncell>
 # ## Finite Element Methods
 # In the foloowing we introduce the basic components of a finite
-# element method when applied to the Forchheimer problem:
+# element method when applied to the Forchheimer problem :cite:`Kieu`.
 # A scalar, nonlinear parabolic equation
 # \begin{equation}
 # \partial_t - \nabla\cdot K(\nabla u)\nabla u = f

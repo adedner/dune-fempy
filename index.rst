@@ -5,13 +5,6 @@
 Welcome to dune-fempy's documentation!
 ######################################
 
-************
-Introduction
-************
-
-.. toctree::
-   :maxdepth: 2
-
 This module brings python scripting support to `Dune`_.
 It serves three purposes:
 
@@ -152,3 +145,11 @@ Indices and Tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+************
+Bibliography
+************
+
+
+.. bibliography:: dune-fempy.bib

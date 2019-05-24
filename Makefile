@@ -73,10 +73,10 @@ python_time.p: mcf-algorithm_nb.ipynb
 
 figures/mcf-comparison.png: cpp_time.p python_time.p
 	@python3 mcf-comparison-plot.py
-figures/3dexample.png: 3dexample.py $(TEX)
+figures/3dexample.png: 3dexample.py dune-fempy.pmd
 	@pvpython 3dexample.py
 
-figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png: interpolation.py $(TEX)
+figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png: interpolation.py dune-corepy.pmd
 	@pvpython $<
 
 

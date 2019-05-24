@@ -1,0 +1,610 @@
+\chapter{Translating Python Code to C++} \label{sec:mcf-comparison}
+
+Having looked at some of the functionality available for solving
+various FEM problems, we now shift our focus towards more in-depth
+features that concern efficiency and C++ development. Here we consider
+the idea of moving sections of Python code
+over to C++ for efficiency. A key aspect of the design of \dune[Fempy] has
+been about keeping the structure of the C++ code in the Python code's
+design, to the point where translating between the two is relatively painless. In
+particular this allows for rapid prototyping of methods in Python with
+its relative ease of use, after which code can be ported to C++ for
+efficiency if necessary in large-scale computation.
+
+\section{A simple example}
+
+Here we will demonstrate this translation process, and additionally
+provide comparisons for the difference in efficiency timewise. We will
+examine the function used for calculating the averaged radius of a
+surface used in section \ref{sec:mcf}.
+\renewcommand{\pweavecaption}{A pythonic function for calculating the
+radius of a surface}
+\renewcommand{\pweavelabel}{lst:calcR}
+\begin{pweavecode}
+def calcRadius(surface):
+    # compute R = int_x |x| / int_x 1
+    R   = 0
+    vol = 0
+    for e in surface.elements:
+        rule = geometry.quadratureRule(e.type, 4)
+        for p in rule:
+            geo = e.geometry
+            weight = geo.volume * p.weight
+            R   += geo.toGlobal(p.position).two_norm * weight
+            vol += weight
+    return R/vol
+\end{pweavecode}
+As a relatively simple example, this code is not particularly slow in
+python, however the existence of callbacks inside a looped statement
+are not insignificant. Now let us look at a C++ translation of the above
+code.
+\renewcommand{\pweavecaption}{The C++ version of the calcRadius
+function}
+\renewcommand{\pweavelabel}{lst:calcR-cpp}
+\begin{pweavecode}
+#include <dune/geometry/quadraturerules.hh>
+
+template< class Surface >
+double calcRadius( const Surface &surface )
+{
+  double R = 0.;
+  double vol = 0.;
+  for( const auto &entity : elements( surface ) )
+  {
+    const auto& rule = Dune::QuadratureRules<double, 2>::rule(entity.type(), 4);
+    for ( const auto &p : rule )
+    {
+      const auto geo = entity.geometry();
+      const double weight = geo.volume() * p.weight();
+      R   += geo.global(p.position()).two_norm() * weight;
+      vol += weight;
+    }
+  }
+  return R/vol;
+}
+\end{pweavecode}
+We note that we take advantage of C++11 features such as \cpp{auto}
+and range based for loops to keep a similar structure to the Python
+code.
+
+Supposing we save the above as \cpp{radius.hh}, we can then call it
+in a Python script and use it like a regular function as follows.
+\renewcommand{\pweavecaption}{Calling our C++ function using algorithm}
+\renewcommand{\pweavelabel}{lst:calcR-algorithm}
+\begin{pweavecode}
+from dune.generator import algorithm
+calcRadius = algorithm.load('calcRadius', 'radius.hh', surface)
+\end{pweavecode}
+Doing this, we can quite easily swap between the two versions and
+compare the runtime of the solve method. We show these results in
+figure \ref{fig:mcf-comparison}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth, height=8cm,
+keepaspectratio]{figures/mcf-comparison.png}
+\caption{Comparison of time taken between the two calcRadius methods}
+\label{fig:mcf-comparison}
+\end{figure}
+
+What we see is that the C++ version is roughly 18\% faster. On a small
+scale this is not a significant change, but it shows that it can be
+worth the extra coding time for longer running simulations. Naturally
+a full C++ version would see a further improvement in runtime, though
+whether that is justified depends on a case-by-case basis.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Saddle point solver}
+{\bf TODO}: explain Uzawa scheme
+
+\renewcommand{\pweavecaption}%
+{Setup for the preconditioned Uzawa algorithm}
+\renewcommand{\pweavelabel}{lstUzawaIntro}
+```python, label="UzawaIntro", results = 'hidden'
+from dune.grid import structuredGrid
+from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
+                inner, dot, div, grad, dx, as_vector, transpose, Identity
+from dune.ufl import Constant, DirichletBC
+from dune.alugrid import aluCubeGrid as leafGridView
+from dune.fem.space import lagrange  as lagrangeSpace
+from dune.fem.operator import galerkin as galerkinOperator
+from dune.fem.operator import linear as linearOperator
+from dune.fem.scheme import galerkin as galerkinScheme
+from dune.grid import cartesianDomain
+
+grid = leafGridView( cartesianDomain([0,0],[3,1],[30,10]) )
+
+order = 2
+spcU = lagrangeSpace(grid, dimRange=grid.dimension, order=order, storage="fem")
+spcP = lagrangeSpace(grid, dimRange=1, order=order-1, storage="fem")
+
+cell  = spcU.cell()
+x     = SpatialCoordinate(cell)
+mu    = Constant(0.1,  "mu")
+nu    = Constant(0.01, "nu")
+u     = TrialFunction(spcU)
+v     = TestFunction(spcU)
+p     = TrialFunction(spcP)
+q     = TestFunction(spcP)
+exact_u     = as_vector( [x[1] * (1.-x[1]), 0] )
+exact_p     = as_vector( [ (-2*x[0] + 2)*mu ] )
+f           = as_vector( [0,]*grid.dimension )
+f          += nu*exact_u
+mainModel   = (nu*dot(u,v) + mu*inner(grad(u)+grad(u).T, grad(v)) - dot(f,v)) * dx
+gradModel   = -inner( p[0]*Identity(grid.dimension), grad(v) ) * dx
+divModel    = -div(u)*q[0] * dx
+massModel   = inner(p,q) * dx
+preconModel = inner(grad(p),grad(q)) * dx
+
+mainOp      = galerkinScheme([mainModel==0,DirichletBC(spcU,exact_u,1)])
+gradOp      = galerkinOperator(gradModel)
+divOp       = galerkinOperator(divModel)
+massOp      = galerkinScheme(massModel==0)
+preconOp    = galerkinScheme(preconModel==0)
+
+velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
+pressure = spcP.interpolate([0], name="pressure")
+rhsVelo  = velocity.copy()
+rhsPress = pressure.copy()
+
+r      = rhsPress.copy()
+d      = rhsPress.copy()
+precon = rhsPress.copy()
+xi     = rhsVelo.copy()
+
+A = linearOperator(mainOp)
+G = linearOperator(gradOp)
+D = linearOperator(divOp)
+M = linearOperator(massOp)
+P = linearOperator(preconOp)
+
+solver = {"method":"cg", "tolerance":1e-10}
+Ainv   = mainOp.inverseLinearOperator(A,parameters=solver)
+Minv   = massOp.inverseLinearOperator(M,solver)
+Pinv   = preconOp.inverseLinearOperator(P,solver)
+
+# get main forcing and set constraints
+mainOp(velocity,rhsVelo)
+rhsVelo *= -1
+G(pressure,xi)
+rhsVelo -= xi
+mainOp.setConstraints(rhsVelo)
+mainOp.setConstraints(velocity)
+```
+{\bf TODO}: explain some of the new functionality used (perhaps should be
+explainer earlier, e.g., \pyth{inverseLinearOperator}
+
+For the C++ code we implement a function with the following signature
+\inputcpprange{uzawa.hh}{lstUzawaHH}%
+         {Header file for C++ version of preconditioned Uzawa algorithm}
+         {1}{11}
+
+\begin{landscape}
+\begin{minipage}{0.475\linewidth}
+\renewcommand{\pweavecaption}%
+{Python version of preconditioned Uzawa algorithm}
+\renewcommand{\pweavelabel}{lstUzawaPY}
+```python, label="UzawaPY", results = 'hidden'
+Ainv(rhsVelo, velocity)
+D(velocity,rhsPress)
+Minv(rhsPress, r)
+if mainOp.model.nu > 0:
+    precon.clear()
+    Pinv(rhsPress, precon)
+    r *= mainOp.model.mu
+    r.axpy(mainOp.model.nu,precon)
+d.assign(r)
+delta = r.scalarProductDofs(rhsPress)
+for m in range(100):
+    xi.clear()
+    G(d,rhsVelo)
+    mainOp.setConstraints(\
+        [0,]*grid.dimension, rhsVelo)
+    Ainv(rhsVelo, xi)
+    D(xi,rhsPress)
+    rho = delta /\
+       d.scalarProductDofs(rhsPress)
+    pressure.axpy(rho,d)
+    velocity.axpy(-rho,xi)
+    D(velocity, rhsPress)
+    Minv(rhsPress,r)
+    if mainOp.model.nu > 0:
+        precon.clear()
+        Pinv(rhsPress,precon)
+        r *= mainOp.model.mu
+        r.axpy(mainOp.model.nu,precon)
+    oldDelta = delta
+    delta = r.scalarProductDofs(rhsPress)
+    if delta < 1e-9: break
+    gamma = delta/oldDelta
+    d *= gamma
+    d += r
+```
+\end{minipage}
+\hfill
+\begin{minipage}{0.475\linewidth}
+\inputcpprange{uzawa.hh}{lstUzawaHH}%
+         {Header file for C++ version of preconditioned Uzawa algorithm}
+         {14}{66}
+\end{minipage}
+\end{landscape}
+
+\renewcommand{\pweavecaption}%
+{Execute C++ version of preconditioned Uzawa algorithm}
+\renewcommand{\pweavelabel}{lstUzawaCPP}
+```python, label="UzawaCPP"
+# Note: the models are virtualize so op.model().nu() will not work on the C++ side
+#       so we either need to 'devirtualize' or pass in nu,mu
+from dune.generator import algorithm
+velocity = spcU.interpolate([0,]*spcU.dimRange, name="velocity")
+pressure = spcP.interpolate([0], name="pressure")
+
+# get main forcing and set constraints
+mainOp(velocity,rhsVelo)
+rhsVelo *= -1
+G(pressure,xi)
+rhsVelo -= xi
+mainOp.setConstraints(rhsVelo)
+mainOp.setConstraints(velocity)
+
+uzawa = algorithm.run('uzawa', 'uzawa.hh',
+            mainOp.model.nu,mainOp.model.mu,
+            mainOp, G, D, Ainv, Minv, Pinv, rhsVelo, xi, rhsPress, r, d,
+            precon, velocity, pressure)
+fig = pyplot.figure(figsize=(20,10))
+velocity.plot(colorbar="horizontal", figure=(fig, 121))
+pressure.plot(colorbar="horizontal", figure=(fig, 122))
+pyplot.show()
+```
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{comment}
+\section{Model C++ Header Generation} \label{sec:header}
+
+After having looked at the basics of the Python
+interface, let us now consider features more aimed at C++
+integration and code extensibility.
+
+In section \ref{sec:schemes}, we briefly alluded to the fact that the UFL
+equation passed to the \pyth{scheme} constructor is used to create a
+\pyth{model} class. To this end a C++ class is generated and JIT
+compilation is used to export this class to Python.
+We can separate the process into two steps as follows.
+\renewcommand{\pweavecaption}{A simple integrands model}
+\renewcommand{\pweavelabel}{lst:integrands}
+\begin{pweavecode}
+from dune.fem.model  import integrands as discreteModel
+from dune.fem.scheme import galerkin   as solutionScheme
+model  = discreteModel(gridView, a == b)
+scheme = solutionScheme(model)
+\end{pweavecode}
+where \pyth{a == b} refers to the UFL equation used to represent weak form
+of the PDE, i.e., the bilinear and linear form,
+and \pyth{integrands} refers to form of C++ class used to represent
+second order operators in \dune[Fem]. A form of this C++ representation
+that is more human readable is given by
+\renewcommand{\pweavecaption}{A simple elliptic model}
+\renewcommand{\pweavelabel}{lst:elliptic}
+\begin{pweavecode}
+from dune.fem.model  import elliptic as discreteModel
+from dune.fem.scheme import h1       as solutionScheme
+model  = discreteModel(gridView, a == b)
+scheme = solutionScheme(model)
+\end{pweavecode}
+While the generated class is easier to read and change it is less flexible
+then the \pyth{integrands} model, e.g., interior facet integrals can not be
+directly represented in this class.
+
+We note that this is a different approach to similar packages, like Fenics
+\cite{FEniCS} and Firedrake \cite{Firedrake}, which
+in general do not create a human readable C++ class that only depends on
+the PDE itself and not on discretization details, e.g., the discrete spaces
+or quadratures used. We are planning to adding this approach in the future
+to be able to generate more efficient code in some special cases. Note that
+one advantage is that non standard discretization schemes can be easily
+implemented in C++ based on these generated classes, more
+details can be found in \cite{LloydsThesis} which also contains an example
+usage for non variational problems.
+
+% \begin{comment}
+\subsection{Elliptic Models}
+
+First let us consider the simpler \pyth{elliptic} model. In mathematical
+terms, consider the same general operator we defined previously.
+\begin{equation}
+  L[u] = -\nabla \cdot D(x, u) \nabla u + m(x, u, \nabla u).
+  \tag{\ref{eqn:elliptic}}
+\end{equation}
+In variational form, after multiplying with a test function and
+integration by parts (ignoring boundary terms for now), we arrive at
+\[
+  L[u] = \int_{\Omega}D(x, u) \nabla u \cdot \nabla v + m(x, u, \nabla u)
+  v \diff x.
+\]
+Possibly with an additional boundary integral representing non trivial
+boundary conditions.
+Now the elliptic model class in \dune[Fempy] has methods that represent
+the above form in general terms. Most importantly it has four methods, two
+to compute $D(x, u) \nabla u$ and the corresponding linearization
+and a second pair to compute $m(x, u, \nabla u)$ and its linearization.
+Additionally there are
+methods for the associated Dirichlet or Neumann boundary conditions.
+Together these form the \pyth{elliptic} model class templated over the underlying
+type of the grid. As mention above this is only
+one way of expressing bilinear forms in \dune[Fempy].
+% Generally this
+% class is then used to create a shared object file that is exported to
+% python using pybind11 for use in python scripts and notebooks.
+
+As an example assume for instance we were to take
+the case of $m(x, u, \nabla u) = u$ above. In the model class, this would be
+defined under the method \cpp{source}.
+\renewcommand{\pweavecaption}{A function in the elliptic model C++
+class}
+\renewcommand{\pweavelabel}{lst:elliptic-cpp}
+\begin{pweavecode}
+template< class Point >
+void source ( const Point &x, const RangeType &u, const JacobianRangeType &du, RangeType &result ) const
+{
+  result = u[ 0 ];
+}
+\end{pweavecode}
+
+Another possibility provided for by the modular design of
+\dune[python] and the simple structure of the class representing the
+elliptic model, is the creation of alternate
+models. This approach involves the writing of additional C++
+classes (one example would be an elliptic discontinuous Galerkin model) based on
+the elliptic model class except with extra modifications that one
+might want to make to the underlying structure.
+Whilst this approach is more in-depth than simply editing
+an elliptic header file, it allows one to change the functions
+themselves beyond what the default elliptic model accepts.
+\Atodo{the above is not too clear, i.e., what is actually needed?}
+
+\Atodo{Do we keep the following or just chite Lloyd's thesis a future paper?
+We could even consider leaving the elliptic model out of the paper and only
+show how to use the integrands model in a C++ code...}
+An example of this approach is the \textit{nonvariational} model
+for the \dune[femnv] module (\cite{NVPAPER}). This comes
+from the desire to write bilinear forms that can accept a Hessian as
+as argument as follows.
+\begin{equation*}
+  L[u] = \nabla \cdot D(x, u) \nabla \varphi(x) + m(x, u, \nabla
+  u, D^2 u)\varphi.
+\end{equation*}
+Such a change would require different arguments to be made available
+to the methods from the elliptic model. Suppose we wanted to
+implement the nonvariational Poisson equation, i.e. taking $m = -\Delta u$
+above. Then we would need the following method.
+\renewcommand{\pweavecaption}{A nonvariational method}
+\renewcommand{\pweavelabel}{lst:nvop}
+\begin{pweavecode}
+template< class Point >
+void source ( const Point &x, const RangeType &u, const
+JacobianRangeType &du, const HessianRangeType &d2u, RangeType &result ) const
+{
+  result[ 0 ] = d2u[ 0 ][ 0 ] + d2u[ 1 ][ 1 ];
+}
+\end{pweavecode}
+Whilst this may not be immediately possible with the standard elliptic
+model, it is possible to create a model \cpp{'nvdg'} that can
+use such functions, which results in the ability to write functional
+\dune[Fempy] code as follows.
+\renewcommand{\pweavecaption}{The \dune[Fempy] code for a nonvariational
+model}
+\renewcommand{\pweavelabel}{lst:fempy_nv}
+\begin{pweavecode}
+a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
+b = rhs(A, exact)
+model = create.model("nvdg", gridView, a == b)
+\end{pweavecode}
+Thus it becomes possible to write schemes that expect different
+arguments from the operator.
+
+\subsection{Integrands Models}
+
+We note however that as mentioned before, there exists another way of
+constructing operators, by using \pyth{'integrands'}.
+% This method
+% bypasses the virtual methods used in the elliptic operator class and
+% creates methods purely using the UFL expressions given to it.
+This allows for a more general description of second order operators not
+expressible by the \pyth{elliptic} model class. For example we can express
+a non variational second order problem directly:
+\renewcommand{\pweavecaption}{Usage of integrands operators for skeleton terms}
+\renewcommand{\pweavelabel}{lst:fempy_integrands}
+\begin{pweavecode}
+from dune.fem.model import integrands
+a = -(grad(grad(u[0])[0])[0] + grad(grad(u[0])[1])[1])*v[0]*dx
+    + jump(A*grad(u[0]), n)*avg(v[0])*dS
+b = rhs(A, exact)
+scheme = integrands(space, a == b)
+\end{pweavecode}
+In addition as the above shows we can add a term
+defined only on the skeleton (the facets) of the mesh. Due to the
+ability to add such interior terms, the \pyth{integrands} class is
+for example useful to construct discontinuous Galerkin methods.
+% \end{comment}
+
+% \subsection{C++ Models} \label{sec:cpp-models}
+
+In addition to the automatic creation of a shared library object that
+is done when the model is imported into Python, it is
+possible to generate a stand alone header file containing the model class
+That is, it is possible to generate a C++ file (e.g. \cpp{'model.hh'}) that can be
+used flexibly in both \dune[Fempy] and regular C++ compatible \dune code.
+Within a \dune[] module depending on \dune[Fempy], we can do this by
+writing a pure UFL file and calling cmake on it.
+
+Let us examine what this file looks like for the Forchheimer model:
+\renewcommand{\pweavecaption}{UFL file used for C++ header file generation}
+\renewcommand{\pweavelabel}{lst:header}
+\begin{pweavecode}
+from dune.fem import Space
+space = Space(2, 1)
+u = TrialFunction(space)
+v = TestFunction(space)
+x = SpatialCoordinate(space.cell())
+dt = Constant(0, "dt")    # time step
+t  = Constant(0, "t")     # current time
+u_h_n = NamedCoefficient(space,"previous")
+
+initial = 1/2*(x[0]**2 + x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+abs_du = sqrt(inner(grad(u), grad(u)))
+K = 2/(1 + sqrt(1 + 4*abs_du))
+a = (inner((u - u_h_n)/dt, v) + inner(K*grad(u), grad(v)))*dx
+exact = as_vector( [exp(-2*t)*(initial - 1) + 1] )
+b = replace(a, {u: exact})
+
+F = a - b
+\end{pweavecode}
+Once the corresponding \cpp{forchheimer.hh} file has been generated,
+it can then be edited manually, and then used in place
+of a UFL expression in \dune[Fempy]. This choice of default shared library
+generation or usable header files falls in line with
+attempts we have made to improve extensibility of the code, since in
+particular it allows for the user to write in more complex features in
+C++ that do not necessarily have Python bindings written for them. An
+additional advantage is that this header file can be directly used within a
+traditional \dune[] C++ program.
+
+What the above allows us to do is to easily investigate,
+the difference in efficiency between using the
+full \dune[Fempy] interface to run problems and writing a pure C++ version
+to solve the same problem. The model file needed to run the C++ \dune[Fem]
+code can be generated using a UFL expression as explained above.
+To look at this in more detail we constructed
+an identical Forchheimer example in C++ which can be found in section
+\ref{sec:forch-cpp}. We compare the runtime of the two solve-steps
+below.
+\begin{center}
+  \captionof{table}{Runtimes for Forchheimer solve time}
+  \begin{tabular}{l | l}
+    \hline
+     & Runtime (s) \\ \hline
+    C++ & 78.3 \\
+    Python & 83.0
+  \end{tabular}
+\end{center}
+Thus we see there is not a sizable difference between the \dune[Fem] and
+\dune[Fempy] versions.
+
+\Rtodo{When I tested this the run times were the same. So double check please.}
+
+\noindent \textit{Remark.} We remark that both versions use preprocessing, which relatively
+speaking is negligible for long-running simulations. We also note that
+the most \textit{costly} aspect of pure Python code are generally
+callbacks, and in this example this amounts to just the solve call. An
+additional example that taxes the two versions differently can be
+found in section \ref{sec:mcf-comparison}.
+
+\section{Virtualization} \label{sec:virtualization}
+
+One final topic we want to discuss is virtualization and the
+rationalities behind various design decisions. In the development of the
+python bindings for \dune[Python], one decision that was made was to
+avoid introducing a virtual layer when exporting classes from C++ to Python or
+vice versa. Such a layer would introduce additional code maintenance
+and more importantly perhaps lead to loss in performance when a C++ object
+is passed through Python back into C++. In this case code optimization
+steps like inlining or loop unrolling could not be utilized to their
+full potential.
+
+Take as an example a discrete function which is constructed
+using 
+\begin{lstlisting}[style=pythonstyle]
+df = space.interpolate([0], name="df")
+\end{lstlisting}
+The call to
+\pyth{interpolate} goes back to the corresponding function in \dune[fem] and
+returns an instance of the discrete function. To store the solution to a PDE
+problem in \pyth{df}, the \pyth{solve} method on a \pyth{scheme} is
+called. While executing \pyth{scheme.solve(target=df)} the discrete
+function instance is passed back to another \dune[fem] function. If \pyth{df}
+were virtualized (i.e. type erased) in either of the two steps, i.e. when
+passed to or from Python, then the \pyth{solve} method could not work with
+the same efficiency as when used in a pure C++ environment. The number of
+degrees of freedom, local structure, etc. of the discrete function would
+only be known as dynamic properties, making code optimization by the compiler
+or the \dune developer implementing the \pyth{solve} method more difficult
+or even impossible. Note that virtualizing the discrete function for
+example, would almost certainly also require virtualization of the
+underlying discrete function spaces (with mapper and basis function set),
+and the underlying grid view (with its iterators). The cumulative effect
+of this would be a quite severe hit on performance.
+
+To avoid this issue, no type erasure is carried out
+when an object is passed into Python. So in the above example the call to
+\pyth{interpolate} returns an object which still contains the full type
+information of the underlying \dune[fem] function. This approach leads to
+compilation overhead the first time a new type of discrete function is used
+since a new Python module needs to be generated. But this overhead occurs only
+the first time the discrete function is used during the development of a
+project and is thus negligible. Since no type erasure has occurred,
+any \dune object can now be passed back to it. The \pyth{solve} method on the scheme is
+exported in such a way that the target argument has to be of the same discrete
+function type that was defined by the \pyth{storage} argument provided during the
+space construction. Consequently a scheme over a given space (e.g. a
+Lagrange space of a fixed order using an \pyth{istl} storage)
+will only accept one type of discrete function as \pyth{target} argument
+for its solve method. As described before the advantage of this is that the
+full static type information is available at the cost of more compilation
+requirements when changes (e.g. to the storage back end) are made.
+
+There are a few exceptions to the above rule, where Python objects
+passed as arguments to C++ functions undergo type erasure
+if their type does not match the exact type of the arguments of that
+function.
+
+An example is the \pyth{__call__} method on an \pyth{operator}.
+When calling \pyth{op(arg,dest)}, the destination parameter
+(\pyth{dest}) has to be of the correct discrete function type, but for
+the argument parameter (\pyth{arg}) it can make
+sense to allow for a wide range of grid functions, e.g. an exact solution
+given by a UFL expression or a different type of discrete function. In many
+cases the implementation of the operator does not require the argument to even
+be discrete since only the evaluation of \pyth{arg} at quadrature points is
+required; in this case any grid function is a valid argument.
+On the C++ side the operator call is simply implemented as a template
+method on the operator class with the signature
+\begin{lstlisting}[style=cppstyle]
+template <class GF> Operator::operator()(const GF &arg, typename Operator::DiscreteFunction &dest);
+\end{lstlisting}
+We note that it is not possible to export a template method to Python without
+fixing all of its arguments. Since an optimized version of such a method
+is often implemented for the case that \pyth{arg} is of the same type as
+\pyth{dest}, the default method that will always be exported to Python
+has \cpp{GF=Operator::DiscreteFunction}. In addition, a second version is
+exported where \cpp{GF=VirtualizedGridFunction<...>}, which is a
+type erased implementation of a grid function. Any grid function exported
+to Python (e.g. UFL expressions, discrete function etc.) will implicitly
+convert to a \cpp{VirtualizedGridFunction} so that \pyth{op(arg,dest)} can
+be used in Python even in the case that \pyth{arg} is not of the same type
+as \cpp{dest}. Optimal code is still produced in the case where both
+parameters are of the same type.
+
+A second use of type erasure where objects are passed back to C++ occurs
+when an \pyth{operator} or \pyth{scheme} is constructed from a given model.
+Since the development of a new model can involve repeated changes
+being made to it (e.g. its underlying UFL form) we aimed to avoid the
+situation of each change requiring a recompilation of the \pyth{operator} or
+\pyth{scheme}. To this end the model is virtualized when it is passed to
+the constructor of the \pyth{operator} or \pyth{scheme} class.
+Consequently, these classes only depend on some type information like the
+underlying type of the grid view and the range dimension of the model but
+not on the actual details of the bilinear form. The consequence of this
+approach is that evaluating some part of the form introduces a virtual
+function call. At the same time UFL coefficients are stored as type erased
+\pyth{VirtualizedGridFunction} in the model class again to avoid too much
+recompilation when changes to the UFL equations are made.
+\Atodo{ explain that tests have shown that this is negligible and show some
+performance test. Mention virtualization parameter to
+disable type erasure if required.}
+\end{comment}
+
+

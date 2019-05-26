@@ -27,18 +27,6 @@ Mesh Files used in the Examples
 :download:`slit domain mesh <wave_tank.msh>`
 
 
-.. _contributing:
-
-**********************************
-Contributing to this Documentation
-**********************************
-
-
-***************
-Reporting a Bug
-***************
-
-
 *******************
 Citing this project
 *******************

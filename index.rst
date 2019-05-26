@@ -56,17 +56,21 @@ the code is available for download in form of both :ref:`scripts`.
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
    different solver backends (including for example `scipy`_ and `petsc`_).
-#. We provide more detail on how to use the `Dune`_ grid interface,
+
+   We then provide more detail on how to use the `Dune`_ grid interface,
    attach data to the grid entities and define general grid functions.
-#. The examples in this section build in the general concepts described
-   in the first part,
-   introducing only a few new features. The :ref:`scripts`
+
+   Finally, some more examples building up on the general concepts described
+   in the first part.
+
+   The :ref:`scripts`
    used for each of these and the following examples can be downloaded
    and are hopefully useful as starting point for new projects.
 #. Local grid refinement and coarsening is a central feature of
    `Dune-Fem`_. Here we show how to use it for stationary and
    time dependent problems.
-#. Grid adaptivity makes use of special grid views. Other views are also
+
+   Grid adaptivity makes use of special grid views. Other views are also
    available, one of these can be used to deform the grid given an
    arbitrary (discrete) vector field. This is used to compute the evolution
    of a surface under mean curvature flow.
@@ -88,28 +92,23 @@ the code is available for download in form of both :ref:`scripts`.
    installation
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Introduction
 
    gettingstarted
-   dunegrid
-   furtherexamples
 
 .. toctree::
-   :caption: Advanced Concepts
-   :maxdepth: 1
+   :caption: Further Topics
+   :maxdepth: 2
 
-   adaptivity
-   moving
-   algorithm
+   topics
 
 .. toctree::
    :maxdepth: 1
    :caption: User Projects
+   :name: userprojects
 
-   twophaseflow_descr
-   vemdemo_descr
-
+   contributions
 
 .. toctree::
    :maxdepth: 2

@@ -5,15 +5,10 @@ TABLE = tables/features_discretefunction tables/features_grid tables/features_op
 FIGURES = figures/3dexample.png figures/mcf-comparison.png figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png
 RST = spiral.rst vemdemo.rst uzawa-scipy.rst laplace-adaptive.rst crystal.rst elasticity.rst mcf.rst mcf-algorithm.rst dune-fempy.rst dune-corepy.rst wave.rst twophaseflow.rst
 
-.PHONY: sphinx
-all: $(RST) $(TABLE) $(FIGURES) index.rst installation.rst gettingstarted.rst adaptivity.rst moving.rst furtherexamples.rst furtherprojects.rst
+all: $(RST) $(TABLE) $(FIGURES) index.rst additional.rst installation.rst gettingstarted.rst topics.rst \
+	   contributions.rst vemdemo_descr.rst twophaseflow_descr.rst
 	@rm -rf html
 	@sphinx-build -b html . html
-
-sphinx:
-	@rm -rf html
-	@sphinx-build -b html . html
-
 
 .PHONY: clean distclean
 clean:
@@ -25,15 +20,12 @@ distclean: clean
 	@rm -f *.bbl
 	@rm -rf html
 
-%.ipynb: %.py
-	@python3 py2ipynb.py $< $*_nb.ipynb --image="png"
+.SECONDARY:
+
 %_nb.ipynb: %.py
 	@python3 py2ipynb.py $< $*_nb.ipynb --image="png"
-%.rst: %.ipynb
-	@jupyter nbconvert --to rst $*_nb.ipynb --output $*
-	@sed -i '/^----------/a :download:`(notebook) <$*_nb.ipynb>` :download:`(script) <$*.py>`' $*.rst
-	@sed -i "s/raw:: latex/math::/g" $*.rst
-	@sed -i "s/raw-latex/math/g" $*.rst
+%.rst: %_nb.ipynb
+	@bash nbscript2rst.sh $*
 
 
 cpp_time.p: mcf-algorithm_nb.ipynb
@@ -41,7 +33,7 @@ python_time.p: mcf-algorithm_nb.ipynb
 
 figures/mcf-comparison.png: cpp_time.p python_time.p
 	@python3 mcf-comparison-plot.py
-figures/3dexample.png: 3dexample.py dune-fempy.ipynb
+figures/3dexample.png: 3dexample.py dune-fempy_nb.ipynb
 	@pvpython 3dexample.py
-figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png: interpolation.py dune-corepy.ipynb
+figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png: interpolation.py dune-corepy_nb.ipynb
 	@pvpython interpolation.py

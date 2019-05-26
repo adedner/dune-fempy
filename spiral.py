@@ -1,5 +1,5 @@
 # <markdowncell>
-# ## Spiral Wave
+# # Spiral Wave
 #
 # This demonstrates the simulation of spiral waves in an excitable media. It consists of system of reaction diffusion equations with two components. Both the model parameters and the approach for discretizing the system are taken from http://www.scholarpedia.org/article/Barkley_model.
 #

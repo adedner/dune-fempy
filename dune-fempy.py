@@ -1,6 +1,16 @@
-
 # <markdowncell>
+# # Finite Element Methods
+# In the foloowing we introduce the basic components of a finite
+# element method:
+#
+# - constructing a tesselation of the computational domain
+# - setting up a discrete function space and working with functions
+#   defined over the grid
+# - defining the mathematical model to solve
+# - solving the (non linear) system arising from the discretization of the
+#   model by the Galerkin method
 # <codecell>
+
 import time, numpy, math, sys
 try:
     import petsc4py
@@ -15,20 +25,7 @@ matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
 
 # <markdowncell>
-# ## Finite Element Methods
-# In the foloowing we introduce the basic components of a finite
-# element method:
-#
-# - constructing a tesselation of the computational domain
-# - setting up a discrete function space and working with functions
-#   defined over the grid
-# - defining the mathematical model to solve
-# - solving the (non linear) system arising from the discretization of the
-#   model by the Galerkin method
-# <codecell>
-
-# <markdowncell>
-# ### Setting up the Mesh
+# ## Setting up the Mesh
 # <codecell>
 
 from dune.grid import structuredGrid as leafGridView
@@ -40,7 +37,7 @@ x = SpatialCoordinate(triangle)
 initial = 1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 
 # <markdowncell>
-# ### Grid Functions
+# ## Grid Functions
 # We can easily easily integrate grid function
 # <codecell>
 
@@ -64,7 +61,7 @@ for element in gridView.elements:
 print(mass)
 
 # <markdowncell>
-# ### Discrete Spaces
+# ## Discrete Spaces
 # Setting up a discrete function space and some grid function
 # <codecell>
 
@@ -89,7 +86,7 @@ u_h.plot(grid=gridView,gridLines="white")
 u_h_n = u_h.copy(name="previous")
 
 # <markdowncell>
-# ### Models and Schemes
+# ## Models and Schemes
 # Now we can set up our PDE model
 # As an example we will study the Forchheimer problem :cite:`Kieu` which
 # is a scalar, nonlinear parabolic equation
@@ -166,7 +163,7 @@ def evolve(scheme, u_h, u_h_n, endTime):
         time += scheme.model.dt
 
 # <markdowncell>
-# ### Solving the System
+# ## Solving the System
 # Since we have forced the system towards a given solution, we can compute
 # the discretization error. First we define ufl expressions for the $L^2$
 # and $H^1$ norms and will use those to compute the experimental order of
@@ -203,7 +200,7 @@ for eocLoop in range(loops):
         scheme.model.dt /= 2
 
 # <markdowncell>
-# ## Alternate Solve Methods
+# # Alternate Solve Methods
 # Here we look at different ways of solving PDEs using external
 # packages and python functionality.
 # Different linear algebra backends can be accessed by changing setting the
@@ -218,11 +215,11 @@ for eocLoop in range(loops):
 # `fem` space by using the `as_numpy` method. Similar methods are available
 # for the other storages, i.e., `as_istl,as_petsc`. The same methods are
 # also available to retrieve the underlying matrix structures of linear
-# operators. 
+# operators.
 # <codecell>
 
 # <markdowncell>
-# ### Using Scipy
+# ## Using Scipy
 # We implement a simple Newton Krylov solver using a linear solver from
 # Scipy. We can use the `as_numpy` method to access the degrees of freedom as
 # Numpy vector based on the `python buffer protocol`. So no data is copied
@@ -317,7 +314,7 @@ print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 
 # <markdowncell>
-# ### Using Petsc and Petsc4Py
+# ## Using Petsc and Petsc4Py
 # Switching to a storage based on the PETSc solver package and solving the
 # system using the dune-fem bindings
 # <codecell>
@@ -418,7 +415,7 @@ print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
   *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 
 # <markdowncell>
-# ## More General Boundary Conditions
+# # More General Boundary Conditions
 # So far we only used natural boundary conditions. Here we discuss how to
 # set Dirichlet boundary conditions and use different conditions for
 # different components of the solution.
@@ -470,7 +467,7 @@ plotComponents(vec, gridLines=None, level=2,
                colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 
 # <markdowncell>
-# ## A 3D example
+# # A 3D example using a GMesh file
 # In this example we use pygmsh to construct a tetrahedral mesh and olve a
 # simple laplace problem
 # <codecell>
@@ -515,7 +512,7 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 # <codecell>
 
 # <markdowncell>
-# ## Listing installed components
+# # Listing installed components
 # The available realization of a given interface, i.e., the available
 # grid implementations, depends on the modules found during configuration.
 # Getting access to all available components is straightforward:

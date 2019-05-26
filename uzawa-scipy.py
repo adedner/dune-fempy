@@ -1,5 +1,5 @@
 # <markdowncell>
-# ## Saddle point solver (using Scipy)
+# # Saddle point solver (using Scipy)
 # Todo: explain uzawa algoirthm, show scipy version (here), dune-fempy version
 # (other script) and an algorithm implementation
 #

@@ -1,3 +1,7 @@
+############################################
+Dynamic Local Grid Refinement and Coarsening
+############################################
+
 .. toctree::
    :maxdepth: 3
 

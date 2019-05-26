@@ -1,3 +1,7 @@
+##################
+Some More Examples
+##################
+
 .. toctree::
    :maxdepth: 2
 
@@ -5,6 +9,3 @@
    spiral
    wave
    uzawa-scipy
-
-
-

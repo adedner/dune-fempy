@@ -22,7 +22,8 @@ clean:
          crystal_files  laplace-adaptive_files  mcf-algorithm_files \
 				 html
 distclean: clean
-	@rm -f *.bbl $(PDF) $(TEX)
+	@rm -f *.bbl
+	@rm -rf html
 
 %.ipynb: %.py
 	@python3 py2ipynb.py $< $*_nb.ipynb --image="png"

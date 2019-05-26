@@ -83,58 +83,41 @@ the code is available for download in form of both :ref:`scripts`.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Installation (out of date)
+   :caption: Installation
 
    installation
 
-
 .. toctree::
-   :maxdepth: 3
-   :caption: A first Example and General Concepts
+   :maxdepth: 1
+   :caption: Introduction
 
    gettingstarted
-
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Using the Dune Grid Interface
-
    dunegrid
-
-
-.. toctree::
-   :caption: Some Further Examples
-   :maxdepth: 3
-
    furtherexamples
 
-
 .. toctree::
-   :maxdepth: 3
-   :caption: Grid Adaptivity
+   :caption: Advanced Concepts
+   :maxdepth: 1
 
    adaptivity
-
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Moving Grids
-
    moving
+   algorithm
+
+.. toctree::
+   :maxdepth: 1
+   :caption: User Projects
+
+   twophaseflow_descr
+   vemdemo_descr
 
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Additional Projects
-
-   furtherprojects
-
-
-.. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Information and Resources
 
    additional
+
+
 .. API reference <api/modules>
 
 

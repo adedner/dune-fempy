@@ -1,5 +1,5 @@
 # <markdowncell>
-# # HP adaptive DG scheme for twophase flow problem
+# # Problem description
 # Describe model and scheme here...
 # <codecell>
 import matplotlib
@@ -38,7 +38,7 @@ newtonParameters = {"tolerance": tolerance,
 
 
 # <markdowncell>
-# Problem description
+# # Defining the model
 # using a Broks Corey pressure law
 
 
@@ -236,7 +236,7 @@ form_s -= inner(dBulk_s,n) * v[1] * P.dirichlet * ds
 
 
 # <markdowncell>
-# Time discretization
+# # Time discretization
 
 
 # <codecell>
@@ -244,7 +244,7 @@ form_s = P.Phi*(u[1]-solution_old[1])*v[1] * dx + tau*form_s
 
 
 # <markdowncell>
-# Stabilization (Limiter)
+# # Stabilization (Limiter)
 
 
 # <codecell>
@@ -299,7 +299,7 @@ def errorMeasure(w,dw):
 
 
 # <markdowncell>
-# Iterative schemes (iterative or impes-iterative)
+# # Iterative schemes (iterative or impes-iterative)
 
 
 # <codecell>
@@ -321,7 +321,7 @@ def step():
 
 
 # <markdowncell>
-# HP Adpativity
+# # HP Adpativity
 
 # Setting up residual indicator
 
@@ -341,7 +341,7 @@ estimator = create.operator("galerkin", estimatorModel, spc, fvspc)
 
 
 # <markdowncell>
-# Marker for grid adaptivity (h)
+# # Marker for grid adaptivity (h)
 
 
 # <codecell>
@@ -358,7 +358,7 @@ def markh(element):
 
 
 # <markdowncell>
-# Marker for space adaptivity (p)
+# # Marker for space adaptivity (p)
 
 
 # <codecell>
@@ -386,7 +386,7 @@ orderreduce  = createOrderRedcution( spc )
 
 
 # <markdowncell>
-# Main program
+# # Main program
 
 # Pre adapt the grid
 
@@ -448,6 +448,7 @@ while t < endTime:
 
 
 # <markdowncell>
+# Postprocessing
 # Show solution along a given line
 
 

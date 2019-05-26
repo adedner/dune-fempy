@@ -1,14 +1,6 @@
-
 # <markdowncell>
-# We show how the features of the Dune core modules can be used in a
-# Python script. Our main focus is on the grid interface which is defined
-# in the Dune-Grid module. This depends on two other modules which we will
-# only briefly touch on.
-# <codecell>
-import time, numpy, math, sys
-
-# <markdowncell>
-# ## A quick survey of Dune-Common and Dune-Geometry
+# # Dense Vectors and the Geometry Class
+# A quick survey of Dune-Common and Dune-Geometry
 # The core module Dune-Common provides some classes for dense linear algebra.
 # The `FieldVector` and `FieldMatrix` classes are heavily used in the grid
 # geometry realizations. The conceptional basis for these geometries is
@@ -16,6 +8,7 @@ import time, numpy, math, sys
 # quadrature rules.
 # <codecell>
 
+import time, numpy, math, sys
 from dune.common import FieldVector, FieldMatrix
 x = FieldVector([0.25,0.25,0.25])
 
@@ -28,7 +21,7 @@ for p in dune.geometry.quadratureRule(geometryType, 3):
     print(p.position, p.weight)
 
 # <markdowncell>
-# ## Grid Construction
+# # Grid Construction
 # We now move on to the Dune-Grid module. First let us discuss different
 # possibilities of constructing a grid.
 # <codecell>
@@ -82,7 +75,7 @@ triangles = [aluView.indexSet.subIndices(e, 2) for e in aluView.elements]
 aluView = aluSimplexGrid({"vertices": vertices, "simplices": triangles})
 
 # <markdowncell>
-# ## Basic Grid Usage
+# # Basic Grid Usage
 # We next discuss how to retrieve basic information from a constructed grid
 # and iterate over its entities (i.e., elements, faces, edges, vertices, etc.).
 # <codecell>
@@ -100,7 +93,7 @@ for edge in unitSquare.edges:
     print(", ".join(str(c) for c in edge.geometry.corners))
 
 # <markdowncell>
-# ## Grid Functions
+# # Grid Functions
 # This is a fundamental concept in any grid based discretization package.
 # These are functions that can be evaluated given an entity in the grid and
 # a local coordinate within the reference element of that entity. 
@@ -123,7 +116,7 @@ f.plot()
 hat0.plot()
 
 # <markdowncell>
-# ## Attaching Data to the Grid
+# # Attaching Data to the Grid
 # To attach data to the entities in a grid, each Dune grid has an
 # `IndexSet` which provides a consecutive, zero starting integer for the
 # set of entities of a given geometry type, i.e., entities sharing the same
@@ -161,7 +154,7 @@ hatx = FieldVector([1./3., 1./3.])
 print(max(error(e, hatx) for e in aluView.elements))
 
 # <markdowncell>
-# ## Output
+# # Output
 # We already used `matplotlib` to plot the grid and grid functions. For more
 # flexible plotting Dune relies on `vtk` and Dune-Python makes it easy to
 # write suitable files.

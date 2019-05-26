@@ -1,10 +1,5 @@
 # <markdowncell>
-# # Demonstration notebook for the DUNE-VEM module
-# This module is based on DUNE-FEM # (https://www.dune-project.org/modules/dune-fem)
-# and provides a Python frontend based on the new Python extension to DUNE
-# (https://dune-project.org/modules/dune-python)
-#
-# ## Laplace problem
+# # Laplace problem
 #
 # We first consider a simple Laplace problem with Dirichlet boundary conditions
 # \begin{align*}
@@ -149,7 +144,7 @@ for i,m in enumerate(methods):
 pyplot.show()
 
 # <markdowncell>
-# ## Nonlinear elliptic problem
+# # Nonlinear elliptic problem
 # We can easily set up a non linear problem
 # \begin{align*}
 # \end{align*}
@@ -170,7 +165,7 @@ solution = space.interpolate([0], name="solution")
 info = scheme.solve(target=solution)
 solution.plot(gridLines=None, colorbar="horizontal")
 # <markdowncell>
-# ## Linear Elasticity
+# # Linear Elasticity
 # As final example we solve a linear elasticity equation usign a
 # conforming VEM space:
 

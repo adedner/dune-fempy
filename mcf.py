@@ -5,7 +5,7 @@
 # equation where the evolution is governed by the mean curvature $H$.
 # One real-life example of this is in how soap films change over time,
 # although it can also be applied to image processing (e.g.
-# \cite{Malladi}).
+# :cite:`Malladi`).
 # Assume we can define a reference surface $\Gamma_0$ such that
 # we can write the evolving surface $\Gamma(t)$ in the form
 # \begin{gather*}
@@ -19,7 +19,7 @@
 # where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
 #
 # We will solve this using a finite element approach based on the
-# following time discrete approximation from \cite[Eqn 4.16]{Charlie}
+# following time discrete approximation from :cite:`Charlie`
 # (with a $\theta$-scheme applied).
 # \begin{gather*}
 #   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +

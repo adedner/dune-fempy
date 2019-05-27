@@ -10,7 +10,7 @@
 # where $n$ is the outward unit normal and $g$ is given Dirichlet data
 # given on part of the domain boundary. We repeat a double slit experiment,
 # i.e., we have a wave channel which ends in two slits on the right and
-# forcing the wave on the left end by defining # $g=\frac{1}{10\pi}\cos(10\pi t)$.
+# forcing the wave on the left end by defining $g=\frac{1}{10\pi}\cos(10\pi t)$.
 #
 # We discretize the wave equation by an explicit symplectic time stepping
 # scheme for two unknowns $\psi^n$ and $p^n$ where $p=-\partial_t\psi$ based
@@ -33,7 +33,7 @@
 # \end{align*}
 # Note that the update for $\psi$ does not involve any spatial derivatives
 # so can be performed directly on the level of the degree of freedom
-# vectors. We use \emph{numpy} for these steps. For the update of $p$ we
+# vectors. We use *numpy* for these steps. For the update of $p$ we
 # use a variational formulation
 # \begin{align*}
 #   \vec{p} &= \vec{p} + M^{-1}S\vec{\psi}
@@ -63,7 +63,7 @@ t = 0
 
 
 # <markdowncell>
-# We use \emph{gmsh} to define the domain and then set up a first order
+# We use *gmsh* to define the domain and then set up a first order
 # scalar Lagrange space which we will use both for $\psi$ and $p$. We can
 # construct general grids by either defining the grids directly in Python
 # (as demonstrated in the following example) or by reading the grid from
@@ -93,7 +93,7 @@ phiVec = phi.as_numpy
 # $x\not\in\Gamma_D$, e.g., an ufl `conditional`.
 #
 # Note that the stiffness matrix does not depend on time so we can
-# assemble the matrix once and extract the corresponding \emph{scipy}
+# assemble the matrix once and extract the corresponding sscipy*
 # sparse matrix.
 
 # <codecell>
@@ -132,7 +132,7 @@ S = M*S
 # <markdowncell>
 # We can now set up the time loop and perform our explicit time stepping
 # algorithm. Note that the computation is carried out completely using
-# \emph{numpy} and \emph{scipy} algorithms we the exception of setting the
+# *numpy* and *scipy* algorithms we the exception of setting the
 # boundary conditions. This is done using the `setConstraints` method on
 # the stiffness operator which we constructed passing in the boundary
 # conditions. At the time of writing it is not yet possible to extract a

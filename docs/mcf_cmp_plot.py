@@ -4,7 +4,6 @@ from matplotlib.ticker import ScalarFormatter
 from numpy import append
 
 def plot(ct, ct2):
-    plt.figure()
     fig, ax = plt.subplots()
     plt.loglog(ct[0][:], ct[1][:],'*-', markersize=15, label='hybrid')
     plt.loglog(ct2[0][:], ct2[1][:],'*-', markersize=15, label='python')
@@ -24,8 +23,3 @@ def plot(ct, ct2):
     plt.xlabel('Number of Grid Elements (log)',fontsize=20)
     plt.gcf().subplots_adjust(bottom=0.17, left=0.16)
     plt.ylabel('Runtime in s (log)',fontsize=20)
-    plt.savefig('figures/mcf-comparison.png')
-
-ct = pickle.load(open("cpp_time.p", 'rb'))
-ct2 = pickle.load(open("python_time.p", 'rb'))
-plot(ct, ct2)

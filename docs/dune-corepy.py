@@ -9,6 +9,7 @@
 # <codecell>
 
 import time, numpy, math, sys
+import matplotlib.pyplot as pyplot
 from dune.common import FieldVector, FieldMatrix
 x = FieldVector([0.25,0.25,0.25])
 
@@ -34,6 +35,7 @@ yaspView = yaspGrid(domain)
 yaspView.plot()
 yaspView.hierarchicalGrid.globalRefine()
 yaspView.plot()
+pyplot.show()
 
 # <markdowncell>
 # Let's visualize the grid and then globally refine it once

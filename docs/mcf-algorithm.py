@@ -33,14 +33,14 @@
 # <codecell>
 import math, time
 import pickle
+import numpy as np
 
 from ufl import *
 import dune.ufl
 from dune.generator import algorithm
 import dune.geometry as geometry
 import dune.fem as fem
-from dune.fem.plotting import plotPointData as plot
-import matplotlib.pyplot as pyplot
+from mcf_cmp_plot import plot
 
 print("START",flush=True)
 
@@ -112,11 +112,6 @@ def calculate(use_cpp, gridView):
 
     scheme.model.dt = 0.02
 
-    import numpy as np
-    pyplot.figure()
-    pyplot.gca().set_xlim([0, endTime])
-    pyplot.gca().set_ylabel("error")
-    pyplot.gca().set_xlabel("time")
 
     numberOfLoops = 3
     times = np.zeros(numberOfLoops)
@@ -157,7 +152,7 @@ def calculate(use_cpp, gridView):
     except ImportError:
         print("pandas could not be used to show table with results")
         pass
-    pickle.dump([gridSizes, times], open(file_path,'wb'))
+    return gridSizes, times
 
 
 # <markdowncell>
@@ -168,12 +163,16 @@ def calculate(use_cpp, gridView):
 
 # <codecell>
 # set up reference domain Gamma_0
+results = []
 from dune.alugrid import aluConformGrid as leafGridView
-print("HALLO 1",flush=True)
 gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
-print("HALLO 2",flush=True)
-calculate(True, gridView)
-print("HALLO 3",flush=True)
+results += [calculate(True, gridView)]
+
 gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
-print("HALLO 4",flush=True)
-calculate(False, gridView)
+results += [calculate(False, gridView)]
+
+# <markdowncell>
+# Compare the hybrid and pure Python versions
+
+# <codecell>
+plot(results[0],results[1])

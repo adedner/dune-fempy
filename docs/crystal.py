@@ -162,11 +162,13 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 from dune.ufl import expression2GF
 indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="indicator")
 # <markdowncell>
-# We do the initial refinement of the grid using the general form of the `mark' method
+# We perform the initial refinement of the grid using the general form of the `mark' method
+
 # ```python
 # def mark(indicator, refineTolerance, coarsenTolerance=0,
 #     minLevel=0, maxLevel=None):
 # ```
+
 # which can be used for both refinement and coarsening.
 # An element $T$ is marked for refinement if the value value of
 # `indicator` on $T$ is greater then `refineTolerance` and coarsened if the

@@ -1,20 +1,28 @@
 .. _installation:
 
+#######################
+Using Docker or Vagrant
+#######################
+
+###########
+From Source
+###########
+
 ************
 Requirements
 ************
 
 The following dependencies are needed for Dune-Fempy:
 
-* At least C++11 compatible C++ compiler (e.g. gcc 4.9 or later)
+* At least C++11 compatible C++ compiler (e.g. gcc 5.3 or later)
 
-* python2.7 or later
+* python (3.4 or later - possibly also works with 2.7 but not guaranteed)
 
   * mpi4py
   * ufl       (strongly recommended)
-  * sphinx    (strongly recommended)
+  * petsc4py  (optional)
 
-* Dune2.5 or later
+* Dune (release 2.6 or later)
 
   * dune-common
   * dune-geometry
@@ -25,18 +33,11 @@ The following dependencies are needed for Dune-Fempy:
   * dune-corepy
   * dune-alugrid  (strongly recommended)
 
-* Open MPI
-
-The above can all be automatically installed using the install script found in the 
-main folder of the Dune-Fempy module, i.e.
-
-.. code-block:: bash
-
-  $ sh linuxinstall.sh
-
 ******************************
 Building the Dune Core modules
 ******************************
+
+- Mention available deb packages
 
 ****************************
 Setting up the python module
@@ -46,19 +47,19 @@ Setting up the python module
 Troubleshooting
 ***************
 
-* The compiler version needs to be 4.9 or later. This can be checked in terminal with :: 
+* The compiler version needs to be 5.3 or later. This can be checked in terminal with ::
 
   $ g++ --version
 
-  If your version is out of date, you will need to upgrade your system to run Dune-fempy. 
+  If your version is out of date, you will need to upgrade your system to use Dune
 
-* It is possible that the python version may be an issue. The script uses python3.5m since that is the latest version available at the time of writing. If during the Dune installation you get the error
+* It is possible that the python version may be an issue. The script uses python3.5m. If during the Dune installation you get the error
 
   .. code-block:: none
 
     fatal error: pyconfig.h: No such file or directory
 
-  This can probably be fixed by installing additional python3.5 libraries with e.g. :: 
+  This can probably be fixed by installing additional python3.5 libraries with e.g. ::
 
   $ sudo apt-get install libpython3.5-dev
 

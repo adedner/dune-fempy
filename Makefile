@@ -5,6 +5,10 @@ TABLE = tables/features_discretefunction tables/features_grid tables/features_op
 FIGURES = figures/3dexample.png figures/mcf-comparison.png figures/interpolation_discrete.png figures/interpolation_exact.png figures/interpolation_error.png
 RST = spiral.rst vemdemo.rst uzawa-scipy.rst laplace-adaptive.rst crystal.rst elasticity.rst mcf.rst mcf-algorithm.rst dune-fempy.rst dune-corepy.rst wave.rst twophaseflow.rst
 
+# .EXPORT_ALL_VARIABLES:
+
+unexport DUNE_LOG_LEVEL
+
 all: $(RST) $(TABLE) $(FIGURES) index.rst additional.rst installation.rst gettingstarted.rst topics.rst \
 	   contributions.rst vemdemo_descr.rst twophaseflow_descr.rst
 	@rm -rf html

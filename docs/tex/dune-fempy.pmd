@@ -1,0 +1,1939 @@
+\documentclass{ansbook}
+
+\definecolor{hrefcolor}{rgb}{0.0,0.0,0.8}
+\newcommand{\linkcolor}{hrefcolor}
+\hypersetup{pdfstartview=FitR}
+\hypersetup{pdftitle={The DUNE-Fempy Module},
+            pdfauthor={L. Connellan, A. Dedner, R. Kloefkorn, M. Nolte},
+            breaklinks=true,
+            linkbordercolor=\linkcolor,
+            urlbordercolor=\linkcolor,
+            citebordercolor=\linkcolor,
+            runbordercolor=\linkcolor,
+            menubordercolor=\linkcolor,
+            filebordercolor=\linkcolor,
+            runcolor=\linkcolor
+            baseurl={https://gitlab.dune-project.org/extensions/dune-alugrid}
+}
+% make links underlined in acrobat reader
+\hypersetup{pdfborderstyle={/S/U/W 1}}
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+
+%<*pre>
+\usepackage{a4wide}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{anslistings}
+\usepackage{subcaption}
+\usepackage{xspace}
+\usepackage{comment}
+\usepackage{pdflscape}
+
+\newcommand{\dune}[1][]{\textsc{Dune}\ifx&#1&\else\textsc{-{#1}}\fi\xspace}
+\newcommand{\alugrid}{\textsc{ALUGrid}\xspace}
+\newcommand{\ug}{\textsc{UG}\xspace}
+\newcommand{\sionlib}{\textsc{SIONlib}\xspace}
+\newcommand{\alberta}{\textsc{ALBERTA}\xspace}
+\newcommand{\yaspgrid}{\textsc{YaspGrid}\xspace}
+
+\newcommand{\mayavi}{\pyth{Mayavi}\xspace}
+\newcommand{\matplotlib}{\pyth{Matplotlib}\xspace}
+\newcommand{\pygmsh}{\pyth{pygmsh}\xspace}
+\newcommand{\quadpy}{\pyth{Quadpy}\xspace}
+\newcommand{\numpy}{\pyth{Numpy}\xspace}
+\newcommand{\scipy}{\pyth{Scipy}\xspace}
+\newcommand{\paraview}{Paraview\xspace}
+\newcommand{\vtk}{VTK\xspace}
+\newcommand{\cmake}{cmake\xspace}
+\newcommand{\pybind}{Pybind11\xspace}
+\newcommand{\code}[1]{\lstinline[basicstyle=\small\sffamily]{#1} }
+\newcommand{\file}[1]{\code{#1}}
+
+\newcommand{\Atodo}[1]{\todo[inline]{{\bf\color{green}Andreas:} #1}}
+\newcommand{\Ltodo}[1]{\todo[inline]{{\bf\color{blue}Lloyd:} #1}}
+\newcommand{\Mtodo}[1]{\todo[inline]{{\bf\color{green}Martin:} #1}}
+\newcommand{\Rtodo}[1]{\todo[inline]{{\bf\color{red}Robert:} #1}}
+
+\newcommand{\autocite}{\cite}
+%</pre>
+\newcommand{\pweavecaption}{}
+\newcommand{\pweavelabel}{}
+\lstnewenvironment{pweavecode}[1][]{\lstset{escapechar=`,moredelim=[il][]{\#tex},style=pythonstyle, title={\codetitlestyle{Python code }},belowcaptionskip=\belowtitleskip, caption=\pweavecaption,label=\pweavelabel}}{}
+\lstnewenvironment{pweaveout}[1][]{\lstset{style=gencodestyle, title={\codetitlestyle{Output}}, belowcaptionskip=\belowtitleskip}}{}
+
+\newcommand{\setpweavecaption}[2]{%
+  \renewcommand{\pweavecaption}{#1}%
+  \renewcommand{\pweavelabel}{#2}%
+}
+
+\begin{document}
+
+\title{Solving Complex System of Partial Differential Equations with Python}
+\author{}
+% \author[1]{Lloyd Connellan}% \thanks{l.connellan@warwick.ac.uk}}
+% \author[1]{Andreas Dedner}% \thanks{a.s.dedner@warwick.ac.uk}}
+% \author[2]{Robert Kl\"ofkorn}%\thanks{robert.kloefkorn@norceresearch.no}}
+% \author[3]{Martin Nolte}%\thanks{nolte@mathematik.uni-freiburg.de}}
+% \affil[1]{University of Warwick, UK}
+% \affil[2]{Norwegian Research Centre, Norway}
+% \affil[3]{University of Freiburg, Germany}
+% \runningtitle{The \dune[Fempy] Module}
+% \runningauthor{Connellan, Dedner, Kl\"ofkorn, Nolte}
+
+% \providecommand{\keywords}[1]{\textbf{Keywords: } #1}
+
+% \date{November, 2017}
+
+\maketitle
+\tableofcontents
+
+```python, label="Intro", echo=False
+# <markdowncell>
+# <codecell>
+import time, numpy, math, sys
+try:
+    import petsc4py
+    petsc4py.init(sys.argv)
+    from petsc4py import PETSc
+except:
+    petsc4py = False
+import dune.plotting
+dune.plotting.block = False
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
+from matplotlib import pyplot
+```
+
+\chapter{Finite Elements Methods and the \dune Project}
+
+\section{A Very Brief Introduction to Finite Element Methods}
+
+\section{What is \dune}
+
+\section{Installation of the Software}
+
+%<*tag>
+
+\chapter{A Motivating Example} \label{sec:fem-in-fempy}
+
+```python, label="fem-in-fempy", echo=False
+# <markdowncell>
+# ## Finite Element Methods
+# In the foloowing we introduce the basic components of a finite
+# element method:
+#
+# - constructing a tesselation of the computational domain
+# - setting up a discrete function space and working with functions
+#   defined over the grid
+# - defining the mathematical model to solve
+# - solving the (non linear) system arising from the discretization of the
+#   model by the Galerkin method
+# <codecell>
+```
+
+When designing any software package, a natural challenge that arises
+is trying to make the user interface as simple and easy to use as possible.
+At the same time however, we also want to create an interface that retains
+all the functionality we need.
+
+In the context of finite element methods, this leads to the question
+of what the minimal functional structure for a FEM looks like. In
+order to try to address this question, we will first outline from a
+mathematical standpoint the general structure we have in mind for a
+FEM.
+
+To begin with, the original problem we typically want to apply a finite
+element method to is a continuous PDE in some
+infinite-dimensional space $V$. First let $\Omega \subset \mathbb{R}^d$ be
+a polygonal domain for our problem. We then choose a conforming
+finite element space $V_h = \{\varphi_h : \Omega \to \mathbb{R}^r \}
+\subset V$, where dim $V_h = N$. This involves choosing a basis for
+$V_h$, which can vary depending on the problem, but typically involves
+piecewise polynomial functions.
+
+Next the variational (or weak) form of the equation is defined. For
+the purpose of illustration, let us assume to start with we have a
+parabolic PDE of the following general form.
+\begin{equation*}
+  \begin{array}{ll}
+  \partial_t u + L[u] = 0, & \mbox{in } \Omega \times [0, T], \\
+  u(x, 0) = u^0(x), & \mbox{in } \Omega, \\
+  D\nabla u \cdot \textbf{n} = g(x), & \mbox{on } \Gamma \times [0, T],
+  \end{array}
+\label{eqn:parabolic}
+\end{equation*}
+where the elliptic operator $L$ is defined as
+\begin{equation}
+  L[u] := -\nabla \cdot D(x, t, u, \nabla u) + m(x, t, u, \nabla u),
+\label{eqn:elliptic}
+\end{equation}
+and where $u^0$ and $g$ are the initial and boundary conditions and
+$\textbf{n}$ is the outward pointing normal. We note that we are
+only considering Neumann boundary conditions at first for simplicity,
+although Dirichlet boundary conditions are also a possibility.
+
+To obtain the discrete form, we begin by applying a simple time stepping
+scheme, starting from
+the initial data $u^0$ we define a sequence $u^n$ satisfying
+\begin{equation}
+  \frac{u^{n+1}-u^n}{\Delta t} + L_I[u^{n+1}] + L_E[u^n] = 0~,
+\label{eqn:rotheStrong}
+\end{equation}
+where $\Delta t$ is a time step and
+$L_I$ and $L_E$ are the implicit and explicit parts of $L$,
+defined as
+\begin{gather}
+  L_I[u] = -\nabla\cdot D_1(x, t^{n+1}, u, \nabla u) + m_1(x, t^{n+1}, u, \nabla u), \quad \\
+  L_E[u] = -\nabla\cdot D_2(x, t^n, u, \nabla u) + m_2(x, t^n, u, \nabla u),
+\label{eqn:im-ex}
+\end{gather}
+and $D_1 + D_2 = D$, $m_1 + m_2 = m$. The variational formulation of
+\eqref{eqn:rotheStrong} is
+\begin{equation}
+\begin{split}
+  \int_\Omega \frac{u^{n+1}-u^n}{\Delta t}\varphi +
+  \int_\Omega D_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1}\cdot\nabla\varphi +
+        m_1(x, t^{n+1}, u^{n+1}, \nabla u^{n+1})\varphi \\
+  +\int_\Omega D_2(x, t^n, u^n, \nabla u^n)\cdot\nabla\varphi +
+        m_2(x, t^n u^n, \nabla u^n)\varphi
+  - \int_{\partial\Omega} \frac{1}{2}(g(t^{n+1},x)+g(t^n,x))\varphi = 0
+\label{eqn:rothe}
+\end{split}
+\end{equation}
+The final step is to solve this system for $u^{n+1} \in V_h$. This also
+involves potential variation in terms of the solver used and possible
+nonlinearity of the problem. We also note that this is a simple scheme
+for demonstration, and more complex examples involving higher order
+schemes or nonconforming spaces can be easily implemented along the
+same lines.
+
+With this general form in mind, in \dune[Fempy] we have designed the
+structure to take as similar a style as possible, which results in the
+following breakdown of parts.
+
+\begin{itemize}
+  \item \ref{sec:grids} Grid. The computational domain $\Omega$ the problem is set in.
+  \item \ref{sec:functions} Grid functions. Functions defined on the grid
+  used for example for the solution $u_h$ but also for the exact solution.
+  \item \ref{sec:spaces} Space. The finite element space $V_h$ and type of basis functions.
+  \item \ref{sec:schemes} Scheme. The weak form of the equation, its
+  boundary conditions, and method for solving.
+  \item \ref{sec:solving} Solving. The actual solving process and data
+  output.
+\end{itemize}
+
+We note that there exist even further simplifications that can be made
+in terms of this design choice; for instance a FEM could be
+distilled to simply choosing a weak form (an operator) and a grid,
+and having all other things set to sensible defaults. Additionally the code
+itself used to represent these methods could be simplified to a large
+degree depending on the aim of the software.
+
+Ultimately as a FEM package aimed more at extensibility and for
+researchers who are willing to commit to some degree of
+programming, we have opted for more complexity in some cases at the
+expense of this simplicity. In general this is quite a nuanced design
+decision that must be made without a clear \textit{right} answer.
+
+With that in mind, for the remainder of this section we shall
+demonstrate in more detail how each of these concepts are implemented
+in the context of a worked example, the FEM applied to
+the Forchheimer equation: a scalar,
+nonlinear parabolic equation derived in \cite{Kieu}.
+\begin{equation} \label{eqn:forch-roche}
+\begin{split}
+  \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
+  + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
+  + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v \diff x \\
+  - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi \diff x
+  - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v \diff s.
+\end{split}
+\end{equation}
+where the diffusion tensor is given by
+\begin{equation}
+  K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+\end{equation}
+and $f=f(x,t)$ is some forcing term.
+This corresponds to taking $D_I=D_E=\frac{1}{2}K(\nabla u) \nabla u$
+and $m_I=\frac{1}{2}f(x,t),m_E=\frac{1}{2}f(x,t)$.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Grids} \label{sec:grids}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ### Setting up the Mesh
+# <codecell>
+```
+
+The first aspect of FEMs that we consider is probably the most
+fundamental aspect, that of the grid (or mesh). Naturally, before looking at the
+equations we want to solve themselves, we must look at the
+computational domain and how we want to discretize it. Ideally
+numerical software looking to emulate FEMs should be able to construct both simple
+triangulated 2D domains and more complex surfaces and meshes.
+
+For now we will look at a simple example. Let us suppose we
+have a domain of the following form.
+\begin{equation*}
+  \Omega = \{ (x,y) \in \mathbb{R}^2 : 0 \leq x \leq 1, 0 \leq y \leq 1\}.
+\label{eqn:domain}
+\end{equation*}
+In creating a computational grid for this domain, it will be necessary to specify
+the following things.
+\begin{enumerate}
+  \item The shape of the domain (a square) and its vertices.
+  \item The number of elements.
+  \item The type of elements (e.g. square elements or triangles).
+\end{enumerate}
+With these points in mind, we implement the grid in the following way
+in \dune[Fempy] and plot the result in figure \ref{fig:grid}.
+\renewcommand{\pweavecaption}{Creating and plotting two simple
+rectangular grids}
+\renewcommand{\pweavelabel}{lst:grid}
+```python, label="grid", Fig=True, caption="Plot of a 2D grid for two different levels of refinement", width="0.475\\textwidth"
+from dune.grid import structuredGrid as leafGridView
+gridView = leafGridView([0, 0], [1, 1], [4, 4])
+```
+Here we create a simple square domain by specifying two opposite
+corners $(0,0)$ and $(1,1)$, and the number
+of elements in each direction $(4,4)$. We then refine the grid and
+plot the results, before coarsening it again. We note that this is a
+simplified example and in general grids in \dune[Fempy] can
+additionally be constructed via a dictionary containing vertex and
+element information, gmsh files or \textit{dune grid format} (dgf)
+files when more complexity is required, which is demonstrated in the
+\dune[python] paper \cite{Dune-Py}. A list of more complicated
+grids and other modules is given in \ref{sec:modules}.
+
+Conceptually it is worth stating that from a design standpoint, assumptions
+could potentially be made to cut down on the complexity needed.
+For instance in situations where the exact details are
+not necessary, a basic square grid could simply be made with
+\pyth{grid = square()}. However such a design comes at the cost of it
+being unclear how to make small modifications.
+
+\section{Grid Functions} \label{sec:functions}
+
+Having defined the computational domain and function space, we look
+towards functions that we may need to define, e.g. for containing the
+solution. In particular we want to be able to store what initial
+values it can take, its value at the previous time step and so on.
+
+Let us begin by just considering functions $f\colon\Omega\to\R^r$
+e.g. the initial condition $u^0$.
+In \dune[Fempy], we use the Unified Form Language (UFL) (\cite{UFL}) to define
+equations, which is essentially a human-readable way of writing functions
+and variational forms.
+To this end, we must begin by defining a variable to describe the spatial
+variable $x$:
+\renewcommand{\pweavecaption}{Creating an \pyth{x} variable in UFL}
+\renewcommand{\pweavelabel}{lst:forch-uflx}
+```python, label = 'forch-uflx'
+from ufl import SpatialCoordinate, triangle
+x = SpatialCoordinate(triangle)
+```
+Here we create \pyth{x} as a 2D spatial coordinate from UFL.
+So now for initial condition
+$u^0 = \frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3) + 1$,
+we would have the following code:
+\renewcommand{\pweavecaption}{Creating a grid function using UFL}
+\renewcommand{\pweavelabel}{lst:forch-initial}
+```python, label = 'forch-initial'
+initial = 1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+```
+Now this function can be used in a variety of ways. Let us first
+show how we would compute the mass of the initial function.
+We do this using the function \pyth{integrate} as follows:
+\renewcommand{\pweavecaption}{Integrating the initial data}
+\renewcommand{\pweavelabel}{lst:forch-integrate}
+```python, label="fem2", echo=False
+# <markdowncell>
+# ### Grid Functions
+# We can easily easily integrate grid function
+# <codecell>
+```
+```python, label = 'forch-integrate'
+from dune.fem.function import integrate
+mass = integrate(gridView, initial, order=5)
+print(mass)
+```
+The arguments to the function \pyth{integrate} are the grid describing the
+domain of integration, a UFL expression describing the integrand and
+the parameter \pyth{order} giving the order of the quadrature to use.
+Note that at the time of writing \dune[Fempy] only operates with vectored
+valued expressions and forms.
+
+%% \Atodo{Here it would be nice to be able to provide a quadrature instead of only an order}
+
+We can also plot functions fairly easily. The two main ways to do
+this in \dune[Fempy] are either a quick plot in \pyth{matplotlib}
+(see \cite{Matplotlib}), or writing to a
+VTK file for use in Paraview (see \cite{Paraview}), which we do
+below, resulting in figure \ref{fig:forch-plot}.
+\renewcommand{\pweavecaption}{Plotting a function using two different methods}
+\renewcommand{\pweavelabel}{lst:forch-plot}
+```python, label="fem2", echo=False
+# <markdowncell>
+# and plot them using matplotlib or write a vtk file for postprocessing
+# <codecell>
+```
+```python, label = 'forch-plot', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
+from dune.fem.plotting import plotPointData as plot
+plot(initial, grid=gridView)
+gridView.writeVTK('initial', pointdata={'initial': initial})
+```
+For the vtk output the function needs to be assigned a name, which is given
+by the key argument of the dictionary passed as the \pyth{pointdata}
+argument.
+
+Note that so far we have simply used the UFL expressions, e.g., \pyth{initial}
+directly, i.e., without using any approximation and in fact the functions
+we have used so far, e.g., for integration and plotting do not require the
+UFL expression to be approximated. In some cases it can be necessary to
+convert the expression into a \emph{grid function}, i.e., a function that
+can be localized to one element of the grid and evaluated there in local
+coordinates. To this end we can use the function \pyth{uflFunction}
+and for example compute a simple approximation of the mass
+```python, label = 'uflfunction'
+from dune.fem.function import uflFunction
+initial_gf = uflFunction(gridView, name="ufl", order=1, ufl=initial)
+mass = 0
+for element in gridView.elements:
+  mass += initial_gf(element,[0.5,0.5]) * element.geometry.volume
+print(mass)
+```
+Since with \dune[Python] the complete grid interface is available in the
+Python script this simplifies rapid prototyping of new algorithms also
+using grid functions given by UFL expressions which can later also be used
+in C++ code.
+
+Finally to obtain a discrete
+function we need to define finite dimensional spaces which we will do in
+the next section.
+
+\section{Spaces} \label{sec:spaces}
+
+The next key part of a FEM after constructing the grid is defining the
+kind of finite element we want to use, and by extension their space. In
+particular this is important because the order and type of elements used can
+dictate the solvability and the efficiency of the method.
+
+\begin{comment}
+Let us consider a simple case of Lagrange elements. Since we have a 2D
+domain with a quadrilateral mesh, we consider shape functions that are 1 on
+each separate node, and 0 on the others. For orders 2 and 3, the shape
+functions would be quadratic and cubic polynomials respectively (as
+shown in figure \ref{fig:lagrange-elements}).
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{figures/lagrange-ele2.jpg}
+  \caption{Second order element}
+  \label{fig:lagrange2}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+  \centering
+  \includegraphics[width=.4\linewidth]{figures/lagrange-ele3.png}
+  \caption{Third order element}
+  \label{fig:lagrange3}
+\end{subfigure}
+\caption{Node maps of two Lagrange reference elements
+\label{fig:lagrange-elements}
+\end{figure}
+\end{comment}
+The creation of a Lagrange space in \dune[Fempy] is done by the
+following code.
+\renewcommand{\pweavecaption}{Creating a Lagrange space with
+polynomial basis functions}
+\renewcommand{\pweavelabel}{lst:space}
+```python, label="fem1", echo=False
+# <markdowncell>
+# ### Discrete Spaces
+# Setting up a discrete function space and some grid function
+# <codecell>
+```
+```python, label = 'space'
+from dune.fem.space import lagrange as solutionSpace
+space = solutionSpace(gridView, order=2)
+```
+We note that the above space with Lagrange basis functions as well as other discrete function spaces 
+are called with two default
+arguments and one keyword argument.
+\begin{itemize}
+  \item \pyth{gridView} passes in the grid view we constructed previously.
+  \item \pyth{dimRange=None} (optional) sets the dimension of the range
+  space, not setting this parameter leads to a scalar space, setting
+  \pyth{dimRange}$\geq 0$  produces a vextor valued space.
+  \item \pyth{order=2} (optional) sets the order of the finite
+  elements to 2 (1 is the default).
+\end{itemize}
+Of particular note is that the first argument corresponds to a \dune
+discrete space realization that can come from anywhere within a \dune
+installation, provided Python bindings are created for it. For instance we could use a
+discontinuous Galerkin space with orthonormal basis functions instead
+by importing \pyth{dgonb}.
+
+Now we can create discrete grid function by using the default interpolation
+into the finite element space given by the nodal variables on the space.
+The method \pyth{interpolate} can be used for that:
+\renewcommand{\pweavecaption}{}
+\renewcommand{\pweavelabel}{lst:forch-uh}
+```python, label="fem3", echo=False
+# <markdowncell>
+# So far we used grid functions defined globally. An important subclass of
+# grid functions are discrete functions over a given discrete function space.
+# The easiest way to construct such functions is to use the interpolate
+# method on the discrete function space:
+# <codecell>
+```
+```python, label = 'forch-uh'
+u_h = space.interpolate(initial, name='u_h')
+```
+So we have created a discrete function \pyth{u_h} over the discrete
+finite element space which we will use to contain the solution $u^{n+1}$
+to our PDE and used an interpolation over the space to assign its initial value by
+interpolation of the UFL expression \pyth{initial}. The name is used later for plotting
+purposes for example in the vtk output. Discrete function are a special
+form of grid functions so have the same properties shown in the previous
+section:
+\renewcommand{\pweavecaption}{Plotting discrete function using \matplotlib}
+\renewcommand{\pweavelabel}{lst:forch-plot-uh}
+```python, label="fem2", echo=False
+# <markdowncell>
+# and plot them using matplotlib or write a vtk file for postprocessing
+# <codecell>
+```
+```python, label = 'forch-plot-uh', fig=True, caption="The matplotlib plot of the initial function", width="0.475\\textwidth"
+u_h.plot(grid=gridView,gridLines="white")
+```
+
+To define the weak formulation given by (\ref{eqn:forch-roche}) we need two
+discrete function, one to store the next time step ($u^{n+1}$) and a second one
+$u^{n}$ containing the approximation of the present time step. We use
+\pyth{u_h} to store the former and construct a copy of \pyth{u_h} to store
+the later:
+
+\renewcommand{\pweavecaption}{Copying a discrete function}
+\renewcommand{\pweavelabel}{lst:forch-u_h_n}
+```python, label = 'forch-u_h_n'
+u_h_n = u_h.copy(name="previous")
+```
+Given two discrete function we can use \pyth{u_h_n.assign(u_h)} to assign
+one to the other.
+
+\Atodo{Move the describtion of the error computation to here, i.e., show
+the interpolation error for the initial conditions?}
+
+\section{Schemes} \label{sec:schemes}
+
+In \dune[Fempy], we define schemes as the object combining a
+discretization of a given weak form, its boundary conditions and the method used
+to approximate the inverse e.g. the iterative linear solver to use.
+Specifically, for an operator $L: V_h \to V_h^{*}$, schemes have two
+main methods:
+\begin{enumerate}
+\item Apply the operator (\pyth{__call__}). That is to calculate $w_h = L[v_h]$ given some
+$v_h \in V_h$. If Dirichlet boundary conditions are part of the problem
+then $w_h = v_h - g$ on the Dirichlet boundary, where $g$ is the boundary
+function.
+\item Solve the PDE (\pyth{solve}). That is to compute the solution $u_h$ to $L[u_h] = v_h$ given some $v_h \in
+V_h^{*}$, by using a solve method. By default $v_h = 0$.
+\end{enumerate}
+\noindent \textit{Remark.} In the case where only the operator application is
+required/possible (e.g. when $L:V \to W \neq V$ , an \pyth{operator}
+object can be constructed instead of a scheme which does not implement a solve method.
+
+\noindent \textit{Remark.} By default the \pyth{solve} method solves the
+residual problem, e.g., $L[u_h]=0$ in the domain (and $u_h-g=0$ on the
+Dirichlet boundary if present). The \pyth{solve} method can take an
+optional argument \pyth{rhs} in which case $L[u_h]=$\pyth{rhs} will be
+solved.
+
+Recall the parabolic equation (\ref{eqn:forch-roche}), which we will focus
+on in the following example. To begin with, it is
+necessary to define the variables that are used in the equation.
+\renewcommand{\pweavecaption}{Setting up UFL variables to be used}
+\renewcommand{\pweavelabel}{lst:forch-variables}
+```python, label="fem4", echo=False
+# <markdowncell>
+# ### Models and Schemes
+# Now we can set up our PDE model
+# As an example we will study the Forchheimer problem :cite:`Kieu` which
+# is a scalar, nonlinear parabolic equation
+# \begin{equation}
+# \partial_t - \nabla\cdot K(\nabla u)\nabla u = f
+# \end{equation}
+# where the diffusion tensor is given by
+# \begin{equation}
+#   K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+# \end{equation}
+# and $f=f(x,t)$ is some forcing term.
+# On the boundary we prescribe Neumann boundary conditions
+# $\nabla u \cdot n = g$ and initial conditions $u=u_0$.
+#
+# We will solve this problem in variational form and using Crank Nicholson in time
+# \begin{equation}
+# \begin{split}
+#   \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
+#   + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
+#   + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v\ dx \\
+#   - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi\ dx
+#   - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v\ ds
+#   = 0.
+# \end{split}
+# \end{equation}
+# on a domain $\Omega=[0,1]^2$. We choose $f,g$ so that the exact solution
+# is given by
+# \begin{equation}
+#   u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
+#                         \frac{1}{3}(x^3 - y^3)\right) + 1
+# \end{equation}
+# <codecell>
+```
+Recall that the semi discrete problem was
+\begin{equation}
+  \int_{\Omega} \frac{1}{\Delta t} (u^{n+1} - u^n) v \
+  + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla v \
+  + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla v \diff x
+  = \int_{\Omega} f v \diff x + \int_{\partial \Omega} g v \diff s.
+  \tag{\ref{eqn:forch-roche}}
+\end{equation}
+and we force the system by defining $f$ so that
+\begin{equation}
+  u(x,t) = e^{-2t}\left(\frac{1}{2}(x_0^2 + x_1^2) - \frac{1}{3}(x_0^3 - x_1^3)\right) + 1
+         = e^{-2t}\left(u^0(x)-1\right) + 1
+\end{equation}
+becomes the exact solution.
+We can use \pyth{initial} to define this using some algebra, and we
+write a lambda function that takes \pyth{t} as argument.
+\renewcommand{\pweavecaption}{The exact solution}
+\renewcommand{\pweavelabel}{lst:forch-exact}
+```python, label = 'forch-exact'
+from ufl import exp
+exact = lambda t: exp(-2*t)*(initial - 1) + 1
+```
+Finally $g$ is defined by assigning the
+value to the boundary term using the exact solution.
+```python, label = 'forch-variables'
+from ufl import TestFunction, TrialFunction
+from dune.ufl import Constant
+u = TrialFunction(space)
+v = TestFunction(space)
+dt = Constant(0, name="dt")    # time step
+t  = Constant(0, name="t")     # current time
+```
+The trial function $u$ and the test function $v$ are defined on the
+same \pyth{space} as before. Additionally $\Delta t$ and $t$ are
+defined as \pyth{Constant}, which can be simply used within UFL expressions
+and set to specific values later on if required either using the
+\pyth{value} attribute on the \pyth{Constant} instance or using the
+attribute given by the \pyth{name} as described below.
+
+Now for the equation (\ref{eqn:forch-roche}) itself,
+resulting in an implementation of the following form.
+\renewcommand{\pweavecaption}{Implementing the weak form}
+\renewcommand{\pweavelabel}{lst:forch-eqn-impl}
+```python, label = 'forch-eqn-impl'
+from ufl import dx, grad, div, grad, dot, inner, sqrt
+abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
+K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
+a = ( dot((u - u_h_n)/dt, v) \
+    + 0.5*dot(K(u)*grad(u), grad(v)) \
+    + 0.5*dot(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx
+```
+Note that we can directly use the discrete function \pyth{u_h_n} as part of
+the UFL expression, changes to the degrees of freedom of this discrete
+functions do not require any recompilation.
+
+To define the forcing $f$, we put the exact
+solution into the strong form of the equation
+(i.e. $f = u_t - \nabla \cdot (K(\nabla u) \cdot \nabla u$).
+We also add in Neumann boundary
+conditions by substituting the exact solution into the boundary term (obtained
+after differentiation by parts).
+\renewcommand{\pweavecaption}{Setting up the right hand side}
+\renewcommand{\pweavelabel}{lst:forch-rhs}
+```python, label = 'forch-rhs'
+from ufl import dot, FacetNormal, ds
+f = lambda s: -2*exp(-2*s)*(initial - 1) - div( K(exact(s))*grad(exact(s)) )
+g = lambda s: K(exact(s))*grad(exact(s))
+n = FacetNormal(space)
+b = 0.5*(f(t)+f(t+dt))*v*dx + 0.5*dot(g(t)+g(t+dt),n)*v*ds
+```
+Finally, having defined the weak form and right hand side, we can
+now set up a scheme object which we can use to solve the PDE.
+\renewcommand{\pweavecaption}{Creating an $H^{1}$ scheme}
+\renewcommand{\pweavelabel}{lst:forch-scheme}
+```python, label="fem5", echo=False
+# <markdowncell>
+# With the model described as a ufl form, we can construct a scheme class
+# that provides the solve method which we can use to evolve the solution from
+# one time step to the next:
+# <codecell>
+```
+```python, label = 'forch-scheme'
+from dune.fem.scheme import galerkin as solutionScheme
+scheme = solutionScheme(a == b, solver='cg')
+```
+The above function generates code to assemble and solve
+a Galerkin method, with the space and equation passed in.
+As before
+there exist other such premade \dune schemes for different
+types of problems (see \ref{sec:scheme-list}).
+Note that by default a Newton method is used to solve the resulting system
+and either a preconditioned Krylov solver or a direct solver is used to
+solve the linear system in each step. The type of Krylov solver can be
+specified by the \pyth{solver} argument (in this case we are using
+a conjugate gradient method, since the PDE operator is
+self-adjoint). The default value for this argument is \pyth{gmres}.
+More details on how to choose and customize the solvers will be given later.
+
+\Rtodo{The scheme and the model needs to be a bit more motivated here - Robert}
+
+
+Lastly we note that it is possible to explicitly define a model object
+and we investigate the different ways of doing this in section \ref{sec:header}.
+
+\section{Solving} \label{sec:solving}
+
+The last natural part of a FEM is the solving, which includes
+time loops, mesh refinements, data output, plotting, and so on.
+Let us begin by setting up the time step $\Delta t = 0.05$.
+The time step is part of the UFL equation passed to the constructor of the
+\pyth{scheme}. The scheme uses that equation to construct a model with
+methods to change any UFL constant found in the equation. Using an instance
+of \pyth{Constant} we can easily assign values to these constant using
+the given name. Recall that we used
+\pyth{dt = Constant(space, "dt")} in our UFL equation and setting this
+constant for example to \pyth{0.05} is achieved by the following code:
+\renewcommand{\pweavecaption}{Setting up time variables before the
+loop}
+\renewcommand{\pweavelabel}{lst:forch-pre-solve}
+```python, label = 'forch-pre-solve'
+scheme.model.dt = 0.005
+```
+Note that this does not require any additional JIT compilation. Similarly we
+can use set the time in the model to zero by calling
+\pyth{scheme.model.t = 0}.
+
+Next we write the following method for solving the problem over the
+time range. Since the problem is time-dependent, we
+solve over a for loop with $t_0 = 0$ and $t_N = T$, using \pyth{u_h_n} for
+the old solution and \pyth{u_h} for the new one.
+\renewcommand{\pweavecaption}{Evolve method for solving in time}
+\renewcommand{\pweavelabel}{lst:forch-evolve}
+```python, label='forch-evolve'
+def evolve(scheme, u_h, u_h_n, endTime):
+    time = 0
+    while time < (endTime - 1e-6):
+        scheme.model.t = time
+        u_h_n.assign(u_h)
+        scheme.solve(target=u_h)
+        time += scheme.model.dt
+```
+Note that changing \pyth{u_h_n} changes the corresponding function in the
+model defined by the UFL equation given above again without having to
+recompile the code.
+
+Lastly we want to have a way of computing the error. Say for
+instance we want to look at the $L^2$ and $H^1$ errors for our
+computed solution, assuming an exact solution $u$ is known at the
+final time of the simulation.
+\begin{equation}
+ L^2\text{ error} = \left( \int_{\Omega} | u - u_h |^2 \diff x
+                    \right)^{\frac{1}{2}}, \qquad
+ H^1\text{ error} = \left( \int_{\Omega} | \nabla(u - u_h) |^2 \diff x
+                    \right)^{\frac{1}{2}}.
+\label{eqn:error}
+\end{equation}
+Computing the squared norm can be achieved with the following code.
+\renewcommand{\pweavecaption}{Writing expressions for the error
+computed at the final time}
+\renewcommand{\pweavelabel}{lst:forch-error}
+```python, label="fem6", echo=False
+# <markdowncell>
+# ### Solving the System
+# Since we have forced the system towards a given solution, we can compute
+# the discretization error. First we define ufl expressions for the $L^2$
+# and $H^1$ norms and will use those to compute the experimental order of
+# convergence of the scheme by computing the time evolution on different grid
+# levels.
+# <codecell>
+```
+```python, label = 'error'
+endTime    = 0.25
+exact_end  = exact(endTime)
+l2error = dot(u_h - exact_end, u_h - exact_end)
+h1error = dot(grad(u_h - exact_end), grad(u_h - exact_end))
+```
+First of all we define the exact solution (\pyth{exact_end}) at the
+end time $T=1$. Then we simply write expressions in UFL to calculate
+the $L^2$ and $H^1$ errors. We note that this works even though
+\pyth{u_h} is a discrete function and not a UFL term itself,
+since the expression is extracted from it automatically.
+
+We also want to compute the estimated order of convergence (EOC), to test our
+method.
+\begin{equation*}
+  EOC = \frac{\log(e_{new}/e_{old})}{\log(h_{new}/h_{old})}.
+\label{eqn:eoc}
+\end{equation*}
+This is calculated by refining the grid and comparing the errors
+($e_{old}$ and $e_{new}$) to the grid sizes ($h_{old}$ and
+$h_{new}$), where the errors are computed using the error function
+\pyth{l2error} from \ref{lst:forch-error}. In particular for a grid size
+that is being halved at each step, we do the following after each
+solve step.
+\renewcommand{\pweavecaption}{Calculating the EOCs}
+\renewcommand{\pweavelabel}{lst:eoc}
+\begin{pweavecode}
+error_old = error                                # store old error
+error = sqrt(integrate(gridView, l2error, 5)[0]) # integrate
+eoc = log(error/error_old)/log(0.5)              # do the EOC calc
+gridView.hierarchicalGrid.globalRefine(1)        # refine the grid
+\end{pweavecode}
+Combining these concepts into one solve method in \dune[Fempy], we have the
+following program (with resulting figure \ref{fig:forch-main}).
+\renewcommand{\pweavecaption}{Solving the Forchheimer equation in
+time and refining the grid}
+\renewcommand{\pweavelabel}{lst:forch-main}
+```python, label='forch-main', fig=True, caption='Plot of solutions at each level of refinement', width='0.32\\textwidth'
+from math import log
+errors = 0,0
+loops = 2
+for eocLoop in range(loops):
+    u_h.interpolate(initial)
+    evolve(scheme, u_h, u_h_n, endTime)
+    errors_old = errors
+    errors = [sqrt(e) for e in integrate(gridView, [l2error,h1error], order=5)]
+    if eocLoop == 0:
+        eocs = ['-','-']
+    else:
+        eocs = [ round(log(e/e_old)/log(0.5),2) \
+                 for e,e_old in zip(errors,errors_old) ]
+    print('step:', eocLoop, ', size:', gridView.size(0))
+    print('\t | u_h - u | =', '{:0.5e}'.format(errors[0]), ', eoc =', eocs[0])
+    print('\t | grad(uh - u) | =', '{:0.5e}'.format(errors[1]), ', eoc =', eocs[1])
+    u_h.plot()
+    gridView.writeVTK('forchheimer', pointdata={'u': u_h, 'l2error':
+                  l2error, 'h1error': h1error}, number=eocLoop)
+    if eocLoop < loops-1:
+        gridView.hierarchicalGrid.globalRefine(1)
+        scheme.model.dt /= 2
+```
+\Atodo{Possible increase the number of eoc loops for publication}
+\begin{comment}
+We compile a table of the errors and EOCs for additional refinement
+steps and also including the $H^1$ error below.
+\Atodo{The following table is hard coded so needs to be fixed before
+submission - or generated through the Makefile}
+\begin{center}
+  \begin{tabular}{l | l | l | l | l}
+    \hline
+    Elements & $\|u - u_h\|_{L^2}$ & EOC & $|u - u_h|_{H^1}$ & EOC \\ \hline
+    16 & 2.919e-05 & - & 8.917e-04 & - \\
+    64 & 3.611e-06 & 3.015 & 2.223e-04 & 2.000 \\
+    256 & 4.500e-07 & 3.004 & 5.573e-05 & 2.000 \\
+    1024 & 5.621e-08 & 3.001 & 1.393e-05 & 2.000 \\
+    4096 & 7.031e-09 & 2.999 & 3.483e-06 & 2.000
+  \end{tabular}
+\end{center}
+\end{comment}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Using Alternative Linear Algebra Packages} \label{sec:solve}
+```python, label="solve-methods", echo=False
+# <markdowncell>
+# ## Alternate Solve Methods
+# Here we look at different ways of solving PDEs using external
+# packages and python functionality.
+# Different linear algebra backends can be accessed by changing setting the
+# `storage` parameter during construction of the discrete space. All
+# discrete functions and operators/schemes based on this space will then
+# use this backend. Available backends are `fem,istl,petsc`. The default is
+# `fem` which uses simple data structures and linear solvers implemented in
+# the `dune-fem` package. The simplicity of the data structure makes it
+# possible to use the buffer protocol to seamlessly move between C++ and
+# Numpy/Scipy data structures on the python side. A degrees of freedom
+# vector (dof vector) can be retrieved # from a discrete function over the
+# `fem` space by using the `as_numpy` method. Similar methods are available
+# for the other storages, i.e., `as_istl,as_petsc`. The same methods are
+# also available to retrieve the underlying matrix structures of linear
+# operators. 
+# <codecell>
+```
+
+We carry on our exploration of the \dune[Fempy] feature set by
+looking at the different methods of solving the PDE,
+facilitated by the different storage back ends which can be chosen while
+constructing the spaces. The underlying module \dune[fem] allows us to
+directly store DoF vectors and system matrices in the native data
+structures of a number of different linear algebra software packages. Thus
+a large number of solvers and preconditioners become availbale without loss
+of performance. Furthermore, for those packages providing Python bindings
+for their data structures, these can be directly accessed in Python
+scripts.
+
+By default we use a very simple storage structure
+directly provided in \dune[fem] and consequently not requiring any
+additional packages. A number of simple Krylov type solvers are available
+but no sophisticated preconditioning.
+Changing the \pyth{storage} argument in the construction of the space makes
+it possible to use more sophisticated solvers (e.g., better
+preconditioners or direct solvers). Available possibilities are shown in
+Table \ref{tab:discrete-functions}. In the following code the storage is
+changed to use data structures provided by the module
+\dune[Istl] (see \cite{Dune-Istl}) linear algebra backend.
+\renewcommand{\pweavecaption}{Accessing different storage types}
+\renewcommand{\pweavelabel}{lst:storage}
+\begin{pweavecode}
+from dune.fem.space import lagrange as solutionSpace
+space = solutionSpace(gridView, order=2, storage='istl')
+\end{pweavecode}
+
+An advantage of the default \pyth{"fem"} storage is that we can
+directly use solvers from SciPy \cite{SciPy}. This
+allows for more complex ways of writing numerical methods without the
+need to explicitly write it on the C++ side. Using the Python buffer
+protocol the raw storage for the degrees of freedom and the sparse matrix
+can be directly transferred to vectors from the NumPy package
+\cite{NumPy} and CRS matrix from SciPy.
+No copy is required and changes to the DoF vector made
+on the Python side will automatically lead to changes on the C++ side.
+We demonstrate this via the Forchheimer example from
+Section \ref{sec:fem-in-fempy}, first by implementing a simple Newton solver:
+given an initial guess $u^0$ (here taken to be zero) we solve for $n\geq 0$,
+\begin{align*}
+   u^{n+1} = u^n - DS^{-1}(u^n)S(u^n),
+\end{align*}
+We will use different linear algebra packages to invert the linearization $DS$ of the operator $S$.
+
+Usually solving the nonlinear system is automatically taken care of in \dune[Fempy] by
+\pyth{scheme.solve}, however this time we will use the call operator on the
+\pyth{scheme} to compute $S(u^n)$ as well as \pyth{scheme.jacobian} to
+assemble the system matrix in form of a SciPy sparse row matrix.
+This can directly be done using the default storage type
+\pyth{storage="fem"}. We present this
+alternative below: % and plot the result in figure \ref{fig:forch-newton}.
+\renewcommand{\pweavecaption}{Creating a class to hold a different
+solve method}
+\renewcommand{\pweavelabel}{lst:forch-newton}
+```python, label="solve-methods1", echo=False
+# <markdowncell>
+# ### Using Scipy
+# We implement a simple Newton Krylov solver using a linear solver from
+# Scipy. We can use the `as_numpy` method to access the degrees of freedom as
+# Numpy vector based on the `python buffer protocol`. So no data is copied
+# and changes to the dofs made on the python side are automatically carried
+# over to the C++ side.
+# from Scipy.
+# <codecell>
+```
+```python, label='forch-newton'
+from dune.fem.operator import linear as linearOperator
+import numpy as np
+from scipy.sparse.linalg import spsolve as solver
+class Scheme:
+  def __init__(self, scheme):
+      self.model = scheme.model
+      self.jacobian = linearOperator(scheme)
+
+  def solve(self, target=None):
+      # create a copy of target for the residual
+      res = target.copy(name="residual")
+
+      # extract numpy vectors from target and res
+      sol_coeff = target.as_numpy
+      res_coeff = res.as_numpy
+
+      n = 0
+      while True:
+          scheme(target, res)
+          absF = math.sqrt( np.dot(res_coeff,res_coeff) )
+          if absF < 1e-10:
+              break
+          scheme.jacobian(target,self.jacobian)
+          sol_coeff -= solver(self.jacobian.as_numpy, res_coeff)
+          n += 1
+
+scheme_cls = Scheme(scheme)
+
+u_h.interpolate(initial)                # reset u_h to initial
+evolve(scheme_cls, u_h, u_h_n, endTime)
+error = u_h - exact_end
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+```
+
+```python, label="solve-methods2", echo=False
+# <markdowncell>
+# Using a non linear solver from the Scipy package
+# <codecell>
+```
+We can redo the above computation using a Newton-Krylov solver from
+SciPy. We do this by constructing a class \pyth{Df} containing the
+derivative of the operator. This would normally be done within DUNE,
+but here we do it purely through Python:
+\renewcommand{\pweavecaption}{Implementing a Newton-Krylov solver with SciPy}
+\renewcommand{\pweavelabel}{lst:forch-df}
+```python, label='forch-df'
+from scipy.optimize import newton_krylov
+from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg import cg as solver
+
+class Scheme2:
+    def __init__(self, scheme):
+        self.scheme = scheme
+        self.model = scheme.model
+        self.res = u_h.copy(name="residual")
+
+    # non linear function
+    def f(self, x_coeff):
+        # the following converts a given numpy array
+        # into a discrete function over the given space
+        x = space.function("tmp", dofVector=x_coeff)
+        scheme(x, self.res)
+        return self.res.as_numpy
+
+    # class for the derivative DS of S
+    class Df(LinearOperator):
+        def __init__(self, x_coeff):
+            self.shape = (x_coeff.shape[0], x_coeff.shape[0])
+            self.dtype = x_coeff.dtype
+            x = space.function("tmp", dofVector=x_coeff)
+            self.jacobian = linearOperator(scheme, ubar=x)
+        # reassemble the matrix DF(u) given a DoF vector for u
+        def update(self, x_coeff, f):
+            x = space.function("tmp", dofVector=x_coeff)
+            scheme.jacobian(x, self.jacobian)
+        # compute DS(u)^{-1}x for a given DoF vector x
+        def _matvec(self, x_coeff):
+            return solver(self.jacobian.as_numpy, x_coeff, tol=1e-10)[0]
+
+    def solve(self, target=None):
+        sol_coeff = target.as_numpy
+        # call the newton krylov solver from scipy
+        sol_coeff[:] = newton_krylov(self.f, sol_coeff,
+                    verbose=0, f_tol=1e-8,
+                    inner_M=self.Df(sol_coeff))
+
+scheme2_cls = Scheme2(scheme)
+u_h.interpolate(initial)
+evolve(scheme2_cls, u_h, u_h_n, endTime)
+error = u_h - exact_end
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+```
+
+We can also use solvers from the PETSc package (see \cite{PETSc}) to solve
+the problem. This can be done either through bindings available in
+\dune[fem] or through the \pyth{petsc4py} package
+(\cite{PETSc4Py}).\footnote{For this to work, one must make sure that \dune
+has been configured using the same version of PETSc used for
+\pyth{petsc4py}.}
+
+The first step is to change the storage in the space. This also
+requires setting up the scheme and discrete functions again to use the
+new storage structure.
+
+We can directly use the PETSc solvers by invoking \pyth{solve} on the
+scheme as before. Note that to do this we must change the storage type by
+creating a new \pyth{space}. Then we have the following code, resulting in
+the same approximation as computed previously:
+% found once again in figure \ref{fig:forch-petsc}.
+\renewcommand{\pweavecaption}{Using petsc4py to solve using PETSc}
+\renewcommand{\pweavelabel}{lst:forch-petsc}
+```python, label="solve-methods2", echo=False
+# <markdowncell>
+# ### Using Petsc and Petsc4Py
+# Switching to a storage based on the PETSc solver package and solving the
+# system using the dune-fem bindings
+# <codecell>
+```
+```python
+spacePetsc = solutionSpace(gridView, order=2, storage='petsc')
+# first we will use the petsc solver available in the `dune-fem` package
+# (using the sor preconditioner)
+schemePetsc = solutionScheme(a == b, space=spacePetsc,
+                parameters={"linear.preconditioning.method":"sor"})
+schemePetsc.model.dt = scheme.model.dt
+u_h = spacePetsc.interpolate(initial, name='u_h')
+u_h_n = u_h.copy(name="previous")
+evolve(schemePetsc, u_h, u_h_n, endTime)
+error = u_h - exact_end
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+```
+Note how we have overrode the space used to construct the UFL equation by
+providing a different space to the constructor of the scheme.
+
+Next we will implement the Newton loop in Python using \pyth{petsc4py}
+to solve the linear systems.
+We can access the PETSc vectors by calling \pyth{as_petsc} on the
+discrete function. Note that this property will only be available if
+the discrete function is an element of a space with storage
+\pyth{'petsc'}. The method \pyth{jacobian} on the scheme now assembles into
+a provided linear operator based on a sparse PETSc matrix and so we can directly use the KSP class
+from \pyth{petsc4py}.
+\renewcommand{\pweavecaption}{Using petsc4py and its Krylov solvers to
+define a Newton scheme and solve}
+\renewcommand{\pweavelabel}{lst:forch-petsc-ksp}
+```python, label="solve-methods4", echo=False
+# <markdowncell>
+# Implementing a Newton Krylov solver using the binding provided by petsc4py
+# <codecell>
+```
+```python, label='forch-petsc-ksp'
+import petsc4py, sys
+petsc4py.init(sys.argv)
+from petsc4py import PETSc
+
+class Scheme3:
+  def __init__(self, scheme):
+      self.model = scheme.model
+      self.jacobian = linearOperator(scheme)
+      self.ksp = PETSc.KSP()
+      self.ksp.create(PETSc.COMM_WORLD)
+      # use conjugate gradients method
+      self.ksp.setType("cg")
+      # and incomplete Cholesky
+      self.ksp.getPC().setType("icc")
+      self.ksp.setOperators(self.jacobian.as_petsc)
+      self.ksp.setFromOptions()
+  def solve(self, target=None):
+      res = target.copy(name="residual")
+      sol_coeff = target.as_petsc
+      res_coeff = res.as_petsc
+      n = 0
+      while True:
+          schemePetsc(target, res)
+          absF = math.sqrt( res_coeff.dot(res_coeff) )
+          if absF < 1e-10:
+              break
+          schemePetsc.jacobian(target, self.jacobian)
+          self.ksp.solve(res_coeff, res_coeff)
+          sol_coeff -= res_coeff
+          n += 1
+
+u_h.interpolate(initial)
+scheme3_cls = Scheme3(schemePetsc)
+evolve(scheme3_cls, u_h, u_h_n, endTime)
+error = u_h - exact_end
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+```
+Finally we we will use PETSc's nonlinear solvers (the \pyth{snes}
+classes) directly.
+\renewcommand{\pweavecaption}{Using petsc4py and their nonlinear
+solvers (SNES) directly}
+\renewcommand{\pweavelabel}{lst:forch-petsc-snes}
+```python, label="solve-methods5", echo=False
+# <markdowncell>
+# Using the petsc4py bindings for the non linear KSP solvers from PETSc
+# <codecell>
+```
+```python, label='forch-petsc-snes'
+class Scheme4:
+    def __init__(self, scheme):
+        self.model = scheme.model
+        self.res = scheme.space.interpolate([0],name="residual")
+        self.scheme = scheme
+        self.jacobian = linearOperator(self.scheme)
+        self.snes = PETSc.SNES().create()
+        self.snes.setFunction(self.f, self.res.as_petsc.duplicate())
+        self.snes.setUseMF(False)
+        self.snes.setJacobian(self.Df, self.jacobian.as_petsc, self.jacobian.as_petsc)
+        self.snes.getKSP().setType("cg")
+        self.snes.setFromOptions()
+
+    def f(self, snes, x, f):
+        # setup discrete function using the provide petsc vectors
+        inDF = self.scheme.space.function("tmp",dofVector=x)
+        outDF = self.scheme.space.function("tmp",dofVector=f)
+        self.scheme(inDF,outDF)
+
+    def Df(self, snes, x, m, b):
+        inDF = self.scheme.space.function("tmp",dofVector=x)
+        self.scheme.jacobian(inDF, self.jacobian)
+        return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
+
+    def solve(self, target):
+        sol_coeff = target.as_petsc
+        self.res.clear()
+        self.snes.solve(self.res.as_petsc, sol_coeff)
+
+u_h.interpolate(initial)
+scheme4_cls = Scheme4(schemePetsc)
+evolve(scheme4_cls, u_h, u_h_n, endTime)
+error = u_h - exact_end
+print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+```
+\noindent \textit{Remark.} The methods \pyth{as_numpy} and \pyth{as_petsc}
+(returning the DoF vector or system matrix either as a \pyth{numpy} or a \pyth{petsc}
+vector or matrix) do not lead to a copy of the data and the same is true for the
+discrete functions returned by the \pyth{function} method on the
+discrete space. In the \pyth{numpy} case Python's buffer protocol is used,
+while in the case of \pyth{petsc} the
+underlying C++ \pyth{Vec} and \pyth{Mat} structures can be shared using the
+bindings provided by \pyth{petsc4py}. At the time of writing it
+is not yet possible to pass in for example a \pyth{Mat} instance
+constructed on the Python side to the \pyth{scheme.jacobian} method.
+
+Finally, we would like to point out that matrix and vector instances
+constructed for example by \pyth{vector = discreteFunction.as_numpy} will
+be invalidated during grid refinement. Any grid refinement will
+automatically resize the underlying degrees of freedom vector of any
+discrete function, consequently the memory address will have changed after
+grid refienement and the buffer underlying the numpy array \pyth{vector}
+will be invalid and its usage will lead to unspecified behaviour.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Setting Boundary Conditions} \label{sec:bcs}
+```python, label="solve-methods", echo=False
+# <markdowncell>
+# ## More General Boundary Conditions
+# So far we only used natural boundary conditions. Here we discuss how to
+# set Dirichlet boundary conditions and use different conditions for
+# different components of the solution.
+#
+# To fix Dirichlet boundary conditions $u=g$ on part of the boundary
+# $\Gamma\subset\partial\Omega$ the central class is
+# `dune.ufl.DirichletBC` which takes three arguments:
+# the discrete function space for $u$, the function $g$ given by a UFL
+# expression, and a description of $\Gamma$. There are different ways to
+# do this. If it is omitted or `None` the condition is applied to the whole
+# domain, a integer $s>0$ can be provided which can be set to describe a
+# part of the boundary during grid construction as described in another
+# place. Finally a UFL condition can be used, i.e., `x[0]<0`.
+#
+# For vector valued functions $u$ the value function $g$ can be a UFL
+# vector or a list. In the later case a component of `None` can be used to
+# describe components which are not to be constrained by the boundary
+# condition.
+# <codecell>
+```
+The example studied so far involved only Neumann boundary conditions which
+are included in the bilinear form through boundary integrals. Another
+important class of boundary conditions are Dirichlet type boundary
+conditions $u=g$ which typically are included through constraints in the
+finite element method, i.e., by modifying the system such that
+$u_h = I_hg$ on the Dirichlet part of the boundary where $I_h$ is the
+interpolation operator associated with the discrete function space, e.g.,
+evaluation of $g$ at the Lagrange points on the boundary.
+
+In \dune[fempy] these type of boundary needs to be included in the
+construction of the scheme or the operator. So if for example the
+analytical problem is
+\begin{align*}
+  -\triangle u &= 0 && \text{in } \Omega \\
+  u &= sin(xy) && \text{on } \partial\Omega
+\end{align*}
+then we need to construct a corresponding scheme adding the boundary
+conditions to the weak form:
+\renewcommand{\pweavecaption}{Defining Dirichlet boundary conditions}
+\renewcommand{\pweavelabel}{lst:dbc}
+\begin{pweavecode}
+from dune.ufl import DirichletBC
+scheme = solutionScheme([dot(grad(u),grad(v))==0,
+                         DirichletBC(space, sin(x[0]*x[1], subDomain) ])
+\end{pweavecode}
+
+The \pyth{DirichletBC} class is used to describe the boundary
+conditions, it takes a space, the function to use on the boundary, and as
+third argument a description of the portion of the boundary
+$\Gamma_D\subset\partial\Omega$ on which the
+boundary condition is to be applied. If no \pyth{subDomain} is provided (or
+it is \pyth{None}) then this boundary condition will be applied to the
+whole boundary. Only one boundary condition without \pyth{subDomain} can be
+passed to the scheme and it will be applied after all other Dirichlet
+conditions have been evaluated, i.e., it applies to the remaining part of
+the boundary. The simplest approach to single out a specific part of the
+boundary is to describe the domain using a ufl expression which evaluates
+to zero for $x\not\in\Gamma_D$. A second approach is to use integer identifiers
+which can be set during grid construction by using for example the
+\emph{dune grid format} (DGF). When using the \pyth{structuredGrid}
+function to construct the grid, the boundaries have the following
+identifiers: $1$ and $2$ for the left and right boundary, $3$ and $4$ for
+the bottom and top, and finally in the three dimensional setting $5$ and
+$6$ identify the front and back boundaries, respectively.
+Note, that an arbitrary number of instances of the \pyth{DirichletBC} class
+can be used during the construction of the \pyth{scheme}.
+
+Finally, in the case of vector valued spaces it is sometimes necessary to
+only provide conditions for some of the components of the discrete
+function. For example assume that the problem consists of two coupled
+elliptic problems with Dirichlet conditions for the first unknown and
+Neuman conditions for the second, e.g., let the unknown be
+$u=(u_1,u_2)$ satisfying
+\begin{align*}
+  -\triangle u_1    &= f_1(u) && \text{in } \Omega \\
+  -\triangle u_2    &= f_2(u) && \text{in } \Omega \\
+  u_1               &= g && \text{on } \partial\Omega \\
+  \nabla u_2\cdot n &= h && \text{on } \partial\Omega \\
+\end{align*}
+A single \pyth{DirichletBC} class can be provided to the scheme with no
+\pyth{subDomain} and where the value argument is a list of length two where
+the first component is $g$ and the second component is \pyth{None}. 
+
+Here is an example:
+
+\renewcommand{\pweavecaption}{A system with mixed boundary conditions}
+\renewcommand{\pweavelabel}{lst:mixedbc}
+```python, label='mixedbc', fig=True, caption='Plot of solutions of mixed boundary condition problem', width='0.32\\textwidth'
+from ufl import sin
+from dune.ufl import DirichletBC
+from dune.fem.plotting import plotComponents
+from matplotlib import ticker
+
+vecSpace = solutionSpace(gridView, dimRange=2, order=2)
+x = SpatialCoordinate(vecSpace)
+vec = vecSpace.interpolate([0,0], name='u_h')
+uVec,vVec = TrialFunction(vecSpace), TestFunction(vecSpace)
+a  = ( inner(grad(uVec), grad(vVec)) + inner(uVec,vVec) ) * dx
+f  = ( uVec[0]*(1-uVec[1])*vVec[0] + uVec[1]*(1-uVec[0])*vVec[1] ) * dx
+f  = f + uVec[0]*uVec[0] * vVec[1] * ds
+bc = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),None])
+vecScheme = solutionScheme( [a == f, bc],
+        parameters={"newton.linear.tolerance": 1e-9} )
+vecScheme.solve(target=vec)
+plotComponents(vec, gridLines=None, level=2,
+               colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
+
+```
+To prescribe $u_2=0$ at the bottom boundary is also straightforward
+```python, label="solve-methods", echo=False
+# <markdowncell>
+To prescribe $u_2=0$ at the bottom boundary is also straightforward
+# <codecell>
+```
+\renewcommand{\pweavecaption}{A second system with mixed boundary conditions}
+\renewcommand{\pweavelabel}{lst:mixedbc2}
+```python, label='mixedbc2', fig=True, caption='Plot of solutions of the second mixed boundary condition problem', width='0.32\\textwidth'
+bcBottom = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),0],x[1]<1e-10)
+vecScheme = solutionScheme( [a == f, bc, bcBottom],
+        parameters={"newton.linear.tolerance": 1e-9} )
+vecScheme.solve(target=vec)
+plotComponents(vec, gridLines=None, level=2,
+               colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
+```
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Some concluding examples}
+\subsection{A 3d Laplace problem on a complex domain}
+The example below shows an example of solving a simple laplace problem
+using \pygmsh to define the unstructured mesh:
+\renewcommand{\pweavecaption}{3D Laplace equation using a \pygmsh tetrahedral mesh}
+\renewcommand{\pweavelabel}{lst:3dgmsh}
+```python, label="lst:3dgmsh-md", echo=False
+# <markdowncell>
+# ## A 3D example
+# In this example we use pygmsh to construct a tetrahedral mesh and olve a
+# simple laplace problem
+# <codecell>
+```
+```python, label='lst:3dgmsh', results='hidden'
+# The following code is taken from the `pygmsh` homepage
+try:
+  import pygmsh
+  geom = pygmsh.built_in.Geometry()
+  poly = geom.add_polygon([
+      [ 0.0,  0.5, 0.0], [-0.1,  0.1, 0.0], [-0.5,  0.0, 0.0],
+      [-0.1, -0.1, 0.0], [ 0.0, -0.5, 0.0], [ 0.1, -0.1, 0.0],
+      [ 0.5,  0.0, 0.0], [ 0.1,  0.1, 0.0] ], lcar=0.05)
+  axis = [0, 0, 1]
+  geom.extrude( poly, translation_axis=axis, rotation_axis=axis,
+      point_on_axis=[0, 0, 0], angle=2.0 / 6.0 * numpy.pi)
+  mesh = pygmsh.generate_mesh(geom, verbose=False)
+  points, cells = mesh.points, mesh.cells
+  domain3d = {"vertices":points, "simplices":cells["tetra"]}
+except ImportError: # pygmsh not installed - use a simple cartesian domain
+  from dune.grid import cartesianDomain
+  domain3d = cartesianDomain([-0.25,-0.25,0],[0.25,0.25,1],[30,30,60])
+
+from dune.alugrid import aluSimplexGrid as leafGridView3d
+gridView3d  = leafGridView3d(domain3d)
+space3d = solutionSpace(gridView3d, order=1)
+
+from ufl import conditional
+u = TrialFunction(space3d)
+v = TestFunction(space3d)
+x = SpatialCoordinate(space3d)
+scheme3d = solutionScheme((inner(grad(u),grad(v))+inner(u,v))*dx ==
+                        conditional(dot(x,x)<.01,100,0)*v*dx,
+                        solver='cg')
+
+uh3d = space3d.interpolate([0],name="solution")
+scheme3d.solve(target=uh3d)
+# note: plotting with matplotlib not yet available for 3d grids
+gridView3d.writeVTK('3dexample', pointdata=[uh3d])
+```
+\begin{figure}
+\centering
+\includegraphics[width=0.4\textwidth]{figures/3dexample.png}
+\caption{Result from 3D example}
+\label{fig:3dgmsh}
+\end{figure}
+```python, label="lst:3dgmsh-md", echo=False
+# <markdowncell>
+# ![3d laplace problem](figures/3dexample.png)
+# <codecell>
+```
+
+\input{elasticity.tex}
+\input{spiral.tex}
+\input{wave.tex}
+\Atodo{cite firedrake example}
+\input{uzawa-scipy}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Working with the Full Grid Interface}
+\label{sec:corebindings}
+\input{dune-corepy}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Adaptive Mesh Refinement} \label{sec:crystal}
+
+We shall now consider the implementation of adaptive mesh refinement
+in \dune[Fempy]. Adaptive mesh refinement is a technique that
+allows for the targeted refinement of the computational domain in
+specific areas where there is greater turbulence or activity, for greater
+precision. In problems where uniform refinement of a mesh is not
+required, this allows for more precision of the results at less
+computational cost.
+
+The method considered here uses so-called h-adaptivity that adds
+additional mesh points to the grid at areas of small scale activity.
+It does so based on a marking procedure that
+evaluates an error indicator on each element and determines
+whether to refine the grid based on a level of tolerance.
+
+In this section we present two examples which use adaptive grid
+refinement in slightly different ways.
+
+\input{laplace-adaptive.tex}
+
+We shall now look at a model for crystallization on the surface of a
+liquid.
+
+\input{crystal.tex}
+
+\section{A p-adaptive example}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Moving Meshes} \label{sec:mcf}
+
+In this section we will consider an example where the grid itself
+changes over time subject to PDEs. Specifically we refer to a
+\textit{geometric evolution equation}, which describes the motion of a
+hypersurface by prescribing its velocity geometrically. In
+\dune[Fempy], it is possible to accomplish this through the following
+process
+\begin{enumerate}
+\item Create an interpolated function that describes the initial
+surface, i.e.
+\begin{lstlisting}[style=pythonstyle]
+positions = space.interpolate(lambda x: some_function(x), name="position")
+\end{lstlisting}
+\item Create a surface from \pyth{positions} using this function
+\begin{lstlisting}[style=pythonstyle]
+from dune.fem.view import geometryGridView
+surface = geometryGridView(positions)
+\end{lstlisting}
+\item Create the scheme that describes the surface evolution and solve
+it in the usual way.
+\item Update the surface using the computed solution.
+\begin{lstlisting}[style=pythonstyle]
+positions.dofVector.assign(solution.dofVector)
+\end{lstlisting}
+\end{enumerate}
+With this process the surface (and by extension the mesh) can be
+changed over time. We will now demonstrate this in a mean curvature flow
+example.
+
+\input{mcf.tex}
+
+\begin{comment}
+\section{Partitioned Grids} \label{sec:battery}
+
+As another application of grid techniques, we look at a problem where
+ we want to divide the grid into three regions. We do this using an
+\pyth{'adaptive'} grid that allows for grid filters to be applied. We
+note that another way of creating multi-domain grids in \dune is
+described in \cite{Muthing} (though \dune[Python] bindings are not yet
+available).
+
+\input{battery.tex}
+\end{comment}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\include{dune-algorithm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Parallel Execution}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Further Examples}
+\section{Incompressible Navier Stokes solver}
+\section{Compressible Navier Stokes / Euler solver}
+% \section{HP adaptive DG scheme for twophase flow problem}
+\input{twophaseflow}
+\section{Solvers on 2D polygonal meshes}
+\input{vemdemo}
+\section{Solvers for non-variational problems}
+\section{General framework for phasefield approximations}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%</tag>
+
+\bibliographystyle{abbrvnat}
+\bibliography{dune-fempy}
+
+\begin{appendix}
+
+%<*append>
+
+\chapter{Docker container with all examples}
+\label{sec:installation}
+
+\Atodo{Taken from dune-python paper - need to adapt}
+
+The simplest approach for testing \dune[Python] is to use the provided
+Docker image. It includes a number of Jupyter notebooks showcasing
+the possibilities of the \dune Python bindings. There is a special Docker
+image accompanying this paper. It can be used by executing
+\begin{bash}
+docker run --rm -v dune-python-paper:/dune -p 127.0.0.1:8888:8888 registry.dune-project.org/staging/dune-python:paper2018
+\end{bash}
+The Jupyter server can then be accessed from a web browser at \url{http://127.0.0.1:8888};
+the password is \file{dune}.
+The code examples from this paper are included in the notebook file
+\file{paper2018.ipynb}.
+Notice that this method works on Linux, MacOS, and Windows alike, although it
+might be necessary to increase the amount of system memory given to Docker to
+4~GB, e.g., on MacOS.
+
+If you already have the \dune core modules either installed or in local
+space, it suffices to download the \dune[Python] module
+\begin{bash}
+export GITURL=https://gitlab.dune-project.org/staging/dune-python
+wget -qO - ${GITURL}/repository/archive.tar.gz?ref=releases/2.6 | tar xz
+\end{bash}
+and to configure the module by running \code{dunecontrol}. Then
+set the environment variable \code{PYTHONPATH} to include the \code{python}
+subfolder in the build directory of \dune[Python], e.g.,
+\code{dune-python/build-cmake/python}.
+% The code used for the paper is
+% available as Python script and as Jupyter notebook in the `paper2018`
+% folder in the \dune[Python] source directory.
+
+For some of the example \dune[ALUGrid] and for the final example
+\dune[Polygongrid] will be required in addition to
+the core modules. After building these modules the corresponding `python`
+subfolder in the build directories of these modules also need to be added
+to \code{PYTHONPATH}.
+For a more permanent installation of \dune[Python] we suggest to set up a
+virtual environment and install all necessary \dune modules into it.
+More details can be found in the \url{README.md} file or on the main page of
+the GitLab repository of \dune[Python].
+
+\begin{comment}
+\chaptern{Derivation of Forchheimer Model} \label{sec:forch}
+The origin of this equation stems from Darcy's law, an equation that
+describes flow through porous media, and is applied regularly to
+groundwater flow models.
+\begin{equation*}
+  -\nabla p = \frac{\mu}{\kappa} v,
+\label{eqn:darcy}
+\end{equation*}
+where $p, v, \mu$ and $\kappa$ are the pressure, velocity, absolute
+viscosity and permeability. For situations where the Reynolds number
+is greater than $\sim 10$, inertia begins to have an effect on the system,
+which is accounted for in the Darcy-Forchheimer equation. In its most
+general form we have the following.
+\begin{equation*}
+  -\nabla p = \sum^N_{i=0}a_i |v|^{\alpha_i}v,
+\label{eqn:darcy-forch}
+\end{equation*}
+where $a_i$ and $\alpha_i$ are obtained empirically. Through some
+manipulations, we can simplify this to an equation for just the
+pressure $\rho$.
+\begin{equation*}
+  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f,
+\label{eqn:forch}
+\end{equation*}
+where the function $K: \mathbb{R}^{+} \to \mathbb{R}^{+}$ is dependent
+on the $a_i$ and $\alpha_i$ above. Adding in boundary data and initial
+values gives us the \textbf{boundary value problem}.
+\begin{equation*}
+  \begin{array}{ll}
+  \rho_t - \nabla \cdot (K(|\nabla \rho|) \nabla \rho) = f & \mbox{in
+  } \Omega \times [0, T], \\
+  \rho(x, 0) = \rho^{0}(x) & \mbox{in } \Omega, \\
+  K(|\nabla \rho|) \nabla \rho \cdot \textbf{n} + g(x) = 0 & \mbox{on }
+  \Gamma \times [0, T],
+  \end{array}
+\label{eqn:forch-bvp}
+\end{equation*}
+where $\rho^0$ and $g$ are initial and boundary data given. Thus
+the \textbf{weak form} or variational formulation follows.
+\begin{equation*}
+  (\rho_t, \varphi_h) + (K(|\nabla \rho|) \nabla \rho, \nabla \varphi_h) = - <
+  g, \varphi_h> + (f, \varphi_h), \quad \varphi_h \in V_h,
+\label{eqn:forch-weak}
+\end{equation*}
+with $\rho(x, 0) = \rho^{0}(x)$. Finally it remains to discretize the
+equation in time using a backward Euler method. Let the time domain $I
+= [0,T]$ be divided into $N$ intervals $t_0 = 0 < t_1 < \dots < t_N = T$
+such that $\Delta t = t_n - t_{n-1}$ and $\rho^{n} = \rho(x, t_n)$.
+Then we have the time discretized PDE.
+\begin{equation*}
+  \left(\frac{\rho^{n+1} - \rho^{n}}{\Delta t}, \varphi_h \right) +
+  (K(|\nabla \rho^{n+1}|) \nabla \rho^{n+1},
+  \nabla \varphi_h) = - < g, \varphi_h > + (f, \varphi_h), \quad
+  \varphi_h \in V_h.
+\label{eqn:forch-time}
+\end{equation*}
+We note that in the form given in (\ref{eqn:forch-roche}), $g = 0$ and
+we replace $\rho$ with $u$ for simplicity.
+
+\chapter{C++ Version of Forchheimer Example} \label{sec:forch-cpp}
+
+Here we present the C++ version of the Forchheimer example from
+section \ref{sec:fem-in-fempy} using \dune[FEM], that we compare to
+the Python version in section \ref{sec:cpp-models}.
+
+\inputcpp{./forchheimer/main.cc}{}{lst:forch-cpp}
+\end{comment}
+
+\chapter{List of available components} \label{sec:modules}
+\Atodo{suggestion for a better title?}
+
+Here we list the different components that are available for
+\dune[Fempy] at the time of writing. We will divide them
+into different sections that reflect the structure we have
+used in the main part of the paper. Since every additional \dune[] modules
+can add additional components, those available in a given \dune[]
+installation may warry and of course additional features are constantly
+added. To simplify determining what is available the following utility can
+be used:
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Listing installed components
+# The available realization of a given interface, i.e., the available
+# grid implementations, depends on the modules found during configuration.
+# Getting access to all available components is straightforward:
+# <codecell>
+```
+\renewcommand{\pweavecaption}{The default form for linearising an operator}
+\renewcommand{\pweavelabel}{lst:linearise-operator}
+```python, label="lst:componentsutility"
+from dune.utility import components
+# to get a list of all available components:
+components()
+# to get for example all available grid implementations:
+components("grid")
+```
+% # constructing a `yaspGrid` instance can be done using
+% component("grid","yasp")(cartesianDomain([0,0],[1,1],[10,10]))
+
+\section{Gridviews} \label{sec:grid-list}
+
+Grids by default take the following form.
+\renewcommand{\pweavecaption}{The default form for grid creation}
+\renewcommand{\pweavelabel}{lst:default-grid}
+\begin{pweavecode}
+from dune.grid import selectedGridView 
+gridView = selectedGridView(constructor, dimgrid=None, dimworld=None)
+\end{pweavecode}
+\pyth{selectedGridView} is one of the functions from the table below and may be located
+in a module different to \pyth{dune.grid}, for example \pyth{dune.alugrid} or \pyth{dune.spgrid}. 
+All functions have the following arguments. 
+
+\begin{enumerate}
+\item \pyth{constructor}: Either a dgf \textit{dune grid format} file, a
+\textit{gmsh} file, or a preset object similar to what is demonstrated in
+section \ref{sec:grids}.
+\item \pyth{dimgrid} (optional): The dimension of the grid.
+\item \pyth{dimworld} (optional): The dimension of the space the grid is in.
+\end{enumerate}
+The dimensions of the grid do not have to be passed to the constructor if
+they can be determined from the \pyth{constructor} argument.
+
+The table below shows a list of possible grid implementations for which
+binding are available at the time of writing.
+
+\begin{center}
+  \captionof{table}{Grids}
+  \begin{tabular}{l | l | l}
+    \hline
+    Class & Module & Description \\ \hline \hline
+    \input{tables/features_grid}
+  \end{tabular}
+\end{center}
+
+Grids can also be constructed to provide a different grid view:
+\renewcommand{\pweavecaption}{Creating a custom grid view}
+\renewcommand{\pweavelabel}{lst:default-view}
+\begin{pweavecode}
+from dune.fem.view import gridView
+grid = gridView( hgrid )
+\end{pweavecode}
+
+The first argument can be any of the ones allowed for the grid construction
+(in which case the same \pyth{LeafGridView} is constructor as when directly
+constructing the grid). In addition the following views can be
+constructed.
+\begin{center}
+  \captionof{table}{Gridviews}
+  \begin{tabular}{l | l | l}
+    \hline
+    Class & Module & Description \\ \hline \hline
+    \input{tables/features_view}
+  \end{tabular}
+\end{center}
+
+\section{Spaces} \label{sec:space-list}
+
+Now we move on to spaces. By default, they take the form
+\renewcommand{\pweavecaption}{The default form for space creation}
+\renewcommand{\pweavelabel}{lst:default-space}
+\begin{pweavecode}
+from dune.fem.space import solutionSpace
+space = solutionSpace(gridView, dimRange=None, order=1,
+                      storage='fem', field='double')
+\end{pweavecode}
+where \pyth{solutionSpace} is a function from the \pyth{dune.fem.space} module and the available 
+implementations are listed in Table \ref{tab:spaces} below.
+All spaces are created with the following arguments.
+
+\begin{enumerate}
+\item \pyth{gridView}: A grid view object from \ref{sec:grid-list}.
+\item \pyth{dimRange} (optional): The range dimension of the space.
+\item \pyth{order} (optional): The polynomial order of the basis
+functions.
+\item \pyth{storage} (optional): \pyth{'fem'} by default. Other options for the storage used for discrete functions 
+ are \pyth{'istl'} or \pyth{'petsc'} (as shown in Table \ref{tab:discrete-functions}).
+\item \pyth{field} (optional): The field of the range space
+(\pyth{'double'} or \pyth{'complex'}).
+\end{enumerate}
+
+Available spaces are:
+\begin{center}
+  \captionof{table}{Spaces}
+  \label{tab:spaces}
+  \begin{tabular}{l | l | l}
+    \hline
+    Class & Module & Description \\ \hline \hline
+    \input{tables/features_space}
+  \end{tabular}
+\end{center}
+
+\begin{center}
+  \captionof{table}{Discrete Functions}
+  \label{tab:discrete-functions}
+  \begin{tabular}{l | l | l}
+    \hline
+    Class & Module & Description \\ \hline \hline
+    \input{tables/features_discretefunction}
+  \end{tabular}
+\end{center}
+
+
+\section{Grid Function}
+
+Grid functions can be constructed in a variety of ways, though the explicit
+way to make a grid function is
+\renewcommand{\pweavecaption}{The default form for function creation}
+\renewcommand{\pweavelabel}{lst:default-function}
+\begin{pweavecode}
+from dune.fen.function import gridFunction
+f = gridFunction(gridView, 'function-name', order, constructor)
+\end{pweavecode}
+where \pyth{gridFunction} is one of the functions listed in Table
+\ref{tab:functions} which is called with the following arguments.
+\begin{enumerate}
+\item \pyth{gridView}: A grid view object from \ref{sec:grid-list}.
+\item \pyth{'function-name'}: A string for the name of the created
+function.
+\item \pyth{order}: The order of the function used for quadrature.
+\item \pyth{constructor}: An object described in the table below used
+to construct the function.
+\end{enumerate}
+For the below table we list the available functions 
+together with the compatible argument for the
+\pyth{constructor} parameter.
+\begin{center}
+  \captionof{table}{Grid Functions}
+  \label{tab:functions}
+  \begin{tabular}{l | l | l }
+    \hline
+    Class & Module & Constructor \\ \hline \hline
+    \input{tables/features_function}
+  \end{tabular}
+\end{center}
+In addition \pyth{discreteFunction} can be used to construct discrete functions
+where instead of a \pyth{grid} a \pyth{space} is passed as the first argument.
+But typically these are made using the
+\pyth{space.interpolate(expression)} syntax, using the storage type
+for the space by default. The arguments for the \pyth{interpolate}
+method are the same used to construct general grid functions given in
+the previous table.
+
+\section{Schemes and Operators} \label{sec:scheme-list}
+
+As discussed in section \ref{sec:schemes}, schemes can be constructed
+directly with a UFL equation and contain the method for solving the PDE.
+% Addtionally as shown in section \ref{sec:header} it is also possible to create
+% models and operators that store the operator separately.
+In addition UFL forms can be used to construct operators which do not have 
+While schemes have to have identical domain and range spaces, operators can
+map between different spaces.
+We review this below.
+\renewcommand{\pweavecaption}{The default form for scheme creation}
+\renewcommand{\pweavelabel}{lst:default-scheme}
+\begin{pweavecode}
+from dune.fem.scheme import solutionScheme
+scheme = solutionScheme(equation, space,
+                        parameters=dict, solver='solver-name')
+\end{pweavecode}
+where \pyth{solutionScheme} is one of the schemes implemented in \dune[fempy].
+The two main schemes available in \dune[fempy] are
+\pyth{galerkin} and \pyth{h1}. The distinction between them is
+described in section \ref{sec:header}. In addition the \dune[nvdg]
+module provides an \pyth{nvdg} scheme. 
+Schemes are typically created with the following arguments.
+
+\begin{enumerate}
+\item \pyth{equation}: A UFL equation (\pyth{a == b}), or a model
+object. In addition a tuple or list can be used here
+where the first entry is the equation and further arguments can provide
+Dirichlet boundary conditions.
+\item \pyth{space}: A space object from \ref{sec:space-list}. (This is
+optional if the trial/test UFL functions are initialized with a
+\dune[Fempy] discrete function space, as in code listing
+\ref{lst:forch-variables}).
+\item \pyth{parameters} (optional): A dictionary of \dune parameters that can be used
+to specify things like the solver behaviour, e.g.
+\pyth|{'newton.tolerance': 1e-3}| a more detailed description of these
+parameters will be given later.
+\item \pyth{solver} (optional): \pyth{'fem'} by default. Used to
+specify the solver used, from \ref{tab:solvers}.
+\end{enumerate}
+The two main schemes available in \dune[fempy] are
+\pyth{galerkin} and \pyth{h1}. The distinction between them is
+described in section \ref{sec:header}. In addition the \dune[nvdg]
+module provides an \pyth{nvdg} scheme.
+
+There are a number of parameters that can be passed to the scheme to
+influence the solving procedure. Most importantly tolerances for the
+iterative solvers can be provided and verbosity can be turned on and off.
+
+In addition preconditioners can be set via the parameters.
+
+Some parameters are common to all solver backends and others are only available
+for a specific solver backend. 
+
+\renewcommand{\pweavecaption}{Solver parameters for nonlinear and linear solvers.}
+\renewcommand{\pweavelabel}{lst:solverparameter}
+\begin{pweavecode}
+# linear solver parameter 
+from dune.fem import parameter
+parameter.append({"fem.solver.method": "gmres", 
+                  "istl.preconditioning.iterations": 1,
+                  "istl.preconditioning.relaxation": 1.2})
+\end{pweavecode}
+
+\Atodo{discuss the scheme parameters at the end of section describing the
+backends or somewhere else?}
+\begin{comment}
+Available options depend on the
+\pyth{storage} backend used to construct the space.
+For the \pyth{istl} backend available options
+include: \pyth{none, ssor, sor, ilu-0, ilu-n, gauss-seidel, jacobi}
+and \pyth{amg-ilu-0}. They are set using the following syntax.
+\renewcommand{\pweavecaption}{How preconditioning is set via
+parameters}
+\renewcommand{\pweavelabel}{lst:preconditioning}
+\begin{pweavecode}
+from dune.fem import parameter
+parameter.append({"istl.preconditioning.method": "ilu",
+                  "istl.preconditioning.iterations": 1,
+                  "istl.preconditioning.relaxation": 1.2})
+\end{pweavecode}
+For the \pyth{petsc} backend options include:
+\pyth{none}, \pyth{oas}, \pyth{sor}, \pyth{jacobi}, \pyth{hypre},
+\pyth{ml}, \pyth{ilu}, \pyth{icc}, and \pyth{lu}. Which of these
+can actually be used will depend on the PETSc implementation, e.g.
+\pyth{hypre} requires that PETSc was build with support for the
+\pyth{hypre} package.
+\end{comment}
+
+Finally we list the possible solving methods available that can be
+selected during scheme creation above.
+\begin{table}[ht!]
+  \centering
+  \caption{Solvers}
+  \label{tab:solvers}
+  \begin{tabular}{l | l}
+    \hline
+    Class & Description\\ \hline \hline
+    \input{tables/features_solver}
+  \end{tabular}
+\end{table}
+There is also the possibility of constructing an operator that can be
+applied using the \pyth{__call__} method and linearised using the
+\pyth{jacobian} method but does not provide a \pyth{solve} method.
+This is especially of interest in the case where the operator maps
+between different spaces. Creating an operator is similar to the scheme
+construction.
+\renewcommand{\pweavecaption}{The default form for operator creation}
+\renewcommand{\pweavelabel}{lst:default-operator}
+\begin{pweavecode}
+from dune.fem.operator import galerkin
+operator = galerkin(form, domainSpace, rangeSpace)
+\end{pweavecode}
+\Atodo{move the following to main part (Andreas)}
+Here the first argument is a UFL form.
+such after calling
+\pyth{operator(d_h,r_h)} the degrees of freedom of the
+discrete function $r_h$ over the range
+space satisfies \pyth{r_h.dofVector[i] = form(d_h,phi_i)} where
+\pyth{phi_i} are the basis function of the range space. To obtain the
+linearization the \pyth{jacobian} method can be used. First a linear
+operator is constructed providing a \pyth{scheme} or \pyth{operator}. 
+\renewcommand{\pweavecaption}{The default form for creating a linear operator}
+\renewcommand{\pweavelabel}{lst:linear-operator}
+\begin{pweavecode}
+from dune.fem.operator import linear
+jacobian = linear(operator)
+\end{pweavecode}
+This construction already assembles the linearization of the operator
+around zero and is thus sufficient in the linear case. To obtain a
+linearization around some other point the following can be used
+\renewcommand{\pweavecaption}{The default form for linearising an operator}
+\renewcommand{\pweavelabel}{lst:linearise-operator}
+\begin{pweavecode}
+operator.jacobian(r_h,jacobian)
+\end{pweavecode}
+
+%</append>
+
+\end{appendix}
+
+\end{document}

@@ -1,0 +1,802 @@
+```python, label="Intro", echo=False
+# <markdowncell>
+# We show how the features of the Dune core modules can be used in a
+# Python script. Our main focus is on the grid interface which is defined
+# in the Dune-Grid module. This depends on two other modules which we will
+# only briefly touch on.
+# <codecell>
+import time, numpy, math, sys
+```
+
+In this section we show how the approach for exporting statically polymorphic
+interfaces presented in Section~\ref{sec:PythonBindings} is used to provide bindings for the
+core \dune interfaces. To this end we discuss the central components for
+implementing grid based numerical scheme in Python based on \dune[Python].
+In Section \ref{sec:gridconstruction} we discuss grid construction,
+followed by a discussion of the central parts of the grid interface in
+Section~\ref{sec:basicgridusage}.
+The central concept of defining functions over a given grid
+is discussed in Section \ref{sec:gridfunctions}, which are functions that
+can be evaluated on a given element of the grid. We present both the
+\emph{bind/unbind} approach used on the C++ side, as well as
+a more direct evaluation method. Grid functions can be easily constructed
+using decorators. A central part of any numerical scheme
+is the construction of discrete grid function requiring to attach degrees
+of freedom to different parts of the grid; this is discussed in Section
+\ref{sec:attachingdata}.
+While visualization of the grid and of grid functions  using
+\matplotlib is used throughout this section, more details on output,
+e.g., to \vtk files is discussed in Section~\ref{sec:output}.
+We conclude this section by discussing parallelization support.
+
+A full Python script containing all the example code shown in the following
+can be found in the \dune[Python] module in the folder \file{doc/paper}.
+
+The central classes we want to describe are contained in the \pyth{dune.grid} module.
+The \dune[Grid] module depends on \dune[Common] and \dune[Geometry]. The
+first contains some dense matrix-vector routines and some other helper
+classes, e.g., for parallelization support. \dune[Geometry] contains the reference
+elements and quadrature rules required, for example, to implement in finite
+element methods.
+
+
+\section{A quick survey of \dune[Common] and \dune[Geometry]}
+\label{sec:CommonAndGeometry}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## A quick survey of Dune-Common and Dune-Geometry
+# The core module Dune-Common provides some classes for dense linear algebra.
+# The `FieldVector` and `FieldMatrix` classes are heavily used in the grid
+# geometry realizations. The conceptional basis for these geometries is
+# provided by Dune-Geometry, providing, for example, reference elements and
+# quadrature rules.
+# <codecell>
+```
+
+% \Mtodo{better splitting of introduction and this section}
+
+In the following we will only describe the
+corresponding Python modules \pyth{dune.common} and \pyth{dune.geometry} without
+going into detail.
+
+The python module \pyth{dune.common} provides access to the
+fixed sized vectors and matrix classes
+\pyth{FieldVector} and \pyth{FieldMatrix}:
+\renewcommand{\pweavecaption}%
+{Instantiating a \dune \cpp{FieldVector} defined in \dune[Common]}
+\renewcommand{\pweavelabel}{lstDuneCommon}
+```python
+from dune.common import FieldVector, FieldMatrix
+x = FieldVector([0.25,0.25,0.25])
+```
+These dense vectors and matrices are used in many places within the dune
+interface, especially for geometrical representations of grid elements.
+In general, a list or tuple of correct length can be passed to any function or
+method expecting a \cpp{FieldVector} in the \dune C++ interface.
+
+The \pyth{dune.geometry} module provides a class representing a \dune reference
+element. It is constructed from a \emph{geometry type}, which encodes the
+dimension and a basic shape, e.g., simplex or (hyper)cube.
+%for given geometry types. A geometry type consists of two parts:
+%the dimension and the type e.g. \cpp{cube,simplex} etc.
+The following code snippet shows how to obtain the reference element for a
+two-dimensional simplex and print all its corners.
+\renewcommand{\pweavecaption}%
+{Reference elements for a 2d triangle}
+\renewcommand{\pweavelabel}{lstDuneGeometry}
+```python
+import dune.geometry
+geometryType = dune.geometry.simplex(2)
+referenceElement = dune.geometry.referenceElement(geometryType)
+print("\t".join(str(c) for c in referenceElement.corners))
+```
+Note that, for convenience, we could have used \pyth{triangle} instead of
+\pyth{simplex(2)}.
+Experienced \dune users will also note a slight deviation for the C++ interface
+in the above code snippet.
+The Python property \pyth{corners} returns a tuple of corners while the C++ method
+with the same name returns the number of corners.
+
+Similarly, it is straightforward to write a quadrature loop for the reference
+element of a given geometry type:
+\renewcommand{\pweavecaption}%
+{Print quadrature rule for a triangle}
+\renewcommand{\pweavelabel}{lstDuneQuadRule}
+```python
+for p in dune.geometry.quadratureRule(geometryType, 3):
+    print(p.position, p.weight)
+```
+
+
+\section{Grid Construction}
+\label{sec:gridconstruction}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Grid Construction
+# We now move on to the Dune-Grid module. First let us discuss different
+# possibilities of constructing a grid.
+# <codecell>
+```
+
+The \dune[Grid] interface can be implemented in various ways and there is hardly
+a common denominator to the data required to construct a grid.
+Therefore, \dune traditionally does not require any specific constructor for a
+grid implementation.
+However, basic data formats are suitable to construct various grid
+implementations.
+For example, most grid implementations are able to represent a Cartesian grid
+and most unstructured grid implementations can be constructed from a Gmsh file,
+given support for the used geometry types.
+On the C++ side, \dune provides rather complicated factory concepts to support
+different construction mechanisms in addition to custom grid constructors.
+
+To unify the grid constructors, \dune[Python] uses Python's dynamic type system
+and requires constructs a grid from an abstract \emph{domain} description.
+Conceptually, this can be anything from a file, e.g., in the \dune grid
+format (DGF) or the Gmsh format, to a highly specialized data structure
+supported by exactly one grid implementation.
+
+The simplest such domain is the \pyth{cartesianDomain}, which can be used to
+construct a 2d grid as follows:
+\renewcommand{\pweavecaption}{Grid construction of a Cartian grid using the \yaspgrid implementation}
+\renewcommand{\pweavelabel}{lstYaspGridConstruction}
+```python label="CartesianGridConstruction"
+from dune.grid import cartesianDomain, yaspGrid
+domain = cartesianDomain([0, 0], [1, 0.25], [15, 4])
+yaspView = yaspGrid(domain)
+```
+This constructs a new \yaspgrid, which is an efficient Cartesian grid implementation
+provided by \dune[Grid], on the domain $[0,1]\times[0,0.25]$,
+subdivided into $15 \times 4$ cells.
+For convenience, the same result can be achieved by \\
+\pyth{dune.grid.structuredGrid([0,0],[1,0.25],[15,4])}, if any structured grid
+implementation will do.
+
+%The resulting grid has $60$ elements:
+%\renewcommand{\pweavecaption}%
+%{Accessing the number of elements (codimension zero entities)}
+%\renewcommand{\pweavelabel}{lstNumberOfElements}
+%```python, label="ObtainNumberOfElements"
+%print("Number of elements: ",yaspView.size(0))
+%print("Number of vertices: ",yaspView.size(yaspView.dimension))
+%```
+%The argument to the size method is the required codimension of the
+%entity, e.g. zero are elements.
+
+In the C++ interface, a \dune grid is hierarchical.
+Refining a grid globally or locally does not result in a new grid but adds
+child elements to the grid hierarchy.
+Frequently, only the leaf level of the hierarchy is used in numerical
+computations, e.g., using a finite element method.
+%In the C++ interface, a \dune grid represents a tree structure. A globally or
+%locally refined grid, results in a tree where the root nodes are the
+%coarsest grid elements (those provided during the construction of the grid)
+%and the leaf nodes in the tree represent the finest grid elements. 
+For convenience, the \dune[Python] grid construction functions always return
+this leaf view of the underlying hierarchical grid, i.e., iterating over the
+elements of a refined grid will return the finest elements in the grid.
+As a view, however, this object cannot be modified directly and the hierarchical
+grid has to be modified instead..
+For example, globally refining the grid is done as follows:
+\renewcommand{\pweavecaption}{Globally refining a hierarchical grid given its leaf view \pyth{grid}}
+\renewcommand{\pweavelabel}{lstGlobalRefine}
+```python, label="AccessingHGrid", fig=True, caption="refinement of a cartesian grid", width="0.475\\textwidth"
+yaspView.plot()
+yaspView.hierarchicalGrid.globalRefine()
+yaspView.plot()
+```
+To visualize the leaf view, we have used a utility method \pyth{plot}.
+This is a convenience extension to the \dune \cpp{GridView} interface,
+plotting the grid using \matplotlib.
+Note how modifying the hierarchical grid affected its leaf view.
+
+The way \pyth{globalRefine} modifies the grid depends on the grid
+implementation.
+For example, the following snippet instantiates a triangular grid provided by
+the \dune[ALUGrid] module \cite{dune:alugrid} by subdividing each square into
+two triangles.
+Upon global refinement, this grid implementation uses bisection to conformingly
+split each triangle in two.
+```python, label="Intro", echo=False
+# <markdowncell>
+# Let's visualize the grid and then globally refine it once
+# <codecell>
+```
+\renewcommand{\pweavecaption}{Constructing a triangular grid with bisection refinement on $[0,0.25]\times[0,1]$}
+\renewcommand{\pweavelabel}{lstALUConformGridConstruction}
+```python, label="SimplexGridConstruction", fig=True, caption='Refinement of a simplex grid using bisection', width="0.475\\textwidth"
+from dune.alugrid import aluConformGrid
+aluView = aluConformGrid(domain)
+aluView.plot()
+aluView.hierarchicalGrid.globalRefine()
+aluView.plot()
+```
+%Here, we make use another grid implementation from the \dune[ALUGrid] module,
+%which is not part of the \dune core.
+%It provides unstructured purely triangular, quadrilateral, tetrahedral, or
+%hexahedral grids.
+Notice that, although \dune[ALUGrid] is not part of the \dune core but exports
+Python bindings on its own, this only differes from the construction of a
+\cpp{YaspGrid} in the name of the construction function.
+
+The simplest way to set up an unstructured grid is by passing in the vertex
+coordinates and the vertex numbers for each element in the grid:
+```python, label="Intro", echo=False
+# <markdowncell>
+# The same for setting up a simplex grid
+# <codecell>
+```
+\renewcommand{\pweavecaption}%
+{Setting up an unstructed triangular grid}
+\renewcommand{\pweavelabel}{lstConstructUnstructuredGrid}
+```python, label="ConstructUnstructuredGrid", fig=True, caption='An unstructed grid before (left) and after (right) refinement', width='0.4\\textwidth'
+vertices = [(0,0), (1,0), (1,0.6), (0,0.6), (-1,0.6), (-1,0), (-1,-0.6), (0,-0.6)]
+triangles = [(2,0,1), (0,2,3), (4,0,3), (0,4,5), (6,0,5), (0,6,7)]
+aluView = aluConformGrid({"vertices": vertices, "simplices": triangles})
+aluView.plot(figsize=(5,5))
+aluView.hierarchicalGrid.globalRefine(2)
+aluView.plot(figsize=(5,5))
+```
+While we use lists here, any iterable structure is possible.
+However, for performance reasons we recommend the use of \numpy arrays
+for larger grids.
+
+```python, label="Intro", echo=False
+# <markdowncell>
+# In addition to global refinement we can also pre process the grid by
+# marking a subset of elements for local refinement.
+# <codecell>
+```
+
+So far, we have been refining every element in our constructed grids.
+When preparing a grid, we might also want to refine it locally.
+Let us, for example, consider the above grid and focus refinement around the
+corner at the origin:
+
+\renewcommand{\pweavecaption}{Local refining around the origin}
+\renewcommand{\pweavelabel}{lstLocalRefinement}
+```python, label="LocalRefinement", fig=True, caption='Local refined grid', width='0.195\\linewidth'
+from dune.grid import Marker
+aluView.plot(figsize=(5,5))
+for i in range(1,4):
+    def mark(e):
+        x = e.geometry.center
+        return Marker.refine if x.two_norm < 0.64**i else Marker.keep
+    aluView.hierarchicalGrid.adapt(mark)
+    aluView.plot(figsize=(5,5))
+```
+Here, we used the \pyth{geometry} property of the element to determine
+the distance of its barycenter to the origin.
+Obtaining geometrical and topological information from the grid is described
+in detail in Section~\ref{sec:basicgridusage}.
+
+Let us assume we want to use this conforming grid as a macro grid to a triangular
+grid quartering each element on refinement, e.g., \pyth{aluSimplexGrid}.
+To do so, we simply obtain the \pyth{vertices} and \pyth{triangles} arrays
+from our grid implementation, e.g.,
+\renewcommand{\pweavecaption}{Creating a grid from a leaf view}
+\renewcommand{\pweavelabel}{lstCreateFromGrid}
+```python, label="CreateFromGrid", fig=False
+from dune.alugrid import aluSimplexGrid
+vertices = aluView.coordinates()
+triangles = [aluView.indexSet.subIndices(e, 2) for e in aluView.elements]
+aluView = aluSimplexGrid({"vertices": vertices, "simplices": triangles})
+```
+Here, \pyth{coordinates} is another convenience function returning the coordinates
+of all vertices as a two-dimensional \numpy array.
+Of course, we could also have manipulated the coordinates before passing
+them on to \pyth{aluSimplexGrid}.
+The \pyth{indexSet} property will be described in more detail in Section
+\ref{sec:attachingdata}.
+
+All steps taken to construct our triangular grid could also have been done in
+C++.
+However, the \dune[Python] convenience methods and direct plotting through
+\matplotlib make the manual construction of desired macro grids much more
+efficient.
+After all, dumping the grid into, e.g., a DGF file, we could still load it from
+C++.
+
+
+\section{Basic Grid Usage}
+\label{sec:basicgridusage}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Basic Grid Usage
+# We next discuss how to retrieve basic information from a constructed grid
+# and iterate over its entities (i.e., elements, faces, edges, vertices, etc.).
+# <codecell>
+```
+
+Now that we know how to construct a grid, let's see what we can do with it.
+For the sake of presentation, let us consider a tessellation of the unit square
+into two triangles:
+\renewcommand{\pweavecaption}{Triangulation of the unit square}
+\renewcommand{\pweavelabel}{lstUnitSquare}
+```python, label="UnitSquare"
+vertices = [(0,0), (1,0), (1,1), (0,1)]
+triangles = [(2,0,1), (0,2,3)]
+unitSquare = aluSimplexGrid({"vertices": vertices, "simplices": triangles})
+print(unitSquare.size(0),"elements and",unitSquare.size(2),"vertices")
+```
+
+A \dune grid can be considered as a container of \emph{entities} together with
+their relation to each other.
+Here, the term entity collectively refers to any topological object in the grid,
+e.g., a vertex, an edge, facet, or an element.
+Entities are differentiated by their codimension w.r.t.\ the grid dimension, i.e.,
+the dimension of its elements.
+For example, in a tetrahedral grid, the codimension of a facet is 1 and the
+codimension of a vertex is 3. So in the above code
+\pyth{unitSquare.size(0)} returns the number of entities of codimension
+zero, i.e., the number of triangles.
+We can iterate over all entities in the (leaf) grid as follows:
+\renewcommand{\pweavecaption}{Iterating over all entities in a grid}
+\renewcommand{\pweavelabel}{lstGridIterateAllEntities}
+```python, label="GridIterateAllEntities"
+for codim in range(0, unitSquare.dimension+1):
+    for entity in unitSquare.entities(codim):
+        print(", ".join(str(c) for c in entity.geometry.corners))
+```
+As an example, we have printed the position of the corner for each entity.
+Geometrical information on entities will be discussed later in this section.
+
+In general, we define \emph{elements} to be entities of codimension 0,
+\emph{facets} to be entities of codimension 1, \emph{edges} to be
+entities of dimension 1, and \emph{vertices} to be entities of dimension 0.
+Using this notation, we can also perform the iteration over all edges as follows:
+\renewcommand{\pweavecaption}{Iterating over all edges in a grid}
+\renewcommand{\pweavelabel}{lstGridIterateAllEdges}
+```python, label="GridIterateAllEdges", results='hidden'
+for edge in unitSquare.edges:
+    print(", ".join(str(c) for c in edge.geometry.corners))
+```
+Just for comparison the following listing shows the same loop based on the C++
+interface:
+\begin{c++}{Iterating over all edges in a grid using the \dune C++ interface}{lstGridIterateEdgesCPP}
+for( edge : edges( unitSquare ) )
+{
+  const auto geo = edge.geometry();
+  std::cout << geo.corner( 0 ) << ", " << geo.corner( 1 ) << std::endl;
+}
+\end{c++}
+
+In \dune, entities are view-only objects providing the properties \pyth{geometry},
+\pyth{level}, \pyth{type}, and \pyth{partitionType}.
+In addition these objects have a \pyth{referenceElement} property, returning the
+reference element of the entity. The same method is also available on the
+\pyth{Geometry} classes.
+
+The \pyth{geometry} property models the geometric realization of the entity, i.e.,
+a mapping from the local coordinates within the reference element to the global
+coordinates in Euclidean space.
+The global coordinates of a local point are returned by the method
+\pyth{toGlobal}; the local coordinates of a global point can be obtained
+via \pyth{toLocal}.
+To transform tangential vectors, the Jacobian of the reference mapping and its
+inverse are provided by the methods \pyth{jacobianTransposed} and
+\pyth{jacobianInverseTransposed}, which are constant if the property \pyth{affine}
+is \pyth{True}.
+In addition, some properties of the mapping's image are exported: \pyth{center},
+\pyth{corners}, and \pyth{volume}.
+
+% \Mtodo{This is a first blah; it needs further refining and maybe some references to the \dune papers.}
+
+% \Atodo{Another stupid code snippet perhaps? Perhaps printing the local and
+% global midpoint of each edge or something?}
+
+\section{Another Look at Grid Functions}
+\label{sec:gridfunctions}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Grid Functions
+# This is a fundamental concept in any grid based discretization package.
+# These are functions that can be evaluated given an entity in the grid and
+# a local coordinate within the reference element of that entity. 
+# <codecell>
+```
+
+Having a computational grid, we can define functions on it, e.g., a piecewise
+constant function.
+%We refer to such functions as \emph{grid functions}.
+To evaluate a piecewise constant function in an arbitrary point $x$, we
+would first need to find the element $T$ containing $x$.
+However, in practice we usually derive $x$ from a given $T$ and a local position
+$\hat x$ in the reference element of $T$, i.e., $T$ is in most cases already available.
+
+Many \dune modules therefore use the concept of \emph{localizable} or
+\emph{bindable} grid functions.
+These functions are associated with a grid and can be localized to an element
+in some manner; this localization is usually referred to as a
+\emph{local function}. In the following we will use the term
+\emph{grid function} to refer to this specific class of functions.
+
+On the C++ side, \dune[Python] adopts the following interface: For any grid
+function, there must be a free-standing function \cpp{localFunction}, which
+must be accessible by argument-dependent lookup, to construct a localizable
+view of the function.
+This view can then be bound to an element and evaluated in a local position
+$\hat x$.
+An example use could look as follows:
+%A grid function consists of a grid and a function that can be evaluated
+%locally on each element of the grid. More precisely, the approach used
+%in many \dune modules is that from a grid function object, a local grid
+%function can be constructed which when bound to an element $E$ of the
+%grid can be evaluated in local coordinates, i.e., given points
+%$\hat{x}$ in the reference element of $E$. In the C++ code,
+%the local function object is obtained using a free standing function
+%\cpp{localFunction}, which takes a \cpp{gridFunction} instance:
+\begin{c++}{}{}
+auto lf = localFunction( gridFunction );
+lf.bind( element );
+auto y = lf( hatx );
+lf.unbind();
+\end{c++}
+The same concept is also accepted by the \cpp{VTKWriter} class available in
+\dune[Grid].
+
+We replicate this concept in Python as closely as possible.
+As Python does not have the concept of an argument-dependent lookup, we expect
+the grid function to provide a method \pyth{localFunction} instead:
+\begin{python}
+lf = gridFunction.localFunction()
+lf.bind(element)
+y = lf(hatx)
+lf.unbind()
+\end{python}
+
+% \Atodo{mention vectorization here}
+As mentioned above this approach follows the C++ interface as closely as
+possible. It is especially useful in the case that multiple evaluations on
+one element are required and the \pyth{bind} method
+is expensive, e.g., because local degree of freedoms have to be retrieved
+from a global vector for a finite element function. For single evaluations
+or non time critical code the approach given above is cumbersome and leads
+to a high number of inefficient calls between Python and C++. Thus we
+provide a simplified interface to evaluate grid functions:
+\begin{python}
+gridFunction(element, hatx)
+\end{python}
+
+Any function on the grid's domain can be easily turned into a grid
+function by using the geometric mapping from the reference element.
+\dune[Python] provide a \pyth{gridFunction} decorator to add the
+\pyth{localFunction} method to a given function:
+\renewcommand{\pweavecaption}{Decorating a globally defined function as a grid function}
+\renewcommand{\pweavelabel}{lstGF1}
+```python, label="GlobalGridFunctions"
+@dune.grid.gridFunction(aluView)
+def f(x):
+    return math.cos(2.*math.pi/(0.3+abs(x[0]*x[1])))
+```
+On the other hand, we might want to implement a piecewise function, i.e., a
+function $f(T, \hat x)$ and use it as a grid function.
+This works in the same manner:
+\renewcommand{\pweavecaption}{Decorating a locally defined function as a grid function}
+\renewcommand{\pweavelabel}{lstGF2}
+```python, label="LocalGridFunctions"
+@dune.grid.gridFunction(aluView)
+def hat0(element,hatx):
+    return 1-hatx[0]-hatx[1]
+```
+Now we can, for example, compute the maximum value of \pyth{f} at
+the barycenter of all elements using the extended grid function interface
+for direct evaluation provided by the decorator:
+\renewcommand{\pweavecaption}%
+{Using a direct evaluate method on grid function objects}
+\renewcommand{\pweavelabel}{lstGF4}
+```python, label="GlobalGridFunctions3"
+hatx = FieldVector([1./3., 1./3.])
+maxValue = max(f(e, hatx) for e in f.grid.elements)
+```
+In fact, since \pyth{function} is based on a globally defined function,
+the following also works
+\renewcommand{\pweavecaption}%
+{Using a global evaluate method on grid function objects}
+\renewcommand{\pweavelabel}{lstGF5}
+```python, label="GlobalGridFunctions3"
+maxValue = max(f(e.geometry.toGlobal(hatx)) for e in f.grid.elements)
+```
+Note, that the evaluation in a global coordinate will not be available
+for the \pyth{hat0} object defined in Listing~\ref{lstGF1}.
+
+There is also a decorator \pyth{dune.grid.GridFunction} available to
+decorate a class providing either a method \pyth{__call__(self, x)}
+or \pyth{__call__(self, element, hatx)}.
+In general, however, it will be more efficient to implement the full grid
+function interface to cache element information upon \pyth{bind}.
+
+For convenience, grid functions can be easily plotted using the \matplotlib:
+\renewcommand{\pweavecaption}{Plotting grid functions}
+\renewcommand{\pweavelabel}{lstGF6}
+```python, label="GlobalGridFunctions4", fig=True, caption='Plot of \pyth{f} (left) and \pyth{hat0} (right)', width='0.45\\textwidth'
+f.plot()
+hat0.plot()
+```
+
+% \Mtodo{I think the following example is not necessary}
+
+% Now we can for example compute the maximum value of \pyth{f} at
+% the bary center of all elements:
+% \renewcommand{\pweavecaption}%
+% {Using the \pyth{localFunction} concept to compute the maximum value over
+% the bary centers of all elements}
+% \renewcommand{\pweavelabel}{lstGF3}
+% ```python, label="GlobalGridFunctions2"
+% maxValue = 0
+% localgf = f.localFunction()
+% for element in f.grid.elements:
+%     localgf.bind(element)
+%     maxValue = max(maxValue, localgf([1./3.,1./3.]))
+%     localgf.unbind()
+% print(maxValue)
+% ```
+% In Python one would like the option to write this in a single line.
+% The \pyth{gridFunction} decorator adds some extra functionality which
+% is not directly available using the \dune C++ concepts:
+% \renewcommand{\pweavecaption}%
+% {Using a direct evaluate method on grid function objects}
+% \renewcommand{\pweavelabel}{lstGF4}
+% ```python, label="GlobalGridFunctions3"
+% maxValue = max(f(e,[1./3.,1./3.]) for e in f.grid.elements)
+% print(maxValue)
+% ```
+% In fact since \pyth{f} is based on a globally defined function
+% the following also works
+% \renewcommand{\pweavecaption}%
+% {Using a global evaluate method on grid function objects}
+% \renewcommand{\pweavelabel}{lstGF5}
+% ```python, label="GlobalGridFunctions3"
+% maxValue = max(f(e.geometry.toGlobal([1./3.,1./3.])) for e in f.grid.elements)
+% print(maxValue)
+% ```
+% Note, that the evaluation in a global coordinate will not be available
+% for \pyth{hat0} object defined in Listing \ref{lstGF1}.
+
+
+\section{Attaching Data to the Grid}
+\label{sec:attachingdata}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Attaching Data to the Grid
+# To attach data to the entities in a grid, each Dune grid has an
+# `IndexSet` which provides a consecutive, zero starting integer for the
+# set of entities of a given geometry type, i.e., entities sharing the same
+# reference element, like all triangles or all cubes. This can be used to attach
+# data to the these entities stored in random access containers like
+# `numpy` arrays. To simplify the process further a `mapper` can be used
+# which is initialized with the data layout, i.e., the number of degrees of
+# freedom that is supposed to be attached to every entity with a given
+# geometry type.
+# <codecell>
+```
+
+In \dune grid structure and user data are cleanly separated, i.e.,
+user data is stored in separate containers.
+The grid provides index maps assigning a unique index to each entity,
+which can be used to address containers of user data.
+
+Each grid has an \pyth{indexSet} property, which assigns an index to each
+entity that is unique within its geometry type.
+For each geometry type, the index range is $[0, N)$, where $N$ is the number
+of entities of this type within the grid.
+Note that \dune does not prescribe any correlation between the iteration order
+and the order of the indices. Recall, for example, the code snippet from
+Listing~\ref{lstCreateFromGrid}, where the \pyth{indexSet} property was used to
+define the elements of a triangulation. The function call
+\pyth{aluView.indexSet.subIndices(e, 2)} for a given element \pyth{e} returns
+the list of indices for all the corners of $e$ (the second argument being the codimension of the
+vertices in a 2d grid; the indices for all the edges for example are obtained by calling
+\pyth{subIndices(e,1)}).
+
+To simplify attaching data to entities of different type
+(e.g., different codimension), \dune[Grid] provides the
+\cpp{MultipleCodimMultipleGeomTypeMapper} class.
+It combines the ranges in an index set such that each entity in the grid is
+assigned a fixed number $n$ of array indices, where $n$ depends only on the
+geometry type.
+
+In Python, the grid provides a convenience method \pyth{mapper} to construct
+such a mapper.
+The mapping from geometry type to the number of requested array indices can be
+passed either as a function, as a callable, as a \pyth{dict}, or as a list or
+tuple.
+In the latter case, the number is assigned by codimension only.
+For example, to assign 2 indices to each element and 3 indices to each vertex in
+the grid, we construct the mapper as follows:
+\setpweavecaption{Example mapper construction}{lstMapperConstruction}
+```python, label="MapperConstruction"
+mapper = unitSquare.mapper([2, 0, 3])
+```
+The above approach is convenient if the same number of degrees of freedom
+is attached to all subentities of a given codimension.
+In many cases, however, the number depends on the geometry type of the entity.
+For example, to attach 4 degrees of freedom to a quadrilateral but only 1 to a
+triangle we use the following \pyth{dict}:
+\setpweavecaption{Example mapper construction using a dictionary}{lstMapperConstructionDict}
+```python, label="MapperConstructionDict"
+layout = {dune.geometry.quadrilateral: 4, dune.geometry.triangle: 1}
+mapper = unitSquare.mapper(layout)
+```
+The abbreviations \pyth{dune.geometry.triangle} and
+\pyth{dune.geometry.quadrilateral} can be used for
+\pyth{dune.geometry.simplex(2)} and
+\pyth{dune.geometry.cube(2)}, respectively, as discussed in
+Section~\ref{sec:CommonAndGeometry}.
+
+Implementing a Lagrange type interpolation into a piecewise linear
+finite element space can now be easily done:
+\setpweavecaption{Lagrange interpolation}{lstLagrangeInterpolation}
+```python, label="LagrangeInterpolation"
+def interpolate(grid):
+    mapper = grid.mapper({dune.geometry.vertex: 1})
+    data = numpy.zeros(mapper.size)
+    for v in grid.vertices:
+        data[mapper.index(v)] = f(v.geometry.center)
+    return mapper, data
+```
+For a triangular grid, implementing the linear interpolation elementwise is now
+straightforward using the \pyth{gridFunction} decorator to obtain a
+grid function:
+\renewcommand{\pweavecaption}%
+{Defining the local interpolation and the interpolation error}
+\renewcommand{\pweavelabel}{lstInterpolationAndError}
+```python, label="LagrangeInterpolationDef"
+mapper, data = interpolate(aluView)
+@dune.grid.gridFunction(aluView)
+def p12dEvaluate(e, x):
+    bary = 1-x[0]-x[1], x[0], x[1]
+    idx = mapper.subIndices(e, 2)
+    return sum(b * data[i] for b, i in zip(bary, idx))
+```
+In the above code we have used the \pyth{subIndices} method, which takes an
+element \pyth{e} of the grid and a codimension \pyth{c} and returns the indices of all
+degrees of freedom attached to subentities of \pyth{e} of the given
+codimension (here, 2 for the vertices). Previously, we used the
+\pyth{index} method providing an entity of the grid (a vertex) which
+returns the indices of the degrees of freedom attached to that entity.
+
+Finally, the mapper is callable with an element \pyth{e} to obtain
+the indices of \emph{all} degrees of freedoms attached to that
+element, i.e., including all subentities. The order of the returned indices
+is in decreasing order of codimension, i.e., starting with the indices for
+vertices.
+Within a given codimension the indices are ordered according
+to the order of the subentities in the reference element of \pyth{e}.
+
+The maximum error at element barycenters can now be quite easily computed:
+\renewcommand{\pweavecaption}%
+{Maximum error of Lagrange interpolation using local coordinate object}
+\renewcommand{\pweavelabel}{lstMaxErrorLagrangeInterpolation1}
+```python, label="LagrangeInterpolationError1"
+@dune.grid.gridFunction(aluView)
+def error(e, x):
+    return abs(p12dEvaluate(e, x)-f(e, x))
+hatx = FieldVector([1./3., 1./3.])
+print(max(error(e, hatx) for e in aluView.elements))
+```
+
+
+\section{Output}
+\label{sec:output}
+```python, label="Intro", echo=False
+# <markdowncell>
+# ## Output
+# We already used `matplotlib` to plot the grid and grid functions. For more
+# flexible plotting Dune relies on `vtk` and Dune-Python makes it easy to
+# write suitable files.
+# <codecell>
+```
+
+Let us first visualize the result using \matplotlib. We have already
+used the \pyth{plot} method on the grid class. The \pyth{gridFunction}
+decorated also adds a plot method that can be used to plot a piecewise
+linear interpolation of the data:
+\renewcommand{\pweavecaption}%
+{Plotting the Lagrange interpolation}
+\renewcommand{\pweavelabel}{lstPlotLagrangeInterpolation}
+```python, label="LagrangeInterpolationFig", fig=True, caption='Lagrange interpolation on the locally adapted grid (full domain on left and on $[0,0.4]^2$ on right)', width='0.32\\textwidth'
+p12dEvaluate.plot(figsize=(9,9), gridLines=None)
+p12dEvaluate.plot(figsize=(9,9), gridLines='black',
+             xlim=[0,0.4], ylim=[0,0.4])
+f.plot(level=2, figsize=(9,9), gridLines=None)
+```
+In the final line we plot the actual function we are interpolating. We used
+an additional argument \pyth{level} to get a more accurate representation.
+If we had set \pyth{level=0} we would have reproduced the picture of the
+linear interpolation, i.e., the figure on the left;
+by using \pyth{level>0} the result is shown on a
+refined grid. Note that both the locally defined function
+\pyth{p12dEvaluate} and the globally defined function are handled in the
+same way.
+
+The capabilities of \matplotlib are limited to two-dimensional grids at most.
+Moreover at the time of writing, only the grid's wireframe and piecewise linear
+functions can be plotted (albeit also on a refined grid) using the provided
+methods.
+For more complex data analysis, e.g., in three space dimensions, external
+programs like \paraview are more flexible.
+Thus, \dune[Grid] provides output of grid and data using the \vtk file format.
+The following code snippet produces a \vtk file with the piecewise linear
+interpolation and the actual smooth function we interpolated:
+\renewcommand{\pweavecaption}%
+{\vtk output}
+\renewcommand{\pweavelabel}{lstVTKOutput}
+```python, label="VTKOutput", results = 'hidden'
+pd = {"exact": f, "discrete": p12dEvaluate, "error": error}
+aluView.writeVTK("interpolation", pointdata=pd)
+```
+As with \matplotlib, the error would be zero and we can use subsampling to see
+the difference between the exact function and the linear interpolation in more
+detail:
+\renewcommand{\pweavecaption}%
+{Subsampling \vtk output}
+\renewcommand{\pweavelabel}{lstSubsamplingVTKOutput}
+```python, label="VTKSubsamplingOutput", results = 'hidden'
+aluView.writeVTK("interpolation_subsampled", subsampling=2, pointdata=pd)
+```
+\begin{figure}[htpb]
+\center
+\includegraphics[width=0.32\textwidth]{figures/interpolation_discrete.png}
+\includegraphics[width=0.32\textwidth]{figures/interpolation_exact.png}
+\includegraphics[width=0.32\textwidth]{figures/interpolation_error.png}
+\caption{Interpolation, exact function, and error using the vtk output}
+\label{fig:interpolSubSampled}
+\end{figure}
+```python, label="lst:3dgmsh-md", echo=False
+# <markdowncell>
+# ![interpolation](figures/interpolation_discrete.png)
+# ![exact solution](figures/interpolation_exact.png)
+# ![interpolation error](figures/interpolation_error.png)
+# <codecell>
+```
+
+```python, label="Intro", echo=False
+# <markdowncell>
+# Mayavi can also be used to plot grid function in Python. This approach
+# relies on methods to extract `numpy` representations of the grid data
+# structure and values of a given grid function.
+#
+# __Note__: mayavi is not installed in the Docker image and, therefore,
+# this feature is not available the Docker container.
+# <codecell>
+```
+It is also directly possible to extract a representation of the
+tessellation using \numpy structures using the \pyth{triangulation}
+method, which returns a \\
+\pyth{matplotlib.tri.triangulation.Triangulation} \\
+object.
+A \numpy array containing the values of a grid function, e.g., the Lagrange
+interpolation defined in Listing~\ref{lstLagrangeInterpolation},
+%(i.e., the grid function \pyth{u_h} representing the Lagrange interpolation
+%defined in Listing~\ref{lstLagrangeInterpolation})
+at the nodes of the (subsampled) grid can be obtained using the method
+\pyth{pointData} on the grid function.
+The following example shows how this can be used to plot grid functions using
+\mayavi \cite{mayavi}:
+\renewcommand{\pweavecaption}%
+{Converting tessellation and interpolation to \numpy}
+\renewcommand{\pweavelabel}{lstToNumpy}
+```python, label="ToMayavi", results = 'hidden'
+level = 3
+triangulation = f.grid.triangulation(level)
+z = f.pointData(level)[:,0]
+try:
+    from mayavi import mlab
+    from mayavi.tools.notebook import display
+    mlab.init_notebook("png")
+    mlab.figure(bgcolor = (1,1,1))
+    s = mlab.triangular_mesh(triangulation.x, triangulation.y, z*0.5,
+                             triangulation.triangles)
+    display( s )
+    # mlab.savefig("mayavi.png", size=(400,300))
+    mlab.close(all=True)
+except ImportError:
+    pass
+```
+\begin{figure}[htpb]
+\center
+\includegraphics[width=0.6\textwidth]{mayavi.png}
+\caption{Visualization using mayavi}
+\label{fig:mayavi}
+\end{figure}

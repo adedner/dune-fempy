@@ -1,0 +1,7 @@
+adaptiveLeafGridView & dune.fem.view & Adaptive grid view \\ \hline
+filteredGridView & dune.fem.view & \begin{tabular}{@{}l@{}}
+  Filtered grid view for separated domains. Usage: \\
+  subGrid = create.view("filtered", grid, filter, domainID) \end{tabular} \\ \hline
+geometryGridView & dune.fem.view & \begin{tabular}{@{}l@{}}
+  Convert a coordinate function into a grid view. Usage: \\
+  geometry = create.view("geometry", function) \end{tabular} \\ \hline

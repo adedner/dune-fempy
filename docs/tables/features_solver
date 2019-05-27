@@ -1,0 +1,9 @@
+'bicgstab' & Biconjugate gradient method \\ \hline
+'cg' & Conjugate gradient method (for symmetric problems only) \\ \hline
+'gmres' & Generalized minimal residual method \\ \hline
+'minres' & Minimal residual method \\ \hline
+'suitesparse' & \begin{tabular}{@{}l@{}}
+                This is a tuple where the second argument determines \\
+                which suitesparse solver to used
+                \end{tabular} \\ \hline
+'superlu' & Solve method from SuperLU package \\ \hline

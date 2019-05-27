@@ -1,0 +1,5 @@
+'elliptic' & dune.fem & \begin{tabular}{@{}l@{}}Default elliptic model using \\
+                        a virtualized DUNE-Fem class \end{tabular} \\ \hline
+'integrands' & dune.fem & \begin{tabular}{@{}l@{}}Model class generated from \\
+                            UFL expressions (not DUNE-Fem compatible) \end{tabular} \\ \hline
+'nvelliptic' & dune.femnv & Nonvariational elliptic model for nv schemes \\ \hline

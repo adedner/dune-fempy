@@ -1,0 +1,9 @@
+aluConformGrid   & dune.alugrid & Conforming simplex grid \\ \hline
+aluCubeGrid      & dune.alugrid & Nonconforming cube grid \\ \hline
+aluSimplexGrid   & dune.alugrid & Nonconforming simplex grid  \\ \hline
+onedGrid         & dune.grid & One-dimensional grid \\ \hline
+ugGrid           & dune.grid & Hybrid nonconforming unstructured grid \\ \hline
+yaspGrid         & dune.grid & Structured grid \\ \hline
+polygonGrid      & dune.polygongrid & Polygonal grid \\ \hline
+spBisectionGrid  & dune.spgrid & Structured grid \\ \hline
+spIsotropicGrid  & dune.spgrid & Structured grid \\ \hline

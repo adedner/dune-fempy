@@ -156,23 +156,6 @@ tolerance = 0.05
 
 # <markdowncell>
 # Let us solve over a loop (solve,estimate,mark) and plot the solutions side by side.
-# There are a few common strategies for marking grid elements based on the
-# elementwise constant estimator $(\eta_T)_T$ preimplemented. One of them is
-# a very simple strategy:
-# ```
-# def mark(indicator, refineTolerance, coarsenTolerance=0,
-#          minLevel=0, maxLevel=None):
-# ```
-# In this approach elements are marked if $\eta_T$ is greater as the given
-# `refineTolerance` and coarsened if it is smaller then the provided
-# `coarsenTolerance`. A minimum and a maximum grid level can be provided to
-# restrict the finest and coarsest grid level used. A equal distribution
-# strategy can be implemented by taking `refineTolerance` to be
-# $\frac{\theta^2}{N}$ where $\theta$ is a given tolerance and $N$ is the
-# number of grid elements. Another method is a layered Doerfler strategy:
-# ```
-# def doerflerMark(indicator, theta, maxLevel=None, layered=0.05):
-# ```
 
 # <codecell>
 h1error = dot(grad(uh - exact), grad(uh - exact))

@@ -4,6 +4,8 @@
 Using Docker or Vagrant
 #######################
 
+.. todo:: mention dune-fem-dev
+
 ###########
 From Source
 ###########
@@ -37,11 +39,13 @@ The following dependencies are needed for Dune-Fempy:
 Building the Dune Core modules
 ******************************
 
-- Mention available deb packages
+.. todo:: Mention available deb packages and perhaps link to other tutorials?
 
 ****************************
 Setting up the python module
 ****************************
+
+.. todo:: mention `dune-python/bin/setup-py.sh` and other options 
 
 ***************
 Troubleshooting

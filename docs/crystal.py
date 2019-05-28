@@ -164,19 +164,6 @@ indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="ind
 # <markdowncell>
 # We perform the initial refinement of the grid using the general form of the `mark' method
 
-# ```python
-# def mark(indicator, refineTolerance, coarsenTolerance=0,
-#     minLevel=0, maxLevel=None):
-# ```
-
-# which can be used for both refinement and coarsening.
-# An element $T$ is marked for refinement if the value value of
-# `indicator` on $T$ is greater then `refineTolerance` and coarsened if the
-# value is less then `coarsenTolerance`. The element $T$ is not refined if
-# its level is already at `maxLevel` and not coarsened if its level it at
-# `minLevel`.
-
-
 # <codecell>
 maxLevel = 11
 startLevel = 5

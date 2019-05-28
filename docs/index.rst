@@ -128,7 +128,6 @@ Indices and Tables
 * :ref:`modindex`
 * :ref:`search`
 
-
 ************
 Bibliography
 ************

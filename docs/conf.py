@@ -288,3 +288,6 @@ apidoc_excluded_paths = ['tests']
 apidoc_separate_modules = True
 
 rst_epilog = "\n.. include:: .special.rst\n"
+
+[extensions]
+todo_include_todos=True

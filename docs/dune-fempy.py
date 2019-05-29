@@ -456,7 +456,7 @@ plotComponents(vec, gridLines=None, level=2,
                colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 
 # <markdowncell>
-To prescribe $u_2=0$ at the bottom boundary is also straightforward
+# To prescribe $u_2=0$ at the bottom boundary is also straightforward
 # <codecell>
 
 bcBottom = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),0],x[1]<1e-10)

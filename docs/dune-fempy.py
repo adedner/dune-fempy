@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Finite Element Methods
+# # Finite Element Methods: a first example
 # In the foloowing we introduce the basic components of a finite
 # element method:
 #

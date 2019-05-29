@@ -57,8 +57,8 @@ A layered Doerfler strategy is also available
 .. toctree::
    :maxdepth: 2
 
-   laplace-adaptive.rst
-   crystal.rst
+   laplace-adaptive_nb
+   crystal_nb
 
 
 ############
@@ -70,8 +70,9 @@ Moving Grids
 .. toctree::
    :maxdepth: 2
 
-   mcf.rst
+   mcf_nb
 
+.. _algorithms:
 
 #######################
 Using C++ Code Snipetts
@@ -79,7 +80,13 @@ Using C++ Code Snipetts
 
 .. todo:: add some explanation on `algorithms` and closeness of Python/C++ interface
 
+.. literalinclude:: mcf-algorithm.py
+   :pyobject: calcRadius
+
+.. literalinclude:: radius.hh
+
 .. toctree::
    :maxdepth: 2
 
-   mcf-algorithm.rst
+   mcf-algorithm_nb
+   lineplot_nb

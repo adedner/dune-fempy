@@ -4,48 +4,180 @@
 Using Docker or Vagrant
 #######################
 
-.. todo:: mention dune-fem-dev
+We provide files for building a Dune docker or vagrant environment on a host
+machine which can be used to develop both C++ and Python code based on Dune.
+In both cases the environment has to be build locally and can then be run from
+any folder on the host machine, i.e., a folder containing some Dune module
+or some Python script. Access rights are set so that the docker/vagrant user
+has the same rights as the user who build the docker/vagrant image
+in the directory from where it was started; consequently new files
+generated during the session are modifiable on the host and vice versa.
+
+The Linux distribution used is based on a Ubuntu image
+and contains most programs needed for shell based code development.
+To install additional packages clone the `dune-fem-dev`_ repository and modify
+the `bootstrap.sh` script adding appropriate `apt-get install`. This script
+is executed as root in the docker/vagrant environment. The script
+`buildDune.sh` is executed as user. Here the virtual environment is set up
+and Dune repositories cloned and build. So additional Dune repositories can
+be added here as well as additional Python packages using `pip install`.
+After each modification to image has to be rebuild within the cloned repository.
+
+.. _dune-fem-dev: https://gitlab.dune-project.org/dune-fem/dune-fem-dev
+
+******
+Docker
+******
+
+To build the container run
+
+.. code:: bash
+
+   docker build --build-arg userId=$(id -u) --build-arg groupId=$(id -g) -t dune https://gitlab.dune-project.org/dune-fem/dune-fem-dev.git
+
+If you have cloned this repository locally replace the URL with a colon.
+
+To get into the container with the current directory as working
+directory execute
+
+.. code:: bash
+
+   docker run -it -rm -v $PWD:/host -v dune:/dune \
+          -v /tmp/.X11-unix:/tmp/.X11-unix:ro dune bash
+
+The current directory will be mounted as `/host` and the main Dune modules and
+the Python virtual environment will be located under the home directory (`/dune`)
+of the `dune` user located in the corresponding data volume.
+
+The second line is needed to activate X forwarding on Linux machines. For
+Windows and MAC OS a bit more work is required:
+
+Notes for MAC users
+===================
+
+To get X forwarding to work in Docker requires
+additionally `xquartz` and `socat` as discussed
+`here <https://irvingduran.com/2017/07/docker-container-x11-on-macos-awesome>`.
+In summary (but please check the given website):
+
+* install XQuartz (X11) and socat
+* in a seperate terminal run
+
+  .. code:: bash
+
+     socat TCP-LISTE:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
+
+* build the docker container and described above and run it using:
+
+  .. code:: bash
+
+     docker run -it -rm -v $PWD:/host -v dune:/dune \
+            -e DISPLAY=$(ipconfig getifaddr en0):0 --net=host \
+            -v /tmp/.X11-unix:/tmp/.X11-unix:ro dune bash
+
+If somebody knows of an easier fix please let us know...
+
+Note for Windows users
+======================
+
+the Docker container has not been tested on
+Windows yet - if you have tested it let us know. X forwarding is sure to
+require some extra work here.
+
+*******
+Vagrant
+*******
+
+Run `vagrant up` to get started and then `vagrant ssh` in your working
+directory to go into the container.
+To update the container run `vagrant provision` which will reexecute the
+`bootstrap.sh` file.
+
 
 ###########
 From Source
 ###########
 
+.. note::
+   We strongly encourage the use of a python virtual environment and the
+   following instructions are written assuming that a virtual environment is
+   activated.
+
 ************
 Requirements
 ************
 
-The following dependencies are needed for Dune-Fempy:
+The following dependencies are needed for Dune-Fem python binding:
 
 * At least C++11 compatible C++ compiler (e.g. gcc 5.3 or later)
-
 * python (3.4 or later - possibly also works with 2.7 but not guaranteed)
 
   * mpi4py
-  * ufl       (strongly recommended)
-  * petsc4py  (optional)
+  * numpy and scipy (strongly recommended)
+  * matplotlib      (strongly recommended)
+  * ufl             (strongly recommended)
+  * petsc4py        (recommended)
 
-* Dune (release 2.6 or later)
+* Required Dune modules (release 2.6 or later)
 
-  * dune-common
-  * dune-geometry
-  * dune-grid
-  * dune-istl
-  * dune-localfunctions
-  * dune-fem
-  * dune-corepy
-  * dune-alugrid  (strongly recommended)
+  * dune-common (https://gitlab.dune-project.org/core/dune-common.git)
+  * dune-geometry (https://gitlab.dune-project.org/core/dune-geometry.git)
+  * dune-grid (https://gitlab.dune-project.org/core/dune-grid.git)
+  * dune-python (https://gitlab.dune-project.org/staging/dune-python.git)
+  * dune-fem (https://gitlab.dune-project.org/dune-fem/dune-fem.git)
+
+* Recommended Dune modules (releases 2.6 or later)
+
+  * dune-istl (https://gitlab.dune-project.org/core/dune-istl.git)
+  * dune-localfunctions (https://gitlab.dune-project.org/core/dune-localfunctions.git)
+  * dune-alugrid  (https://gitlab.dune-project.org/extensions/dune-alugrid.git)
 
 ******************************
-Building the Dune Core modules
+Building the Dune Core Modules
 ******************************
 
 .. todo:: Mention available deb packages and perhaps link to other tutorials?
 
-****************************
-Setting up the python module
-****************************
+After cloning all the repositories simply run
 
-.. todo:: mention `dune-python/bin/setup-py.sh` and other options 
+.. code:: bash
+
+   ./dune-common/bin/dunecontrol --opts=config.opts all
+
+where :download:`config.opts<config.opts>` is an optional configuration
+file containing for example flags for the `cmake` process using `CMAKE_FLAGS=`.
+
+.. todo:: we need to mention `CMAKE_POSITION_INDEPENDENT_CODE=TRUE` or `BUILD_SHARED_LIBS`
+
+********************************
+Building the Dune Python Package
+********************************
+
+After the build process has terminated (hopefully successfully) run
+
+.. code:: bash
+
+   ./dune-python/bin/setup-dunepy.py --opts=config.opts install
+
+and you should be ready to go. Test the installation by opening a Python
+terminal and running
+
+.. code:: python
+
+   from dune.grid import structuredGrid
+   grid = structuredGrid([0,0],[1,1],[10,10])
+   grid.plot()
+
+If you have everything set up correctly (and have `matplotlib`) you should
+get a figure of a structured grid...
+
+.. note::
+   The first time you construct an object of a specific realization of one
+   of the Dune interfaces (e.g. here a structured grid),
+   the just in time compiler needs to be invoked. This can take quite some
+   time - especially for grid realizations. This needs to be done only once
+   so rerunning the above code a second time (even using other parameters
+   in the `structuredGrid` function) should execute almost instantaniously.
 
 ***************
 Troubleshooting

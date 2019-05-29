@@ -1,9 +1,9 @@
-.. dune-fempy documentation master file, created by
+.. dune-fem python documentation master file, created by
    Andreas Dedner on Mon Mai 20 2019.
 
-######################################
-Welcome to dune-fempy's documentation!
-######################################
+###########################################################
+Welcome to the documentation for dune-fem's python bindings
+###########################################################
 
 This module brings python scripting support to `Dune`_.
 It serves three purposes:
@@ -24,17 +24,16 @@ It serves three purposes:
 3. Rapid prototyping of new implementations of `Dune`_ interfaces. So
    new implementations of the `Dune`_ grid interface can be easily
    tested. For `Dune-Fem`_ developers, new grid views, discrete function spaces, and
-   scheme classes following the `Dune-Fem-Howto`_ concept can be added and tested.
+   scheme classes following the *Dune-Fem-Howto* concept can be added and tested.
 
-.. _Dune: http://www.dune-project.org
-.. _Dune-Fem-Howto: http://dune.mathematik.uni-freiburg.de/doc/html-howto/
-.. _Dune-Fem: http://www.dune-project.org/fem/index.html
-.. _UFL: http://fenicsproject.org/documentation/ufl/1.0-beta2/ufl.html
+.. _Dune: https://www.dune-project.org
+.. _Dune-Fem: https://www.dune-project.org/modules/dune-fem/
+.. _UFL: https://bitbucket.org/fenics-project/ufl
 
 
-****************************
+############################
 An Overwiew of this Document
-****************************
+############################
 
 This document tries to describe the main concepts needed to get a new user
 started on solving complex partial differential equations using the
@@ -55,21 +54,17 @@ the code is available for download in form of both :ref:`scripts`.
    is used to describe the basic concepts. This leads through the steps
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
-   different solver backends (including for example `scipy`_ and `petsc`_).
-
+   different solver backends (including for example `scipy`_ and `petsc`_).  |br|
    We then provide more detail on how to use the `Dune`_ grid interface,
-   attach data to the grid entities and define general grid functions.
-
+   attach data to the grid entities and define general grid functions. |br|
    Finally, some more examples building up on the general concepts described
-   in the first part.
-
+   in the first part. |br|
    The :ref:`scripts`
    used for each of these and the following examples can be downloaded
    and are hopefully useful as starting point for new projects.
 #. Local grid refinement and coarsening is a central feature of
    `Dune-Fem`_. Here we show how to use it for stationary and
-   time dependent problems.
-
+   time dependent problems. |br|
    Grid adaptivity makes use of special grid views. Other views are also
    available, one of these can be used to deform the grid given an
    arbitrary (discrete) vector field. This is used to compute the evolution
@@ -93,13 +88,13 @@ the code is available for download in form of both :ref:`scripts`.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Introduction
+   :caption: Getting Started
 
    gettingstarted
 
 .. toctree::
-   :caption: Further Topics
    :maxdepth: 2
+   :caption: Further Topics
 
    topics
 
@@ -108,29 +103,30 @@ the code is available for download in form of both :ref:`scripts`.
    :caption: User Projects
    :name: userprojects
 
-   contributions
+   twophaseflow_descr
+   vemdemo_descr
 
 .. toctree::
    :maxdepth: 2
    :caption: Information and Resources
 
+   contributions
    additional
 
 
 .. API reference <api/modules>
 
 
-******************
+##################
 Indices and Tables
-******************
+##################
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
 
-************
+############
 Bibliography
-************
-
+############
 
 .. bibliography:: dune-fempy.bib

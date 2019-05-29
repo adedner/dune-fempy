@@ -17,4 +17,4 @@ discontinuous Galerking scheme :cite:`TwoPhaseFlow`.
 .. toctree::
    :maxdepth: 3
 
-   twophaseflow.rst
+   twophaseflow_nb

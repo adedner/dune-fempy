@@ -5,13 +5,15 @@ Demonstration notebook for the DUNE-VEM module
 
 .. sectionauthor:: Andreas Dedner <a.s.dedner@warwick.ac.uk>, Martin Nolte <nolte.mrtn@gmail.com>
 
-This module is based on DUNE-FEM (https://www.dune-project.org/modules/dune-fem)
+This module is based on DUNE-FEM
+(https://gitlab.dune-project.org/dune-fem/dune-fem)
 and provides implementation for the Virtual Element Method. The methods and
 a Python frontend based on the new Python extension to DUNE
-(https://dune-project.org/modules/dune-python) is available in the
-http://www.dune-project.org/modules/dune-fem/dune-vem.
+(https://gitlab.dune-project.org/staging/dune-python)
+is available in the
+https://gitlab.dune-project.org/dune-fem/dune-vem.
 
 .. toctree::
    :maxdepth: 3
 
-   vemdemo.rst
+   vemdemo_nb

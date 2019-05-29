@@ -1,22 +1,10 @@
 # <markdowncell>
-# # Mean Curvature Flow
+# # Mean Curvature Flow (revisited)
 #
-# In this example we compute the mean curvature flow of a surface:
-# \begin{align}
-#    \frac{\partial}{\partial_t} x &= H(x)  && \text{for } x\in\Gamma(t)
-# \end{align}
-# Assume we can define a reference surface $\Gamma_0$ such that
-# we can write the evolving surface $\Gamma(t)$ in the form
-# \begin{gather}
-#   \Gamma(t) = X(t,\Gamma_0)
-# \end{gather}
-# It is now possible to show that the vector valued function $X=X(t,x)$ with $x\in\Gamma_0$ satisfies:
-# \begin{gather}
-#   \frac{\partial}{\partial_t}X = - H(X)\nu(X)
-# \end{gather}
-# where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
 #
-# We will solve this using a finite element approach based on the following time discrete approximation:
+# We simulate the shrinking of a sphere under mcf using a finite element
+# approach based on
+# the following time discrete approximation:
 # \begin{gather}
 #   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
 #     \tau \int_{\Gamma^n} \big(
@@ -28,7 +16,22 @@
 # $\Gamma^n:=\Gamma(t^{n})$,
 # $I$ is the identity matrix, $\tau$ is the time step and
 # $\theta\in[0,1]$ is a discretization parameter.
-# <img src="mcf.gif" style="height:228px;">
+#
+# In this case we have an exact formula for the evolution of the radius of
+# the surface
+#
+# $$R(t) = \sqrt{R(0)^2 - 4t}.$$
+#
+# To compare the accuracy of the surface approximation we compute an
+# average radius of the discrete surface in each time step $t^n$ using
+#
+# $$R_h^n = \frac{ \int_{\Gamma^n} |x| }{ |\Gamma^n| }.$$
+#
+# Computing $R_h^n$ requires a grid traversal and a number of calls to
+# interface methods on each element. Doing this on the Python side has a
+# potential performance impact which we investigate here by comparing a
+# pure python implementation with a hybrid approach where computing $R_h^n$
+# is implemented in C++ using the `dune.generator.algorithm` functionality.
 
 # <codecell>
 import math, time
@@ -41,8 +44,6 @@ from dune.generator import algorithm
 import dune.geometry as geometry
 import dune.fem as fem
 from mcf_cmp_plot import plot
-
-print("START",flush=True)
 
 # polynomial order of surface approximation
 order = 2
@@ -59,10 +60,24 @@ endTime = 0.1
 # If first argument is `True` the radius of the computed surface is
 # computed using an algorithm implemented in C++ otherwise the computation
 # is done in Python.
-#
+# <codecell>
+def calcRadius(surface):
+    R,vol = 0, 0
+    for e in surface.elements:
+        rule = geometry.quadratureRule(e.type, 4)
+        for p in rule:
+            geo = e.geometry
+            weight = geo.volume * p.weight
+            R   += geo.toGlobal(p.position).two_norm * weight
+            vol += weight
+    return R/vol
+
+switchCalcRadius = lambda use_cpp,surface: \
+             algorithm.load('calcRadius', 'radius.hh', surface) \
+             if use_cpp else calcRadius
+
+# <markdowncell>
 # Timings for a number of different grid refinements is dumped to disk
-
-
 # <codecell>
 from dune.fem.view import geometryGridView as geoGridView
 from dune.fem.space import lagrange as solutionSpace
@@ -91,27 +106,10 @@ def calculate(use_cpp, gridView):
 
     scheme = solutionScheme(a == 0, space, solver="cg")
 
-    if use_cpp:
-        radius = algorithm.load('calcRadius', 'radius.hh', surface)
-        file_path = 'cpp_time.p'
-    else:
-        # compute an averaged radius of the surface
-        def radius(surface):
-            # compute R = int_x |x| / int_x 1
-            R   = 0
-            vol = 0
-            for e in surface.elements:
-                rule = geometry.quadratureRule(e.type, 4)
-                for p in rule:
-                    geo = e.geometry
-                    weight = geo.volume * p.weight
-                    R   += geo.toGlobal(p.position).two_norm * weight
-                    vol += weight
-            return R/vol
-        file_path = 'python_time.p'
+    Rexact = lambda t: math.sqrt(R0*R0 - 4.*t)
+    radius = switchCalcRadius(use_cpp,surface)
 
     scheme.model.dt = 0.02
-
 
     numberOfLoops = 3
     times = np.zeros(numberOfLoops)
@@ -122,8 +120,7 @@ def calculate(use_cpp, gridView):
         positions.interpolate(x * (R0/sqrt(dot(x,x))))
         solution.interpolate(x)
         t = 0.
-        R = radius( surface )
-        Rexact = math.sqrt(R0*R0 - 4.*t)
+        error = abs(radius(surface)-Rexact(t))
         iterations = 0
         start = time.time()
         while t < endTime:
@@ -133,11 +130,10 @@ def calculate(use_cpp, gridView):
             # store some information about the solution process
             iterations += int( info["linear_iterations"] )
             t          += scheme.model.dt
-            R           = radius( surface )
-            Rexact      = math.sqrt(R0*R0-4.*t)
+            error       = max(error, abs(radius(surface)-Rexact(t)))
         print("time used:", time.time() - start)
         times[i] = time.time() - start
-        errors[i] = abs(R-Rexact)
+        errors[i] = error
         totalIterations[i] = iterations
         gridSizes[i] = gridView.size(2)
         if i < numberOfLoops - 1:

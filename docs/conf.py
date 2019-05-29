@@ -41,6 +41,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'nbsphinx',
 #    'sphinxcontrib.apidoc',
     'sphinxcontrib.bibtex',
 #    'sphinx.ext.autosectionlabel',
@@ -291,3 +292,4 @@ rst_epilog = "\n.. include:: .special.rst\n"
 
 [extensions]
 todo_include_todos=True
+nbsphinx_timeout = -1

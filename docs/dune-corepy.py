@@ -1,4 +1,28 @@
 # <markdowncell>
+# # Overview
+# To facilitate rapid prototyping, the Dune-Python module
+# (https://www.dune-project.org/modules/dune-python)
+# provides Python classes for all the core interfaces of Dune. This makes
+# it easy to develop algorithms directly in Python which go beyond what is
+# available through the Dune-Fem discretization module. This is especially
+# of interest for pre- and postprocessing part of the overall simulation
+# package. While most interface methods from the Dune-Fem package are
+# high level, i.e., computationally expensive, many of the core Dune
+# interface methods are not, i.e., the methods for computing the geometric
+# representation of an element or the methods required to iterate over a
+# grid. Consequently, depending on the requirements of the developed code
+# parts, using the Dune core interfaces through Python could incur a too high
+# hit on the performance of the code. Since the exported Python interfaces
+# are very close to the original Dune C++ interfaces, transferring a Python
+# prototype of the algorithm to C++ is mostly straightforward. A just in
+# time compilation utility available in Dune-Python makes it then very easy
+# to use these C++ algorithms_ from within Python.
+#
+# In the following we briefly introduce the most important parts of the
+# Dune core interface
+#
+# .. _algorithms: topics.rst
+
 # # Dense Vectors and the Geometry Classes
 # A quick survey of Dune-Common and Dune-Geometry
 # The core module Dune-Common provides some classes for dense linear algebra.

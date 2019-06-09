@@ -1,9 +1,9 @@
-##############################################
-Demonstration notebook for the DUNE-VEM module
-##############################################
+############################################
+Virtual Finite Elements: the DUNE-VEM module
+############################################
 :download:`(notebook) <vemdemo_nb.ipynb>` :download:`(script) <vemdemo.py>`
 
-.. sectionauthor:: Andreas Dedner <a.s.dedner@warwick.ac.uk>, Martin Nolte <nolte.mrtn@gmail.com>
+.. .. sectionauthor:: Andrea Cnagiani, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Martin Nolte <nolte.mrtn@gmail.com>
 
 This module is based on DUNE-FEM
 (https://gitlab.dune-project.org/dune-fem/dune-fem)

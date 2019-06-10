@@ -12,77 +12,27 @@ or some Python script. Access rights are set so that the docker/vagrant user
 has the same rights as the user who build the docker/vagrant image
 in the directory from where it was started; consequently new files
 generated during the session are modifiable on the host and vice versa.
-
 The Linux distribution used is based on a Ubuntu image
 and contains most programs needed for shell based code development.
-To install additional packages clone the `dune-fem-dev`_ repository and modify
-the `bootstrap.sh` script adding appropriate `apt-get install`. This script
-is executed as root in the docker/vagrant environment. The script
-`buildDune.sh` is executed as user. Here the virtual environment is set up
-and Dune repositories cloned and build. So additional Dune repositories can
-be added here as well as additional Python packages using `pip install`.
-After each modification to image has to be rebuild within the cloned repository.
 
-.. _dune-fem-dev: https://gitlab.dune-project.org/dune-fem/dune-fem-dev
+Simply download this
+:download:`script<https://gitlab.dune-project.org/dune-fem/dune-fem-dev/raw/master/rundocker.sh>`.
+When executing this scripts the first time the docker image will be
+downloaded which will take some time. After the download is completed
+the working folder will be mounted into the docker container
+under ``/host``. This way the script can be executed (without requiring an
+additional image download) in any folder containing the Python project to
+be worked on. In addition the scripts and notebooks discussed in documentation are
+made available under ``/dunepy/DUNE/dune-fempy/docs``. The git repositories
+of all required Dune modules are cloned under ``/dunepy/DUNE`` and a Python
+virtual environment is setup. Additional Python packages can be easily
+installed using ``pip install`` and additional Dune modules can be added
+using ``git clone``. After adding a new Dune module in ``/dunepy/DUNE`` run
+``updateAll`` to configure the new Dune module and update the Dune Python
+package.
 
-******
-Docker
-******
-
-To build the container run
-
-.. code:: bash
-
-   docker build --build-arg userId=$(id -u) --build-arg groupId=$(id -g) -t dune https://gitlab.dune-project.org/dune-fem/dune-fem-dev.git
-
-If you have cloned this repository locally replace the URL with a colon.
-
-To get into the container with the current directory as working
-directory execute
-
-.. code:: bash
-
-   docker run -it -rm -v $PWD:/host -v dune:/dune \
-          -v /tmp/.X11-unix:/tmp/.X11-unix:ro dune bash
-
-The current directory will be mounted as `/host` and the main Dune modules and
-the Python virtual environment will be located under the home directory (`/dune`)
-of the `dune` user located in the corresponding data volume.
-
-The second line is needed to activate X forwarding on Linux machines. For
-Windows and MAC OS a bit more work is required:
-
-Notes for MAC users
-===================
-
-To get X forwarding to work in Docker requires
-additionally `xquartz` and `socat` as discussed
-`here <https://irvingduran.com/2017/07/docker-container-x11-on-macos-awesome>`.
-In summary (but please check the given website):
-
-* install XQuartz (X11) and socat
-* in a seperate terminal run
-
-  .. code:: bash
-
-     socat TCP-LISTE:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
-
-* build the docker container and described above and run it using:
-
-  .. code:: bash
-
-     docker run -it -rm -v $PWD:/host -v dune:/dune \
-            -e DISPLAY=$(ipconfig getifaddr en0):0 --net=host \
-            -v /tmp/.X11-unix:/tmp/.X11-unix:ro dune bash
-
-If somebody knows of an easier fix please let us know...
-
-Note for Windows users
-======================
-
-the Docker container has not been tested on
-Windows yet - if you have tested it let us know. X forwarding is sure to
-require some extra work here.
+A detailed description of the *dune-fem docker development environment* is
+given `here<https://gitlab.dune-project.org/dune-fem/dune-fem-dev>`.
 
 *******
 Vagrant

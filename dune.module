@@ -1,0 +1,4 @@
+Module: dune-fempy
+Version: 2.7-git
+Maintainer: a.s.dedner@warwick.ac.uk
+Whitespace-Hook: Yes

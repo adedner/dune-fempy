@@ -1,0 +1,732 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Crystal Growth &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Mean Curvature Flow" href="mcf_nb.html" />
+    <link rel="prev" title="Re-entrant Corner Problem" href="laplace-adaptive_nb.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="laplace-adaptive_nb.html">Re-entrant Corner Problem</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Crystal Growth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="topics.html">Dynamic Local Grid Refinement and Coarsening</a> &raquo;</li>
+        
+      <li>Crystal Growth</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/crystal_nb.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Crystal-Growth">
+<h1>Crystal Growth<a class="headerlink" href="#Crystal-Growth" title="Permalink to this headline">¶</a></h1>
+<p>Here we demonstrate crystallisation on the surface of a liquid due to cooling from [&#64;Guyer].</p>
+<p>Let us first set up the grid and the function space. We use the default DoF storage available in <code class="docutils literal notranslate"><span class="pre">dune-fem</span></code> - this can be changed for example to <code class="docutils literal notranslate"><span class="pre">istl</span></code> or <code class="docutils literal notranslate"><span class="pre">petsc</span></code>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span> <span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span> <span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">dune.fem</span> <span class="k">as</span> <span class="nn">fem</span>
+<span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">cartesianDomain</span>
+<span class="kn">from</span> <span class="nn">dune.alugrid</span> <span class="k">import</span> <span class="n">aluConformGrid</span> <span class="k">as</span> <span class="n">leafGridView</span>
+<span class="kn">from</span> <span class="nn">dune.fem.view</span> <span class="k">import</span> <span class="n">adaptiveLeafGridView</span> <span class="k">as</span> <span class="n">adaptiveGridView</span>
+<span class="kn">from</span> <span class="nn">dune.fem.space</span> <span class="k">import</span> <span class="n">lagrange</span> <span class="k">as</span> <span class="n">solutionSpace</span>
+
+<span class="n">order</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">dimDomain</span> <span class="o">=</span> <span class="mi">2</span>     <span class="c1"># we are solving this in 2D</span>
+<span class="n">dimRange</span> <span class="o">=</span> <span class="mi">2</span>      <span class="c1"># we have a system with two unknowns</span>
+<span class="n">domain</span> <span class="o">=</span> <span class="n">cartesianDomain</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="n">gridView</span>  <span class="o">=</span> <span class="n">adaptiveGridView</span><span class="p">(</span> <span class="n">leafGridView</span><span class="p">(</span> <span class="n">domain</span> <span class="p">)</span> <span class="p">)</span>
+<span class="n">space</span> <span class="o">=</span> <span class="n">solutionSpace</span><span class="p">(</span><span class="n">gridView</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="n">dimRange</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;fem&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We want to solve the following system of equations of variables <span class="math notranslate nohighlight">\(\phi\)</span> (phase field) and <span class="math notranslate nohighlight">\(T\)</span> (temperature field)</p>
+<div class="math notranslate nohighlight">
+\begin{equation}
+\begin{aligned}
+\tau \frac{\partial \phi}{\partial t} &amp;= \nabla \cdot D \nabla \phi + \phi(1-\phi)m(\phi, T), \\
+\frac{\partial T}{\partial t} &amp;= D_T \nabla^2 T + \frac{\partial \phi}{\partial t},
+\end{aligned}
+\end{equation}</div><p>where <span class="math notranslate nohighlight">\(D_T\)</span> = 2.25, m is given by</p>
+<div class="math notranslate nohighlight">
+\begin{equation*}
+m(\phi, T) = \phi - \frac{1}{2} - \frac{\kappa_1}{\pi} \arctan(\kappa_2 T),
+\end{equation*}</div><p>D is given by</p>
+<div class="math notranslate nohighlight">
+\begin{equation*}
+D = \alpha^2(1+c\beta)\left(\begin{array}{cc}
+1 + c\beta &amp; -c \frac{\partial \beta}{\partial \psi} \\
+c \frac{\partial \beta}{\partial \psi} &amp; 1+c\beta
+\end{array}\right),
+\end{equation*}</div><p>and where <span class="math notranslate nohighlight">\(\beta = \frac{1-\Phi^2}{1+\Phi^2}\)</span>, <span class="math notranslate nohighlight">\(\Phi = \tan \left( \frac{N}{2} \psi \right)\)</span>, <span class="math notranslate nohighlight">\(\psi = \theta + \arctan \left(\frac{\partial \phi/ \partial y}{\partial \phi / \partial x} \right)\)</span> and <span class="math notranslate nohighlight">\(\theta\)</span>, <span class="math notranslate nohighlight">\(N\)</span> are constants.</p>
+<p>Let us first set up the parameters for the problem.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">alpha</span>        <span class="o">=</span> <span class="mf">0.015</span>
+<span class="n">tau</span>          <span class="o">=</span> <span class="mf">3.e-4</span>
+<span class="n">kappa1</span>       <span class="o">=</span> <span class="mf">0.9</span>
+<span class="n">kappa2</span>       <span class="o">=</span> <span class="mf">20.</span>
+<span class="n">c</span>            <span class="o">=</span> <span class="mf">0.02</span>
+<span class="n">N</span>            <span class="o">=</span> <span class="mf">6.</span>
+</pre></div>
+</div>
+</div>
+<p>We define the initial data and create a function from it. We use this value to set up our solution.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.fem.function</span> <span class="k">import</span> <span class="n">globalFunction</span>
+<span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="n">dot</span><span class="p">,</span><span class="n">sqrt</span><span class="p">,</span><span class="n">conditional</span><span class="p">,</span><span class="n">as_vector</span><span class="p">,</span> <span class="n">SpatialCoordinate</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dot</span><span class="p">(</span> <span class="n">x</span><span class="o">-</span><span class="n">as_vector</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">]),</span> <span class="n">x</span><span class="o">-</span><span class="n">as_vector</span><span class="p">([</span><span class="mi">6</span><span class="p">,</span><span class="mi">6</span><span class="p">]))</span> <span class="p">)</span>
+<span class="n">initial</span> <span class="o">=</span> <span class="n">as_vector</span><span class="p">(</span> <span class="p">[</span><span class="n">conditional</span><span class="p">(</span><span class="n">r</span><span class="o">&gt;</span><span class="mf">0.3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">]</span> <span class="p">)</span>
+<span class="n">u_h</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">initial</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solution&quot;</span><span class="p">)</span>
+<span class="n">u_h_n</span> <span class="o">=</span> <span class="n">u_h</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>As we will be discretising in time, we define the unknown data as <span class="math notranslate nohighlight">\(u = (\phi_1, \Delta T_1)\)</span>, while given data (from the previous time step) is <span class="math notranslate nohighlight">\(u_n = (\phi_0, \Delta T_0)\)</span> and test function <span class="math notranslate nohighlight">\(v = (v_0, v_1)\)</span>.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="n">TestFunction</span><span class="p">,</span> <span class="n">TrialFunction</span>
+<span class="kn">from</span> <span class="nn">dune.ufl</span> <span class="k">import</span> <span class="n">Constant</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+<span class="n">dt</span> <span class="o">=</span> <span class="n">Constant</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;dt&quot;</span><span class="p">)</span>    <span class="c1"># time step</span>
+</pre></div>
+</div>
+</div>
+<p>For the numerical scheme, we discretise the time derivatives in the usual way, and we obtain the weak form by multiplying by a test function and integrating by parts. We also express the system using vectors.</p>
+<p>This gets us the following equation.</p>
+<div class="math notranslate nohighlight">
+\begin{equation}
+\int \left( \alpha^2 \frac{dt}{\tau} (D_n\nabla \phi_1) \cdot \nabla v_0 + dt \ D_T \nabla T_1 \cdot \nabla v_1 + \textbf{u} \cdot \textbf{v} - \textbf{s} \cdot \textbf{v} \right) \ dx
+=
+\int (\textbf{u}_n \cdot \textbf{v} - \phi_0 v_1) \ dx
+\end{equation}</div><p>where</p>
+<div class="math notranslate nohighlight">
+\begin{equation}
+\textbf{s} = \left( \frac{dt}{\tau}\phi_1(1-\phi_1)m(\phi_1, T_1), \phi_1 \right)^T
+\end{equation}</div><p>and</p>
+<p><span class="math notranslate nohighlight">\(D_n\)</span> is the anisotropic diffusion using the previous solution <span class="math notranslate nohighlight">\(\textbf{u}_n\)</span> to compute the entries.</p>
+<p>First we put in the right hand side which only contains explicit data.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="n">inner</span><span class="p">,</span> <span class="n">dx</span>
+<span class="n">a_ex</span> <span class="o">=</span> <span class="p">(</span><span class="n">inner</span><span class="p">(</span><span class="n">u_h_n</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="n">inner</span><span class="p">(</span><span class="n">u_h_n</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="o">*</span> <span class="n">dx</span>
+</pre></div>
+</div>
+</div>
+<p>For the left hand side we have the spatial derivatives and the implicit parts.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="n">pi</span><span class="p">,</span> <span class="n">atan</span><span class="p">,</span> <span class="n">atan_2</span><span class="p">,</span> <span class="n">tan</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">inner</span>
+<span class="n">psi</span>        <span class="o">=</span> <span class="n">pi</span><span class="o">/</span><span class="mf">8.0</span> <span class="o">+</span> <span class="n">atan_2</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u_h_n</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">],</span> <span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u_h_n</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">]))</span>
+<span class="n">Phi</span>        <span class="o">=</span> <span class="n">tan</span><span class="p">(</span><span class="n">N</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">psi</span><span class="p">)</span>
+<span class="n">beta</span>       <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">Phi</span><span class="o">*</span><span class="n">Phi</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">Phi</span><span class="o">*</span><span class="n">Phi</span><span class="p">)</span>
+<span class="n">dbeta_dPhi</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">N</span> <span class="o">*</span> <span class="n">Phi</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">Phi</span><span class="o">*</span><span class="n">Phi</span><span class="p">)</span>
+<span class="n">fac</span>        <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">beta</span>
+<span class="n">diag</span>       <span class="o">=</span> <span class="n">fac</span> <span class="o">*</span> <span class="n">fac</span>
+<span class="n">offdiag</span>    <span class="o">=</span> <span class="o">-</span><span class="n">fac</span> <span class="o">*</span> <span class="n">c</span> <span class="o">*</span> <span class="n">dbeta_dPhi</span>
+<span class="n">d0</span>         <span class="o">=</span> <span class="n">as_vector</span><span class="p">([</span><span class="n">diag</span><span class="p">,</span> <span class="n">offdiag</span><span class="p">])</span>
+<span class="n">d1</span>         <span class="o">=</span> <span class="n">as_vector</span><span class="p">([</span><span class="o">-</span><span class="n">offdiag</span><span class="p">,</span> <span class="n">diag</span><span class="p">])</span>
+<span class="n">m</span>          <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">kappa1</span> <span class="o">/</span> <span class="n">pi</span><span class="o">*</span><span class="n">atan</span><span class="p">(</span><span class="n">kappa2</span><span class="o">*</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">s</span>          <span class="o">=</span> <span class="n">as_vector</span><span class="p">([</span><span class="n">dt</span> <span class="o">/</span> <span class="n">tau</span> <span class="o">*</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">m</span><span class="p">,</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+<span class="n">a_im</span> <span class="o">=</span> <span class="p">(</span><span class="n">alpha</span><span class="o">*</span><span class="n">alpha</span><span class="o">*</span><span class="n">dt</span> <span class="o">/</span> <span class="n">tau</span> <span class="o">*</span> <span class="p">(</span><span class="n">inner</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">d0</span><span class="p">,</span> <span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span>
+        <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">inner</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="o">+</span> <span class="mf">2.25</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">inner</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="o">+</span> <span class="n">inner</span><span class="p">(</span><span class="n">u</span><span class="p">,</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="n">inner</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">v</span><span class="p">))</span> <span class="o">*</span> <span class="n">dx</span>
+</pre></div>
+</div>
+</div>
+<p>We set up the scheme with some parameters.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.fem.scheme</span> <span class="k">import</span> <span class="n">galerkin</span> <span class="k">as</span> <span class="n">solutionScheme</span>
+<span class="n">solverParameters</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;newton.tolerance&quot;</span><span class="p">:</span> <span class="mf">1e-8</span><span class="p">,</span>
+        <span class="s2">&quot;newton.linear.tolerance&quot;</span><span class="p">:</span> <span class="mf">1e-10</span><span class="p">,</span>
+        <span class="s2">&quot;newton.verbose&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;newton.linear.verbose&quot;</span><span class="p">:</span> <span class="kc">False</span>
+    <span class="p">}</span>
+<span class="n">scheme</span> <span class="o">=</span> <span class="n">solutionScheme</span><span class="p">(</span><span class="n">a_im</span> <span class="o">==</span> <span class="n">a_ex</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;gmres&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="n">solverParameters</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We set up the adaptive method. We start with a marking strategy based on the value of the gradient of the phase field variable.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.ufl</span> <span class="k">import</span> <span class="n">expression2GF</span>
+<span class="n">indicator</span> <span class="o">=</span> <span class="n">expression2GF</span><span class="p">(</span><span class="n">gridView</span><span class="p">,</span> <span class="n">dot</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u_h</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">grad</span><span class="p">(</span><span class="n">u_h</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;indicator&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We perform the initial refinement of the grid using the general form of the `mark’ method</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">maxLevel</span> <span class="o">=</span> <span class="mi">11</span>
+<span class="n">startLevel</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">gridView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">(</span><span class="n">startLevel</span><span class="p">)</span>
+<span class="n">u_h</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">startLevel</span><span class="p">,</span> <span class="n">maxLevel</span><span class="p">):</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">1.2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">maxLevel</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">u_h</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">loadBalance</span><span class="p">(</span><span class="n">u_h</span><span class="p">)</span>
+    <span class="n">u_h</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">initial</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">gridView</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+336 240 256 324 508 676
+</pre></div></div>
+</div>
+<p>Let us start by plotting the initial state of the material, which is just a small circle in the centre.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.fem.plotting</span> <span class="k">import</span> <span class="n">plotComponents</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pyplot</span>
+<span class="kn">from</span> <span class="nn">dune.fem.function</span> <span class="k">import</span> <span class="n">levelFunction</span><span class="p">,</span> <span class="n">partitionFunction</span>
+
+<span class="c1"># can construct a vtk writer that generates a sequence of files</span>
+<span class="c1"># vtk = gridView.sequencedVTK(&quot;crystal&quot;, pointdata=[u_h],</span>
+<span class="c1">#           celldata=[levelFunction(gridView), partitionFunction(gridView)])</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;font.size&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;figure.figsize&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="n">plotComponents</span><span class="p">(</span><span class="n">u_h</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">pyplot</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/crystal_nb_19_0.png" src="_images/crystal_nb_19_0.png" />
+</div>
+</div>
+<p>We set <code class="docutils literal notranslate"><span class="pre">dt</span></code> and the initial time t=0.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">scheme</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="mf">0.0005</span>
+<span class="n">t</span> <span class="o">=</span> <span class="mf">0.0</span>
+</pre></div>
+</div>
+</div>
+<p>Finally we set up the time loop and solve the problem - each time this cell is run the simulation will progress to the given <code class="docutils literal notranslate"><span class="pre">endTime</span></code> and then the result is shown. The simulation can be progressed further by rerunning the cell while increasing the <code class="docutils literal notranslate"><span class="pre">endTime</span></code>.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">endTime</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="k">while</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">endTime</span><span class="p">:</span>
+    <span class="n">u_h_n</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">u_h</span><span class="p">)</span>
+    <span class="n">scheme</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">u_h</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">gridView</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">+=</span> <span class="n">scheme</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dt</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">1.2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">maxLevel</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">u_h</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">loadBalance</span><span class="p">(</span><span class="n">u_h</span><span class="p">)</span>
+    <span class="c1"># vtk()                # store result in vtk file</span>
+<span class="nb">print</span><span class="p">()</span>
+
+<span class="n">plotComponents</span><span class="p">(</span><span class="n">u_h</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">pyplot</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">jet</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+0.04950000000000004 7412
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/crystal_nb_23_1.png" src="_images/crystal_nb_23_1.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mcf_nb.html" class="btn btn-neutral float-right" title="Mean Curvature Flow" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="laplace-adaptive_nb.html" class="btn btn-neutral float-left" title="Re-entrant Corner Problem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

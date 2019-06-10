@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Dynamic Local Grid Refinement and Coarsening &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processEscapes": true, "processClass": "math|output_area", "inlineMath": [["$", "$"], ["\\(", "\\)"]], "ignoreClass": "document"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Re-entrant Corner Problem" href="laplace-adaptive_nb.html" />
+    <link rel="prev" title="Saddle point solver (using Scipy)" href="uzawa-scipy_nb.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Dynamic Local Grid Refinement and Coarsening</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="laplace-adaptive_nb.html">Re-entrant Corner Problem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="crystal_nb.html">Crystal Growth</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#moving-grids">Moving Grids</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mcf_nb.html">Mean Curvature Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#using-c-code-snipetts">Using C++ Code Snipetts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mcf-algorithm_nb.html">Mean Curvature Flow (revisited)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lineplot_nb.html">Sampling the solution over a line</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Dynamic Local Grid Refinement and Coarsening</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/topics.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="dynamic-local-grid-refinement-and-coarsening">
+<h1>Dynamic Local Grid Refinement and Coarsening<a class="headerlink" href="#dynamic-local-grid-refinement-and-coarsening" title="Permalink to this headline">¶</a></h1>
+<p>For refining and coarsening a grid locally the <cite>dune.fem</cite> module provides a
+functon <cite>adapt</cite>. The storage of all discrete functions will be
+automatically resized to accommodate the changes in the grid but the
+resulting dof vector will not be initialized. To prolong and restrict data
+from the old to the new grid, the corresponding discrete functions have to be
+passed to the <cite>dune.fem.adapt</cite> method:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">fem</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span><span class="n">u2</span><span class="p">,</span><span class="o">...</span><span class="p">,</span><span class="n">uN</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The module <cite>dune.fem</cite> also provides a <cite>globalRefine(level,*dfs)</cite> method,
+where a negative level globally coarsens the grid. If discrete functions
+are passed in they will be prolong (restricted), the dof vectors of all
+other dof vectors will be resized.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>if the underlying storage of a discrete function is stored on the Python
+side as a numpy array, i.e., <cite>vec = uh.as_numpy</cite> was called, then access
+to <cite>vec</cite> will be undefined after a grid modification since the
+underlying buffer change will not have been registered.</p>
+</div>
+<p>The module <cite>dune.fem</cite> provides a function for marking elements for
+refinement/coarsening:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">mark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span> <span class="n">refineTolerance</span><span class="p">,</span> <span class="n">coarsenTolerance</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">minLevel</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">maxLevel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>where <cite>indicator</cite> is a grid function.
+An element <span class="math notranslate nohighlight">\(T\)</span> is marked for refinement if the value of <code class="docutils literal notranslate"><span class="pre">indicator</span></code>
+on <span class="math notranslate nohighlight">\(T\)</span> is greater then <code class="docutils literal notranslate"><span class="pre">refineTolerance</span></code> and coarsened if the
+value is less then <code class="docutils literal notranslate"><span class="pre">coarsenTolerance</span></code>. The element <span class="math notranslate nohighlight">\(T\)</span> is not
+refined if its level is already at <code class="docutils literal notranslate"><span class="pre">maxLevel</span></code> and not coarsened if its
+level it at <code class="docutils literal notranslate"><span class="pre">minLevel</span></code>.  This method can for example be used to refine
+the grid according to an equal distribution strategy by invoking</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">dune</span><span class="o">.</span><span class="n">fem</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span> <span class="n">theta</span><span class="o">/</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>where <cite>theta</cite> is a given tolerance.</p>
+<p>A layered Doerfler strategy is also available</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">doerflerMark</span><span class="p">(</span><span class="n">indicator</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">maxLevel</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">layered</span><span class="o">=</span><span class="mf">0.05</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>The following two examples showcase adaptivity: the first one using a
+residual a-posteriori estimator for an elliptic problem, the second one
+shows adaptivity for a time dependent phase field model for crystal growth.
+At the end of this section a dual weighted residual approach is used to
+optimize the grid with respect to the error at a given point. While the
+first two examples can be implemented completely using the available Python
+bindings the final example requires using a small C++ snippet which is easy
+to integrate into the Python code.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="laplace-adaptive_nb.html">Re-entrant Corner Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="crystal_nb.html">Crystal Growth</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="moving-grids">
+<h1>Moving Grids<a class="headerlink" href="#moving-grids" title="Permalink to this headline">¶</a></h1>
+<div class="admonition-todo admonition" id="index-0">
+<p class="admonition-title">Todo</p>
+<p>add some explanation on <cite>GridParts</cite></p>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcf_nb.html">Mean Curvature Flow</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="using-c-code-snipetts">
+<span id="algorithms"></span><h1>Using C++ Code Snipetts<a class="headerlink" href="#using-c-code-snipetts" title="Permalink to this headline">¶</a></h1>
+<div class="admonition-todo admonition" id="index-1">
+<p class="admonition-title">Todo</p>
+<p>add some explanation on <cite>algorithms</cite> and closeness of Python/C++ interface</p>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">calcRadius</span><span class="p">(</span><span class="n">surface</span><span class="p">):</span>
+    <span class="n">R</span><span class="p">,</span><span class="n">vol</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">surface</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+        <span class="n">rule</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">quadratureRule</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">:</span>
+            <span class="n">geo</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">geometry</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">volume</span> <span class="o">*</span> <span class="n">p</span><span class="o">.</span><span class="n">weight</span>
+            <span class="n">R</span>   <span class="o">+=</span> <span class="n">geo</span><span class="o">.</span><span class="n">toGlobal</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span> <span class="o">*</span> <span class="n">weight</span>
+            <span class="n">vol</span> <span class="o">+=</span> <span class="n">weight</span>
+    <span class="k">return</span> <span class="n">R</span><span class="o">/</span><span class="n">vol</span>
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &lt;dune/geometry/quadraturerules.hh&gt;</span>
+
+<span class="n">template</span><span class="o">&lt;</span> <span class="k">class</span> <span class="nc">Surface</span> <span class="o">&gt;</span>
+<span class="n">double</span> <span class="n">calcRadius</span><span class="p">(</span> <span class="n">const</span> <span class="n">Surface</span> <span class="o">&amp;</span><span class="n">surface</span> <span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">double</span> <span class="n">R</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">;</span>
+  <span class="n">double</span> <span class="n">vol</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">;</span>
+  <span class="k">for</span><span class="p">(</span> <span class="n">const</span> <span class="n">auto</span> <span class="o">&amp;</span><span class="n">entity</span> <span class="p">:</span> <span class="n">elements</span><span class="p">(</span> <span class="n">surface</span> <span class="p">)</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">const</span> <span class="n">auto</span><span class="o">&amp;</span> <span class="n">rule</span> <span class="o">=</span> <span class="n">Dune</span><span class="p">::</span><span class="n">QuadratureRules</span><span class="o">&lt;</span><span class="n">double</span><span class="p">,</span> <span class="mi">2</span><span class="o">&gt;</span><span class="p">::</span><span class="n">rule</span><span class="p">(</span><span class="n">entity</span><span class="o">.</span><span class="n">type</span><span class="p">(),</span> <span class="mi">4</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="n">const</span> <span class="n">auto</span> <span class="o">&amp;</span><span class="n">p</span> <span class="p">:</span> <span class="n">rule</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">const</span> <span class="n">auto</span> <span class="n">geo</span> <span class="o">=</span> <span class="n">entity</span><span class="o">.</span><span class="n">geometry</span><span class="p">();</span>
+      <span class="n">const</span> <span class="n">double</span> <span class="n">weight</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">volume</span><span class="p">()</span> <span class="o">*</span> <span class="n">p</span><span class="o">.</span><span class="n">weight</span><span class="p">();</span>
+      <span class="n">R</span>   <span class="o">+=</span> <span class="n">geo</span><span class="o">.</span><span class="k">global</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">())</span><span class="o">.</span><span class="n">two_norm</span><span class="p">()</span> <span class="o">*</span> <span class="n">weight</span><span class="p">;</span>
+      <span class="n">vol</span> <span class="o">+=</span> <span class="n">weight</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">R</span><span class="o">/</span><span class="n">vol</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mcf-algorithm_nb.html">Mean Curvature Flow (revisited)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="lineplot_nb.html">Sampling the solution over a line</a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="laplace-adaptive_nb.html" class="btn btn-neutral float-right" title="Re-entrant Corner Problem" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="uzawa-scipy_nb.html" class="btn btn-neutral float-left" title="Saddle point solver (using Scipy)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

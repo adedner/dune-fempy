@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>How to showcase your own project &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Notebooks and Scripts" href="additional.html" />
+    <link rel="prev" title="Laplace problem" href="vemdemo_nb.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>How to showcase your own project</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/contributions.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="how-to-showcase-your-own-project">
+<span id="contributing"></span><h1>How to showcase your own project<a class="headerlink" href="#how-to-showcase-your-own-project" title="Permalink to this headline">¶</a></h1>
+<p>Contributions are very welcomed - this can include pointing out typos,
+suggestion places were the description should be improved, providing this
+improvement, and so on. In addition we would like to showcase what user
+have used this package for, by adding sections to the <a class="reference internal" href="index.html#userprojects"><span class="std std-ref">User Projects</span></a> chapter:</p>
+<p>To do this provide us with a file <em>projectname_descr.rst</em> with a short
+description of your project with the authors and links to the project web
+page, journal article and so on.
+The following is an example taken from the description file of the
+<a class="reference download internal" download="" href="_downloads/a238f006d1f13ac3621b74d2b33b7196/vemdemo_descr.rst"><code class="xref download docutils literal notranslate"><span class="pre">vem</span> <span class="pre">project</span></code></a></p>
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span><span class="gh">########################################################</span>
+<span class="gh">*dune-vem*: implementation of the virtual element method</span>
+<span class="gh">########################################################</span>
+
+<span class="p">..</span> <span class="ow">sectionauthor</span><span class="p">::</span> Andreas Dedner &lt;a.s.dedner@warwick.ac.uk&gt;, Martin Nolte &lt;nolte.mrtn@gmail.com&gt;
+
+This module is based on DUNE-FEM
+(https://gitlab.dune-project.org/dune-fem/dune-fem)
+and provides implementation for the Virtual Element Method. The methods and
+a Python frontend based on the new Python extension to DUNE
+(https://gitlab.dune-project.org/staging/dune-python)
+is available in the
+https://gitlab.dune-project.org/dune-fem/dune-vem.
+
+<span class="p">..</span> <span class="ow">toctree</span><span class="p">::</span>
+   <span class="nc">:maxdepth:</span> <span class="nf">3</span>
+
+   vemdemo
+</pre></div>
+</div>
+<p>The <em>vemdemo.rst</em> file can be automatically generated by downloading our
+<a class="reference download internal" download="" href="_downloads/0bb4301ace2954d8fb62df64c9ee889d/nbscript2rst.sh"><code class="xref download docutils literal notranslate"><span class="pre">conversion</span> <span class="pre">script</span></code></a>. It takes the name of a python script
+file as argument, generates a jupyter notebook and the restructured text
+file. So running <em>bash nbscript2rst.sh projectname.py</em> will generate the
+files <em>projectname_nb.ipynb, projectname.rst</em>, and image files in the
+folder <em>projectname_files</em>. Send us these files
+in addition to the description file (e.g. as a <em>tar.gz</em> file)
+and that’s it. You can also fork this repo and set up a pull request.</p>
+<p>Your python script file <em>myproject.py</em> can contain both <em>markdown</em> parts for
+additional descriptions between python code blocks similar to
+a jupyter notebook
+(see e.g. the <a class="reference download internal" download="" href="_downloads/0da2579857fc49511a3055c267f9d17b/vemdemo.py"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a> for the virtual element project).
+This file will be translated into a <a class="reference download internal" download="" href="_downloads/01b690d770cfe084cc1c2a8cb19d1653/vemdemo_nb.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">jupyter</span> <span class="pre">notebook</span></code></a>
+which will also be made available for download. And then the sphinx
+extension <em>nbsphinx</em> is used to
+generate the restructured text file used in the
+documentation. The syntax for combining markdown cells and python code
+is straightforward:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># &lt;markdowncell&gt;</span>
+<span class="c1"># # Laplace problem</span>
+<span class="c1">#</span>
+<span class="c1"># We first consider a simple Laplace problem with Dirichlet boundary conditions</span>
+<span class="c1"># \begin{align*}</span>
+<span class="c1">#   -\Delta u &amp;= f, &amp;&amp; \text{in } \Omega, \\</span>
+<span class="c1">#           u &amp;= g, &amp;&amp; \text{on } \partial\Omega,</span>
+<span class="c1"># \end{align*}</span>
+<span class="c1"># with $\Omega=[-\frac{1}{2},1]^2$ and choosing the forcing and the boundary conditions</span>
+<span class="c1"># so that the exact solution is equal to</span>
+<span class="c1"># \begin{align*}</span>
+<span class="c1">#   u(x,y) &amp;= xy\cos(\pi xy)</span>
+<span class="c1"># \end{align*}</span>
+
+<span class="c1"># First some setup code:</span>
+<span class="c1"># &lt;codecell&gt;</span>
+<span class="kn">import</span> <span class="nn">dune.vem</span>
+<span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">cartesianDomain</span><span class="p">,</span> <span class="n">gridFunction</span>
+<span class="kn">from</span> <span class="nn">dune.vem</span> <span class="k">import</span> <span class="n">voronoiCells</span>
+<span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">dune.ufl</span>
+
+<span class="c1"># &lt;markdowncell&gt;</span>
+<span class="c1"># Now we define the model starting with the exact solution:</span>
+
+<span class="c1"># &lt;codecell&gt;</span>
+<span class="n">uflSpace</span> <span class="o">=</span> <span class="n">dune</span><span class="o">.</span><span class="n">ufl</span><span class="o">.</span><span class="n">Space</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">uflSpace</span><span class="p">)</span>
+<span class="n">exact</span> <span class="o">=</span> <span class="n">as_vector</span><span class="p">(</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">pi</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span> <span class="p">)</span>
+
+<span class="c1"># next the bilinear form</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">uflSpace</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">uflSpace</span><span class="p">)</span>
+<span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">inner</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span><span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span> <span class="o">*</span> <span class="n">dx</span>
+</pre></div>
+</div>
+<p>If you have any questions or something in unclear let us know!</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="additional.html" class="btn btn-neutral float-right" title="Notebooks and Scripts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="vemdemo_nb.html" class="btn btn-neutral float-left" title="Laplace problem" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

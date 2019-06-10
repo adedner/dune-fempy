@@ -1,0 +1,336 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>A first Example and General Concepts &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Finite Element Methods: a first example" href="dune-fempy_nb.html" />
+    <link rel="prev" title="Using Docker or Vagrant" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">A first Example and General Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html">Finite Element Methods: a first example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Alternate-Solve-Methods">Alternate Solve Methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#More-General-Boundary-Conditions">More General Boundary Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#A-3D-example-using-a-GMesh-file">A 3D example using a GMesh file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Listing-installed-components">Listing installed components</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#using-the-full-grid-interface">Using the Full Grid Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dune-corepy_nb.html">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-corepy_nb.html#Dense-Vectors-and-the-Geometry-Classes">Dense Vectors and the Geometry Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-corepy_nb.html#Grid-Construction-and-Basic-Interface">Grid Construction and Basic Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-corepy_nb.html#Attaching-Data-to-the-Grid-and-Defining-Grid-Functions">Attaching Data to the Grid and Defining Grid Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-corepy_nb.html#Output-of-Grid-and-Visualization-of-Data">Output of Grid and Visualization of Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#some-more-examples">Some More Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="elasticity_nb.html">Linear elasticity: deformed beam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="spiral_nb.html">Spiral Wave</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wave_nb.html">Wave equation in a slit domain</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uzawa-scipy_nb.html">Saddle point solver (using Scipy)</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>A first Example and General Concepts</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/gettingstarted.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="a-first-example-and-general-concepts">
+<h1>A first Example and General Concepts<a class="headerlink" href="#a-first-example-and-general-concepts" title="Permalink to this headline">¶</a></h1>
+<p><em>Section author: Lloyd Connellan &lt;<a class="reference external" href="mailto:l&#46;connellan&#37;&#52;&#48;warwick&#46;ac&#46;uk">l<span>&#46;</span>connellan<span>&#64;</span>warwick<span>&#46;</span>ac<span>&#46;</span>uk</a>&gt;, Andreas Dedner &lt;<a class="reference external" href="mailto:a&#46;s&#46;dedner&#37;&#52;&#48;warwick&#46;ac&#46;uk">a<span>&#46;</span>s<span>&#46;</span>dedner<span>&#64;</span>warwick<span>&#46;</span>ac<span>&#46;</span>uk</a>&gt;, Robert Klöfkorn &lt;<a class="reference external" href="mailto:robert&#46;kloefkorn&#37;&#52;&#48;iris&#46;no">robert<span>&#46;</span>kloefkorn<span>&#64;</span>iris<span>&#46;</span>no</a>&gt;, Martin Nolte &lt;<a class="reference external" href="mailto:nolte&#46;mrtn&#37;&#52;&#48;gmail&#46;com">nolte<span>&#46;</span>mrtn<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</em></p>
+<div class="admonition-todo admonition" id="index-0">
+<p class="admonition-title">Todo</p>
+<p>In general copy more <em>explanations</em> from the <cite>dnne-fempy.pmd</cite> file</p>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy_nb.html">Finite Element Methods: a first example</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Setting-up-the-Mesh">Setting up the Mesh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Grid-Functions">Grid Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Discrete-Spaces">Discrete Spaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Models-and-Schemes">Models and Schemes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Solving-the-System">Solving the System</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy_nb.html#Alternate-Solve-Methods">Alternate Solve Methods</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Using-Scipy">Using Scipy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dune-fempy_nb.html#Using-Petsc-and-Petsc4Py">Using Petsc and Petsc4Py</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy_nb.html#More-General-Boundary-Conditions">More General Boundary Conditions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy_nb.html#A-3D-example-using-a-GMesh-file">A 3D example using a GMesh file</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-fempy_nb.html#Listing-installed-components">Listing installed components</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="using-the-full-grid-interface">
+<h1>Using the Full Grid Interface<a class="headerlink" href="#using-the-full-grid-interface" title="Permalink to this headline">¶</a></h1>
+<p><em>Section author: Andreas Dedner &lt;<a class="reference external" href="mailto:a&#46;s&#46;dedner&#37;&#52;&#48;warwick&#46;ac&#46;uk">a<span>&#46;</span>s<span>&#46;</span>dedner<span>&#64;</span>warwick<span>&#46;</span>ac<span>&#46;</span>uk</a>&gt;, Martin Nolte &lt;<a class="reference external" href="mailto:nolte&#46;mrtn&#37;&#52;&#48;gmail&#46;com">nolte<span>&#46;</span>mrtn<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</em></p>
+<div class="admonition-todo admonition" id="index-1">
+<p class="admonition-title">Todo</p>
+<p>Add more examples on grid construction, i.e., dgf parser with boundary ids</p>
+</div>
+<div class="admonition-todo admonition" id="index-2">
+<p class="admonition-title">Todo</p>
+<p>In general copy more <em>explanations</em> from the <cite>dnne-corepy.pmd</cite> file</p>
+</div>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy_nb.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy_nb.html#Dense-Vectors-and-the-Geometry-Classes">Dense Vectors and the Geometry Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy_nb.html#Grid-Construction-and-Basic-Interface">Grid Construction and Basic Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy_nb.html#Attaching-Data-to-the-Grid-and-Defining-Grid-Functions">Attaching Data to the Grid and Defining Grid Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dune-corepy_nb.html#Output-of-Grid-and-Visualization-of-Data">Output of Grid and Visualization of Data</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="some-more-examples">
+<h1>Some More Examples<a class="headerlink" href="#some-more-examples" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="elasticity_nb.html">Linear elasticity: deformed beam</a></li>
+<li class="toctree-l1"><a class="reference internal" href="spiral_nb.html">Spiral Wave</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wave_nb.html">Wave equation in a slit domain</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uzawa-scipy_nb.html">Saddle point solver (using Scipy)</a></li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="dune-fempy_nb.html" class="btn btn-neutral float-right" title="Finite Element Methods: a first example" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installation.html" class="btn btn-neutral float-left" title="Using Docker or Vagrant" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

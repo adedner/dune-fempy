@@ -1,0 +1,615 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Sampling the solution over a line &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="HP adaptive DG scheme for twophase flow problem" href="twophaseflow_descr.html" />
+    <link rel="prev" title="Mean Curvature Flow (revisited)" href="mcf-algorithm_nb.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="mcf-algorithm_nb.html">Mean Curvature Flow (revisited)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Sampling the solution over a line</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="topics.html">Dynamic Local Grid Refinement and Coarsening</a> &raquo;</li>
+        
+      <li>Sampling the solution over a line</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/lineplot_nb.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Sampling-the-solution-over-a-line">
+<h1>Sampling the solution over a line<a class="headerlink" href="#Sampling-the-solution-over-a-line" title="Permalink to this headline">¶</a></h1>
+<p>Let us revisit our simple 3d example from the introduction</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="k">try</span><span class="p">:</span>
+  <span class="kn">import</span> <span class="nn">pygmsh</span>
+  <span class="n">geom</span> <span class="o">=</span> <span class="n">pygmsh</span><span class="o">.</span><span class="n">built_in</span><span class="o">.</span><span class="n">Geometry</span><span class="p">()</span>
+  <span class="n">poly</span> <span class="o">=</span> <span class="n">geom</span><span class="o">.</span><span class="n">add_polygon</span><span class="p">([</span>
+      <span class="p">[</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span>  <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+      <span class="p">[</span><span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span> <span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span>
+      <span class="p">[</span> <span class="mf">0.5</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span> <span class="mf">0.1</span><span class="p">,</span>  <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span> <span class="p">],</span> <span class="n">lcar</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+  <span class="n">axis</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+  <span class="n">geom</span><span class="o">.</span><span class="n">extrude</span><span class="p">(</span> <span class="n">poly</span><span class="p">,</span> <span class="n">translation_axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span> <span class="n">rotation_axis</span><span class="o">=</span><span class="n">axis</span><span class="p">,</span>
+      <span class="n">point_on_axis</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">angle</span><span class="o">=</span><span class="mf">2.0</span> <span class="o">/</span> <span class="mf">6.0</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+  <span class="n">mesh</span> <span class="o">=</span> <span class="n">pygmsh</span><span class="o">.</span><span class="n">generate_mesh</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+  <span class="n">points</span><span class="p">,</span> <span class="n">cells</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">mesh</span><span class="o">.</span><span class="n">cells</span>
+  <span class="n">domain3d</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;vertices&quot;</span><span class="p">:</span><span class="n">points</span><span class="p">,</span> <span class="s2">&quot;simplices&quot;</span><span class="p">:</span><span class="n">cells</span><span class="p">[</span><span class="s2">&quot;tetra&quot;</span><span class="p">]}</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span> <span class="c1"># pygmsh not installed - use a simple cartesian domain</span>
+  <span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">cartesianDomain</span>
+  <span class="n">domain3d</span> <span class="o">=</span> <span class="n">cartesianDomain</span><span class="p">([</span><span class="o">-</span><span class="mf">0.25</span><span class="p">,</span><span class="o">-</span><span class="mf">0.25</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mf">0.25</span><span class="p">,</span><span class="mf">0.25</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">30</span><span class="p">,</span><span class="mi">30</span><span class="p">,</span><span class="mi">60</span><span class="p">])</span>
+
+<span class="kn">from</span> <span class="nn">dune.alugrid</span> <span class="k">import</span> <span class="n">aluSimplexGrid</span> <span class="k">as</span> <span class="n">leafGridView3d</span>
+<span class="n">gridView3d</span>  <span class="o">=</span> <span class="n">leafGridView3d</span><span class="p">(</span><span class="n">domain3d</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>As before we solve a simple Laplace problem</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.fem.space</span> <span class="k">import</span> <span class="n">lagrange</span> <span class="k">as</span> <span class="n">solutionSpace</span>
+<span class="kn">from</span> <span class="nn">dune.fem.scheme</span> <span class="k">import</span> <span class="n">galerkin</span> <span class="k">as</span> <span class="n">solutionScheme</span>
+<span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="n">TrialFunction</span><span class="p">,</span> <span class="n">TestFunction</span><span class="p">,</span> <span class="n">SpatialCoordinate</span><span class="p">,</span> <span class="n">dot</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">conditional</span><span class="p">,</span> <span class="n">sqrt</span>
+
+<span class="n">space3d</span> <span class="o">=</span> <span class="n">solutionSpace</span><span class="p">(</span><span class="n">gridView3d</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">u</span> <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">space3d</span><span class="p">)</span>
+<span class="n">v</span> <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">space3d</span><span class="p">)</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">space3d</span><span class="p">)</span>
+<span class="n">scheme3d</span> <span class="o">=</span> <span class="n">solutionScheme</span><span class="p">((</span><span class="n">dot</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">),</span><span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">))</span><span class="o">+</span><span class="n">u</span><span class="o">*</span><span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="n">dx</span> <span class="o">==</span>
+                        <span class="n">conditional</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">)</span><span class="o">&lt;.</span><span class="mi">01</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span><span class="o">*</span><span class="n">v</span><span class="o">*</span><span class="n">dx</span><span class="p">,</span>
+                        <span class="n">solver</span><span class="o">=</span><span class="s1">&#39;cg&#39;</span><span class="p">)</span>
+<span class="n">uh3d</span> <span class="o">=</span> <span class="n">space3d</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;solution&quot;</span><span class="p">)</span>
+<span class="n">info</span> <span class="o">=</span> <span class="n">scheme3d</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">uh3d</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Instead of plotting this using paraview we want to only study the solution along a single line. This requires findings points <span class="math notranslate nohighlight">\(x_i = x_0+\frac{i}{N}(x1-x0)\)</span> for <span class="math notranslate nohighlight">\(i=0,\dots,N\)</span> within the unstructured grid. This would be expensive to compute on the Python so we implement this algorithm in C++ using the <code class="docutils literal notranslate"><span class="pre">LineSegmentSampler</span></code> class available in <code class="docutils literal notranslate"><span class="pre">Dune-Fem</span></code>. The resulting <code class="docutils literal notranslate"><span class="pre">algorithm</span></code> returns a pair of two lists with coordinates <span class="math notranslate nohighlight">\(x_i\)</span> and the values of the grid function at these
+points:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1">#include &lt;vector&gt;</span>
+<span class="c1">#include &lt;utility&gt;</span>
+<span class="c1">#include &lt;dune/fem/misc/linesegmentsampler.hh&gt;</span>
+
+<span class="n">template</span> <span class="o">&lt;</span><span class="k">class</span> <span class="nc">GF</span><span class="p">,</span> <span class="k">class</span> <span class="nc">DT</span><span class="o">&gt;</span>
+<span class="n">std</span><span class="p">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">DT</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">typename</span> <span class="n">GF</span><span class="p">::</span><span class="n">RangeType</span><span class="o">&gt;&gt;</span>
+<span class="n">sample</span><span class="p">(</span><span class="n">const</span> <span class="n">GF</span> <span class="o">&amp;</span><span class="n">gf</span><span class="p">,</span> <span class="n">DT</span> <span class="o">&amp;</span><span class="n">start</span><span class="p">,</span> <span class="n">DT</span> <span class="o">&amp;</span><span class="n">end</span><span class="p">,</span> <span class="nb">int</span> <span class="n">n</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">Dune</span><span class="p">::</span><span class="n">Fem</span><span class="p">::</span><span class="n">LineSegmentSampler</span><span class="o">&lt;</span><span class="n">typename</span> <span class="n">GF</span><span class="p">::</span><span class="n">GridPartType</span><span class="o">&gt;</span> <span class="n">sampler</span><span class="p">(</span><span class="n">gf</span><span class="o">.</span><span class="n">gridPart</span><span class="p">(),</span><span class="n">start</span><span class="p">,</span><span class="n">end</span><span class="p">);</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">DT</span><span class="o">&gt;</span> <span class="n">coords</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
+  <span class="n">std</span><span class="p">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">typename</span> <span class="n">GF</span><span class="p">::</span><span class="n">RangeType</span><span class="o">&gt;</span> <span class="n">values</span><span class="p">(</span><span class="n">n</span><span class="p">);</span>
+  <span class="n">sampler</span><span class="p">(</span><span class="n">gf</span><span class="p">,</span><span class="n">values</span><span class="p">);</span>
+  <span class="n">sampler</span><span class="o">.</span><span class="n">samplePoints</span><span class="p">(</span><span class="n">coords</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">std</span><span class="p">::</span><span class="n">make_pair</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span><span class="n">values</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">dune.generator.algorithm</span> <span class="k">as</span> <span class="nn">algorithm</span>
+<span class="kn">from</span> <span class="nn">dune.common</span> <span class="k">import</span> <span class="n">FieldVector</span>
+<span class="n">x0</span><span class="p">,</span> <span class="n">x1</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]),</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">p</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;utility.hh&#39;</span><span class="p">,</span> <span class="n">uh3d</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span> <span class="o">/</span> <span class="n">length</span>
+    <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/lineplot_nb_5_0.png" src="_images/lineplot_nb_5_0.png" />
+</div>
+</div>
+<p><strong>Note</strong>: the coordinates returned are always in the interval <span class="math notranslate nohighlight">\([0,1]\)</span> so if physical coordinates are required, they need to be rescaled. Also, function values returned by the <code class="docutils literal notranslate"><span class="pre">sample</span></code> function are always of a <code class="docutils literal notranslate"><span class="pre">FieldVector</span></code> type, so that even for a scalar example a <code class="docutils literal notranslate"><span class="pre">v[i]</span></code> is a vector of dimension one, so that <code class="docutils literal notranslate"><span class="pre">y[i]=v[i][0]</span></code> has to be used.</p>
+<p>A mentioned above any grid function can be passed in as argument to the <code class="docutils literal notranslate"><span class="pre">sample</span></code> function. So for example plotting <span class="math notranslate nohighlight">\(|\nabla u_h|\)</span> is straight forward using the corresponding ufl expression. Since in this case automatic conversion from the ufl expression (available for example in the plotting function) to a grid function, we need to do this explicitly:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.ufl</span> <span class="k">import</span> <span class="n">expression2GF</span>
+<span class="n">absGrad</span> <span class="o">=</span> <span class="n">expression2GF</span><span class="p">(</span><span class="n">gridView3d</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">uh3d</span><span class="p">),</span><span class="n">grad</span><span class="p">(</span><span class="n">uh3d</span><span class="p">))),</span> <span class="mi">2</span> <span class="p">)</span>
+<span class="n">p</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;utility.hh&#39;</span><span class="p">,</span> <span class="n">absGrad</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+    <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="c1"># &lt;mardowncell&gt;</span>
+<span class="c1"># Similar we can plot both partial derivatives of the solution over the</span>
+<span class="c1"># given line:</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/lineplot_nb_7_0.png" src="_images/lineplot_nb_7_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.ufl</span> <span class="k">import</span> <span class="n">expression2GF</span>
+<span class="n">absGrad</span> <span class="o">=</span> <span class="n">expression2GF</span><span class="p">(</span><span class="n">gridView3d</span><span class="p">,</span> <span class="n">grad</span><span class="p">(</span><span class="n">uh3d</span><span class="p">),</span> <span class="mi">2</span> <span class="p">)</span>
+<span class="n">p</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;utility.hh&#39;</span><span class="p">,</span> <span class="n">absGrad</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+<span class="n">dx</span><span class="p">,</span><span class="n">dy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)),</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+    <span class="n">dx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dy</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dx</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">dy</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/lineplot_nb_8_0.png" src="_images/lineplot_nb_8_0.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="twophaseflow_descr.html" class="btn btn-neutral float-right" title="HP adaptive DG scheme for twophase flow problem" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mcf-algorithm_nb.html" class="btn btn-neutral float-left" title="Mean Curvature Flow (revisited)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

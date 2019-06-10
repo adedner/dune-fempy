@@ -1,0 +1,1188 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Problem description &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true, "processClass": "math|output_area", "ignoreClass": "document"}})</script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+      <li>Problem description</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/html/_downloads/8e8ab69d5cf9c652ceb4a88b896d7a36/twophaseflow_nb.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Problem-description">
+<h1>Problem description<a class="headerlink" href="#Problem-description" title="Permalink to this headline">¶</a></h1>
+<p>Describe model and scheme here…</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span> <span class="s1">&#39;image&#39;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span> <span class="p">)</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+<span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">dune.ufl</span> <span class="k">import</span> <span class="n">Space</span><span class="p">,</span> <span class="n">Constant</span>
+
+<span class="kn">import</span> <span class="nn">dune.fem</span> <span class="k">as</span> <span class="nn">fem</span>
+<span class="kn">import</span> <span class="nn">dune.create</span> <span class="k">as</span> <span class="nn">create</span>
+<span class="kn">from</span> <span class="nn">dune.generator</span> <span class="k">import</span> <span class="n">algorithm</span>
+<span class="kn">from</span> <span class="nn">dune.common</span> <span class="k">import</span> <span class="n">FieldVector</span>
+<span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">cartesianDomain</span><span class="p">,</span> <span class="n">Marker</span><span class="p">,</span> <span class="n">gridFunction</span>
+<span class="kn">from</span> <span class="nn">dune.fem.function</span> <span class="k">import</span> <span class="n">levelFunction</span><span class="p">,</span> <span class="n">integrate</span>
+<span class="kn">from</span> <span class="nn">dune.plotting</span> <span class="k">import</span> <span class="n">plotPointData</span> <span class="k">as</span> <span class="n">plot</span>
+
+<span class="kn">from</span> <span class="nn">limit</span> <span class="k">import</span> <span class="n">createOrderRedcution</span><span class="p">,</span> <span class="n">createLimiter</span>
+</pre></div>
+</div>
+</div>
+<p>Some parameters</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">maxLevel</span>  <span class="o">=</span> <span class="mi">3</span>
+<span class="n">maxOrder</span>  <span class="o">=</span> <span class="mi">3</span>
+<span class="n">dt</span>        <span class="o">=</span> <span class="mf">5.</span>
+<span class="n">endTime</span>   <span class="o">=</span> <span class="mf">800.</span>
+<span class="n">coupled</span>   <span class="o">=</span> <span class="kc">True</span>
+<span class="n">tolerance</span> <span class="o">=</span> <span class="mf">3e-2</span>
+<span class="n">penalty</span>   <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="n">maxOrder</span> <span class="o">*</span> <span class="p">(</span> <span class="n">maxOrder</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">))</span>
+<span class="n">newtonParameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tolerance&quot;</span><span class="p">:</span> <span class="n">tolerance</span><span class="p">,</span>
+                    <span class="s2">&quot;verbose&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;linear.verbose&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;linabstol&quot;</span><span class="p">:</span> <span class="mf">1e-8</span><span class="p">,</span> <span class="s2">&quot;reduction&quot;</span><span class="p">:</span> <span class="mf">1e-8</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Defining-the-model">
+<h1>Defining the model<a class="headerlink" href="#Defining-the-model" title="Permalink to this headline">¶</a></h1>
+<p>using a Broks Corey pressure law</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">brooksCorey</span><span class="p">(</span><span class="n">P</span><span class="p">,</span><span class="n">s_n</span><span class="p">):</span>
+    <span class="n">s_w</span> <span class="o">=</span> <span class="mi">1</span><span class="o">-</span><span class="n">s_n</span>
+    <span class="n">s_we</span> <span class="o">=</span> <span class="p">(</span><span class="n">s_w</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_wr</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_wr</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_nr</span><span class="p">)</span>
+    <span class="n">s_ne</span> <span class="o">=</span> <span class="p">(</span><span class="n">s_n</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_nr</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_wr</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_nr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">P</span><span class="o">.</span><span class="n">useCutOff</span><span class="p">:</span>
+        <span class="n">cutOff</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">min_value</span><span class="p">(</span><span class="n">max_value</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="mf">0.00001</span><span class="p">),</span><span class="mf">0.99999</span><span class="p">)</span>
+        <span class="n">s_we</span> <span class="o">=</span> <span class="n">cutOff</span><span class="p">(</span><span class="n">s_we</span><span class="p">)</span>
+        <span class="n">s_ne</span> <span class="o">=</span> <span class="n">cutOff</span><span class="p">(</span><span class="n">s_ne</span><span class="p">)</span>
+    <span class="n">kr_w</span> <span class="o">=</span> <span class="n">s_we</span><span class="o">**</span><span class="p">((</span><span class="mf">2.</span><span class="o">+</span><span class="mf">3.</span><span class="o">*</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span><span class="o">/</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">kr_n</span> <span class="o">=</span> <span class="n">s_ne</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">s_we</span><span class="o">**</span><span class="p">((</span><span class="mf">2.</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span><span class="o">/</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="p">))</span>
+    <span class="n">p_c</span>  <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">pd</span><span class="o">*</span><span class="n">s_we</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span>
+    <span class="n">dp_c</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">pd</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">s_we</span><span class="o">**</span><span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">P</span><span class="o">.</span><span class="n">theta</span><span class="o">-</span><span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="p">(</span><span class="mf">1.</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_wr</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">s_nr</span><span class="p">))</span>
+    <span class="n">l_n</span>  <span class="o">=</span> <span class="n">kr_n</span> <span class="o">/</span> <span class="n">P</span><span class="o">.</span><span class="n">mu_n</span>
+    <span class="n">l_w</span>  <span class="o">=</span> <span class="n">kr_w</span> <span class="o">/</span> <span class="n">P</span><span class="o">.</span><span class="n">mu_w</span>
+    <span class="k">return</span> <span class="n">p_c</span><span class="p">,</span><span class="n">dp_c</span><span class="p">,</span><span class="n">l_n</span><span class="p">,</span><span class="n">l_w</span>
+</pre></div>
+</div>
+</div>
+<p>Constants and domain description for anisotropic lens test</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">class</span> <span class="nc">AnisotropicLens</span><span class="p">:</span>
+    <span class="n">dimWorld</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">domain</span>   <span class="o">=</span> <span class="n">cartesianDomain</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.39</span><span class="p">],[</span><span class="mf">0.9</span><span class="p">,</span><span class="mf">0.65</span><span class="p">],[</span><span class="mi">15</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+    <span class="n">x</span>        <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">triangle</span><span class="p">)</span>
+
+    <span class="n">g</span>     <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,]</span><span class="o">*</span><span class="n">dimWorld</span> <span class="p">;</span> <span class="n">g</span><span class="p">[</span><span class="n">dimWorld</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">9.810</span> <span class="c1"># [m/s^2]</span>
+    <span class="n">g</span>     <span class="o">=</span> <span class="n">as_vector</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+    <span class="n">r_w</span>   <span class="o">=</span> <span class="mf">1000.</span>  <span class="c1"># [Kg/m^3]</span>
+    <span class="n">mu_w</span>  <span class="o">=</span> <span class="mf">1.e-3</span>  <span class="c1"># [Kg/m s]</span>
+    <span class="n">r_n</span>   <span class="o">=</span> <span class="mf">1460.</span>  <span class="c1"># [Kg/m^3]</span>
+    <span class="n">mu_n</span>  <span class="o">=</span> <span class="mf">9.e-4</span>  <span class="c1"># [Kg/m s]</span>
+
+    <span class="n">lens</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">:</span> <span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">b</span><span class="p">)</span><span class="o">*</span>                <span class="p">(</span><span class="n">conditional</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.49</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">0.03</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">)</span><span class="o">*</span>                 <span class="n">conditional</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.45</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">0.11</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">))</span>                <span class="o">+</span> <span class="n">b</span>
+
+    <span class="n">p_c</span> <span class="o">=</span> <span class="n">brooksCorey</span>
+
+    <span class="n">Kdiag</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">6.64</span><span class="o">*</span><span class="mf">1e-14</span><span class="p">,</span> <span class="mf">1e-10</span><span class="p">)</span> <span class="c1"># [m^2]</span>
+    <span class="n">Koff</span>  <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mf">5e-11</span><span class="p">)</span>          <span class="c1"># [m^2]</span>
+    <span class="n">K</span>     <span class="o">=</span> <span class="n">as_matrix</span><span class="p">(</span> <span class="p">[[</span><span class="n">Kdiag</span><span class="p">,</span><span class="n">Koff</span><span class="p">],[</span><span class="n">Koff</span><span class="p">,</span><span class="n">Kdiag</span><span class="p">]]</span> <span class="p">)</span>
+
+    <span class="n">Phi</span>   <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.39</span><span class="p">,</span> <span class="mf">0.40</span><span class="p">)</span>             <span class="c1"># [-]</span>
+    <span class="n">s_wr</span>  <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.12</span><span class="p">)</span>             <span class="c1"># [-]</span>
+    <span class="n">s_nr</span>  <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">,</span> <span class="mf">0.00</span><span class="p">)</span>             <span class="c1"># [-]</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">2.00</span><span class="p">,</span> <span class="mf">2.70</span><span class="p">)</span>             <span class="c1"># [-]</span>
+    <span class="n">pd</span>    <span class="o">=</span> <span class="n">lens</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mf">5000.</span><span class="p">,</span> <span class="mf">755.</span><span class="p">)</span>            <span class="c1"># [Pa]</span>
+
+    <span class="c1">#### initial conditions</span>
+    <span class="n">p_w0</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.65</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="mf">9810.</span>       <span class="c1"># hydrostatic pressure</span>
+    <span class="n">s_n0</span> <span class="o">=</span> <span class="mi">0</span>                       <span class="c1"># fully saturated</span>
+    <span class="c1"># boundary conditions</span>
+    <span class="n">inflow</span> <span class="o">=</span> <span class="n">conditional</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.45</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">0.06</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">)</span><span class="o">*</span>             <span class="n">conditional</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="mf">0.65</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">1e-8</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">)</span>
+    <span class="n">J_n</span>  <span class="o">=</span> <span class="o">-</span><span class="mf">5.137</span><span class="o">*</span><span class="mf">1e-5</span>
+    <span class="n">J_w</span>  <span class="o">=</span> <span class="mf">1e-20</span>
+    <span class="n">dirichlet</span> <span class="o">=</span> <span class="n">conditional</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">&lt;</span><span class="mf">1e-8</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">)</span> <span class="o">+</span>                <span class="n">conditional</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mf">0.9</span><span class="p">)</span><span class="o">&lt;</span><span class="mf">1e-8</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mf">0.</span><span class="p">)</span>
+    <span class="n">p_wD</span> <span class="o">=</span> <span class="n">p_w0</span>
+    <span class="n">s_nD</span> <span class="o">=</span> <span class="n">s_n0</span>
+
+    <span class="n">q_n</span>  <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">q_w</span>  <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">useCutOff</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="n">P</span> <span class="o">=</span> <span class="n">AnisotropicLens</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>Setup grid, discrete spaces and functions</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">grid</span> <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s2">&quot;adaptive&quot;</span><span class="p">,</span> <span class="s2">&quot;ALUCube&quot;</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">domain</span><span class="p">,</span> <span class="n">dimgrid</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">coupled</span><span class="p">:</span>
+    <span class="n">spc</span>          <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">space</span><span class="p">(</span><span class="s2">&quot;dglegendrehp&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">maxOrder</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">spc1</span>         <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">space</span><span class="p">(</span><span class="s2">&quot;dglegendrehp&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">maxOrder</span><span class="p">)</span>
+    <span class="n">spc</span>          <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">space</span><span class="p">(</span><span class="s2">&quot;product&quot;</span><span class="p">,</span> <span class="n">spc1</span><span class="p">,</span><span class="n">spc1</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;p&quot;</span><span class="p">,</span><span class="s2">&quot;s&quot;</span><span class="p">]</span> <span class="p">)</span>
+
+<span class="n">solution</span>     <span class="o">=</span> <span class="n">spc</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solution&quot;</span><span class="p">)</span>
+<span class="n">solution_old</span> <span class="o">=</span> <span class="n">spc</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solution_old&quot;</span><span class="p">)</span>
+<span class="n">sol_pm1</span>      <span class="o">=</span> <span class="n">spc</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;sol_pm1&quot;</span><span class="p">)</span>
+<span class="n">intermediate</span> <span class="o">=</span> <span class="n">spc</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;iterate&quot;</span><span class="p">)</span>
+<span class="n">persistentDF</span> <span class="o">=</span> <span class="p">[</span><span class="n">solution</span><span class="p">,</span><span class="n">solution_old</span><span class="p">,</span><span class="n">intermediate</span><span class="p">]</span>
+
+<span class="n">fvspc</span>        <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">space</span><span class="p">(</span><span class="s2">&quot;finitevolume&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">storage</span><span class="o">=</span><span class="s2">&quot;fem&quot;</span><span class="p">)</span>
+<span class="n">estimate</span>     <span class="o">=</span> <span class="n">fvspc</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;estimate&quot;</span><span class="p">)</span>
+<span class="n">estimate_pm1</span> <span class="o">=</span> <span class="n">fvspc</span><span class="o">.</span><span class="n">interpolate</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;estimate-pm1&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">uflSpace</span> <span class="o">=</span> <span class="n">Space</span><span class="p">((</span><span class="n">P</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">,</span><span class="n">P</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">),</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">u</span>        <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">uflSpace</span><span class="p">)</span>
+<span class="n">v</span>        <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">uflSpace</span><span class="p">)</span>
+<span class="n">cell</span>     <span class="o">=</span> <span class="n">uflSpace</span><span class="o">.</span><span class="n">cell</span><span class="p">()</span>
+<span class="n">x</span>        <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">tau</span>      <span class="o">=</span> <span class="n">Constant</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;timeStep&quot;</span><span class="p">)</span>
+<span class="n">beta</span>     <span class="o">=</span> <span class="n">Constant</span><span class="p">(</span><span class="n">penalty</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;penalty&quot;</span><span class="p">)</span>
+
+<span class="n">p_w</span>  <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">s_n</span>  <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">p_c</span><span class="p">,</span><span class="n">dp_c</span><span class="p">,</span><span class="n">l_n</span><span class="p">,</span><span class="n">l_w</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">p_c</span><span class="p">(</span><span class="n">s_n</span><span class="o">=</span><span class="n">intermediate</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<p>Bulk terms</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">dBulk_p</span>  <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">K</span><span class="o">*</span><span class="p">(</span> <span class="p">(</span><span class="n">l_n</span><span class="o">+</span><span class="n">l_w</span><span class="p">)</span><span class="o">*</span><span class="n">grad</span><span class="p">(</span><span class="n">p_w</span><span class="p">)</span> <span class="o">+</span> <span class="n">l_n</span><span class="o">*</span><span class="n">dp_c</span><span class="o">*</span><span class="n">grad</span><span class="p">(</span><span class="n">s_n</span><span class="p">)</span> <span class="p">)</span>
+<span class="n">dBulk_p</span> <span class="o">+=</span> <span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">K</span><span class="o">*</span><span class="p">(</span> <span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">r_n</span><span class="o">*</span><span class="n">l_n</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">r_w</span><span class="o">*</span><span class="n">l_w</span><span class="p">)</span><span class="o">*</span><span class="n">P</span><span class="o">.</span><span class="n">g</span> <span class="p">)</span>
+<span class="n">bulk_p</span>   <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">q_w</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">q_n</span><span class="p">)</span>
+<span class="n">dBulk_s</span>  <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">K</span><span class="o">*</span><span class="n">l_n</span><span class="o">*</span><span class="n">dp_c</span><span class="o">*</span><span class="n">grad</span><span class="p">(</span><span class="n">s_n</span><span class="p">)</span>
+<span class="n">dBulk_s</span> <span class="o">+=</span> <span class="n">P</span><span class="o">.</span><span class="n">K</span><span class="o">*</span><span class="n">l_n</span><span class="o">*</span><span class="p">(</span><span class="n">grad</span><span class="p">(</span><span class="n">p_w</span><span class="p">)</span><span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">r_n</span><span class="o">*</span><span class="n">P</span><span class="o">.</span><span class="n">g</span><span class="p">)</span>
+<span class="n">bulk_s</span>   <span class="o">=</span> <span class="o">-</span><span class="n">P</span><span class="o">.</span><span class="n">q_n</span>
+</pre></div>
+</div>
+</div>
+<p>Boundary and initial conditions</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">p_D</span><span class="p">,</span> <span class="n">s_D</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">p_wD</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">s_nD</span><span class="p">,</span>
+<span class="n">p_N</span><span class="p">,</span> <span class="n">s_N</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">J_w</span><span class="o">+</span><span class="n">P</span><span class="o">.</span><span class="n">J_n</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">J_n</span>
+<span class="n">p_0</span><span class="p">,</span> <span class="n">s_0</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">p_w0</span><span class="p">,</span> <span class="n">P</span><span class="o">.</span><span class="n">s_n0</span>
+</pre></div>
+</div>
+</div>
+<p>Bulk integrals</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">form_p</span> <span class="o">=</span> <span class="p">(</span> <span class="n">inner</span><span class="p">(</span><span class="n">dBulk_p</span><span class="p">,</span><span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">+</span> <span class="n">bulk_p</span><span class="o">*</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span> <span class="o">*</span> <span class="n">dx</span>
+<span class="n">form_s</span> <span class="o">=</span> <span class="p">(</span> <span class="n">inner</span><span class="p">(</span><span class="n">dBulk_s</span><span class="p">,</span><span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="o">+</span> <span class="n">bulk_s</span><span class="o">*</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="o">*</span> <span class="n">dx</span>
+</pre></div>
+</div>
+</div>
+<p>Boundary fluxes</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">form_p</span> <span class="o">+=</span> <span class="n">p_N</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">inflow</span> <span class="o">*</span> <span class="n">ds</span>
+<span class="n">form_s</span> <span class="o">+=</span> <span class="n">s_N</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">inflow</span> <span class="o">*</span> <span class="n">ds</span>
+</pre></div>
+</div>
+</div>
+<p>DG terms</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">sMax</span><span class="p">(</span><span class="n">a</span><span class="p">):</span> <span class="k">return</span> <span class="n">max_value</span><span class="p">(</span><span class="n">a</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">),</span> <span class="n">a</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span>
+<span class="n">n</span>         <span class="o">=</span> <span class="n">FacetNormal</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">hT</span>        <span class="o">=</span> <span class="n">MaxCellEdgeLength</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">he</span>        <span class="o">=</span> <span class="n">avg</span><span class="p">(</span> <span class="n">CellVolume</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="n">FacetArea</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">heBnd</span>     <span class="o">=</span> <span class="n">CellVolume</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span> <span class="o">/</span> <span class="n">FacetArea</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+<span class="n">k</span>         <span class="o">=</span> <span class="n">dot</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">K</span><span class="o">*</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="p">)</span>
+<span class="n">lambdaMax</span> <span class="o">=</span> <span class="n">k</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">k</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">/</span><span class="n">avg</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">wavg</span><span class="p">(</span><span class="n">z</span><span class="p">):</span> <span class="k">return</span> <span class="p">(</span><span class="n">k</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">z</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span><span class="o">+</span><span class="n">k</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span><span class="o">*</span><span class="n">z</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">k</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)</span><span class="o">+</span><span class="n">k</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Penalty terms (including dirichlet boundary treatment)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">p_c0</span><span class="p">,</span><span class="n">dp_c0</span><span class="p">,</span><span class="n">l_n0</span><span class="p">,</span><span class="n">l_w0</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">p_c</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">penalty_p</span> <span class="o">=</span> <span class="p">[</span><span class="n">beta</span><span class="o">*</span><span class="n">lambdaMax</span><span class="o">*</span><span class="n">sMax</span><span class="p">(</span><span class="n">l_n0</span><span class="o">+</span><span class="n">l_w0</span><span class="p">),</span>
+             <span class="n">beta</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="p">(</span><span class="n">l_n0</span><span class="o">+</span><span class="n">l_w0</span><span class="p">)]</span>
+<span class="n">penalty_s</span> <span class="o">=</span> <span class="p">[</span><span class="n">beta</span><span class="o">*</span><span class="n">lambdaMax</span><span class="o">*</span><span class="n">sMax</span><span class="p">(</span><span class="n">l_n0</span><span class="o">*</span><span class="n">dp_c0</span><span class="p">),</span>
+             <span class="n">beta</span><span class="o">*</span><span class="n">k</span><span class="o">*</span><span class="p">(</span><span class="n">l_n0</span><span class="o">*</span><span class="n">dp_c0</span><span class="p">)]</span>
+<span class="n">form_p</span> <span class="o">+=</span> <span class="n">penalty_p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">he</span> <span class="o">*</span> <span class="n">jump</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">*</span><span class="n">jump</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dS</span>
+<span class="n">form_s</span> <span class="o">+=</span> <span class="n">penalty_s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="n">he</span> <span class="o">*</span> <span class="n">jump</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">jump</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">dS</span>
+<span class="n">form_p</span> <span class="o">+=</span> <span class="n">penalty_p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">heBnd</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">p_D</span><span class="p">)</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">dirichlet</span> <span class="o">*</span> <span class="n">ds</span>
+<span class="n">form_s</span> <span class="o">+=</span> <span class="n">penalty_s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">heBnd</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">s_D</span><span class="p">)</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">dirichlet</span> <span class="o">*</span> <span class="n">ds</span>
+</pre></div>
+</div>
+</div>
+<p>Consistency terms</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">form_p</span> <span class="o">-=</span> <span class="n">inner</span><span class="p">(</span><span class="n">wavg</span><span class="p">(</span><span class="n">dBulk_p</span><span class="p">),</span><span class="n">n</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">))</span> <span class="o">*</span> <span class="n">jump</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dS</span>
+<span class="n">form_s</span> <span class="o">-=</span> <span class="n">inner</span><span class="p">(</span><span class="n">wavg</span><span class="p">(</span><span class="n">dBulk_s</span><span class="p">),</span><span class="n">n</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">))</span> <span class="o">*</span> <span class="n">jump</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">dS</span>
+<span class="n">form_p</span> <span class="o">-=</span> <span class="n">inner</span><span class="p">(</span><span class="n">dBulk_p</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">dirichlet</span> <span class="o">*</span> <span class="n">ds</span>
+<span class="n">form_s</span> <span class="o">-=</span> <span class="n">inner</span><span class="p">(</span><span class="n">dBulk_s</span><span class="p">,</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">dirichlet</span> <span class="o">*</span> <span class="n">ds</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Time-discretization">
+<h1>Time discretization<a class="headerlink" href="#Time-discretization" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">form_s</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">Phi</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">solution_old</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">*</span><span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">tau</span><span class="o">*</span><span class="n">form_s</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Stabilization-(Limiter)">
+<h1>Stabilization (Limiter)<a class="headerlink" href="#Stabilization-(Limiter)" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">limiter</span> <span class="o">=</span> <span class="n">createLimiter</span><span class="p">(</span> <span class="n">spc</span><span class="p">,</span> <span class="n">limiter</span><span class="o">=</span><span class="s2">&quot;scaling&quot;</span> <span class="p">)</span>
+<span class="n">tmp</span> <span class="o">=</span> <span class="n">solution</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">limit</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+    <span class="n">tmp</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
+    <span class="n">limiter</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="n">target</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Time stepping Converting UFL forms to scheme</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">if</span> <span class="n">coupled</span><span class="p">:</span>
+    <span class="n">form</span> <span class="o">=</span> <span class="n">form_s</span> <span class="o">+</span> <span class="n">form_p</span>
+    <span class="n">tpModel</span> <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">model</span><span class="p">(</span> <span class="s2">&quot;integrands&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">form</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># tpModel.penalty  = penalty</span>
+    <span class="c1"># tpModel.timeStep = dt</span>
+    <span class="n">scheme</span> <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">scheme</span><span class="p">(</span><span class="s2">&quot;galerkin&quot;</span><span class="p">,</span> <span class="n">tpModel</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;suitesparse&quot;</span><span class="p">,</span><span class="s2">&quot;umfpack&quot;</span><span class="p">),</span>
+                     <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fem.solver.newton.&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">newtonParameters</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">uflSpace1</span> <span class="o">=</span> <span class="n">Space</span><span class="p">((</span><span class="n">P</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">,</span><span class="n">P</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">u1</span>        <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">uflSpace1</span><span class="p">)</span>
+    <span class="n">v1</span>        <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">uflSpace1</span><span class="p">)</span>
+    <span class="n">form_p</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">form_p</span><span class="p">,</span> <span class="p">{</span> <span class="n">u</span><span class="p">:</span><span class="n">as_vector</span><span class="p">([</span><span class="n">u1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">intermediate</span><span class="o">.</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]]),</span>
+                             <span class="n">v</span><span class="p">:</span><span class="n">as_vector</span><span class="p">([</span><span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mf">0.</span><span class="p">])</span> <span class="p">}</span> <span class="p">)</span>
+    <span class="n">form_s</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">form_s</span><span class="p">,</span> <span class="p">{</span> <span class="n">u</span><span class="p">:</span><span class="n">as_vector</span><span class="p">([</span><span class="n">solution</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">u1</span><span class="p">[</span><span class="mi">0</span><span class="p">]]),</span>
+                             <span class="n">intermediate</span><span class="p">:</span><span class="n">as_vector</span><span class="p">([</span><span class="n">solution</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">intermediate</span><span class="p">[</span><span class="mi">1</span><span class="p">]]),</span>
+                             <span class="n">v</span><span class="p">:</span><span class="n">as_vector</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span><span class="n">v1</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span> <span class="p">}</span> <span class="p">)</span>
+    <span class="n">form</span> <span class="o">=</span> <span class="p">[</span><span class="n">form_p</span><span class="p">,</span><span class="n">form_s</span><span class="p">]</span>
+    <span class="n">tpModel</span> <span class="o">=</span> <span class="p">[</span><span class="n">create</span><span class="o">.</span><span class="n">model</span><span class="p">(</span> <span class="s2">&quot;integrands&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">form</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">),</span>
+               <span class="n">create</span><span class="o">.</span><span class="n">model</span><span class="p">(</span> <span class="s2">&quot;integrands&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">form</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)]</span>
+    <span class="c1"># tpModel[0].penalty  = penalty</span>
+    <span class="c1"># tpModel[1].penalty  = penalty</span>
+    <span class="c1"># tpModel[1].timeStep = dt</span>
+    <span class="n">scheme</span> <span class="o">=</span> <span class="p">[</span><span class="n">create</span><span class="o">.</span><span class="n">scheme</span><span class="p">(</span><span class="s2">&quot;galerkin&quot;</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;suitesparse&quot;</span><span class="p">,</span><span class="s2">&quot;umfpack&quot;</span><span class="p">),</span>
+                     <span class="n">parameters</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fem.solver.newton.&quot;</span> <span class="o">+</span> <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">newtonParameters</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+                <span class="k">for</span> <span class="n">m</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tpModel</span><span class="p">,</span><span class="n">spc</span><span class="o">.</span><span class="n">components</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+<p>Stopping condition for iterative approaches</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">errorMeasure</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="n">dw</span><span class="p">):</span>
+    <span class="n">rel</span> <span class="o">=</span> <span class="n">integrate</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="p">[</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span><span class="n">dw</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="p">],</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rel</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">tolerance</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">rel</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Iterative-schemes-(iterative-or-impes-iterative)">
+<h1>Iterative schemes (iterative or impes-iterative)<a class="headerlink" href="#Iterative-schemes-(iterative-or-impes-iterative)" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">step</span><span class="p">():</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">solution_old</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">intermediate</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coupled</span><span class="p">:</span>
+            <span class="n">scheme</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">solution</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">scheme</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">solution</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+            <span class="n">scheme</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">solution</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">limit</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># print(&quot;step&quot;,n,flush=True)</span>
+        <span class="k">if</span> <span class="n">errorMeasure</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span><span class="n">solution</span><span class="o">-</span><span class="n">intermediate</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n</span><span class="o">==</span><span class="mi">20</span><span class="p">:</span>
+            <span class="k">break</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="HP-Adpativity">
+<h1>HP Adpativity<a class="headerlink" href="#HP-Adpativity" title="Permalink to this headline">¶</a></h1>
+<p>Setting up residual indicator</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">uflSpace0</span> <span class="o">=</span> <span class="n">Space</span><span class="p">((</span><span class="n">P</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">,</span><span class="n">P</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">),</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">v0</span>        <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">uflSpace0</span><span class="p">)</span>
+
+<span class="n">Rvol</span> <span class="o">=</span> <span class="n">P</span><span class="o">.</span><span class="n">Phi</span><span class="o">*</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">solution_old</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="n">tau</span> <span class="o">-</span> <span class="n">div</span><span class="p">(</span><span class="n">dBulk_s</span><span class="p">)</span> <span class="o">-</span> <span class="n">bulk_s</span>
+<span class="n">estimator</span> <span class="o">=</span> <span class="n">hT</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">Rvol</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span>      <span class="n">he</span> <span class="o">*</span> <span class="n">inner</span><span class="p">(</span><span class="n">jump</span><span class="p">(</span><span class="n">dBulk_s</span><span class="p">),</span> <span class="n">n</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">avg</span><span class="p">(</span><span class="n">v0</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dS</span> <span class="o">+</span>      <span class="n">heBnd</span> <span class="o">*</span> <span class="p">(</span><span class="n">s_N</span> <span class="o">+</span> <span class="n">inner</span><span class="p">(</span><span class="n">dBulk_s</span><span class="p">,</span><span class="n">n</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">inflow</span> <span class="o">*</span> <span class="n">ds</span> <span class="o">+</span>      <span class="n">penalty_s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">he</span> <span class="o">*</span> <span class="n">jump</span><span class="p">(</span><span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">avg</span><span class="p">(</span><span class="n">v0</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dS</span> <span class="o">+</span>      <span class="n">penalty_s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">heBnd</span> <span class="o">*</span> <span class="p">(</span><span class="n">s_D</span> <span class="o">-</span> <span class="n">u</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">v0</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">P</span><span class="o">.</span><span class="n">dirichlet</span> <span class="o">*</span> <span class="n">ds</span>
+<span class="n">estimator</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">estimator</span><span class="p">,</span> <span class="p">{</span><span class="n">intermediate</span><span class="p">:</span><span class="n">u</span><span class="p">})</span>
+
+<span class="n">estimatorModel</span> <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="s2">&quot;integrands&quot;</span><span class="p">,</span> <span class="n">grid</span><span class="p">,</span> <span class="n">estimator</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+<span class="c1"># estimatorModel.timeStep = dt</span>
+<span class="c1"># estimatorModel.penalty  = penalty</span>
+<span class="n">estimator</span> <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="n">operator</span><span class="p">(</span><span class="s2">&quot;galerkin&quot;</span><span class="p">,</span> <span class="n">estimatorModel</span><span class="p">,</span> <span class="n">spc</span><span class="p">,</span> <span class="n">fvspc</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Marker-for-grid-adaptivity-(h)">
+<h1>Marker for grid adaptivity (h)<a class="headerlink" href="#Marker-for-grid-adaptivity-(h)" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">hTol</span> <span class="o">=</span> <span class="mf">1e-16</span>                           <span class="c1"># changed later</span>
+<span class="k">def</span> <span class="nf">markh</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">referenceElement</span><span class="o">.</span><span class="n">center</span>
+    <span class="n">eta</span>    <span class="o">=</span> <span class="n">estimate</span><span class="o">.</span><span class="n">localFunction</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">center</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">eta</span> <span class="o">&gt;</span> <span class="n">hTol</span> <span class="ow">and</span> <span class="n">element</span><span class="o">.</span><span class="n">level</span> <span class="o">&lt;</span> <span class="n">maxLevel</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">Marker</span><span class="o">.</span><span class="n">refine</span>
+    <span class="k">elif</span> <span class="n">eta</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="o">*</span><span class="n">hTol</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">Marker</span><span class="o">.</span><span class="n">coarsen</span>
+    <span class="k">else</span><span class="p">:</span>
+      <span class="k">return</span> <span class="n">Marker</span><span class="o">.</span><span class="n">keep</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Marker-for-space-adaptivity-(p)">
+<h1>Marker for space adaptivity (p)<a class="headerlink" href="#Marker-for-space-adaptivity-(p)" title="Permalink to this headline">¶</a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pTol</span> <span class="o">=</span> <span class="mf">1e-16</span>
+<span class="k">def</span> <span class="nf">markp</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="n">element</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">referenceElement</span><span class="o">.</span><span class="n">center</span>
+    <span class="n">r</span>      <span class="o">=</span> <span class="n">estimate</span><span class="o">.</span><span class="n">localFunction</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">center</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">r_p1</span>   <span class="o">=</span> <span class="n">estimate_pm1</span><span class="o">.</span><span class="n">localFunction</span><span class="p">(</span><span class="n">element</span><span class="p">)</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">center</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span><span class="o">-</span><span class="n">r_p1</span><span class="p">)</span>
+    <span class="n">polorder</span> <span class="o">=</span> <span class="n">spc</span><span class="o">.</span><span class="n">localOrder</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">eta</span> <span class="o">&lt;</span> <span class="n">pTol</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">polorder</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">polorder</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">polorder</span>
+    <span class="k">elif</span> <span class="n">eta</span> <span class="o">&gt;</span> <span class="mf">100.</span><span class="o">*</span><span class="n">pTol</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">polorder</span><span class="o">+</span><span class="mi">1</span> <span class="k">if</span> <span class="n">polorder</span> <span class="o">&lt;</span> <span class="n">maxOrder</span> <span class="k">else</span> <span class="n">polorder</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">polorder</span>
+</pre></div>
+</div>
+</div>
+<p>Operator for projecting into space with a reduced order on every element</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">orderreduce</span>  <span class="o">=</span> <span class="n">createOrderRedcution</span><span class="p">(</span> <span class="n">spc</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="Main-program">
+<h1>Main program<a class="headerlink" href="#Main-program" title="Permalink to this headline">¶</a></h1>
+<p>Pre adapt the grid</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">hgrid</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">hierarchicalGrid</span>
+<span class="n">hgrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">maxLevel</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pre adaptive (&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="s2">&quot;): &quot;</span><span class="p">,</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">solution</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span> <span class="n">as_vector</span><span class="p">([</span><span class="n">p_0</span><span class="p">,</span><span class="n">s_0</span><span class="p">])</span> <span class="p">)</span>
+    <span class="n">limit</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+    <span class="n">step</span><span class="p">()</span>
+    <span class="n">estimator</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">estimate</span><span class="p">)</span>
+    <span class="n">hgrid</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">markh</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">persistentDF</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;final pre adaptive (&quot;</span><span class="p">,</span><span class="n">i</span><span class="p">,</span><span class="s2">&quot;): &quot;</span><span class="p">,</span><span class="n">dt</span><span class="p">,</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+pre adaptive ( 0 ):  240
+pre adaptive ( 1 ):  213
+pre adaptive ( 2 ):  363
+final pre adaptive ( 2 ):  5.0 273
+</pre></div></div>
+</div>
+<p>Define the constant for the h adaptivity</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">solution</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span> <span class="n">as_vector</span><span class="p">([</span><span class="n">p_0</span><span class="p">,</span><span class="n">s_0</span><span class="p">])</span> <span class="p">)</span>
+<span class="n">limit</span><span class="p">(</span><span class="n">solution</span><span class="p">)</span>
+<span class="n">estimator</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">estimate</span><span class="p">)</span>
+<span class="n">timeTol</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">estimate</span><span class="o">.</span><span class="n">dofVector</span><span class="p">)</span> <span class="o">/</span> <span class="n">endTime</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Using timeTol = &#39;</span><span class="p">,</span><span class="n">timeTol</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Using timeTol =  3.2161312218750177e-15
+</pre></div></div>
+</div>
+<p>Time loop</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">saveStep</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">while</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">endTime</span><span class="p">:</span>
+    <span class="n">step</span><span class="p">()</span>
+
+    <span class="c1"># h adaptivity</span>
+    <span class="n">hTol</span> <span class="o">=</span> <span class="n">timeTol</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">/</span> <span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">estimator</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">estimate</span><span class="p">)</span>
+    <span class="n">hgrid</span><span class="o">.</span><span class="n">mark</span><span class="p">(</span><span class="n">markh</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">persistentDF</span><span class="p">)</span>
+
+    <span class="c1"># p adaptivity</span>
+    <span class="n">estimator</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span> <span class="n">estimate</span><span class="p">)</span>
+    <span class="n">orderreduce</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span><span class="n">sol_pm1</span><span class="p">)</span>
+    <span class="n">estimator</span><span class="p">(</span><span class="n">sol_pm1</span><span class="p">,</span> <span class="n">estimate_pm1</span><span class="p">)</span>
+    <span class="n">fem</span><span class="o">.</span><span class="n">spaceAdapt</span><span class="p">(</span><span class="n">spc</span><span class="p">,</span> <span class="n">markp</span><span class="p">,</span> <span class="n">persistentDF</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">+=</span> <span class="n">dt</span>
+
+    <span class="k">if</span> <span class="n">t</span><span class="o">&gt;=</span><span class="n">saveStep</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">grid</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="nb">sum</span><span class="p">(</span><span class="n">estimate</span><span class="o">.</span><span class="n">dofVector</span><span class="p">),</span><span class="n">hTol</span><span class="p">,</span><span class="s2">&quot;# timestep&quot;</span><span class="p">,</span><span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">plot</span><span class="p">(</span><span class="n">solution</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+        <span class="n">saveStep</span> <span class="o">+=</span> <span class="mi">100</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+5.0 240 0.0 5.890350223214318e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_1.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+100.0 357 0.0 4.504385464810949e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_3.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_3.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+200.0 477 0.0 3.4360376302083523e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_5.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_5.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+300.0 582 0.0 2.748830104166682e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_7.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_7.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+400.0 615 0.0 2.5770282226562644e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_9.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_9.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+500.0 714 0.0 2.242769331851477e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_11.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_11.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+600.0 813 0.0 1.949170437500011e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_13.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_13.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+700.0 924 0.0 1.7690490769389536e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_15.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_15.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+800.0 1011 0.0 1.6096752862237327e-17 # timestep
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_17.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_48_17.png" />
+</div>
+</div>
+<p>Postprocessing Show solution along a given line</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">x0</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span>  <span class="mf">0.65</span><span class="p">])</span>
+<span class="n">x1</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mf">0.775</span><span class="p">,</span> <span class="mf">0.39</span><span class="p">])</span>
+<span class="n">p</span><span class="p">,</span><span class="n">v</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;utility.hh&#39;</span><span class="p">,</span> <span class="n">solution</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">pyplot</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+<span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
+    <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">x0</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span> <span class="o">/</span> <span class="n">l</span>
+    <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_50_0.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_50_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">gridFunction</span>
+<span class="kn">from</span> <span class="nn">dune.fem.function</span> <span class="k">import</span> <span class="n">levelFunction</span>
+<span class="nd">@gridFunction</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;polOrder&quot;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">polOrder</span><span class="p">(</span><span class="n">e</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">spc</span><span class="o">.</span><span class="n">localOrder</span><span class="p">(</span><span class="n">e</span><span class="p">)]</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">solution</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">solution</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">polOrder</span><span class="p">,</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">plot</span><span class="p">(</span><span class="n">levelFunction</span><span class="p">(</span><span class="n">grid</span><span class="p">),</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">4</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_0.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_1.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_2.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_2.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_3.png" src="../../../_images/html__downloads_8e8ab69d5cf9c652ceb4a88b896d7a36_twophaseflow_nb_51_3.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

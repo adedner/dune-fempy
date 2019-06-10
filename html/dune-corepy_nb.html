@@ -1,0 +1,856 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Overview &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Linear elasticity: deformed beam" href="elasticity_nb.html" />
+    <link rel="prev" title="Finite Element Methods: a first example" href="dune-fempy_nb.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Dense-Vectors-and-the-Geometry-Classes">Dense Vectors and the Geometry Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Grid-Construction-and-Basic-Interface">Grid Construction and Basic Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Attaching-Data-to-the-Grid-and-Defining-Grid-Functions">Attaching Data to the Grid and Defining Grid Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Output-of-Grid-and-Visualization-of-Data">Output of Grid and Visualization of Data</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="gettingstarted.html">A first Example and General Concepts</a> &raquo;</li>
+        
+      <li>Overview</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/dune-corepy_nb.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Overview">
+<h1>Overview<a class="headerlink" href="#Overview" title="Permalink to this headline">¶</a></h1>
+<p>To facilitate rapid prototyping, the Dune-Python module (<a class="reference external" href="https://www.dune-project.org/modules/dune-python">https://www.dune-project.org/modules/dune-python</a>) provides Python classes for all the core interfaces of Dune. This makes it easy to develop algorithms directly in Python which go beyond what is available through the Dune-Fem discretization module. This is especially of interest for pre- and postprocessing part of the overall simulation package. While most interface methods from the Dune-Fem package are high level, i.e., computationally
+expensive, many of the core Dune interface methods are not, i.e., the methods for computing the geometric representation of an element or the methods required to iterate over a grid. Consequently, depending on the requirements of the developed code parts, using the Dune core interfaces through Python could incur a too high hit on the performance of the code. Since the exported Python interfaces are very close to the original Dune C++ interfaces, transferring a Python prototype of the algorithm
+to C++ is mostly straightforward. A just in time compilation utility available in Dune-Python makes it then very easy to use these C++ algorithms_ from within Python.</p>
+<p>In the following we briefly introduce the most important parts of the Dune core interface</p>
+</div>
+<div class="section" id="Dense-Vectors-and-the-Geometry-Classes">
+<h1>Dense Vectors and the Geometry Classes<a class="headerlink" href="#Dense-Vectors-and-the-Geometry-Classes" title="Permalink to this headline">¶</a></h1>
+<p>A quick survey of Dune-Common and Dune-Geometry The core module Dune-Common provides some classes for dense linear algebra. The <code class="docutils literal notranslate"><span class="pre">FieldVector</span></code> and <code class="docutils literal notranslate"><span class="pre">FieldMatrix</span></code> classes are heavily used in the grid geometry realizations. The conceptional basis for these geometries is provided by Dune-Geometry, providing, for example, reference elements and quadrature rules.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">numpy</span><span class="o">,</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pyplot</span>
+<span class="kn">from</span> <span class="nn">dune.common</span> <span class="k">import</span> <span class="n">FieldVector</span><span class="p">,</span> <span class="n">FieldMatrix</span>
+<span class="n">x</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mf">0.25</span><span class="p">,</span><span class="mf">0.25</span><span class="p">,</span><span class="mf">0.25</span><span class="p">])</span>
+
+<span class="kn">import</span> <span class="nn">dune.geometry</span>
+<span class="n">geometryType</span> <span class="o">=</span> <span class="n">dune</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">simplex</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">referenceElement</span> <span class="o">=</span> <span class="n">dune</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">referenceElement</span><span class="p">(</span><span class="n">geometryType</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">referenceElement</span><span class="o">.</span><span class="n">corners</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">dune</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">quadratureRule</span><span class="p">(</span><span class="n">geometryType</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(0.000000, 0.000000)    (1.000000, 0.000000)    (0.000000, 1.000000)
+(0.333333, 0.333333) -0.28125
+(0.600000, 0.200000) 0.2604166666666667
+(0.200000, 0.600000) 0.2604166666666667
+(0.200000, 0.200000) 0.2604166666666667
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Grid-Construction-and-Basic-Interface">
+<h1>Grid Construction and Basic Interface<a class="headerlink" href="#Grid-Construction-and-Basic-Interface" title="Permalink to this headline">¶</a></h1>
+<p>We now move on to the Dune-Grid module. First let us discuss different possibilities of constructing a grid.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">cartesianDomain</span><span class="p">,</span> <span class="n">yaspGrid</span>
+<span class="n">domain</span> <span class="o">=</span> <span class="n">cartesianDomain</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.25</span><span class="p">],</span> <span class="p">[</span><span class="mi">15</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="n">yaspView</span> <span class="o">=</span> <span class="n">yaspGrid</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+
+<span class="n">yaspView</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">yaspView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">()</span>
+<span class="n">yaspView</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">pyplot</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_3_0.png" src="_images/dune-corepy_nb_3_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_3_1.png" src="_images/dune-corepy_nb_3_1.png" />
+</div>
+</div>
+<p>Let’s visualize the grid and then globally refine it once</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.alugrid</span> <span class="k">import</span> <span class="n">aluConformGrid</span>
+<span class="n">aluView</span> <span class="o">=</span> <span class="n">aluConformGrid</span><span class="p">(</span><span class="n">domain</span><span class="p">)</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">()</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_5_0.png" src="_images/dune-corepy_nb_5_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_5_1.png" src="_images/dune-corepy_nb_5_1.png" />
+</div>
+</div>
+<p>The same for setting up a simplex grid</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.6</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.6</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mf">0.6</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mf">0.6</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="o">-</span><span class="mf">0.6</span><span class="p">)]</span>
+<span class="n">triangles</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">5</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">)]</span>
+<span class="n">aluView</span> <span class="o">=</span> <span class="n">aluConformGrid</span><span class="p">({</span><span class="s2">&quot;vertices&quot;</span><span class="p">:</span> <span class="n">vertices</span><span class="p">,</span> <span class="s2">&quot;simplices&quot;</span><span class="p">:</span> <span class="n">triangles</span><span class="p">})</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_7_0.png" src="_images/dune-corepy_nb_7_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_7_1.png" src="_images/dune-corepy_nb_7_1.png" />
+</div>
+</div>
+<p>In addition to global refinement we can also pre process the grid by marking a subset of elements for local refinement.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.grid</span> <span class="k">import</span> <span class="n">Marker</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">mark</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">center</span>
+        <span class="k">return</span> <span class="n">Marker</span><span class="o">.</span><span class="n">refine</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">two_norm</span> <span class="o">&lt;</span> <span class="mf">0.64</span><span class="o">**</span><span class="n">i</span> <span class="k">else</span> <span class="n">Marker</span><span class="o">.</span><span class="n">keep</span>
+    <span class="n">aluView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">adapt</span><span class="p">(</span><span class="n">mark</span><span class="p">)</span>
+    <span class="n">aluView</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="mi">5</span><span class="p">))</span>
+
+<span class="kn">from</span> <span class="nn">dune.alugrid</span> <span class="k">import</span> <span class="n">aluSimplexGrid</span>
+<span class="n">vertices</span> <span class="o">=</span> <span class="n">aluView</span><span class="o">.</span><span class="n">coordinates</span><span class="p">()</span>
+<span class="n">triangles</span> <span class="o">=</span> <span class="p">[</span><span class="n">aluView</span><span class="o">.</span><span class="n">indexSet</span><span class="o">.</span><span class="n">subIndices</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">aluView</span><span class="o">.</span><span class="n">elements</span><span class="p">]</span>
+<span class="n">aluView</span> <span class="o">=</span> <span class="n">aluSimplexGrid</span><span class="p">({</span><span class="s2">&quot;vertices&quot;</span><span class="p">:</span> <span class="n">vertices</span><span class="p">,</span> <span class="s2">&quot;simplices&quot;</span><span class="p">:</span> <span class="n">triangles</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_9_0.png" src="_images/dune-corepy_nb_9_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_9_1.png" src="_images/dune-corepy_nb_9_1.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_9_2.png" src="_images/dune-corepy_nb_9_2.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_9_3.png" src="_images/dune-corepy_nb_9_3.png" />
+</div>
+</div>
+<p>We next discuss how to retrieve basic information from a constructed grid and iterate over its entities (i.e., elements, faces, edges, vertices, etc.).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">vertices</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)]</span>
+<span class="n">triangles</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)]</span>
+<span class="n">unitSquare</span> <span class="o">=</span> <span class="n">aluSimplexGrid</span><span class="p">({</span><span class="s2">&quot;vertices&quot;</span><span class="p">:</span> <span class="n">vertices</span><span class="p">,</span> <span class="s2">&quot;simplices&quot;</span><span class="p">:</span> <span class="n">triangles</span><span class="p">})</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">unitSquare</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span><span class="s2">&quot;elements and&quot;</span><span class="p">,</span><span class="n">unitSquare</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="s2">&quot;vertices&quot;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">codim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">unitSquare</span><span class="o">.</span><span class="n">dimension</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">entity</span> <span class="ow">in</span> <span class="n">unitSquare</span><span class="o">.</span><span class="n">entities</span><span class="p">(</span><span class="n">codim</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">entity</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">corners</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">unitSquare</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">edge</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">corners</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+2 elements and 4 vertices
+(1.000000, 1.000000), (1.000000, 0.000000), (0.000000, 0.000000)
+(0.000000, 0.000000), (0.000000, 1.000000), (1.000000, 1.000000)
+(0.000000, 0.000000), (1.000000, 0.000000)
+(0.000000, 0.000000), (1.000000, 1.000000)
+(0.000000, 0.000000), (0.000000, 1.000000)
+(1.000000, 0.000000), (1.000000, 1.000000)
+(1.000000, 1.000000), (0.000000, 1.000000)
+(0.000000, 0.000000)
+(1.000000, 0.000000)
+(1.000000, 1.000000)
+(0.000000, 1.000000)
+(0.000000, 0.000000), (1.000000, 0.000000)
+(0.000000, 0.000000), (1.000000, 1.000000)
+(0.000000, 0.000000), (0.000000, 1.000000)
+(1.000000, 0.000000), (1.000000, 1.000000)
+(1.000000, 1.000000), (0.000000, 1.000000)
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Attaching-Data-to-the-Grid-and-Defining-Grid-Functions">
+<h1>Attaching Data to the Grid and Defining Grid Functions<a class="headerlink" href="#Attaching-Data-to-the-Grid-and-Defining-Grid-Functions" title="Permalink to this headline">¶</a></h1>
+<p>This is a fundamental concept in any grid based discretization package. These are functions that can be evaluated given an entity in the grid and a local coordinate within the reference element of that entity.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="nd">@dune</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">gridFunction</span><span class="p">(</span><span class="n">aluView</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">2.</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="p">(</span><span class="mf">0.3</span><span class="o">+</span><span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+
+<span class="nd">@dune</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">gridFunction</span><span class="p">(</span><span class="n">aluView</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">hat0</span><span class="p">(</span><span class="n">element</span><span class="p">,</span><span class="n">hatx</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="o">-</span><span class="n">hatx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">hatx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">hatx</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">])</span>
+<span class="n">maxValue</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">hatx</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+
+<span class="n">maxValue</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">toGlobal</span><span class="p">(</span><span class="n">hatx</span><span class="p">))</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+
+<span class="n">f</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<span class="n">hat0</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_13_0.png" src="_images/dune-corepy_nb_13_0.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_13_1.png" src="_images/dune-corepy_nb_13_1.png" />
+</div>
+</div>
+<p>To attach data to the entities in a grid, each Dune grid has an <code class="docutils literal notranslate"><span class="pre">IndexSet</span></code> which provides a consecutive, zero starting integer for the set of entities of a given geometry type, i.e., entities sharing the same reference element, like all triangles or all cubes. This can be used to attach data to the these entities stored in random access containers like <code class="docutils literal notranslate"><span class="pre">numpy</span></code> arrays. To simplify the process further a <code class="docutils literal notranslate"><span class="pre">mapper</span></code> can be used which is initialized with the data layout, i.e., the number of
+degrees of freedom that is supposed to be attached to every entity with a given geometry type.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">mapper</span> <span class="o">=</span> <span class="n">unitSquare</span><span class="o">.</span><span class="n">mapper</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+
+<span class="n">layout</span> <span class="o">=</span> <span class="p">{</span><span class="n">dune</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">quadrilateral</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dune</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">triangle</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<span class="n">mapper</span> <span class="o">=</span> <span class="n">unitSquare</span><span class="o">.</span><span class="n">mapper</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">interpolate</span><span class="p">(</span><span class="n">grid</span><span class="p">):</span>
+    <span class="n">mapper</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">mapper</span><span class="p">({</span><span class="n">dune</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">vertex</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">mapper</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grid</span><span class="o">.</span><span class="n">vertices</span><span class="p">:</span>
+        <span class="n">data</span><span class="p">[</span><span class="n">mapper</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mapper</span><span class="p">,</span> <span class="n">data</span>
+
+<span class="n">mapper</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">interpolate</span><span class="p">(</span><span class="n">aluView</span><span class="p">)</span>
+<span class="nd">@dune</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">gridFunction</span><span class="p">(</span><span class="n">aluView</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">p12dEvaluate</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="n">bary</span> <span class="o">=</span> <span class="mi">1</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">subIndices</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">b</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">bary</span><span class="p">,</span> <span class="n">idx</span><span class="p">))</span>
+
+<span class="nd">@dune</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">gridFunction</span><span class="p">(</span><span class="n">aluView</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p12dEvaluate</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">-</span><span class="n">f</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+<span class="n">hatx</span> <span class="o">=</span> <span class="n">FieldVector</span><span class="p">([</span><span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">,</span> <span class="mf">1.</span><span class="o">/</span><span class="mf">3.</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">hatx</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">aluView</span><span class="o">.</span><span class="n">elements</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+1.6026566867981322
+</pre></div></div>
+</div>
+</div>
+<div class="section" id="Output-of-Grid-and-Visualization-of-Data">
+<h1>Output of Grid and Visualization of Data<a class="headerlink" href="#Output-of-Grid-and-Visualization-of-Data" title="Permalink to this headline">¶</a></h1>
+<p>We already used <code class="docutils literal notranslate"><span class="pre">matplotlib</span></code> to plot the grid and grid functions. For more flexible plotting Dune relies on <code class="docutils literal notranslate"><span class="pre">vtk</span></code> and Dune-Python makes it easy to write suitable files.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">p12dEvaluate</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">),</span> <span class="n">gridLines</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">p12dEvaluate</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">),</span> <span class="n">gridLines</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span>
+             <span class="n">xlim</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.4</span><span class="p">],</span> <span class="n">ylim</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mf">0.4</span><span class="p">])</span>
+<span class="n">f</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="mi">9</span><span class="p">),</span> <span class="n">gridLines</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="n">pd</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;exact&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">,</span> <span class="s2">&quot;discrete&quot;</span><span class="p">:</span> <span class="n">p12dEvaluate</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">error</span><span class="p">}</span>
+<span class="n">aluView</span><span class="o">.</span><span class="n">writeVTK</span><span class="p">(</span><span class="s2">&quot;interpolation&quot;</span><span class="p">,</span> <span class="n">pointdata</span><span class="o">=</span><span class="n">pd</span><span class="p">)</span>
+
+<span class="n">aluView</span><span class="o">.</span><span class="n">writeVTK</span><span class="p">(</span><span class="s2">&quot;interpolation_subsampled&quot;</span><span class="p">,</span> <span class="n">subsampling</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">pointdata</span><span class="o">=</span><span class="n">pd</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_17_0.png" src="_images/dune-corepy_nb_17_0.png" />
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_17_1.png" src="_images/dune-corepy_nb_17_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/dune-corepy_nb_17_2.png" src="_images/dune-corepy_nb_17_2.png" />
+</div>
+</div>
+<p><img alt="interpolation" src="_images/interpolation_discrete.png" /> <img alt="exact solution" src="_images/interpolation_exact.png" /> <img alt="interpolation error" src="_images/interpolation_error.png" /></p>
+<p>Mayavi can also be used to plot grid function in Python. This approach relies on methods to extract <code class="docutils literal notranslate"><span class="pre">numpy</span></code> representations of the grid data structure and values of a given grid function.</p>
+<p><strong>Note</strong>: mayavi is not installed in the Docker image and, therefore, this feature is not available the Docker container.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">level</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">triangulation</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">triangulation</span><span class="p">(</span><span class="n">level</span><span class="p">)</span>
+<span class="n">z</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">pointData</span><span class="p">(</span><span class="n">level</span><span class="p">)[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">mayavi</span> <span class="k">import</span> <span class="n">mlab</span>
+    <span class="kn">from</span> <span class="nn">mayavi.tools.notebook</span> <span class="k">import</span> <span class="n">display</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">init_notebook</span><span class="p">(</span><span class="s2">&quot;png&quot;</span><span class="p">)</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">bgcolor</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">mlab</span><span class="o">.</span><span class="n">triangular_mesh</span><span class="p">(</span><span class="n">triangulation</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">triangulation</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">*</span><span class="mf">0.5</span><span class="p">,</span>
+                             <span class="n">triangulation</span><span class="o">.</span><span class="n">triangles</span><span class="p">)</span>
+    <span class="n">display</span><span class="p">(</span> <span class="n">s</span> <span class="p">)</span>
+    <span class="c1"># mlab.savefig(&quot;mayavi.png&quot;, size=(400,300))</span>
+    <span class="n">mlab</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Notebook initialized with png backend.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<img src="data:image/png;base64,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" alt="PNG image"></img></div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="elasticity_nb.html" class="btn btn-neutral float-right" title="Linear elasticity: deformed beam" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="dune-fempy_nb.html" class="btn btn-neutral float-left" title="Finite Element Methods: a first example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

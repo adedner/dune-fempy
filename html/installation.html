@@ -1,0 +1,422 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Using Docker or Vagrant &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processEscapes": true, "processClass": "math|output_area", "inlineMath": [["$", "$"], ["\\(", "\\)"]], "ignoreClass": "document"}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="A first Example and General Concepts" href="gettingstarted.html" />
+    <link rel="prev" title="Welcome to the documentation for dune-fem’s python bindings" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using Docker or Vagrant</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#vagrant">Vagrant</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#from-source">From Source</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-the-dune-core-modules">Building the Dune Core Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-the-dune-python-package">Building the Dune Python Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Using Docker or Vagrant</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/installation.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="using-docker-or-vagrant">
+<span id="installation"></span><h1>Using Docker or Vagrant<a class="headerlink" href="#using-docker-or-vagrant" title="Permalink to this headline">¶</a></h1>
+<p>We provide files for building a Dune docker or vagrant environment on a host
+machine which can be used to develop both C++ and Python code based on Dune.
+In both cases the environment has to be build locally and can then be run from
+any folder on the host machine, i.e., a folder containing some Dune module
+or some Python script. Access rights are set so that the docker/vagrant user
+has the same rights as the user who build the docker/vagrant image
+in the directory from where it was started; consequently new files
+generated during the session are modifiable on the host and vice versa.
+The Linux distribution used is based on a Ubuntu image
+and contains most programs needed for shell based code development.</p>
+<p>Simply download this
+<a class="reference download external" download="" href="https://gitlab.dune-project.org/dune-fem/dune-fem-dev/raw/master/rundocker.sh"><code class="xref download docutils literal notranslate"><span class="pre">script</span></code></a>.
+When executing this scripts the first time the docker image will be
+downloaded which will take some time. After the download is completed
+the working folder will be mounted into the docker container
+under <code class="docutils literal notranslate"><span class="pre">/host</span></code>. This way the script can be executed (without requiring an
+additional image download) in any folder containing the Python project to
+be worked on. In addition the scripts and notebooks discussed in documentation are
+made available under <code class="docutils literal notranslate"><span class="pre">/dunepy/DUNE/dune-fempy/docs</span></code>. The git repositories
+of all required Dune modules are cloned under <code class="docutils literal notranslate"><span class="pre">/dunepy/DUNE</span></code> and a Python
+virtual environment is setup. Additional Python packages can be easily
+installed using <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> and additional Dune modules can be added
+using <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span></code>. After adding a new Dune module in <code class="docutils literal notranslate"><span class="pre">/dunepy/DUNE</span></code> run
+<code class="docutils literal notranslate"><span class="pre">updateAll</span></code> to configure the new Dune module and update the Dune Python
+package.</p>
+<p>A detailed description of the <em>dune-fem docker development environment</em> is
+given <cite>here&lt;https://gitlab.dune-project.org/dune-fem/dune-fem-dev&gt;</cite>.</p>
+<div class="section" id="vagrant">
+<h2>Vagrant<a class="headerlink" href="#vagrant" title="Permalink to this headline">¶</a></h2>
+<p>Run <cite>vagrant up</cite> to get started and then <cite>vagrant ssh</cite> in your working
+directory to go into the container.
+To update the container run <cite>vagrant provision</cite> which will reexecute the
+<cite>bootstrap.sh</cite> file.</p>
+</div>
+</div>
+<div class="section" id="from-source">
+<h1>From Source<a class="headerlink" href="#from-source" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We strongly encourage the use of a python virtual environment and the
+following instructions are written assuming that a virtual environment is
+activated.</p>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>The following dependencies are needed for Dune-Fem python binding:</p>
+<ul class="simple">
+<li><p>At least C++11 compatible C++ compiler (e.g. gcc 5.3 or later)</p></li>
+<li><p>python (3.4 or later - possibly also works with 2.7 but not guaranteed)</p>
+<ul>
+<li><p>mpi4py</p></li>
+<li><p>numpy and scipy (strongly recommended)</p></li>
+<li><p>matplotlib      (strongly recommended)</p></li>
+<li><p>ufl             (strongly recommended)</p></li>
+<li><p>petsc4py        (recommended)</p></li>
+</ul>
+</li>
+<li><p>Required Dune modules (release 2.6 or later)</p>
+<ul>
+<li><p>dune-common (<a class="reference external" href="https://gitlab.dune-project.org/core/dune-common.git">https://gitlab.dune-project.org/core/dune-common.git</a>)</p></li>
+<li><p>dune-geometry (<a class="reference external" href="https://gitlab.dune-project.org/core/dune-geometry.git">https://gitlab.dune-project.org/core/dune-geometry.git</a>)</p></li>
+<li><p>dune-grid (<a class="reference external" href="https://gitlab.dune-project.org/core/dune-grid.git">https://gitlab.dune-project.org/core/dune-grid.git</a>)</p></li>
+<li><p>dune-python (<a class="reference external" href="https://gitlab.dune-project.org/staging/dune-python.git">https://gitlab.dune-project.org/staging/dune-python.git</a>)</p></li>
+<li><p>dune-fem (<a class="reference external" href="https://gitlab.dune-project.org/dune-fem/dune-fem.git">https://gitlab.dune-project.org/dune-fem/dune-fem.git</a>)</p></li>
+</ul>
+</li>
+<li><p>Recommended Dune modules (releases 2.6 or later)</p>
+<ul>
+<li><p>dune-istl (<a class="reference external" href="https://gitlab.dune-project.org/core/dune-istl.git">https://gitlab.dune-project.org/core/dune-istl.git</a>)</p></li>
+<li><p>dune-localfunctions (<a class="reference external" href="https://gitlab.dune-project.org/core/dune-localfunctions.git">https://gitlab.dune-project.org/core/dune-localfunctions.git</a>)</p></li>
+<li><p>dune-alugrid  (<a class="reference external" href="https://gitlab.dune-project.org/extensions/dune-alugrid.git">https://gitlab.dune-project.org/extensions/dune-alugrid.git</a>)</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="building-the-dune-core-modules">
+<h2>Building the Dune Core Modules<a class="headerlink" href="#building-the-dune-core-modules" title="Permalink to this headline">¶</a></h2>
+<div class="admonition-todo admonition" id="index-0">
+<p class="admonition-title">Todo</p>
+<p>Mention available deb packages and perhaps link to other tutorials?</p>
+</div>
+<p>After cloning all the repositories simply run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dune-common/bin/dunecontrol --opts<span class="o">=</span>config.opts all
+</pre></div>
+</div>
+<p>where <code class="xref download docutils literal notranslate"><span class="pre">config.opts</span></code> is an optional configuration
+file containing for example flags for the <cite>cmake</cite> process using <cite>CMAKE_FLAGS=</cite>.</p>
+<div class="admonition-todo admonition" id="index-1">
+<p class="admonition-title">Todo</p>
+<p>we need to mention <cite>CMAKE_POSITION_INDEPENDENT_CODE=TRUE</cite> or <cite>BUILD_SHARED_LIBS</cite></p>
+</div>
+</div>
+<div class="section" id="building-the-dune-python-package">
+<h2>Building the Dune Python Package<a class="headerlink" href="#building-the-dune-python-package" title="Permalink to this headline">¶</a></h2>
+<p>After the build process has terminated (hopefully successfully) run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./dune-python/bin/setup-dunepy.py --opts<span class="o">=</span>config.opts install
+</pre></div>
+</div>
+<p>and you should be ready to go. Test the installation by opening a Python
+terminal and running</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dune.grid</span> <span class="kn">import</span> <span class="n">structuredGrid</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">structuredGrid</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
+<span class="n">grid</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>If you have everything set up correctly (and have <cite>matplotlib</cite>) you should
+get a figure of a structured grid…</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The first time you construct an object of a specific realization of one
+of the Dune interfaces (e.g. here a structured grid),
+the just in time compiler needs to be invoked. This can take quite some
+time - especially for grid realizations. This needs to be done only once
+so rerunning the above code a second time (even using other parameters
+in the <cite>structuredGrid</cite> function) should execute almost instantaniously.</p>
+</div>
+</div>
+<div class="section" id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p>The compiler version needs to be 5.3 or later. This can be checked in terminal with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ g++ --version
+</pre></div>
+</div>
+<p>If your version is out of date, you will need to upgrade your system to use Dune</p>
+</li>
+<li><p>It is possible that the python version may be an issue. The script uses python3.5m. If during the Dune installation you get the error</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>fatal error: pyconfig.h: No such file or directory
+</pre></div>
+</div>
+<p>This can probably be fixed by installing additional python3.5 libraries with e.g.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo apt-get install libpython3.5-dev
+</pre></div>
+</div>
+<p>If python3.5 is not available on your system, you can simply change 3.5 for another appropriate version everywhere in the script (e.g. 3.4 or 2.7 (untested)). Otherwise, consider upgrading your system.</p>
+</li>
+<li><p>One other problem is that a default version of Open MPI may already be installed. This will lead to errors where Dune appears to be looking in the wrong directory for Open MPI (e.g. usr/lib/openmpi instead of the home directory where the script installs it). This can be solved by running</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ make uninstall
+</pre></div>
+</div>
+<p>in the original MPI install directory, followed by removing the folder. It will then be necessary to reinstall Open MPI and Dune. It may also be necessary to direct mpi4py to the new MPI installation. It is possible to check whether this is a problem by running python and trying out</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mpi4py</span> <span class="kn">import</span> <span class="n">MPI</span>
+</pre></div>
+</div>
+<p>If it comes up with an error, this can be fixed by installing mpi4py manually using the following commands</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ git clone https://bitbucket.org/mpi4py/mpi4py.git
+$ cd mpi4py
+$ python setup.py build --mpicc=/path/to/openmpi/bin/mpicc
+$ python setup.py install --user
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="gettingstarted.html" class="btn btn-neutral float-right" title="A first Example and General Concepts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the documentation for dune-fem’s python bindings" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

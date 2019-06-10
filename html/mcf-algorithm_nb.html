@@ -1,0 +1,663 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mean Curvature Flow (revisited) &mdash; Tutorial for dune-fempy  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <script type="text/x-mathjax-config">MathJax.Hub.Config({"tex2jax": {"processClass": "math|output_area", "processEscapes": true, "ignoreClass": "document", "inlineMath": [["$", "$"], ["\\(", "\\)"]]}})</script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sampling the solution over a line" href="lineplot_nb.html" />
+    <link rel="prev" title="Mean Curvature Flow" href="mcf_nb.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Tutorial for dune-fempy
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                2.7
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Using Docker or Vagrant</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html#from-source">From Source</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html">A first Example and General Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#using-the-full-grid-interface">Using the Full Grid Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gettingstarted.html#some-more-examples">Some More Examples</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Further Topics</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="topics.html">Dynamic Local Grid Refinement and Coarsening</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topics.html#moving-grids">Moving Grids</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="topics.html#using-c-code-snipetts">Using C++ Code Snipetts</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Mean Curvature Flow (revisited)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lineplot_nb.html">Sampling the solution over a line</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">User Projects</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="twophaseflow_descr.html">HP adaptive DG scheme for twophase flow problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vemdemo_descr.html">Virtual Finite Elements: the DUNE-VEM module</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Information and Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributions.html">How to showcase your own project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html">Notebooks and Scripts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#mesh-files-used-in-the-examples">Mesh Files used in the Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#citing-this-project">Citing this project</a></li>
+<li class="toctree-l1"><a class="reference internal" href="additional.html#list-of-things-that-need-doing">List of things that need doing…</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Tutorial for dune-fempy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="topics.html">Dynamic Local Grid Refinement and Coarsening</a> &raquo;</li>
+        
+      <li>Mean Curvature Flow (revisited)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/mcf-algorithm_nb.ipynb.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput,
+div.nbinput div.prompt,
+div.nbinput div.input_area,
+div.nbinput div[class*=highlight],
+div.nbinput div[class*=highlight] pre,
+div.nboutput,
+div.nbinput div.prompt,
+div.nbinput div.output_area,
+div.nboutput div[class*=highlight],
+div.nboutput div[class*=highlight] pre {
+    background: none;
+    border: none;
+    padding: 0 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+/* avoid gaps between output lines */
+div.nboutput div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput,
+div.nboutput {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput,
+    div.nboutput {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput div.prompt,
+div.nboutput div.prompt {
+    min-width: 5ex;
+    padding-top: 0.4em;
+    padding-right: 0.4em;
+    text-align: right;
+    flex: 0;
+}
+@media (max-width: 540px) {
+    div.nbinput div.prompt,
+    div.nboutput div.prompt {
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput div.prompt.empty {
+        padding: 0;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput div.prompt pre,
+div.nboutput div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput div.input_area,
+div.nboutput div.output_area {
+    padding: 0.4em;
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput div.input_area,
+    div.nboutput div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    background: #f5f5f5;
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="section" id="Mean-Curvature-Flow-(revisited)">
+<h1>Mean Curvature Flow (revisited)<a class="headerlink" href="#Mean-Curvature-Flow-(revisited)" title="Permalink to this headline">¶</a></h1>
+<p>We simulate the shrinking of a sphere under mcf using a finite element approach based on the following time discrete approximation:</p>
+<div class="math notranslate nohighlight">
+\begin{gather}
+  \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
+    \tau \int_{\Gamma^n} \big(
+    \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
+    \colon\nabla_{\Gamma^n}\varphi
+  =0~.
+\end{gather}</div><p>Here <span class="math notranslate nohighlight">\(U^n\)</span> parametrizes <span class="math notranslate nohighlight">\(\Gamma(t^{n+1})\)</span> over <span class="math notranslate nohighlight">\(\Gamma^n:=\Gamma(t^{n})\)</span>, <span class="math notranslate nohighlight">\(I\)</span> is the identity matrix, <span class="math notranslate nohighlight">\(\tau\)</span> is the time step and <span class="math notranslate nohighlight">\(\theta\in[0,1]\)</span> is a discretization parameter.</p>
+<p>In this case we have an exact formula for the evolution of the radius of the surface</p>
+<div class="math notranslate nohighlight">
+\[R(t) = \sqrt{R(0)^2 - 4t}.\]</div>
+<p>To compare the accuracy of the surface approximation we compute an average radius of the discrete surface in each time step <span class="math notranslate nohighlight">\(t^n\)</span> using</p>
+<div class="math notranslate nohighlight">
+\[R_h^n = \frac{ \int_{\Gamma^n} |x| }{ |\Gamma^n| }.\]</div>
+<p>Computing <span class="math notranslate nohighlight">\(R_h^n\)</span> requires a grid traversal and a number of calls to interface methods on each element. Doing this on the Python side has a potential performance impact which we investigate here by comparing a pure python implementation with a hybrid approach where computing <span class="math notranslate nohighlight">\(R_h^n\)</span> is implemented in C++ using the <code class="docutils literal notranslate"><span class="pre">dune.generator.algorithm</span></code> functionality.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">ufl</span> <span class="k">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">dune.ufl</span>
+<span class="kn">from</span> <span class="nn">dune.generator</span> <span class="k">import</span> <span class="n">algorithm</span>
+<span class="kn">import</span> <span class="nn">dune.geometry</span> <span class="k">as</span> <span class="nn">geometry</span>
+<span class="kn">import</span> <span class="nn">dune.fem</span> <span class="k">as</span> <span class="nn">fem</span>
+<span class="kn">from</span> <span class="nn">mcf_cmp_plot</span> <span class="k">import</span> <span class="n">plot</span>
+
+<span class="c1"># polynomial order of surface approximation</span>
+<span class="n">order</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="c1"># initial radius</span>
+<span class="n">R0</span> <span class="o">=</span> <span class="mf">2.</span>
+
+<span class="c1"># end time</span>
+<span class="n">endTime</span> <span class="o">=</span> <span class="mf">0.1</span>
+</pre></div>
+</div>
+</div>
+<p>Main function for calculating the mean curvature flow of a given surface. If first argument is <code class="docutils literal notranslate"><span class="pre">True</span></code> the radius of the computed surface is computed using an algorithm implemented in C++ otherwise the computation is done in Python.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="k">def</span> <span class="nf">calcRadius</span><span class="p">(</span><span class="n">surface</span><span class="p">):</span>
+    <span class="n">R</span><span class="p">,</span><span class="n">vol</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">surface</span><span class="o">.</span><span class="n">elements</span><span class="p">:</span>
+        <span class="n">rule</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">quadratureRule</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rule</span><span class="p">:</span>
+            <span class="n">geo</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">geometry</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">volume</span> <span class="o">*</span> <span class="n">p</span><span class="o">.</span><span class="n">weight</span>
+            <span class="n">R</span>   <span class="o">+=</span> <span class="n">geo</span><span class="o">.</span><span class="n">toGlobal</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">position</span><span class="p">)</span><span class="o">.</span><span class="n">two_norm</span> <span class="o">*</span> <span class="n">weight</span>
+            <span class="n">vol</span> <span class="o">+=</span> <span class="n">weight</span>
+    <span class="k">return</span> <span class="n">R</span><span class="o">/</span><span class="n">vol</span>
+
+<span class="n">switchCalcRadius</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">use_cpp</span><span class="p">,</span><span class="n">surface</span><span class="p">:</span> \
+             <span class="n">algorithm</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;calcRadius&#39;</span><span class="p">,</span> <span class="s1">&#39;radius.hh&#39;</span><span class="p">,</span> <span class="n">surface</span><span class="p">)</span> \
+             <span class="k">if</span> <span class="n">use_cpp</span> <span class="k">else</span> <span class="n">calcRadius</span>
+</pre></div>
+</div>
+</div>
+<p>Timings for a number of different grid refinements is dumped to disk</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dune.fem.view</span> <span class="k">import</span> <span class="n">geometryGridView</span> <span class="k">as</span> <span class="n">geoGridView</span>
+<span class="kn">from</span> <span class="nn">dune.fem.space</span> <span class="k">import</span> <span class="n">lagrange</span> <span class="k">as</span> <span class="n">solutionSpace</span>
+<span class="kn">from</span> <span class="nn">dune.fem.scheme</span> <span class="k">import</span> <span class="n">galerkin</span> <span class="k">as</span> <span class="n">solutionScheme</span>
+<span class="k">def</span> <span class="nf">calculate</span><span class="p">(</span><span class="n">use_cpp</span><span class="p">,</span> <span class="n">gridView</span><span class="p">):</span>
+    <span class="c1"># space on Gamma_0 to describe position of Gamma(t)</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">solutionSpace</span><span class="p">(</span><span class="n">gridView</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="n">gridView</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">TrialFunction</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">TestFunction</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">SpatialCoordinate</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">cell</span><span class="p">())</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;position&quot;</span><span class="p">)</span>
+
+    <span class="c1"># space for discrete solution on Gamma(t)</span>
+    <span class="n">surface</span> <span class="o">=</span> <span class="n">geoGridView</span><span class="p">(</span><span class="n">positions</span><span class="p">)</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">solutionSpace</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">dimRange</span><span class="o">=</span><span class="n">surface</span><span class="o">.</span><span class="n">dimWorld</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">)</span>
+    <span class="n">solution</span>  <span class="o">=</span> <span class="n">space</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solution&quot;</span><span class="p">)</span>
+
+    <span class="c1"># set up model using theta scheme</span>
+    <span class="n">theta</span> <span class="o">=</span> <span class="mf">0.5</span>   <span class="c1"># Crank-Nicholson</span>
+
+    <span class="n">I</span> <span class="o">=</span> <span class="n">Identity</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">dune</span><span class="o">.</span><span class="n">ufl</span><span class="o">.</span><span class="n">Constant</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="s2">&quot;dt&quot;</span><span class="p">)</span>
+
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">inner</span><span class="p">(</span><span class="n">u</span> <span class="o">-</span> <span class="n">x</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="n">dt</span> <span class="o">*</span> <span class="n">inner</span><span class="p">(</span><span class="n">theta</span><span class="o">*</span><span class="n">grad</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">theta</span><span class="p">)</span><span class="o">*</span><span class="n">I</span><span class="p">,</span> <span class="n">grad</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span> <span class="o">*</span> <span class="n">dx</span>
+
+    <span class="n">scheme</span> <span class="o">=</span> <span class="n">solutionScheme</span><span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">space</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;cg&quot;</span><span class="p">)</span>
+
+    <span class="n">Rexact</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">R0</span><span class="o">*</span><span class="n">R0</span> <span class="o">-</span> <span class="mf">4.</span><span class="o">*</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">radius</span> <span class="o">=</span> <span class="n">switchCalcRadius</span><span class="p">(</span><span class="n">use_cpp</span><span class="p">,</span><span class="n">surface</span><span class="p">)</span>
+
+    <span class="n">scheme</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="mf">0.02</span>
+
+    <span class="n">numberOfLoops</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numberOfLoops</span><span class="p">)</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numberOfLoops</span><span class="p">)</span>
+    <span class="n">totalIterations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numberOfLoops</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">))</span>
+    <span class="n">gridSizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">numberOfLoops</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint32</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">numberOfLoops</span><span class="p">):</span>
+        <span class="n">positions</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="p">(</span><span class="n">R0</span><span class="o">/</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">x</span><span class="p">))))</span>
+        <span class="n">solution</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">radius</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span><span class="o">-</span><span class="n">Rexact</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
+        <span class="n">iterations</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">endTime</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">scheme</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">solution</span><span class="p">)</span>
+            <span class="c1"># move the surface</span>
+            <span class="n">positions</span><span class="o">.</span><span class="n">dofVector</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">solution</span><span class="o">.</span><span class="n">dofVector</span><span class="p">)</span>
+            <span class="c1"># store some information about the solution process</span>
+            <span class="n">iterations</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">info</span><span class="p">[</span><span class="s2">&quot;linear_iterations&quot;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">t</span>          <span class="o">+=</span> <span class="n">scheme</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dt</span>
+            <span class="n">error</span>       <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="nb">abs</span><span class="p">(</span><span class="n">radius</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span><span class="o">-</span><span class="n">Rexact</span><span class="p">(</span><span class="n">t</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;time used:&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+        <span class="n">times</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+        <span class="n">errors</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">error</span>
+        <span class="n">totalIterations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">iterations</span>
+        <span class="n">gridSizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">gridView</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numberOfLoops</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">gridView</span><span class="o">.</span><span class="n">hierarchicalGrid</span><span class="o">.</span><span class="n">globalRefine</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">scheme</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">dt</span> <span class="o">/=</span> <span class="mi">2</span>
+    <span class="n">eocs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">:][:</span><span class="n">numberOfLoops</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">errors</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+        <span class="n">keys</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">gridSizes</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span> <span class="s2">&quot;eoc&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">eocs</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s1">&#39;iterations&#39;</span><span class="p">:</span> <span class="n">totalIterations</span><span class="p">}</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">numberOfLoops</span><span class="p">),</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">,</span> <span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="s1">&#39;eoc&#39;</span><span class="p">,</span> <span class="s1">&#39;iterations&#39;</span><span class="p">])</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">table</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pandas could not be used to show table with results&quot;</span><span class="p">)</span>
+        <span class="k">pass</span>
+    <span class="k">return</span> <span class="n">gridSizes</span><span class="p">,</span> <span class="n">times</span>
+</pre></div>
+</div>
+</div>
+<p>Compute the mean curvature flow evolution of a spherical surface. Compare computational time of a pure Python implementation and using a C++ algorithm to compute the radius of the surface for verifying the algorithm.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="c1"># set up reference domain Gamma_0</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="kn">from</span> <span class="nn">dune.alugrid</span> <span class="k">import</span> <span class="n">aluConformGrid</span> <span class="k">as</span> <span class="n">leafGridView</span>
+<span class="n">gridView</span> <span class="o">=</span> <span class="n">leafGridView</span><span class="p">(</span><span class="s2">&quot;sphere.dgf&quot;</span><span class="p">,</span> <span class="n">dimgrid</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dimworld</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">+=</span> <span class="p">[</span><span class="n">calculate</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">gridView</span><span class="p">)]</span>
+
+<span class="n">gridView</span> <span class="o">=</span> <span class="n">leafGridView</span><span class="p">(</span><span class="s2">&quot;sphere.dgf&quot;</span><span class="p">,</span> <span class="n">dimgrid</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dimworld</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">results</span> <span class="o">+=</span> <span class="p">[</span><span class="n">calculate</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">gridView</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+time used: 0.7447910308837891
+time used: 4.6967997550964355
+time used: 19.243513345718384
+   size     error       eoc  iterations
+0   318  0.001060       NaN          94
+1   854  0.000599  1.647357         390
+2  2065  0.000273  2.262345         895
+time used: 0.8545682430267334
+time used: 5.311934232711792
+time used: 22.43255615234375
+   size     error       eoc  iterations
+0   318  0.001060       NaN          94
+1   854  0.000599  1.647357         390
+2  2065  0.000273  2.262345         895
+</pre></div></div>
+</div>
+<p>Compare the hybrid and pure Python versions</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">plot</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="_images/mcf-algorithm_nb_9_0.png" src="_images/mcf-algorithm_nb_9_0.png" />
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="lineplot_nb.html" class="btn btn-neutral float-right" title="Sampling the solution over a line" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mcf_nb.html" class="btn btn-neutral float-left" title="Mean Curvature Flow" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Andreas Dedner
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

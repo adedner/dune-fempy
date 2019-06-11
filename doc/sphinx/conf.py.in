@@ -43,7 +43,7 @@ extensions = [
     'sphinx.ext.viewcode',
 #    'nbsphinx',
 #    'sphinxcontrib.apidoc',
-    'sphinxcontrib.bibtex',
+#    'sphinxcontrib.bibtex',
 #    'sphinx.ext.autosectionlabel',
 #    'nbsphinx',
 ]

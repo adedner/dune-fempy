@@ -1,0 +1,9 @@
+include(DuneSphinxDoc)
+add_sphinx_targets(sphinx
+  demos.rst
+  details.rst
+  duneufl.rst
+  index.rst
+  installation.rst
+  laplace.rst
+)

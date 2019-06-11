@@ -10,7 +10,7 @@ A first Example and General Concepts
 .. toctree::
    :maxdepth: 2
 
-   generated/dune-fempy
+   dune-fempy_nb
 
 #############################
 Using the Full Grid Interface
@@ -28,7 +28,7 @@ Using the Full Grid Interface
 .. toctree::
    :maxdepth: 2
 
-   generated/dune-corepy
+   dune-corepy_nb
 
 ##################
 Some More Examples
@@ -37,7 +37,7 @@ Some More Examples
 .. toctree::
    :maxdepth: 2
 
-   generated/elasticity
-   generated/spiral
-   generated/wave
-   generated/uzawa-scipy
+   elasticity_nb
+   spiral_nb
+   wave_nb
+   uzawa-scipy_nb

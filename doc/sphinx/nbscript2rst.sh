@@ -7,7 +7,7 @@ fi
 echo converting $file.py to $file\_nb.ipynb and $file.rst
 
 python py2ipynb.py $file.py $file_nb.ipynb --image="png"
-jupyter nbconvert --to rst $file_nb.ipynb --output generated/$file.rst
+jupyter nbconvert --to rst $file_nb.ipynb --output $file.rst
 # sed -i '/^=======/a :download:`(notebook) <'$file'_nb.ipynb>` :download:`(script) <'$file'.py>`' $file.rst
 # sed -i "/^=======/a :download:`(notebook) <$file_nb.ipynb>` :download:`(script) <$file.py>`" $file.rst
 # sed -i "s/raw:: latex/math::/g" $file.rst

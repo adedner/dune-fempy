@@ -4,19 +4,19 @@
 Notebooks and Scripts
 #####################
 
-================================================= =========================================================== =================================================
-Example                                           Notebooks                                                   Scripts
-================================================= =========================================================== =================================================
-Bending beam (linear elasticity)                  :download:`notebook <generated/elasticity_nb.ipynb>`        :download:`script <elasticity.py>`
-Spiral wave (reaction diffusion system)           :download:`notebook <generated/spiral_nb.ipynb>`            :download:`script <spiral.py>`
-Slit domain (wave equation)                       :download:`notebook <generated/wave_nb.ipynb>`              :download:`script <wave.py>`
-Saddle point solver (stokes flow)                 :download:`notebook <generated/uzawa-scipy_nb.ipynb>`       :download:`script <uzawa-scipy.py>`
-Adaptive FE (laplace problem)                     :download:`notebook <generated/laplace-adaptive_nb.ipynb>`  :download:`script <laplace-adaptive.py>`
-Crystal growth (phase field model)                :download:`notebook <generated/crystal_nb.ipynb>`           :download:`script <crystal.py>`
-Time dependent surface (mean curvature flow)      :download:`notebook <generated/mcf_nb.ipynb>`               :download:`script <mcf.py>`
-HP adaptive DG (two phase flow)                   :download:`notebook <generated/twophaseflow_nb.ipynb>`      :download:`script <twophaseflow.py>`
-Virtual element method                            :download:`notebook <generated/vemdemo_nb.ipynb>`           :download:`script <vemdemo.py>`
-================================================= =========================================================== =================================================
+================================================= ================================================= =================================================
+Example                                           Notebooks                                         Scripts
+================================================= ================================================= =================================================
+Bending beam (linear elasticity)                  :download:`notebook <elasticity_nb.ipynb>`        :download:`script <elasticity.py>`
+Spiral wave (reaction diffusion system)           :download:`notebook <spiral_nb.ipynb>`            :download:`script <spiral.py>`
+Slit domain (wave equation)                       :download:`notebook <wave_nb.ipynb>`              :download:`script <wave.py>`
+Saddle point solver (stokes flow)                 :download:`notebook <uzawa-scipy_nb.ipynb>`       :download:`script <uzawa-scipy.py>`
+Adaptive FE (laplace problem)                     :download:`notebook <laplace-adaptive_nb.ipynb>`  :download:`script <laplace-adaptive.py>`
+Crystal growth (phase field model)                :download:`notebook <crystal_nb.ipynb>`           :download:`script <crystal.py>`
+Time dependent surface (mean curvature flow)      :download:`notebook <mcf_nb.ipynb>`               :download:`script <mcf.py>`
+HP adaptive DG (two phase flow)                   :download:`notebook <twophaseflow_nb.ipynb>`      :download:`script <twophaseflow.py>`
+Virtual element method                            :download:`notebook <vemdemo_nb.ipynb>`           :download:`script <vemdemo.py>`
+================================================= ================================================= =================================================
 
 ###############################
 Mesh Files used in the Examples

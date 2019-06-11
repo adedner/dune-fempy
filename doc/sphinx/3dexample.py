@@ -69,4 +69,4 @@ a3dexamplevtuDisplay.EdgeColor = [1.0, 1.0, 1.0]
 a3dexamplevtuDisplay.GlyphType = 'Arrow'
 a3dexamplevtuDisplay.ScalarOpacityUnitDistance = 0.08521562683627307
 
-SaveScreenshot('generated/figures/3dexample.png', magnification=1, quality=100, view=renderView1)
+SaveScreenshot('figures/3dexample.png', magnification=1, quality=100, view=renderView1)

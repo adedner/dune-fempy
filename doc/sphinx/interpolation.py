@@ -43,6 +43,6 @@ for current in ['discrete', 'exact', 'error']:
     colorbar.RangeLabelFormat = "%0.2f"
     display.SetScalarBarVisibility(view, True)
 
-    SaveScreenshot('figures/interpolation_%s.png' % current, magnification=1, quality=100, view=view)
+    SaveScreenshot('generated/figures/interpolation_%s.png' % current, magnification=1, quality=100, view=view)
 
     Hide(warped, view)

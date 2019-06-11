@@ -1,7 +1,7 @@
 ############################################
 Virtual Finite Elements: the DUNE-VEM module
 ############################################
-:download:`(notebook) <vemdemo_nb.ipynb>` :download:`(script) <vemdemo.py>`
+:download:`(notebook) <generated/vemdemo_nb.ipynb>` :download:`(script) <generated/vemdemo.py>`
 
 .. .. sectionauthor:: Andrea Cnagiani, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Martin Nolte <nolte.mrtn@gmail.com>
 
@@ -16,4 +16,4 @@ https://gitlab.dune-project.org/dune-fem/dune-vem.
 .. toctree::
    :maxdepth: 3
 
-   vemdemo.rst
+   generated/vemdemo.rst

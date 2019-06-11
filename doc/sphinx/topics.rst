@@ -66,8 +66,8 @@ to integrate into the Python code.
 .. toctree::
    :maxdepth: 2
 
-   laplace-adaptive
-   crystal
+   generated/laplace-adaptive
+   generated/crystal
 
 
 ############
@@ -79,7 +79,7 @@ Moving Grids
 .. toctree::
    :maxdepth: 2
 
-   mcf
+   generated/mcf
 
 .. _algorithms:
 
@@ -97,6 +97,5 @@ Using C++ Code Snipetts
 .. toctree::
    :maxdepth: 2
 
-   mcf-algorithm
-   lineplot
-   laplace-dual
+   generated/mcf-algorithm
+   generated/lineplot

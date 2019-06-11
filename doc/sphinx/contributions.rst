@@ -49,7 +49,7 @@ Your python script file *myproject.py* can contain both *markdown* parts for
 additional descriptions between python code blocks similar to
 a jupyter notebook
 (see e.g. the :download:`script<vemdemo.py>` for the virtual element project).
-This file will be translated into a :download:`jupyter notebook<vemdemo_nb.ipynb>`
+This file will be translated into a :download:`jupyter notebook<generated/vemdemo_nb.ipynb>`
 which will also be made available for download. And then the sphinx
 extension *nbsphinx* is used to
 generate the restructured text file used in the

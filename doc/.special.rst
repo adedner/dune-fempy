@@ -39,8 +39,4 @@
 .. role:: right
 
 
-.. |br| raw:: html
-
-   <br>
-
-.. |oe| unicode:: U+000F6 .. O UMLAUT
+.. |oe|    unicode:: U+000F6 .. O UMLAUT

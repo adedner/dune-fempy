@@ -2,4 +2,4 @@ Module: dune-fempy
 Version: 2.6
 Maintainer: a.s.dedner@warwick.ac.uk, nolte.mrtn@gmail.com
 Whitespace-Hook: Yes
-Depends: dune-fem (>= 2.6) dune-python (>= 2.6)
+Depends: dune-python (>= 2.6)

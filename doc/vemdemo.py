@@ -65,7 +65,7 @@ exact = as_vector( [x[0]*x[1] * cos(pi*x[0]*x[1])] )
 # next the bilinear form
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
-a = (inner(grad(u),grad(v))) * dx
+a = (inner(grad(u),grad(v))) * dx + (1+sin(dot(x,x)))*dot(u,v) * dx
 
 # finally the right hand side and the boundary conditions
 b = -div(grad(exact[0])) * v[0] * dx
@@ -119,7 +119,13 @@ polygons.plot(colorbar="horizontal")
 # <codecell>
 def compute(grid, space, schemeName):
     # solve the pde
-    scheme = create.scheme(schemeName, [a==b, *dbc], space, solver="cg", parameters=parameters)
+    if schemeName == "vem":
+        scheme = create.scheme(schemeName, [a==b, *dbc], space, solver="cg",
+                     gradStabilization=1,
+                     massStabilization=1+sin(dot(x,x)),
+                     parameters=parameters)
+    else:
+        scheme = create.scheme(schemeName, [a==b, *dbc], space, solver="cg", parameters=parameters)
     df = space.interpolate([0],name="solution")
     info = scheme.solve(target=df)
 
@@ -160,9 +166,15 @@ Dcoeff = lambda u: 1.0 + u[0]**2
 a = (Dcoeff(u) * inner(grad(u), grad(v)) ) * dx
 b = -div( Dcoeff(exact) * grad(exact[0]) ) * v[0] * dx
 dbcs = [dune.ufl.DirichletBC(space, exact, i+1) for i in range(4)]
-scheme = create.scheme("vem", [a==b, *dbcs], space, solver="cg", parameters=parameters)
+scheme = create.scheme("vem", [a==b, *dbcs], space,
+        gradStabilization=Dcoeff(u),
+        solver="cg", parameters=parameters)
 solution = space.interpolate([0], name="solution")
 info = scheme.solve(target=solution)
+edf = exact-solution
+errors = [ math.sqrt(e) for e in
+           integrate(polyGrid, [inner(edf,edf),inner(grad(edf),grad(edf))], order=5) ]
+print( errors )
 solution.plot(gridLines=None, colorbar="horizontal")
 # <markdowncell>
 # # Linear Elasticity
@@ -214,7 +226,9 @@ b = dot(as_vector([0,-rho*g]),v)*dx
 
 # Compute solution
 displacement = space.interpolate([0,0], name="displacement")
-scheme = create.scheme("vem", [a==b, dbc], space, solver="cg", parameters=parameters)
+scheme = create.scheme("vem", [a==b, dbc], space,
+        gradStabilization = as_vector([lambda_+2*mu, lambda_+2*mu]),
+        solver="cg", parameters=parameters)
 info = scheme.solve(target=displacement)
 
 # <markdowncell>

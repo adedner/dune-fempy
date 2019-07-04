@@ -63,8 +63,10 @@ R0 = 2.
 
 # <codecell>
 from dune.fem.view import geometryGridView
-from dune.fem.space import lagrange as solutionSpace
-from dune.alugrid import aluConformGrid as leafGridView
+# from dune.fem.space import lagrange as solutionSpace
+from dune.vem import bbdgSpace as solutionSpace
+# from dune.alugrid import aluConformGrid as leafGridView
+from dune.vem import polyGrid as leafGridView
 gridView = leafGridView("sphere.dgf", dimgrid=2, dimworld=3)
 space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
 u = TrialFunction(space)
@@ -81,7 +83,8 @@ solution = space.interpolate(x, name="solution")
 
 
 # <codecell>
-from dune.fem.scheme import galerkin as solutionScheme
+# from dune.fem.scheme import galerkin as solutionScheme
+from dune.vem import vemScheme as solutionScheme
 theta = 0.5
 I = Identity(3)
 dt = Constant(0, "dt")

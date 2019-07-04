@@ -1,9 +1,0 @@
-DGF
-
-Interval
-0   0                                   % first corner
-1   1                                   % second corner
-100 100                                 % 100 cells in each direction
-#
-
-# unitcube2.dgf

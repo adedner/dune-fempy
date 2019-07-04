@@ -1,7 +1,0 @@
-print('Warning: this model does not lead a converging scheme - possible issue with boundary conditions or forcing')
-
-space = Space(2, 1)
-u, v = TrialFunction(space), TestFunction(space)
-x = SpatialCoordinate(space.cell())
-
-F = (inner(grad(u), grad(v)) / sqrt(1 + inner(grad(u), grad(u)))) * dx

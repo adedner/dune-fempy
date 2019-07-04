@@ -1,8 +1,0 @@
-#!${PYTHON_EXECUTABLE}
-
-import sys
-
-from dune.models.elliptic.compiler import main
-
-if __name__ == '__main__':
-    sys.exit(main())

@@ -27,7 +27,7 @@ additional image download) in any folder containing the Python project to
 be worked on.
 
 In addition the scripts and notebooks discussed in documentation are
-made available under ``/dunepy/DUNE/dune-fempy/doc``.
+made available under ``/dunepy/DUNE/dune-fempy/demos``.
 Additional Python packages can be easily
 installed using ``pip install`` and additional Dune modules can be added
 using ``git clone``. After adding a new Dune module in ``/dunepy/DUNE`` run
@@ -35,7 +35,7 @@ using ``git clone``. After adding a new Dune module in ``/dunepy/DUNE`` run
 package.
 
 X forwarding required for example to use ``matplotlib`` should
-directly work most Linux host systems,
+directly work on most Linux based host systems,
 for Windows and MAC OS a bit more work is required as
 discussed below. Also the default allocation of memory has to be changed on
 these systems.

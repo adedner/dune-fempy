@@ -111,7 +111,7 @@ vh_n = vh.copy()
 u   = ufl.TrialFunction(space)
 phi = ufl.TestFunction(space)
 
-# right hand sie (time derivative part + explicit forcing in v)
+# right hand sie (time derivative part
 a_ex = ufl.inner(uh_n, phi) * ufl.dx
 # left hand side (heat equation in first variable + backward Euler in time)
 a_im = (dt * spiral_D * ufl.inner(ufl.grad(u), ufl.grad(phi)) +

@@ -42,7 +42,7 @@ dune.fem.parameter.append({"fem.verboserank": 0})
 
 # <codecell>
 methods = [ ### "[space,scheme,spaceKwrags]"
-            ["lagrange","h1",{}],
+            ["lagrange","galerkin",{}],
             ["vem","vem",{"conforming":True}],
             ["vem","vem",{"conforming":False}],
             ["bbdg","bbdg",{}],
@@ -65,10 +65,11 @@ exact = as_vector( [x[0]*x[1] * cos(pi*x[0]*x[1])] )
 # next the bilinear form
 u = TrialFunction(uflSpace)
 v = TestFunction(uflSpace)
-a = (inner(grad(u),grad(v))) * dx
+massCoeff = 1+dot(x,x)
+a = ( inner(grad(u),grad(v)) + massCoeff*dot(u,v) ) * dx
 
 # finally the right hand side and the boundary conditions
-b = -div(grad(exact[0])) * v[0] * dx
+b = ( -div(grad(exact[0])) + massCoeff*exact[0] ) * v[0] * dx
 dbc = [dune.ufl.DirichletBC(uflSpace, exact, i+1) for i in range(4)]
 
 
@@ -111,7 +112,6 @@ def polygons(en,x):
 polygons.plot(colorbar="horizontal")
 
 
-
 # <markdowncell>
 # We now define a function to compute the solution and the $L^2,H^1$ error
 # given a grid and a space
@@ -119,7 +119,14 @@ polygons.plot(colorbar="horizontal")
 # <codecell>
 def compute(grid, space, schemeName):
     # solve the pde
-    scheme = create.scheme(schemeName, [a==b, *dbc], space, solver="cg", parameters=parameters)
+    if schemeName == "vem":
+        stab = {"gradStabilization":1, "massStabilization":massCoeff}
+    else:
+        stab = {}
+    scheme = create.scheme(schemeName, [a==b, *dbc], space,
+                      **stab,
+                      solver="cg", parameters=parameters,
+                    )
     df = space.interpolate([0],name="solution")
     info = scheme.solve(target=df)
 
@@ -160,7 +167,9 @@ Dcoeff = lambda u: 1.0 + u[0]**2
 a = (Dcoeff(u) * inner(grad(u), grad(v)) ) * dx
 b = -div( Dcoeff(exact) * grad(exact[0]) ) * v[0] * dx
 dbcs = [dune.ufl.DirichletBC(space, exact, i+1) for i in range(4)]
-scheme = create.scheme("vem", [a==b, *dbcs], space, solver="cg", parameters=parameters)
+scheme = create.scheme("vem", [a==b, *dbcs], space,
+                   gradStabilization=Dcoeff(u),
+                   solver="cg", parameters=parameters)
 solution = space.interpolate([0], name="solution")
 info = scheme.solve(target=solution)
 solution.plot(gridLines=None, colorbar="horizontal")
@@ -214,7 +223,9 @@ b = dot(as_vector([0,-rho*g]),v)*dx
 
 # Compute solution
 displacement = space.interpolate([0,0], name="displacement")
-scheme = create.scheme("vem", [a==b, dbc], space, solver="cg", parameters=parameters)
+scheme = create.scheme("vem", [a==b, dbc], space,
+                  gradStabilization = as_vector([lambda_+2*mu, lambda_+2*mu]),
+                  solver="cg", parameters=parameters)
 info = scheme.solve(target=displacement)
 
 # <markdowncell>

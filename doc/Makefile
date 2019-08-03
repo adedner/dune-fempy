@@ -6,7 +6,7 @@ NBS = spiral_nb.ipynb uzawa-scipy_nb.ipynb elasticity_nb.ipynb wave_nb.ipynb \
       laplace-adaptive_nb.ipynb crystal_nb.ipynb mcf_nb.ipynb \
 			mcf-algorithm_nb.ipynb lineplot_nb.ipynb \
 			dune-fempy_nb.ipynb dune-corepy_nb.ipynb \
-      twophaseflow_nb.ipynb vemdemo_nb.ipynb
+      twophaseflow_nb.ipynb # vemdemo_nb.ipynb
 
 # .EXPORT_ALL_VARIABLES:
 

@@ -46,7 +46,9 @@ MAC users
 
 First note that our docker image requires access to more memory
 then is allocated by default to the docker application under MAC OS.
-This can be changed ...
+This can be changed in the preferences menu for the docker application
+(possibly under advanced settings). Here the number of CPU can also be
+increases to imrpove performance.
 
 To get X forwarding to work in Docker requires
 additionally ``xquartz`` and ``socat`` as discussed

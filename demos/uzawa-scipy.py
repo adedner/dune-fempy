@@ -3,7 +3,7 @@
 # Todo: explain uzawa algoirthm, show scipy version (here), dune-fempy version
 # (other script) and an algorithm implementation
 #
-# Need to remove 'create'
+# .. todo:: Need to remove 'create' and explain the algorithm
 # <codecell>
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )

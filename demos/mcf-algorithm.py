@@ -1,17 +1,16 @@
 # <markdowncell>
 # # Mean Curvature Flow (revisited)
 #
-#
 # We simulate the shrinking of a sphere under mcf using a finite element
 # approach based on
 # the following time discrete approximation:
-# \begin{gather}
-#   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
+# \begin{align}
+# \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
 #     \tau \int_{\Gamma^n} \big(
 #     \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
 #     \colon\nabla_{\Gamma^n}\varphi
 #   =0~.
-# \end{gather}
+# \end{align}
 # Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
 # $\Gamma^n:=\Gamma(t^{n})$,
 # $I$ is the identity matrix, $\tau$ is the time step and

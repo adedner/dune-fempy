@@ -9,25 +9,25 @@
 # Assume we can define a reference surface $\Gamma_0$ such that
 # we can write the evolving surface $\Gamma(t)$ in the form
 # \begin{gather*}
-#   \Gamma(t) = X(t,\Gamma_0).
+# \Gamma(t) = X(t,\Gamma_0).
 # \end{gather*}
 # It is now possible to show that the vector valued function $X=X(t,x)$
 # with $x\in\Gamma_0$ satisfies
 # \begin{gather*}
-#   \frac{\partial}{\partial_t}X = - H(X)\nu(X),
+# \frac{\partial}{\partial_t}X = - H(X)\nu(X),
 # \end{gather*}
 # where $H$ is the mean curvature of $\Gamma_t$ and $\nu$ is its outward pointing normal.
 #
 # We will solve this using a finite element approach based on the
 # following time discrete approximation from :cite:`Charlie`
 # (with a $\theta$-scheme applied).
-# \begin{gather*}
-#   \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
+# \begin{align*}
+# \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
 #     \tau \int_{\Gamma^n} \big(
 #     \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
 #     \colon\nabla_{\Gamma^n}\varphi
 #   =0.
-# \end{gather*}
+# \end{align*}
 # Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
 # $\Gamma^n:=\Gamma(t^{n})$, $I$ is the identity matrix, $\tau$ is the
 # time step and $\theta\in[0,1]$ is a discretization parameter.
@@ -120,8 +120,8 @@ pyplot.close('all')
 # In case we start with a spherical initial surface, i.e., $\Gamma(0)=R_0\;S^2$, the solution
 # to the mean curvature flow equation is easy to compute:
 # \begin{align*}
-#   \Gamma(t) &= R(t)\;S^2 \\
-#   R(t) &= \sqrt{R_0^2-4t}
+# \Gamma(t) &= R(t)\;S^2 \\
+# R(t) &= \sqrt{R_0^2-4t}
 # \end{align*}
 # We can use this to check that our implementation is correct. To do so we first define a function that computes the averaged radius of the surface.
 

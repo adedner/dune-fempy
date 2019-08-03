@@ -3,16 +3,16 @@
 #
 # Here we will consider the classic _re-entrant corner_ problem,
 # \begin{align*}
-#   -\Delta u &= f, && \text{in } \Omega, \\
-#           u &= g, && \text{on } \partial\Omega,
+# -\Delta u &= f, && \text{in } \Omega, \\
+# u &= g, && \text{on } \partial\Omega,
 # \end{align*}
 # where the domain is given using polar coordinates,
 # \begin{gather*}
-#   \Omega = \{ (r,\varphi)\colon r\in(0,1), \varphi\in(0,\Phi) \}~.
+# \Omega = \{ (r,\varphi)\colon r\in(0,1), \varphi\in(0,\Phi) \}~.
 # \end{gather*}
 # For the boundary condition $g$, we set it to the trace of the function $u$, given by
 # \begin{gather*}
-#   u(r,\varphi) = r^{\frac{\pi}{\Phi}} \sin\big(\frac{\pi}{\Phi} \varphi \big)
+# u(r,\varphi) = r^{\frac{\pi}{\Phi}} \sin\big(\frac{\pi}{\Phi} \varphi \big)
 # \end{gather*}
 
 
@@ -113,18 +113,18 @@ for count in range(10):
 # <markdowncell>
 # Theory tells us that
 # \begin{align*}
-#   \int_\Omega |\nabla(u-u_h)|^2 \leq \sum_K \eta_K,
+# \int_\Omega |\nabla(u-u_h)|^2 \leq \sum_K \eta_K,
 # \end{align*}
 # where on each element $K$ of the grid the local estimator is given by
 # \begin{align*}
-#   \eta_K = h_K^2 \int_K |\triangle u_h|^2 +
-#     \frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2.
+# \eta_K = h_K^2 \int_K |\triangle u_h|^2 +
+#   \frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2.
 # \end{align*}
 # Here $[\cdot]$ is the jump in normal direction over the edges of the grid.
 #
 # We compute the elementwise indicator by defining a bilinear form
 # \begin{align*}
-#   \eta(u,v) = \int_\Omega h^2 |\triangle u_h|^2 v +
+# \eta(u,v) = \int_\Omega h^2 |\triangle u_h|^2 v +
 #     \int_{I_h} h_S [\nabla u_h]^2 \{v\},
 # \end{align*}
 # where $\{\cdot\}$ is the average over the cell edges and $[\cdot]$

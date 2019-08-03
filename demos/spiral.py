@@ -5,50 +5,49 @@
 #
 # We use the _Barkley model_ in its simplest form:
 # \begin{align*}
-#   \frac{\partial u}{\partial_t}
-#        &= \frac{1}{\varepsilon}f(u,v) + \Delta u \\
-#   \frac{\partial v}{\partial_t} &= h(u,v)
+# \frac{\partial u}{\partial_t} &= \frac{1}{\varepsilon}f(u,v) + \Delta u \\
+# \frac{\partial v}{\partial_t} &= h(u,v)
 # \end{align*}
 # where
-# \begin{gather}
-#   f(u,v(=u\Big(1-u\Big)\Big(u-\frac{v+b}{a}\Big)
-# \end{gather}
+# \begin{equation*}
+# f(u,v)=u\Big(1-u\Big)\Big(u-\frac{v+b}{a}\Big)
+# \end{equation*}
 # The function $h$ can take different forms, e.g., in its simplest form
-# \begin{gather}
-#   h(u,v) = u - v~.
-# \end{gather}
+# \begin{equation*}
+# h(u,v) = u - v~.
+# \end{equation*}
 # Finally, $\varepsilon,a,b$ for more details on how to chose these parameters check the web page provided above.
 #
 # We employ a carefully constructed linear time stepping scheme for this model: let $u^n,v^n$ be given functions approximating the solution at a time $t^n$. To compute approximations $u^{m+1},v^{m+1}$ at a later time
 # $t^{n+1}=t^n+\tau$ we first split up the non linear function $f$ as follows:
 # \begin{align*}
-#   f(u,v) = f_I(u,u,v) + f_E(u,v)
+# f(u,v) = f_I(u,u,v) + f_E(u,v)
 # \end{align*}
 # where using $u^*(V):=\frac{V+b}{a}$:
 # \begin{align*}
-#   f_I(u,U,V) &= \begin{cases}
-#     u\;(1-U)\;(\;U-U^*(V)\;) & U < U^*(V) \\
-#     -u\;U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
-#   \end{cases} \\
+# f_I(u,U,V) &= \begin{cases}
+#   u\;(1-U)\;(\;U-U^*(V)\;) & U < U^*(V) \\
+#   -u\;U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+# \end{cases} \\
 # \text{and} \\
-#     f_E(U,V) &= \begin{cases}
-#     0 & U < U^*(V) \\
-#     U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
-#   \end{cases} \\
+# f_E(U,V) &= \begin{cases}
+# 0 & U < U^*(V) \\
+# U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+# \end{cases} \\
 # \end{align*}
 # Thus $f_I(u,U,V) = -m(U,V)u$ with
 # \begin{align*}
-#   m(U,V) &= \begin{cases}
-#     (U-1)\;(\;U-U^*(V)\;) & U < U^*(V) \\
-#     U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
-#   \end{cases}
+# m(U,V) &= \begin{cases}
+#   (U-1)\;(\;U-U^*(V)\;) & U < U^*(V) \\
+#   U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+# \end{cases}
 # \end{align*}
 # Note that $u,v$ are assumed to take values only between zero and one so that therefore $m(u^n,v^n) > 0$. Therefore, the following time discrete version of the Barkley model has a linear, positive definite elliptic operator on its left hand side:
 # \begin{align*}
-#   -\tau\Delta u^{n+1} +
-#    (1+\frac{\tau}{\varepsilon} m(u^n,v^n))\; u^{n+1}
-#        &= u^n + \frac{\tau}{\varepsilon} f_E(u^n,v^n) \\
-#   v^{n+1} &= v^n + \tau h(u^n,v^n)
+# -\tau\Delta u^{n+1} +
+#  (1+\frac{\tau}{\varepsilon} m(u^n,v^n))\; u^{n+1}
+#      &= u^n + \frac{\tau}{\varepsilon} f_E(u^n,v^n) \\
+# v^{n+1} &= v^n + \tau h(u^n,v^n)
 # \end{align*}
 # Which can now be solved using a finite element discretization for $u^n,v^n$.
 #
@@ -92,7 +91,6 @@ initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
 # Now we set up the reference domain, the Lagrange finite element space (second order), and discrete functions for $(u^n,v^n($, $(u^{n+1},v^{n+1})$:
 # <codecell>
 
-# domain = dune.grid.structuredGrid([0,0],[3.5,3.5],[40,40])
 gridView = dune.grid.structuredGrid([0,0],[2.5,2.5],[30,30])
 space    = dune.fem.space.lagrange( gridView, dimRange=dimRange, order=1 )
 
@@ -119,7 +117,7 @@ a_im = (dt * spiral_D * ufl.inner(ufl.grad(u), ufl.grad(phi)) +
 
 ustar = (vh_n[0]+spiral_b)/spiral_a
 a_ex += ufl.conditional(uh_n[0]<ustar, dt/spiral_eps* u[0]*(1-uh_n[0])*(uh_n[0]-ustar),
-                                     dt/spiral_eps*uh_n[0]*(1-u[0]) *(uh_n[0]-ustar) ) * phi[0] * ufl.dx
+                                       dt/spiral_eps*uh_n[0]*(1-u[0]) *(uh_n[0]-ustar) ) * phi[0] * ufl.dx
 
 equation   = a_im == a_ex
 ode_update = ufl.as_vector([ vh_n[0] + dt*spiral_h(uh_n[0], vh_n[0]) ])

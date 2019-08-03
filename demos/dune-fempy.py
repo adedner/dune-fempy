@@ -91,11 +91,11 @@ u_h_n = u_h.copy(name="previous")
 # As an example we will study the Forchheimer problem :cite:`Kieu` which
 # is a scalar, nonlinear parabolic equation
 # \begin{equation}
-# \partial_t - \nabla\cdot K(\nabla u)\nabla u = f
+# \partial_tu - \nabla\cdot K(\nabla u)\nabla u = f
 # \end{equation}
 # where the diffusion tensor is given by
 # \begin{equation}
-#   K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+# K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
 # \end{equation}
 # and $f=f(x,t)$ is some forcing term.
 # On the boundary we prescribe Neumann boundary conditions
@@ -104,18 +104,18 @@ u_h_n = u_h.copy(name="previous")
 # We will solve this problem in variational form and using Crank Nicholson in time
 # \begin{equation}
 # \begin{split}
-#   \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
-#   + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
-#   + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v\ dx \\
-#   - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi\ dx
-#   - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v\ ds
-#   = 0.
+# \int_{\Omega} \frac{u^{n+1}-u^n}{\Delta t} \varphi
+# + \frac{1}{2}K(\nabla u^{n+1}) \nabla u^{n+1} \cdot \nabla \varphi \
+# + \frac{1}{2}K(\nabla u^n) \nabla u^n \cdot \nabla \varphi v\ dx \\
+# - \int_{\Omega} \frac{1}{2}(f(x,t^n)+f(x,t^n+\Delta t) \varphi\ dx
+# - \int_{\partial \Omega} \frac{1}{2}(g(x,t^n)+g(x,t^n+\Delta t)) v\ ds
+# = 0.
 # \end{split}
 # \end{equation}
 # on a domain $\Omega=[0,1]^2$. We choose $f,g$ so that the exact solution
 # is given by
 # \begin{equation}
-#   u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
+# u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
 #                         \frac{1}{3}(x^3 - y^3)\right) + 1
 # \end{equation}
 # <codecell>

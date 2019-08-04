@@ -31,18 +31,18 @@ from matplotlib import pyplot
 from dune.grid import structuredGrid as leafGridView
 gridView = leafGridView([0, 0], [1, 1], [4, 4])
 
-from ufl import SpatialCoordinate, triangle
-x = SpatialCoordinate(triangle)
-
-initial = 1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
-
 # <markdowncell>
 # ## Grid Functions
 # We can easily easily integrate grid function
 # <codecell>
 
+from ufl import SpatialCoordinate, triangle
+x = SpatialCoordinate(triangle)
+
+exact = 1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+
 from dune.fem.function import integrate
-mass = integrate(gridView, initial, order=5)
+mass = integrate(gridView, exact, order=5)
 print(mass)
 
 # <markdowncell>
@@ -50,14 +50,14 @@ print(mass)
 # <codecell>
 
 from dune.fem.plotting import plotPointData as plot
-plot(initial, grid=gridView)
-gridView.writeVTK('initial', pointdata={'initial': initial})
+plot(exact, grid=gridView)
+gridView.writeVTK('exact', pointdata={'exact': exact})
 
 from dune.fem.function import uflFunction
-initial_gf = uflFunction(gridView, name="ufl", order=1, ufl=initial)
+exact_gf = uflFunction(gridView, name="ufl", order=1, ufl=exact)
 mass = 0
 for element in gridView.elements:
-  mass += initial_gf(element,[0.5,0.5]) * element.geometry.volume
+  mass += exact_gf(element,[0.5,0.5]) * element.geometry.volume
 print(mass)
 
 # <markdowncell>
@@ -72,34 +72,143 @@ space = solutionSpace(gridView, order=2)
 # So far we used grid functions defined globally. An important subclass of
 # grid functions are discrete functions over a given discrete function space.
 # The easiest way to construct such functions is to use the interpolate
-# method on the discrete function space:
+# method on the discrete function space.
 # <codecell>
 
-u_h = space.interpolate(initial, name='u_h')
+u_h = space.interpolate(exact, name='u_h')
 
 # <markdowncell>
-# and plot them using matplotlib or write a vtk file for postprocessing
+# If a discrete function is already available it is possible to call `copy`
+# to obtain further discrete functions:
 # <codecell>
-
-u_h.plot(grid=gridView,gridLines="white")
 
 u_h_n = u_h.copy(name="previous")
 
 # <markdowncell>
+# It is possible to plot a discrete function using matplotlib or write a vtk file for postprocessing
+# <codecell>
+
+u_h.plot(gridLines="white")
+gridView.writeVTK('uh', pointdata=[u_h])
+
+# <markdowncell>
+# Note: the discrete function `u_h` already has a `name` attribute given in
+# the `interpolate` call. This is used by default in the vtk file. An
+# alternative name can be given by using a dictionary as shown previously.
+# <codecell>
+
+# <markdowncell>
 # ## Models and Schemes
+# We consider a scalar boundary value problem
+# \begin{align*}
+# -\nabla\cdot K(\nabla u)\nabla u &= f & \text{in}\;\Omega:=(0,1)^2 \\
+# K(\nabla u)\nabla u\cdot n &= g_N & \text{on}\;\Gamma_N \\
+# u &= g_D & \text{on}\;\Gamma_D
+# \end{align*}
+# where the diffusion tensor is given by
+# \begin{equation}
+# K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+# \end{equation}
+# and $f=f(x)$ is some forcing term.
+# For the boundary conditions we set $\Gamma_D={0}\times[0,1]$ and take
+# $\Gamma_N$ to be the remaining boundary of $\Omega$.
+#
+# We will solve this problem in variational form
+# \begin{equation}
+# \begin{split}
+# K(\nabla u) \nabla u \cdot \nabla \varphi \
+# - \int_{\Omega} f(x) \varphi\ dx
+# - \int_{\Gamma_N} g_N(x) v\ ds
+# = 0.
+# \end{split}
+# \end{equation}
+# We choose $f,g_N,g_D$ so that the exact solution
+# is given by
+# \begin{equation*}
+# u(x) = \left(\frac{1}{2}(x^2 + y^2) -
+#              \frac{1}{3}(x^3 - y^3)\right) + 1
+# \end{equation*}
+# <codecell>
+
+from ufl import TestFunction, TrialFunction
+from dune.ufl import DirichletBC
+u = TrialFunction(space)
+v = TestFunction(space)
+
+from ufl import dx, grad, div, grad, dot, inner, sqrt, conditional
+abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
+K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
+a = dot(K(u)*grad(u), grad(v)) * dx
+
+from ufl import FacetNormal, ds
+f   = -div( K(exact)*grad(exact) )
+g_N = K(exact)*grad(exact)
+n   = FacetNormal(space)
+b   = f*v*dx + dot(g_N,n)*conditional(x[0]>0,1,0)*v*ds
+dbc = DirichletBC(space,exact,x[0]<=1e-8)
+
+# <markdowncell>
+# With the model described as a ufl form, we can construct a scheme class
+# that provides the solve method which we can use to compute the solution:
+# <codecell>
+
+from dune.fem import parameter
+parameter.append({"fem.verboserank": 0})
+from dune.fem.scheme import galerkin as solutionScheme
+scheme = solutionScheme([a == b, dbc], solver='gmres',
+         parameters={"newton.linear.verbose":True,
+                     "newton.verbose":True,
+                     "newton.tolerance":1e-8,
+                     "newton.linear.tolerance":1e-12})
+scheme.solve(target = u_h)
+
+# <markdowncell>
+# We can compute the error between the exact and the discrete solution by
+# using the `integrate` function described above:
+# <codecell>
+
+h1error = dot(grad(u_h - exact), grad(u_h - exact))
+error = sqrt(integrate(gridView, h1error, order=5))
+print("Number of elements:",gridView.size(0),
+      "number of dofs:",space.size,"H^1 error:", error)
+
+# <markdowncell>
+# To verify that the discrete scheme is converging to the exact solution
+# we can compute the experimental order of convergence (EOC):
+# \begin{align*}
+# {\rm eoc} = \frac{\log{e_h/e_H}}{\log{h/H}}
+# \end{align*}
+# where $h,H$ refer to the spacing of two grids.
+# <codecell>
+
+from math import log
+loops = 2
+for eocLoop in range(loops):
+    error_old = error
+    gridView.hierarchicalGrid.globalRefine(1)
+
+    print("before:",sum(u_h.dofVector))
+    u_h.clear()
+    print("after:",sum(u_h.dofVector))
+    scheme.solve(target = u_h)
+    error = sqrt(integrate(gridView, h1error, order=5))
+    eoc = round(log(error/error_old)/log(0.5),2)
+    print("EOC:",eoc,
+          "Number of elements:", gridView.size(0),
+          "number of dofs:", space.size,"H^1 error:", error)
+
+# <markdowncell>
+# ## Time dependent Problems
 # Now we can set up our PDE model
 # As an example we will study the Forchheimer problem :cite:`Kieu` which
 # is a scalar, nonlinear parabolic equation
 # \begin{equation}
 # \partial_tu - \nabla\cdot K(\nabla u)\nabla u = f
 # \end{equation}
-# where the diffusion tensor is given by
-# \begin{equation}
-# K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
-# \end{equation}
-# and $f=f(x,t)$ is some forcing term.
-# On the boundary we prescribe Neumann boundary conditions
-# $\nabla u \cdot n = g$ and initial conditions $u=u_0$.
+# where the diffusion tensor is given as before,
+# and $f=f(x,t)$ is some time dependent forcing term.
+# On the boundary we prescribe Neumann boundary as before
+# and initial conditions $u=u_0$.
 #
 # We will solve this problem in variational form and using Crank Nicholson in time
 # \begin{equation}
@@ -114,30 +223,26 @@ u_h_n = u_h.copy(name="previous")
 # \end{equation}
 # on a domain $\Omega=[0,1]^2$. We choose $f,g$ so that the exact solution
 # is given by
-# \begin{equation}
+# \begin{equation*}
 # u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
 #                         \frac{1}{3}(x^3 - y^3)\right) + 1
-# \end{equation}
+# \end{equation*}
 # <codecell>
 
 from ufl import exp
-exact = lambda t: exp(-2*t)*(initial - 1) + 1
+initial = 1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+exact   = lambda t: exp(-2*t)*(initial - 1) + 1
 
-from ufl import TestFunction, TrialFunction
 from dune.ufl import Constant
 u = TrialFunction(space)
 v = TestFunction(space)
 dt = Constant(0, name="dt")    # time step
 t  = Constant(0, name="t")     # current time
 
-from ufl import dx, grad, div, grad, dot, inner, sqrt
-abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
-K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
 a = ( dot((u - u_h_n)/dt, v) \
     + 0.5*dot(K(u)*grad(u), grad(v)) \
     + 0.5*dot(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx
 
-from ufl import dot, FacetNormal, ds
 f = lambda s: -2*exp(-2*s)*(initial - 1) - div( K(exact(s))*grad(exact(s)) )
 g = lambda s: K(exact(s))*grad(exact(s))
 n = FacetNormal(space)
@@ -168,8 +273,9 @@ def evolve(scheme, u_h, u_h_n, endTime):
 # the discretization error. First we define ufl expressions for the $L^2$
 # and $H^1$ norms and will use those to compute the experimental order of
 # convergence of the scheme by computing the time evolution on different grid
-# levels.
+# levels. We first reset the grid to start computing on the coarsest level:
 # <codecell>
+gridView.hierarchicalGrid.globalRefine(-4)
 
 endTime    = 0.25
 exact_end  = exact(endTime)
@@ -236,7 +342,7 @@ class Scheme:
       self.model = scheme.model
       self.jacobian = linearOperator(scheme)
 
-  def solve(self, target=None):
+  def solve(self, target):
       # create a copy of target for the residual
       res = target.copy(name="residual")
 
@@ -299,7 +405,7 @@ class Scheme2:
         def _matvec(self, x_coeff):
             return solver(self.jacobian.as_numpy, x_coeff, tol=1e-10)[0]
 
-    def solve(self, target=None):
+    def solve(self, target):
         sol_coeff = target.as_numpy
         # call the newton krylov solver from scipy
         sol_coeff[:] = newton_krylov(self.f, sol_coeff,
@@ -352,7 +458,7 @@ class Scheme3:
       self.ksp.getPC().setType("icc")
       self.ksp.setOperators(self.jacobian.as_petsc)
       self.ksp.setFromOptions()
-  def solve(self, target=None):
+  def solve(self, target):
       res = target.copy(name="residual")
       sol_coeff = target.as_petsc
       res_coeff = res.as_petsc

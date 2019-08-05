@@ -12,12 +12,6 @@
 # <codecell>
 
 import time, numpy, math, sys
-try:
-    import petsc4py
-    petsc4py.init(sys.argv)
-    from petsc4py import PETSc
-except:
-    petsc4py = False
 import dune.plotting
 dune.plotting.block = False
 import matplotlib
@@ -153,7 +147,7 @@ dbc = DirichletBC(space,exact,x[0]<=1e-8)
 # <codecell>
 
 from dune.fem import parameter
-parameter.append({"fem.verboserank": 0})
+parameter.append({"fem.verboserank": -1})
 from dune.fem.scheme import galerkin as solutionScheme
 scheme = solutionScheme([a == b, dbc], solver='gmres',
          parameters={"newton.linear.verbose":True,
@@ -188,7 +182,7 @@ for eocLoop in range(loops):
     gridView.hierarchicalGrid.globalRefine(1)
 
     print("before:",sum(u_h.dofVector))
-    u_h.clear()
+    u_h.interpolate(x[0])
     print("after:",sum(u_h.dofVector))
     scheme.solve(target = u_h)
     error = sqrt(integrate(gridView, h1error, order=5))
@@ -196,6 +190,12 @@ for eocLoop in range(loops):
     print("EOC:",eoc,
           "Number of elements:", gridView.size(0),
           "number of dofs:", space.size,"H^1 error:", error)
+
+# <markdowncell>
+# Coarsen the mesh again up to the macro-level such that subsequent
+# example start with a "clean" setup.
+# <codecell>
+gridView.hierarchicalGrid.globalRefine(-loops)
 
 # <markdowncell>
 # ## Time dependent Problems
@@ -275,8 +275,6 @@ def evolve(scheme, u_h, u_h_n, endTime):
 # convergence of the scheme by computing the time evolution on different grid
 # levels. We first reset the grid to start computing on the coarsest level:
 # <codecell>
-gridView.hierarchicalGrid.globalRefine(-4)
-
 endTime    = 0.25
 exact_end  = exact(endTime)
 l2error = dot(u_h - exact_end, u_h - exact_end)
@@ -425,100 +423,111 @@ print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
 # system using the dune-fem bindings
 # <codecell>
 
-spacePetsc = solutionSpace(gridView, order=2, storage='petsc')
-# first we will use the petsc solver available in the `dune-fem` package
-# (using the sor preconditioner)
-schemePetsc = solutionScheme(a == b, space=spacePetsc,
-                parameters={"linear.preconditioning.method":"sor"})
-schemePetsc.model.dt = scheme.model.dt
-u_h = spacePetsc.interpolate(initial, name='u_h')
-u_h_n = u_h.copy(name="previous")
-evolve(schemePetsc, u_h, u_h_n, endTime)
-error = u_h - exact_end
-print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+try:
+    spacePetsc = solutionSpace(gridView, order=2, storage='petsc')
+    # first we will use the petsc solver available in the `dune-fem` package
+    # (using the sor preconditioner)
+    schemePetsc = solutionScheme(a == b, space=spacePetsc,
+                    parameters={"linear.preconditioning.method":"sor"})
+    schemePetsc.model.dt = scheme.model.dt
+    u_h = spacePetsc.interpolate(initial, name='u_h')
+    u_h_n = u_h.copy(name="previous")
+    evolve(schemePetsc, u_h, u_h_n, endTime)
+    error = u_h - exact_end
+    print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+      *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+except dune.generator.ConfigurationError:
+    print("petsc was not found during configuration of dune-py: skipping example")
+    spacePetsc = None
+    pass
 
 # <markdowncell>
 # Implementing a Newton Krylov solver using the binding provided by petsc4py
 # <codecell>
 
-import petsc4py, sys
-petsc4py.init(sys.argv)
-from petsc4py import PETSc
+try:
+    import petsc4py, sys
+    petsc4py.init(sys.argv)
+    from petsc4py import PETSc
+except ModuleNotFoundError:
+    print("petsc4py not found: skipping example")
+    petsc4py = None
 
-class Scheme3:
-  def __init__(self, scheme):
-      self.model = scheme.model
-      self.jacobian = linearOperator(scheme)
-      self.ksp = PETSc.KSP()
-      self.ksp.create(PETSc.COMM_WORLD)
-      # use conjugate gradients method
-      self.ksp.setType("cg")
-      # and incomplete Cholesky
-      self.ksp.getPC().setType("icc")
-      self.ksp.setOperators(self.jacobian.as_petsc)
-      self.ksp.setFromOptions()
-  def solve(self, target):
-      res = target.copy(name="residual")
-      sol_coeff = target.as_petsc
-      res_coeff = res.as_petsc
-      n = 0
-      while True:
-          schemePetsc(target, res)
-          absF = math.sqrt( res_coeff.dot(res_coeff) )
-          if absF < 1e-10:
-              break
-          schemePetsc.jacobian(target, self.jacobian)
-          self.ksp.solve(res_coeff, res_coeff)
-          sol_coeff -= res_coeff
-          n += 1
+if petsc4py is not None and spacePetsc is not None:
+    class Scheme3:
+      def __init__(self, scheme):
+          self.model = scheme.model
+          self.jacobian = linearOperator(scheme)
+          self.ksp = PETSc.KSP()
+          self.ksp.create(PETSc.COMM_WORLD)
+          # use conjugate gradients method
+          self.ksp.setType("cg")
+          # and incomplete Cholesky
+          self.ksp.getPC().setType("icc")
+          self.ksp.setOperators(self.jacobian.as_petsc)
+          self.ksp.setFromOptions()
+      def solve(self, target):
+          res = target.copy(name="residual")
+          sol_coeff = target.as_petsc
+          res_coeff = res.as_petsc
+          n = 0
+          while True:
+              schemePetsc(target, res)
+              absF = math.sqrt( res_coeff.dot(res_coeff) )
+              if absF < 1e-10:
+                  break
+              schemePetsc.jacobian(target, self.jacobian)
+              self.ksp.solve(res_coeff, res_coeff)
+              sol_coeff -= res_coeff
+              n += 1
 
-u_h.interpolate(initial)
-scheme3_cls = Scheme3(schemePetsc)
-evolve(scheme3_cls, u_h, u_h_n, endTime)
-error = u_h - exact_end
-print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+    u_h.interpolate(initial)
+    scheme3_cls = Scheme3(schemePetsc)
+    evolve(scheme3_cls, u_h, u_h_n, endTime)
+    error = u_h - exact_end
+    print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+      *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 
 # <markdowncell>
 # Using the petsc4py bindings for the non linear KSP solvers from PETSc
 # <codecell>
 
-class Scheme4:
-    def __init__(self, scheme):
-        self.model = scheme.model
-        self.res = scheme.space.interpolate([0],name="residual")
-        self.scheme = scheme
-        self.jacobian = linearOperator(self.scheme)
-        self.snes = PETSc.SNES().create()
-        self.snes.setFunction(self.f, self.res.as_petsc.duplicate())
-        self.snes.setUseMF(False)
-        self.snes.setJacobian(self.Df, self.jacobian.as_petsc, self.jacobian.as_petsc)
-        self.snes.getKSP().setType("cg")
-        self.snes.setFromOptions()
+if petsc4py is not None and spacePetsc is not None:
+    class Scheme4:
+        def __init__(self, scheme):
+            self.model = scheme.model
+            self.res = scheme.space.interpolate([0],name="residual")
+            self.scheme = scheme
+            self.jacobian = linearOperator(self.scheme)
+            self.snes = PETSc.SNES().create()
+            self.snes.setFunction(self.f, self.res.as_petsc.duplicate())
+            self.snes.setUseMF(False)
+            self.snes.setJacobian(self.Df, self.jacobian.as_petsc, self.jacobian.as_petsc)
+            self.snes.getKSP().setType("cg")
+            self.snes.setFromOptions()
 
-    def f(self, snes, x, f):
-        # setup discrete function using the provide petsc vectors
-        inDF = self.scheme.space.function("tmp",dofVector=x)
-        outDF = self.scheme.space.function("tmp",dofVector=f)
-        self.scheme(inDF,outDF)
+        def f(self, snes, x, f):
+            # setup discrete function using the provide petsc vectors
+            inDF = self.scheme.space.function("tmp",dofVector=x)
+            outDF = self.scheme.space.function("tmp",dofVector=f)
+            self.scheme(inDF,outDF)
 
-    def Df(self, snes, x, m, b):
-        inDF = self.scheme.space.function("tmp",dofVector=x)
-        self.scheme.jacobian(inDF, self.jacobian)
-        return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
+        def Df(self, snes, x, m, b):
+            inDF = self.scheme.space.function("tmp",dofVector=x)
+            self.scheme.jacobian(inDF, self.jacobian)
+            return PETSc.Mat.Structure.SAME_NONZERO_PATTERN
 
-    def solve(self, target):
-        sol_coeff = target.as_petsc
-        self.res.clear()
-        self.snes.solve(self.res.as_petsc, sol_coeff)
+        def solve(self, target):
+            sol_coeff = target.as_petsc
+            self.res.clear()
+            self.snes.solve(self.res.as_petsc, sol_coeff)
 
-u_h.interpolate(initial)
-scheme4_cls = Scheme4(schemePetsc)
-evolve(scheme4_cls, u_h, u_h_n, endTime)
-error = u_h - exact_end
-print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
-  *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
+    u_h.interpolate(initial)
+    scheme4_cls = Scheme4(schemePetsc)
+    evolve(scheme4_cls, u_h, u_h_n, endTime)
+    error = u_h - exact_end
+    print("size: ", gridView.size(0), "L^2, H^1 error:",'{:0.5e}, {:0.5e}'.format(
+      *[ sqrt(e) for e in integrate(gridView,[error**2,inner(grad(error),grad(error))], order=5) ]))
 
 # <markdowncell>
 # # More General Boundary Conditions

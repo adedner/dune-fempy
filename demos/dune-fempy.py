@@ -157,6 +157,7 @@ parameter.append({"fem.verboserank": 0})
 from dune.fem.scheme import galerkin as solutionScheme
 scheme = solutionScheme([a == b, dbc], solver='gmres',
          parameters={"newton.linear.verbose":True,
+                     "newton.linear.maxiterations":1000,
                      "newton.verbose":True,
                      "newton.tolerance":1e-8,
                      "newton.linear.tolerance":1e-12})

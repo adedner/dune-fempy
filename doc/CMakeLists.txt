@@ -24,5 +24,5 @@ sphere.dgf unitcube-2d.dgf wave_tank.msh
 compilegrids.py
 )
 
-add_custom_target(compilegrids2 ${PYTHON_EXECUTABLE} compilegrids.py 2)
-add_custom_target(compilegrids3 ${PYTHON_EXECUTABLE} compilegrids.py 3)
+#add_custom_target(compilegrids2 ${PYTHON_EXECUTABLE} compilegrids.py 2)
+#add_custom_target(compilegrids3 ${PYTHON_EXECUTABLE} compilegrids.py 3)

@@ -73,7 +73,7 @@ import dune.alugrid
 linearSpiral = True
 maxLevel     = 13
 startLevel   = 9
-dt           = dune.ufl.Constant(0.1,"dt")
+dt           = dune.ufl.Constant(0.5,"dt")
 t            = dune.ufl.Constant(0,"time")
 endTime      = 7.
 saveInterval = 0.5

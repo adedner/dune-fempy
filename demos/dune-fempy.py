@@ -95,13 +95,13 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # ## Models and Schemes
 # We consider a scalar boundary value problem
 # \begin{align*}
-# -\nabla\cdot K(\nabla u)\nabla u &= f & \text{in}\;\Omega:=(0,1)^2 \\
-# K(\nabla u)\nabla u\cdot n &= g_N & \text{on}\;\Gamma_N \\
+# -\nabla\cdot D(\nabla u) &= f & \text{in}\;\Omega:=(0,1)^2 \\
+# D(\nabla u)\cdot n &= g_N & \text{on}\;\Gamma_N \\
 # u &= g_D & \text{on}\;\Gamma_D
 # \end{align*}
-# where the diffusion tensor is given by
+# where the diffusion flux s given by
 # \begin{equation}
-# K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+# D(\nabla u) = \frac{\nable u}{1+|\nabla u|^2}
 # \end{equation}
 # and $f=f(x)$ is some forcing term.
 # For the boundary conditions we set $\Gamma_D={0}\times[0,1]$ and take
@@ -110,7 +110,7 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # We will solve this problem in variational form
 # \begin{equation}
 # \begin{split}
-# K(\nabla u) \nabla u \cdot \nabla \varphi \
+# D(\nabla u) \cdot \nabla \varphi \
 # - \int_{\Omega} f(x) \varphi\ dx
 # - \int_{\Gamma_N} g_N(x) v\ ds
 # = 0.
@@ -130,15 +130,14 @@ u = TrialFunction(space)
 v = TestFunction(space)
 
 from ufl import dx, grad, div, grad, dot, inner, sqrt, conditional
-abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
-K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
-a = dot(K(u)*grad(u), grad(v)) * dx
+D = lambda v: grad(v)/(1+inner(grad(v),grad(v)))
+a = dot(D(u), grad(v)) * dx
 
 from ufl import FacetNormal, ds
-f   = -div( K(exact)*grad(exact) )
-g_N = K(exact)*grad(exact)
+f   = -div( D(exact) )
+g_N = D(exact)
 n   = FacetNormal(space)
-b   = f*v*dx + dot(g_N,n)*conditional(x[0]>0,1,0)*v*ds
+b   = f*v*dx + dot(g_N,n)*conditional(x[0]>=1e-8,1,0)*v*ds
 dbc = DirichletBC(space,exact,x[0]<=1e-8)
 
 # <markdowncell>
@@ -149,12 +148,7 @@ dbc = DirichletBC(space,exact,x[0]<=1e-8)
 from dune.fem import parameter
 parameter.append({"fem.verboserank": -1})
 from dune.fem.scheme import galerkin as solutionScheme
-scheme = solutionScheme([a == b, dbc], solver='gmres',
-         parameters={"newton.linear.verbose":True,
-                     "newton.linear.maxiterations":1000,
-                     "newton.verbose":True,
-                     "newton.tolerance":1e-8,
-                     "newton.linear.tolerance":1e-12})
+scheme = solutionScheme([a == b, dbc], solver='cg')
 scheme.solve(target = u_h)
 
 # <markdowncell>
@@ -181,11 +175,9 @@ loops = 2
 for eocLoop in range(loops):
     error_old = error
     gridView.hierarchicalGrid.globalRefine(1)
-
-    print("before:",sum(u_h.dofVector))
-    u_h.interpolate(x[0])
-    print("after:",sum(u_h.dofVector))
-    scheme.solve(target = u_h)
+    print("hallo")
+    # scheme.solve(target = u_h)
+    print("bye")
     error = sqrt(integrate(gridView, h1error, order=5))
     eoc = round(log(error/error_old)/log(0.5),2)
     print("EOC:",eoc,
@@ -206,7 +198,10 @@ gridView.hierarchicalGrid.globalRefine(-loops)
 # \begin{equation}
 # \partial_tu - \nabla\cdot K(\nabla u)\nabla u = f
 # \end{equation}
-# where the diffusion tensor is given as before,
+# where the diffusion tensor is given by
+# \begin{equation}
+# K(\nabla u) = \frac{2}{1+\sqrt{1+4|\nabla u|}}
+# \end{equation}
 # and $f=f(x,t)$ is some time dependent forcing term.
 # On the boundary we prescribe Neumann boundary as before
 # and initial conditions $u=u_0$.
@@ -240,6 +235,8 @@ v = TestFunction(space)
 dt = Constant(0, name="dt")    # time step
 t  = Constant(0, name="t")     # current time
 
+abs_du = lambda u: sqrt(inner(grad(u), grad(u)))
+K = lambda u: 2/(1 + sqrt(1 + 4*abs_du(u)))
 a = ( dot((u - u_h_n)/dt, v) \
     + 0.5*dot(K(u)*grad(u), grad(v)) \
     + 0.5*dot(K(u_h_n)*grad(u_h_n), grad(v)) ) * dx

@@ -95,14 +95,10 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # ## Models and Schemes
 # We consider a scalar boundary value problem
 # \begin{align*}
-# -\nabla\cdot D(\nabla u) &= f & \text{in}\;\Omega:=(0,1)^2 \\
-# D(\nabla u)\cdot n &= g_N & \text{on}\;\Gamma_N \\
+# -\triangle u &= f & \text{in}\;\Omega:=(0,1)^2 \\
+# \nabla u\cdot n &= g_N & \text{on}\;\Gamma_N \\
 # u &= g_D & \text{on}\;\Gamma_D
 # \end{align*}
-# where the diffusion flux s given by
-# \begin{equation}
-# D(\nabla u) = \frac{\nable u}{1+|\nabla u|^2}
-# \end{equation}
 # and $f=f(x)$ is some forcing term.
 # For the boundary conditions we set $\Gamma_D={0}\times[0,1]$ and take
 # $\Gamma_N$ to be the remaining boundary of $\Omega$.
@@ -110,7 +106,7 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # We will solve this problem in variational form
 # \begin{equation}
 # \begin{split}
-# D(\nabla u) \cdot \nabla \varphi \
+# \int \nabla u \cdot \nabla \varphi \
 # - \int_{\Omega} f(x) \varphi\ dx
 # - \int_{\Gamma_N} g_N(x) v\ ds
 # = 0.
@@ -129,13 +125,11 @@ from dune.ufl import DirichletBC
 u = TrialFunction(space)
 v = TestFunction(space)
 
-from ufl import dx, grad, div, grad, dot, inner, sqrt, conditional
-D = lambda v: grad(v)/(1+inner(grad(v),grad(v)))
-a = dot(D(u), grad(v)) * dx
+from ufl import dx, grad, div, grad, dot, inner, sqrt, conditional, FacetNormal, ds
+a = dot(grad(u), grad(v)) * dx
 
-from ufl import FacetNormal, ds
-f   = -div( D(exact) )
-g_N = D(exact)
+f   = -div( grad(exact) )
+g_N = grad(exact)
 n   = FacetNormal(space)
 b   = f*v*dx + dot(g_N,n)*conditional(x[0]>=1e-8,1,0)*v*ds
 dbc = DirichletBC(space,exact,x[0]<=1e-8)
@@ -175,9 +169,8 @@ loops = 2
 for eocLoop in range(loops):
     error_old = error
     gridView.hierarchicalGrid.globalRefine(1)
-    print("hallo")
-    # scheme.solve(target = u_h)
-    print("bye")
+    u_h.interpolate(0)
+    scheme.solve(target = u_h)
     error = sqrt(integrate(gridView, h1error, order=5))
     eoc = round(log(error/error_old)/log(0.5),2)
     print("EOC:",eoc,

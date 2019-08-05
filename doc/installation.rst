@@ -1,8 +1,8 @@
 .. _installation:
 
-#######################
-Using Docker or Vagrant
-#######################
+############
+Using Docker
+############
 
 We provide files for building a Dune docker or vagrant environment on a host
 machine which can be used to develop both C++ and Python code based on Dune.
@@ -15,34 +15,110 @@ generated during the session are modifiable on the host and vice versa.
 The Linux distribution used is based on a Ubuntu image
 and contains most programs needed for shell based code development.
 
-Simply download this
-:download:`script<https://gitlab.dune-project.org/dune-fem/dune-fem-dev/raw/master/rundocker.sh>`.
+The easiest way to get started is to download the following
+:download:`bash script<https://gitlab.dune-project.org/dune-fem/dune-fem-dev/raw/master/rundune.sh>`.
+
 When executing this scripts the first time the docker image will be
-downloaded which will take some time. After the download is completed
-the working folder will be mounted into the docker container
-under ``/host``. This way the script can be executed (without requiring an
+downloaded which will take some time.
+Execute this script in the folder containing your project files.
+The current directory will be mounted as ``/host``;
+this way the script can be executed (without requiring an
 additional image download) in any folder containing the Python project to
-be worked on. In addition the scripts and notebooks discussed in documentation are
-made available under ``/dunepy/DUNE/dune-fempy/docs``. The git repositories
-of all required Dune modules are cloned under ``/dunepy/DUNE`` and a Python
-virtual environment is setup. Additional Python packages can be easily
+be worked on.
+
+In addition the scripts and notebooks discussed in documentation are
+made available under ``/dunepy/DUNE/dune-fempy/demos``.
+Additional Python packages can be easily
 installed using ``pip install`` and additional Dune modules can be added
 using ``git clone``. After adding a new Dune module in ``/dunepy/DUNE`` run
 ``updateAll`` to configure the new Dune module and update the Dune Python
 package.
 
-A detailed description of the *dune-fem docker development environment* is
-given `here<https://gitlab.dune-project.org/dune-fem/dune-fem-dev>`.
+X forwarding required for example to use ``matplotlib`` should
+directly work on most Linux based host systems,
+for Windows and MAC OS a bit more work is required as
+discussed below. Also the default allocation of memory has to be changed on
+these systems.
 
-*******
-Vagrant
-*******
+*********
+MAC users
+*********
 
-Run `vagrant up` to get started and then `vagrant ssh` in your working
-directory to go into the container.
-To update the container run `vagrant provision` which will reexecute the
-`bootstrap.sh` file.
+First note that our docker image requires access to more memory
+then is allocated by default to the docker application under MAC OS.
+This can be changed in the preferences menu for the docker application
+(possibly under advanced settings). Here the number of CPU can also be
+increases to imrpove performance.
 
+To get X forwarding to work in Docker requires
+additionally ``xquartz`` and ``socat`` as discussed
+`here <https://irvingduran.com/2017/07/docker-container-x11-on-macos-awesome>`_.
+
+If somebody knows of an easier fix please let us know...
+In summary (but please check the given website):
+
+- install XQuartz (X11) and socat
+- in a separate terminal run
+
+.. code-block:: bash
+
+   socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
+
+- then execute the ``rundune.sh`` script
+
+**********************
+Note for Windows users
+**********************
+
+The memory usage is restricted to 1GB by
+default for the virtual box. Open the virtual box app, stop any running
+machines and then change the setting so that at 4GB are available. At the
+same time increasing the number of CPUs could further improve performance.
+After that restart the virtual machine, restart the docker terminal and
+hopefully everything works.
+
+To get X forwarding you will need a server running. For example
+install ``vcxsrv``, start it with ``xlaunch`` and during initial
+configuration tick ``Disable access control``. After that running the
+``rundune.sh`` script should work. If there is still an issue with X
+forwarding try setting the ``DISPLAY`` environment variable to the IP address
+of your Windows machine.
+
+************************************
+Some more details for docker experts
+************************************
+
+The following describes the steps used in the
+``rundune.sh`` to start
+the *dune-fem docker development environment*. Execute the script in the
+folder containing the Python scripts or Dune C++ modules to download and
+run the Docker image.
+
+The script contains the following run command
+
+.. code-block:: bash
+
+   docker run -it --rm -v $PWD:/host -v dunepy:/dunepy \
+     -v /tmp/.X11-unix:/tmp/.X11-unix:ro \
+     -e userId=$(id -u) -e groupId=$(id -g) registry.dune-project.org/dune-fem/dune-fempy-base:latest
+
+The second line in the ``docker run`` command is included to activate X forwarding on
+Linux machines. To get it to work run either ``xhost +`` or for more security
+
+.. code-block:: bash
+
+   xhost +si:localuser:$USER
+
+
+The main Dune modules and
+the Python virtual environment will be located under the home directory (``/dunepy``)
+of the ``dune`` user located in the corresponding data volume. The git
+repositories of all Dune modules included in the image are then available under the
+home directory ``dunepy/DUNE``. These are stored in the ``dunepy`` volume so
+that changes can be made persistently, i.e., updating the modules,
+switching branches, or adding additional modules. Of course any changes
+will requires using ``dunecontrol`` and ``dune-setup.py`` to rebuild the
+``dune`` environment.
 
 ###########
 From Source

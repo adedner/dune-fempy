@@ -9,9 +9,8 @@ dune-corepy.py        mcf-algorithm.py      twophaseflow.py
 dune-fempy.py         mcf_cmp_plot.py       uzawa.py
 elasticity.py         mcf.py                uzawa-scipy.py
 gitlab-formatting.py  pandoc-formatting.py  vemdemo.py
-interpolation.py      parcrystal.py         wave.py
-laplace-adaptive.py   parcrystalTest.py
-laplace-dual.py       py2ipynb.py
+interpolation.py      wave.py laplace-adaptive.py
+py2ipynb.py
 crystal_nb.ipynb           mcf_nb.ipynb
 dune-corepy_nb.ipynb       spiral_nb.ipynb
 dune-fempy_nb.ipynb        twophaseflow_nb.ipynb

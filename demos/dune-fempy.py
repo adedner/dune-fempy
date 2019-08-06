@@ -27,7 +27,7 @@ gridView = leafGridView([0, 0], [1, 1], [4, 4])
 
 # <markdowncell>
 # ## Grid Functions
-# We can easily easily integrate grid function
+# We can integrate grid function
 # <codecell>
 
 from ufl import SpatialCoordinate, triangle
@@ -114,10 +114,10 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # \end{equation}
 # We choose $f,g_N,g_D$ so that the exact solution
 # is given by
-# \begin{equation*}
+# \begin{align*}
 # u(x) = \left(\frac{1}{2}(x^2 + y^2) -
 #              \frac{1}{3}(x^3 - y^3)\right) + 1
-# \end{equation*}
+# \end{align*}
 # <codecell>
 
 from ufl import TestFunction, TrialFunction

@@ -6,6 +6,8 @@ import dune.grid
 import dune.fem
 import dune.alugrid
 
+from dune.grid import cartesianDomain, gridFunction
+
 # <markdowncell>
 # In our attempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to choose from):
 # <codecell>
@@ -38,20 +40,24 @@ else:
 
 #domain   = dune.grid.cartesianDomain([0,0],[2.5,2.5],[5,5])
 domain   = dune.grid.cartesianDomain([0,0,0],[2.5,2.5,2.5],[5,5,5])
-baseView = dune.alugrid.aluConformGrid(domain)
+#baseView = dune.alugrid.aluConformGrid(domain)
+baseView = dune.grid.ugGrid(domain)
 gridView = dune.fem.view.adaptiveLeafGridView( baseView )
 gridView.hierarchicalGrid.globalRefine(startLevel)
 
-space = dune.fem.space.lagrange( gridView, order=1, storage="istl" )
+maxOrder = 1
+space = dune.fem.space.lagrange( gridView, order=maxOrder,   storage="istl" )
+spcpm = dune.fem.space.lagrange( gridView, order=maxOrder-1, storage="istl" )
 
 x = ufl.SpatialCoordinate(space)
-iu = lambda s: ufl.conditional(s > 1,25, 1, 0 )
-top = ufl.conditional( x[2] > 1,25,1,0)
+iu = lambda s: ufl.conditional(s > 1.25, 1, 0 )
+top = ufl.conditional( x[2] > 1.25,1,0)
 initial_u = iu(x[1])*top + iu(2.5-x[1])*(1.0 - top)
 #initial_u = ufl.conditional( x[2] > 1.25, iu(x[1]), iu(2.5 - x[1]))
 initial_v = ufl.conditional(x[0]<1.25,0.5,0)
 
-uh   = space.interpolate( initial_u, name="u" )
+uh     = space.interpolate( initial_u, name="u" )
+uh_pm1 = spcpm.interpolate( initial_u, name="u_p-1" )
 uh_n = uh.copy()
 vh   = space.interpolate( initial_v, name="v" )
 vh_n = vh.copy()
@@ -75,6 +81,16 @@ form   = ( inner(u,phi) - inner(uh_n, phi) ) * dx + dt*xForm
 
 equation   = form == 0
 
+def markp(element):
+    return 2
+
+# initial mark
+#dune.fem.spaceAdapt(space,markp,[uh])
+
+def markpm1(element):
+    return space.localOrder( element ) - 1
+
+
 # <markdowncell>
 # The model is now completely implemented and can be created, together with the corresponding scheme:
 # <codecell>
@@ -82,7 +98,7 @@ equation   = form == 0
 solverParameters =\
        {"newton.tolerance": 1e-10,
         "newton.linear.tolerance": 1e-8,
-        "newton.linear.preconditioning.method": "ilu",
+        "newton.linear.preconditioning.method": "amg-ilu",
         "newton.verbose": False,
         "newton.linear.verbose": False}
 scheme = dune.fem.scheme.galerkin( equation, solver="cg", parameters=solverParameters)
@@ -93,6 +109,7 @@ scheme = dune.fem.scheme.galerkin( equation, solver="cg", parameters=solverParam
 
 fvspace = dune.fem.space.finiteVolume(uh.space.grid)
 estimate = fvspace.interpolate([0], name="estimate")
+estimate_pm1 = fvspace.interpolate([0], name="estimate_pm1")
 
 chi = ufl.TestFunction(fvspace)
 hT  = ufl.MaxCellEdgeLength(fvspace.cell())
@@ -115,6 +132,37 @@ levelFunction = dune.fem.function.levelFunction(gridView)
 gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, celldata=[estimate,levelFunction])
 count += 1
 
+@gridFunction(gridView,name="pEstimate")
+def pEstimator(e,x):
+    r    = estimate.localFunction(e).evaluate(x)
+    r_p1 = estimate_pm1.localFunction(e).evaluate(x)
+    # if r[0] < 1e-15:
+    #     eta = 0
+    # else:
+    #     eta = abs(r[0]-r_p1[0]) / r[0]
+    eta = abs(sum(r)-sum(r_p1))
+    return [eta, sum(r), sum(r_p1)]
+
+def markpDiff(element):
+    # ptol = 1e-5    # for relative
+    ptol = 1e-16 # 1e-17   # absolute
+    # evaluate smoothness indicator
+    eta = pEstimator(element,element.referenceElement.center)
+    # get current polorder
+    polorder = space.localOrder(element)
+
+    newPolorder = polorder
+    if eta[0] < ptol:
+        newPolorder = polorder-1 if polorder > 1 else polorder
+    elif eta[0] > 100.*ptol:
+        newPolorder = polorder+1 if polorder < maxOrder else polorder
+
+    return newPolorder
+
+@gridFunction(gridView,"pDegree")
+def pDegree(element,x):
+    return space.localOrder(element)
+
 while t.value < endTime:
     uh_n.assign(uh)
     vh_n.assign(vh)
@@ -129,9 +177,16 @@ while t.value < endTime:
     maxEst = max(estimate.dofVector)
     print("max est: ", maxEst)
     if t.value >= nextSaveTime or t.value >= endTime:
-        gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, celldata=[estimate,levelFunction])
+        gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, celldata=[estimate,levelFunction,pDegree])
         nextSaveTime += saveInterval
         count += 1
     if t.value > 5:
         dune.fem.mark(estimate, maxTol, 0.1 * maxTol, 0,maxLevel)
         dune.fem.adapt([uh,vh])
+
+        #estimator(uh, estimate)
+        # mark space with one p lower locally
+        #dune.fem.spaceAdapt(spcpm,markpm1,[uh_pm1])
+        #uh_pm1.interpolate( uh )
+        #estimator(uh_pm1, estimate_pm1)
+        #dune.fem.spaceAdapt(space,markpDiff, [uh])

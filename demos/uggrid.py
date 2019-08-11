@@ -24,8 +24,8 @@ maxTol       = 1e-5
 
 domain   = dune.grid.cartesianDomain([0,0],[2.5,2.5],[5,5])
 #baseView = dune.alugrid.aluConformGrid(domain)
-#baseView = dune.grid.ugGrid(domain)
-baseView = dune.grid.ugGrid("2dgrid.dgf", dimgrid=2, dimworld=2)
+baseView = dune.grid.ugGrid(domain)
+#baseView = dune.grid.ugGrid("2dgrid.dgf", dimgrid=2, dimworld=2)
 
 print("BaseView created")
 gridView = dune.fem.view.adaptiveLeafGridView( baseView )

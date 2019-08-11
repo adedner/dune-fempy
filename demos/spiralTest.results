@@ -1,0 +1,112 @@
+Testing different storages and spaces for spiral 3d on ALUCube. No p or h
+adaptivity used. In the first tests the DG terms are present so the
+DiagNbStencil will be used.
+
+Using a hp-lagrangr space, the memory usage is between 6.4G with petsc
+and >11GB with istl on a grid with only 1728 elements (100k dofs).
+Using a hp-dglegendre space reduces the memory usage considerably (1.5GB
+with petsc and 3GB with istl) - although the number of dofs is now 200k).
+
+Removing the DG terms (i.e. using the DiagStencil only) still leads to
+memory usage of more then 1.5G with petsc (twice that with istl) which
+seems a lot for a small grid like this. Switching to the non hp lagrange
+space leads to the same results as expected,
+
+All the tests are with only jacobi preconder - using something like
+amg/hyper will lead to a significant increase in memory usage (had 20GB
+with my first twophaseflow test...).
+
+It seems like using a matrix even on this small grid is not possible.
+
+What I don't understand is why the lagrange space has a significantly higher
+memory usage although it has fewer dofs and it should have a smaller
+connectivity.
+
+For Lagrange we are not using that
+(a) only few basis functions have non zero traces on faces/edges so the
+    DiagNBStencil could be taken smaller.
+(b) the DG terms are only active in the case of non-conforming hp
+    faces/edges and otherwise they are zero - but this is difficult to
+    figure out.
+
+It seems like 3d simulations with higher order p are out of the
+question....
+
+#######################################################
+
+PETSC<jacobi>, lagrangehp<4>: top gives me 6.4G
+starting to solve with |space|: 117649 grid size 1728
+Newton iteration 0: |residual| = 0.00920041
+Newton iteration 1: |residual| = 1.02771e-12
+memory usage: 0.001584942452609539 GB
+Computed solution at time 0.1 iterations:  63 #Ent:  1728 [0, 0, 0, 0]
+
+ISTL<jacobi>,  lagrangehp<4>: top gives me 11G
+starting to solve with |space|: 117649 grid size 1728
+Newton iteration 0: |residual| = 0.00920041
+Newton iteration 1: |residual| = 7.53189e-10
+memory usage: 0.0029331790283322334 GB
+Computed solution at time 0.1 iterations:  44 #Ent:  1728 [0, 0, 0, 0]
+
+FEM<jacobi>,   lagrangehp<4>: top gives me 8.7G
+starting to solve with |space|: 117649 grid size 1728
+Newton iteration 0: |residual| = 0.00920041
+Newton iteration 1: |residual| = 8.50217e-12
+memory usage: 0.00212887953966856 GB
+Computed solution at time 0.1 iterations:  240 #Ent:  1728 [0, 0, 0, 0]
+
+#############
+
+PETSC<jacobi>, dglegendrehp<4>: top gives me 1.5G
+starting to solve with |space|: 216000 grid size 1728
+Newton iteration 0: |residual| = 2.36044
+Newton iteration 1: |residual| = 2.8324e-10
+memory usage: 0.00036924611777067184 GB
+Computed solution at time 0.1 iterations:  101 #Ent:  1728 [0, 0, 0, 0]
+
+ISTL<jacobi>,  dglegendrehp<4>: top gives me 3G
+starting to solve with |space|: 216000 grid size 1728
+Newton iteration 0: |residual| = 2.36044
+Newton iteration 1: |residual| = 7.10421e-10
+memory usage: 0.0007321638986468315 GB
+Computed solution at time 0.1 iterations:  96 #Ent:  1728 [0, 0, 0, 0]
+
+FEM<jacobi>,   dglegendrehp<4>: top gives me 2.3G
+starting to solve with |space|: 216000 grid size 1728
+Adding default: fem.solver.preconditioning.method: none
+Newton iteration 0: |residual| = 2.36044
+Newton iteration 1: |residual| = 1.69685e-09
+memory usage: 0.0005590477958321571 GB
+Computed solution at time 0.1 iterations:  146 #Ent:  1728 [0, 0, 0, 0]
+
+#############################
+hp-Lagrange with no DG terms:
+#############################
+
+PETSC<jacobi>, lagrangehp<4>: top gives me 1.6GB
+starting to solve with |space|: 117649 grid size 1728
+Newton iteration 0: |residual| = 0.00920041
+Newton iteration 1: |residual| = 1.02771e-12
+memory usage: 0.0003794962540268898 GB
+Computed solution at time 0.1 iterations:  63 #Ent:  1728 [0, 0, 0, 0]
+
+ISTL<jacobi>,  lagrangehp<4>: top gives me 3.3G
+starting to solve with |space|: 117649 grid size 1728
+Newton iteration 0: |residual| = 0.00920041
+Newton iteration 1: |residual| = 7.53189e-10
+memory usage: 0.0008103540167212486 GB
+Computed solution at time 0.1 iterations:  44 #Ent:  1728 [0, 0, 0, 0]
+
+FEM<jacobi>,   lagrangehp<4>: top gives me 2.2GB
+starting to solve with |space|: 117649 grid size 1728
+Newton iteration 0: |residual| = 0.00920041
+Newton iteration 1: |residual| = 8.50217e-12
+memory usage: 0.0005415566265583038 GB
+Computed solution at time 0.1 iterations:  240 #Ent:  1728 [0, 0, 0, 0]
+
+##########################
+Lagrange with no DG terms:
+##########################
+
+FEM<jacobi>,   lagrangehp<4>: top gives me 2.2GB
+

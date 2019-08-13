@@ -1,6 +1,6 @@
 import math
 import ufl
-from ufl import div, grad, inner, dot, dx, dS, jump, avg
+from ufl import div, grad, inner, dot, dx, dS, jump, avg, outer
 import dune.ufl
 import dune.grid
 import dune.fem
@@ -13,13 +13,13 @@ from dune.grid import cartesianDomain, gridFunction
 # <codecell>
 
 linearSpiral = True
-maxLevel     = 13
-startLevel   = 3
+maxLevel     = 5
+startLevel   = 2
 dt           = dune.ufl.Constant(0.1,"dt")
 t            = dune.ufl.Constant(0,"time")
 endTime      = 20.
 saveInterval = 0.5
-maxTol       = 1e-4
+maxTol       = 1e-5
 
 if linearSpiral:
     spiral_a   = 0.75
@@ -41,13 +41,17 @@ else:
 #domain   = dune.grid.cartesianDomain([0,0],[2.5,2.5],[5,5])
 domain   = dune.grid.cartesianDomain([0,0,0],[2.5,2.5,2.5],[5,5,5])
 #baseView = dune.alugrid.aluConformGrid(domain)
-baseView = dune.grid.ugGrid(domain)
+baseView = dune.alugrid.aluCubeGrid(domain)
+#baseView = dune.grid.ugGrid(domain)
+
 gridView = dune.fem.view.adaptiveLeafGridView( baseView )
+maxLevel *= gridView.hierarchicalGrid.refineStepsForHalf
+startLevel *= gridView.hierarchicalGrid.refineStepsForHalf
 gridView.hierarchicalGrid.globalRefine(startLevel)
 
 maxOrder = 1
-space = dune.fem.space.lagrange( gridView, order=maxOrder,   storage="istl" )
-spcpm = dune.fem.space.lagrange( gridView, order=maxOrder-1, storage="istl" )
+space = dune.fem.space.lagrangehp( gridView, maxOrder=maxOrder, storage="istl" )
+spcpm = dune.fem.space.lagrangehp( gridView, maxOrder=maxOrder, storage="istl" )
 
 x = ufl.SpatialCoordinate(space)
 iu = lambda s: ufl.conditional(s > 1.25, 1, 0 )
@@ -69,14 +73,25 @@ vh_n = vh.copy()
 
 u   = ufl.TrialFunction(space)
 phi = ufl.TestFunction(space)
+hT  = ufl.MaxCellEdgeLength(space.cell())
+hS  = ufl.avg( ufl.MaxFacetEdgeLength(space.cell()) )
+hs =  ufl.MaxFacetEdgeLength(space.cell())('+')
+n   = ufl.FacetNormal(space.cell())
+penalty = 5 * (maxOrder * ( maxOrder + 1 )) * spiral_D
 
 ustar          = lambda v: (v+spiral_b)/spiral_a
-
-diffusiveFlux  = spiral_D * grad(u)
+diffusiveFlux  = lambda w,d: spiral_D * d
+source         = lambda u1,u2,u3,v: -1/spiral_eps * u1*(1-u2)*(u3-ustar(v))
 source         = lambda u1,u2,u3,v: -1/spiral_eps * u1*(1-u2)*(u3-ustar(v))
 
-xForm  = inner(diffusiveFlux, grad(phi)) * dx
+# main terms
+xForm  = inner(diffusiveFlux(u,grad(u)), grad(phi)) * dx
 xForm += ufl.conditional(uh_n<ustar(vh_n), source(u,uh_n,uh_n,vh_n), source(uh_n,u,uh_n,vh_n)) * phi * dx
+# dg terms
+xForm -= ( inner( outer(jump(u), n('+')), avg(diffusiveFlux(u,grad(phi)))) +\
+           inner( avg(diffusiveFlux(u,grad(u))), outer(jump(phi), n('+'))) ) * dS
+xForm += penalty/hS * inner(jump(u), jump(phi)) * dS
+# adding time discreization
 form   = ( inner(u,phi) - inner(uh_n, phi) ) * dx + dt*xForm
 
 equation   = form == 0
@@ -112,14 +127,12 @@ estimate = fvspace.interpolate([0], name="estimate")
 estimate_pm1 = fvspace.interpolate([0], name="estimate_pm1")
 
 chi = ufl.TestFunction(fvspace)
-hT  = ufl.MaxCellEdgeLength(fvspace.cell())
-he  = ufl.MaxFacetEdgeLength(fvspace.cell())('+')
-n   = ufl.FacetNormal(fvspace.cell())
 
-residual = (u-uh_n)/dt - div(diffusiveFlux) + source(u,u,u,vh)
+residual = (u-uh_n)/dt - div(diffusiveFlux(u,grad(u))) + source(u,u,u,vh)
 
 estimator_ufl = hT**2 * residual**2 * chi * dx +\
-                he * inner( jump(diffusiveFlux), n('+'))**2 * avg(chi) * dS
+                hS * inner( jump(diffusiveFlux(u,grad(u))), n('+'))**2 * avg(chi) * dS +\
+                1/hS * jump(u)**2 * avg(chi) * dS
 estimator = dune.fem.operator.galerkin(estimator_ufl)
 
 # <markdowncell>

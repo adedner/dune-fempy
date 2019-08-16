@@ -111,8 +111,8 @@ def markpm1(element):
 # <codecell>
 
 solverParameters =\
-       {"newton.tolerance": 1e-10,
-        "newton.linear.tolerance": 1e-8,
+       {"newton.tolerance": 1e-8,
+        "newton.linear.tolerance": 1e-10,
         "newton.linear.preconditioning.method": "amg-ilu",
         "newton.verbose": False,
         "newton.linear.verbose": False}

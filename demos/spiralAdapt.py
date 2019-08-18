@@ -12,10 +12,6 @@ from dune.fem import parameter
 
 parameter.append({"fem.verboserank": 0})
 
-# <markdowncell>
-# In our attempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to choose from):
-# <codecell>
-
 dim = 2
 if len(sys.argv) > 1:
     dim = int(sys.argv[1])
@@ -26,11 +22,17 @@ if len(sys.argv) > 2:
     maxOrder = int(sys.argv[2])
 print("Using max-order = ",maxOrder)
 
-nonConforming = True
+# <markdowncell>
+# In our attempt we will discretize the model as a 2x2 system. Here are some possible model parameters and initial conditions (we even have two sets of model parameters to choose from):
+# <codecell>
+
+nonConforming = False
 usePAdapt = True
 linearSpiral = True
-maxLevel     = 5
-startLevel   = 2
+# maxLevel = 5 for 2d and 4 for 3d
+maxLevel     = 7 - dim
+# startLevel = 2 for 2d and 1 for 3d
+startLevel   = dim - 1
 dt           = dune.ufl.Constant(0.1,"dt")
 t            = dune.ufl.Constant(0,"time")
 endTime      = 15.
@@ -220,7 +222,7 @@ while t.value < endTime:
     maxEst = max(estimate.dofVector)
     print("max est: ", maxEst)
     if t.value >= nextSaveTime-0.01 or t.value >= endTime:
-        print("Writing vtu at time ", t.value)
+        print("Writing vtu at time ", t.value," count = ", count )
         gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, subsampling=2)
         gridView.writeVTK("spiral-grid", pointdata=[uh,vh], number=count, celldata=[levelFunction,pDegree])
         nextSaveTime = t.value + saveInterval

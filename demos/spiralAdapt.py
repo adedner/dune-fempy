@@ -27,12 +27,12 @@ print("Using max-order = ",maxOrder)
 # <codecell>
 
 nonConforming = False
-usePAdapt = True
+usePAdapt = False
 linearSpiral = True
 # maxLevel = 5 for 2d and 4 for 3d
-maxLevel     = 7 - dim
+maxLevel     = 5
 # startLevel = 2 for 2d and 1 for 3d
-startLevel   = dim - 1
+startLevel   = 2 # 1 if dim == 3 else 2
 dt           = dune.ufl.Constant(0.1,"dt")
 t            = dune.ufl.Constant(0,"time")
 endTime      = 15.
@@ -63,11 +63,16 @@ else:
 
 if nonConforming:
     baseView = dune.alugrid.aluCubeGrid(domain)
+    #baseView = dune.alugrid.aluSimplexGrid("spiral.dgf", dimgrid=dim, dimworld=dim)
+    #baseView = dune.alugrid.aluSimplexGrid(domain)
 else:
     baseView = dune.alugrid.aluConformGrid(domain)
-#baseView = dune.grid.ugGrid(domain)
+    #baseView = dune.grid.ugGrid("unit.dgf", dimgrid=dim, worlddim=dim)
 
 gridView = dune.fem.view.adaptiveLeafGridView( baseView )
+
+print("Initial grid: n-element = ",gridView.size( 0 ))
+
 maxLevel *= gridView.hierarchicalGrid.refineStepsForHalf
 startLevel *= gridView.hierarchicalGrid.refineStepsForHalf
 gridView.hierarchicalGrid.globalRefine(startLevel)
@@ -122,7 +127,7 @@ if nonConforming:
     xForm -= ( inner( outer(jump(u), n('+')), avg(diffusiveFlux(u,grad(phi)))) +\
                inner( avg(diffusiveFlux(u,grad(u))), outer(jump(phi), n('+'))) ) * dS
     xForm += penalty/hS * inner(jump(u), jump(phi)) * dS
-# adding time discreization
+# adding time discretization
 form   = ( inner(u,phi) - inner(uh_n, phi) ) * dx + dt*xForm
 
 equation   = form == 0
@@ -131,8 +136,8 @@ def markp(element):
     return 2
 
 # initial mark
-#if usePAdapt:
-#    dune.fem.spaceAdapt(space,markp,[uh])
+if usePAdapt:
+    dune.fem.spaceAdapt(space,markp,[uh])
 
 def markpm1(element):
     return space.localOrder( element ) - 1
@@ -143,12 +148,13 @@ def markpm1(element):
 # <codecell>
 
 solverParameters =\
-       {"newton.tolerance": 1e-10,
-        "newton.linear.tolerance": 1e-8,
-        "newton.linear.preconditioning.method": "ilu",
+       {"newton.tolerance": 1e-8,
+        "newton.linear.tolerance": 1e-12,
+        "newton.linear.preconditioning.method": "amg-ilu",
+        "newton.linear.maxiterations":1000,
         "newton.verbose": False,
         "newton.linear.verbose": True}
-scheme = dune.fem.scheme.galerkin( equation, solver="cg", parameters=solverParameters)
+scheme = dune.fem.scheme.galerkin( equation, solver="gmres", parameters=solverParameters)
 
 # <markdowncell>
 # Error estimator
@@ -177,7 +183,8 @@ def pDegree(element,x):
 nextSaveTime = saveInterval
 count = 0
 levelFunction = dune.fem.function.levelFunction(gridView)
-gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, celldata=[estimate,levelFunction,pDegree], subsampling=2)
+subSampling = 1 if maxOrder < 3 else 2
+gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, celldata=[estimate,levelFunction,pDegree], subsampling=subSampling)
 gridView.writeVTK("spiral-grid", pointdata=[uh,vh], number=count, celldata=[estimate,levelFunction,pDegree])
 count += 1
 
@@ -223,15 +230,14 @@ while t.value < endTime:
     print("max est: ", maxEst)
     if t.value >= nextSaveTime-0.01 or t.value >= endTime:
         print("Writing vtu at time ", t.value," count = ", count )
-        gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, subsampling=2)
+        gridView.writeVTK("spiral", pointdata=[uh,vh], number=count, subsampling=subSampling)
         gridView.writeVTK("spiral-grid", pointdata=[uh,vh], number=count, celldata=[levelFunction,pDegree])
         nextSaveTime = t.value + saveInterval
         count += 1
     if t.value > 5:
-        dune.fem.mark(estimate, maxTol, 0.1 * maxTol, 0,maxLevel)
+        dune.fem.mark(estimate, maxTol, 0.05 * maxTol, 0,maxLevel)
         dune.fem.adapt([uh,vh])
-        if False:
-          # usePAdapt:
+        if usePAdapt:
             # mark space with one p lower locally
             dune.fem.spaceAdapt(spcpm,markpm1,[uh_pm1])
             uh_pm1.interpolate( uh )

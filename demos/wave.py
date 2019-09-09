@@ -4,7 +4,7 @@
 # In the following we will consider the wave equation
 # \begin{align*}
 # \partial_{tt}\psi - \Delta\psi &= 0, && \text{in } \Omega\times(0,T), \\
-#         \psi &= g, && \text{on } \Gamma_D\times(0,T), \\
+# \psi &= g, && \text{on } \Gamma_D\times(0,T), \\
 # \nabla\psi\cdot n &= 0 && \text{on } \partial\Omega\setminus\Gamma_D,
 # \end{align*}
 # where $n$ is the outward unit normal and $g$ is given Dirichlet data
@@ -26,8 +26,8 @@
 # \psi^{n+\frac{1}{2}} &= \psi^n - \frac{\Delta t}{2}p^n, \\
 # p^{n+1}              &=
 # \begin{cases}
-#            p^n - \triangle\psi^{n+\frac{1}{2}} & \text{in the interior}, \\
-#            g(t^{n+1}) & \text{on }\Gamma_D
+# p^n - \triangle\psi^{n+\frac{1}{2}} & \text{in the interior}, \\
+# g(t^{n+1}) & \text{on }\Gamma_D
 # \end{cases} \\
 # \psi^{n+1}           &= \psi^{n+\frac{1}{2}} - \frac{\Delta t}{2}p^{n+1}.
 # \end{align*}

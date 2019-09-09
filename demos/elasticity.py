@@ -59,10 +59,9 @@ sigma = lambda u: lamb*nabla_div(u)*Identity(2) + 2*mu*epsilon(u)
 
 # <markdowncell>
 # Finally we define the variational problem
-# \begin{equation*}
-# \int_\Omega \sigma(u)\colon\epsilon(v) =
-#          (0,-\rho g)\cdot v
-# \end{equation*}
+# \begin{align*}
+# \int_\Omega \sigma(u)\colon\epsilon(v) = (0,-\rho g)\cdot v
+# \end{align*}
 # and solve the system
 
 

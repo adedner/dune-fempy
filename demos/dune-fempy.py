@@ -104,19 +104,16 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # $\Gamma_N$ to be the remaining boundary of $\Omega$.
 #
 # We will solve this problem in variational form
-# \begin{equation}
-# \begin{split}
+# \begin{align*}
 # \int \nabla u \cdot \nabla \varphi \
 # - \int_{\Omega} f(x) \varphi\ dx
 # - \int_{\Gamma_N} g_N(x) v\ ds
 # = 0.
-# \end{split}
-# \end{equation}
+# \end{align*}
 # We choose $f,g_N,g_D$ so that the exact solution
 # is given by
 # \begin{align*}
-# u(x) = \left(\frac{1}{2}(x^2 + y^2) -
-#              \frac{1}{3}(x^3 - y^3)\right) + 1
+# u(x) = \left(\frac{1}{2}(x^2 + y^2) - \frac{1}{3}(x^3 - y^3)\right) + 1
 # \end{align*}
 # <codecell>
 
@@ -212,10 +209,9 @@ gridView.hierarchicalGrid.globalRefine(-loops)
 # \end{equation}
 # on a domain $\Omega=[0,1]^2$. We choose $f,g$ so that the exact solution
 # is given by
-# \begin{equation*}
-# u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
-#                         \frac{1}{3}(x^3 - y^3)\right) + 1
-# \end{equation*}
+# \begin{align*}
+# u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) - \frac{1}{3}(x^3 - y^3)\right) + 1
+# \end{align*}
 # <codecell>
 
 from ufl import exp

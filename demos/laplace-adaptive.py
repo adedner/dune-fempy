@@ -118,14 +118,13 @@ for count in range(10):
 # where on each element $K$ of the grid the local estimator is given by
 # \begin{align*}
 # \eta_K = h_K^2 \int_K |\triangle u_h|^2 +
-#   \frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2.
+# frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2.
 # \end{align*}
 # Here $[\cdot]$ is the jump in normal direction over the edges of the grid.
 #
 # We compute the elementwise indicator by defining a bilinear form
 # \begin{align*}
-# \eta(u,v) = \int_\Omega h^2 |\triangle u_h|^2 v +
-#     \int_{I_h} h_S [\nabla u_h]^2 \{v\},
+# \eta(u,v) = \int_\Omega h^2 |\triangle u_h|^2 v + \int_{I_h} h_S [\nabla u_h]^2 \{v\},
 # \end{align*}
 # where $\{\cdot\}$ is the average over the cell edges and $[\cdot]$
 # the jump. With $h$ and $h_S$ we denote local grid spacings and with

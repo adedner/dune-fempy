@@ -131,7 +131,7 @@ solverParameters =\
        {"newton.tolerance": 1e-3,
         "newton.verbose": False,
         "newton.linear.tolerance": 1e-5,
-        "newton.linear.preconditioning.method": "ilu",
+        "newton.linear.preconditioning.method": "jacobi",
         "newton.linear.verbose": False}
 scheme = dune.fem.scheme.galerkin( equation, space, solver="cg", parameters=solverParameters)
 

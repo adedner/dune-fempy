@@ -569,6 +569,69 @@ plotComponents(vec, gridLines=None, level=2,
                colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 
 # <markdowncell>
+# # Discontinuous Galerkin methods
+# So far we have been using Lagrange spaces of different order to solve our
+# PDE. In the following we show how to use Discontinuous Galerkin method to
+# solve an advection dominated advection-diffusion probllem:
+# \begin{align*}
+# -\varepsilon\triangle u + b\cdot\nabla u &= f
+# \end{align*}
+# with Dirichlet boundary conditions. Here $\varepsilon$ is a small
+# constant and $b$ a given vector.
+# <codecell>
+
+gridView      = leafGridView([-1, -1], [1, 1], [20, 20])
+order = 2
+from dune.fem.space import dglegendre as dgSpace
+space = dgSpace(gridView, order=order)
+
+from ufl import avg, jump, dS, ds,\
+         CellVolume, FacetArea, FacetNormal,\
+         as_vector, atan
+u    = TrialFunction(space)
+v    = TestFunction(space)
+n    = FacetNormal(space)
+he   = avg( CellVolume(space) ) / FacetArea(space)
+hbnd = CellVolume(space) / FacetArea(space)
+x    = SpatialCoordinate(space)
+
+# diffusion factor
+eps = Constant(0.1,"eps")
+# transport direction and upwind flux
+b    = as_vector([1,0])
+hatb = (dot(b, n) + abs(dot(b, n)))/2.0
+# boundary values (for left/right boundary)
+dD   = conditional(x[0]*(1-x[0])<1e-10,1,0)
+g    = conditional(x[0]<0.5,atan(10*x[1]),0)
+# penalty parameter
+beta = 10*order*order
+
+aInternal     = dot(eps*grad(u) - b*u, grad(v)) * dx
+diffSkeleton  = eps*beta/he*jump(u)*jump(v)*dS -\
+                eps*dot(avg(grad(u)),n('+'))*jump(v)*dS -\
+                eps*jump(u)*dot(avg(grad(v)),n('+'))*dS
+diffSkeleton += eps*beta/hbnd*(u-g)*v*dD*ds -\
+                eps*dot(grad(u),n)*v*dD*ds
+advSkeleton   = jump(hatb*u)*jump(v)*dS
+advSkeleton  += ( hatb*u + (dot(b,n)-hatb)*g )*v*dD*ds
+form          = aInternal + diffSkeleton + advSkeleton
+
+scheme = solutionScheme(form==0, solver="gmres",
+            parameters={"newton.linear.preconditioning.method":"jacobi"})
+uh = space.interpolate(0, name="solution")
+scheme.solve(target=uh)
+uh.plot()
+
+# <markdowncell>
+# So far the example was not really advection dominated so we now
+# repeat the experiment but set $\varepsilon=1e-5$
+# <codecell>
+
+eps.value = 1e-5 # could also use scheme.model.eps = 1e-5
+scheme.solve(target=uh)
+uh.plot()
+
+# <markdowncell>
 # # A 3D example using a GMesh file
 # In this example we use pygmsh to construct a tetrahedral mesh and olve a
 # simple laplace problem

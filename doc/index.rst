@@ -110,6 +110,7 @@ the code is available for download in form of both :ref:`scripts`.
    :maxdepth: 2
    :caption: Information and Resources
 
+   developers
    contributions
    additional
 

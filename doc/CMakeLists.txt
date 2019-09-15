@@ -2,7 +2,7 @@ include(DuneSphinxDoc)
 add_sphinx_targets(sphinx)
 dune_symlink_to_source_files(FILES
 additional.rst index.rst twophaseflow_descr.rst contributions.rst
-installation.rst vemdemo_descr.rst gettingstarted.rst  topics.rst
+installation.rst vemdemo_descr.rst gettingstarted.rst  topics.rst developers.rst
 3dexample.py          limit.py              spiral.py
 crystal.py            lineplot.py           svg2pdf.py
 dune-corepy.py        mcf-algorithm.py      twophaseflow.py

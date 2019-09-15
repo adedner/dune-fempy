@@ -104,19 +104,16 @@ gridView.writeVTK('uh', pointdata=[u_h])
 # $\Gamma_N$ to be the remaining boundary of $\Omega$.
 #
 # We will solve this problem in variational form
-# \begin{equation}
-# \begin{split}
+# \begin{align*}
 # \int \nabla u \cdot \nabla \varphi \
 # - \int_{\Omega} f(x) \varphi\ dx
 # - \int_{\Gamma_N} g_N(x) v\ ds
 # = 0.
-# \end{split}
-# \end{equation}
+# \end{align*}
 # We choose $f,g_N,g_D$ so that the exact solution
 # is given by
 # \begin{align*}
-# u(x) = \left(\frac{1}{2}(x^2 + y^2) -
-#              \frac{1}{3}(x^3 - y^3)\right) + 1
+# u(x) = \left(\frac{1}{2}(x^2 + y^2) - \frac{1}{3}(x^3 - y^3)\right) + 1
 # \end{align*}
 # <codecell>
 
@@ -212,10 +209,9 @@ gridView.hierarchicalGrid.globalRefine(-loops)
 # \end{equation}
 # on a domain $\Omega=[0,1]^2$. We choose $f,g$ so that the exact solution
 # is given by
-# \begin{equation*}
-# u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) -
-#                         \frac{1}{3}(x^3 - y^3)\right) + 1
-# \end{equation*}
+# \begin{align*}
+# u(x,t) = e^{-2t}\left(\frac{1}{2}(x^2 + y^2) - \frac{1}{3}(x^3 - y^3)\right) + 1
+# \end{align*}
 # <codecell>
 
 from ufl import exp
@@ -571,6 +567,69 @@ vecScheme = solutionScheme( [a == f, bc, bcBottom],
 vecScheme.solve(target=vec)
 plotComponents(vec, gridLines=None, level=2,
                colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
+
+# <markdowncell>
+# # Discontinuous Galerkin methods
+# So far we have been using Lagrange spaces of different order to solve our
+# PDE. In the following we show how to use Discontinuous Galerkin method to
+# solve an advection dominated advection-diffusion probllem:
+# \begin{align*}
+# -\varepsilon\triangle u + b\cdot\nabla u &= f
+# \end{align*}
+# with Dirichlet boundary conditions. Here $\varepsilon$ is a small
+# constant and $b$ a given vector.
+# <codecell>
+
+gridView      = leafGridView([-1, -1], [1, 1], [20, 20])
+order = 2
+from dune.fem.space import dglegendre as dgSpace
+space = dgSpace(gridView, order=order)
+
+from ufl import avg, jump, dS, ds,\
+         CellVolume, FacetArea, FacetNormal,\
+         as_vector, atan
+u    = TrialFunction(space)
+v    = TestFunction(space)
+n    = FacetNormal(space)
+he   = avg( CellVolume(space) ) / FacetArea(space)
+hbnd = CellVolume(space) / FacetArea(space)
+x    = SpatialCoordinate(space)
+
+# diffusion factor
+eps = Constant(0.1,"eps")
+# transport direction and upwind flux
+b    = as_vector([1,0])
+hatb = (dot(b, n) + abs(dot(b, n)))/2.0
+# boundary values (for left/right boundary)
+dD   = conditional(x[0]*(1-x[0])<1e-10,1,0)
+g    = conditional(x[0]<0.5,atan(10*x[1]),0)
+# penalty parameter
+beta = 10*order*order
+
+aInternal     = dot(eps*grad(u) - b*u, grad(v)) * dx
+diffSkeleton  = eps*beta/he*jump(u)*jump(v)*dS -\
+                eps*dot(avg(grad(u)),n('+'))*jump(v)*dS -\
+                eps*jump(u)*dot(avg(grad(v)),n('+'))*dS
+diffSkeleton += eps*beta/hbnd*(u-g)*v*dD*ds -\
+                eps*dot(grad(u),n)*v*dD*ds
+advSkeleton   = jump(hatb*u)*jump(v)*dS
+advSkeleton  += ( hatb*u + (dot(b,n)-hatb)*g )*v*dD*ds
+form          = aInternal + diffSkeleton + advSkeleton
+
+scheme = solutionScheme(form==0, solver="gmres",
+            parameters={"newton.linear.preconditioning.method":"jacobi"})
+uh = space.interpolate(0, name="solution")
+scheme.solve(target=uh)
+uh.plot()
+
+# <markdowncell>
+# So far the example was not really advection dominated so we now
+# repeat the experiment but set $\varepsilon=1e-5$
+# <codecell>
+
+eps.value = 1e-5 # could also use scheme.model.eps = 1e-5
+scheme.solve(target=uh)
+uh.plot()
 
 # <markdowncell>
 # # A 3D example using a GMesh file

@@ -267,7 +267,7 @@ if coupled:
     # tpModel.penalty  = penalty
     # tpModel.timeStep = dt
     scheme = create.scheme("galerkin", tpModel, spc, ("suitesparse","umfpack"),
-                     parameters={"fem.solver.newton." + k: v for k, v in newtonParameters.items()})
+                     parameters={"newton." + k: v for k, v in newtonParameters.items()})
 else:
     uflSpace1 = Space((P.dimWorld,P.dimWorld),1)
     u1        = TrialFunction(uflSpace1)
@@ -284,7 +284,7 @@ else:
     # tpModel[1].penalty  = penalty
     # tpModel[1].timeStep = dt
     scheme = [create.scheme("galerkin", m, s, ("suitesparse","umfpack"),
-                     parameters={"fem.solver.newton." + k: v for k, v in newtonParameters.items()})
+                     parameters={"newton." + k: v for k, v in newtonParameters.items()})
                 for m,s in zip(tpModel,spc.components)]
 
 

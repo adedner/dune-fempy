@@ -83,7 +83,6 @@ pyplot.show()
 from dune.ufl import expression2GF
 absGrad = expression2GF(gridView3d, sqrt(dot(grad(uh3d),grad(uh3d))), 2 )
 p,v = algorithm.run('sample', 'utility.hh', absGrad, x0, x1, 100)
-length = (x1-x0).two_norm
 for i in range(len(x)):
     y[i] = v[i][0]
 pyplot.plot(x,y)
@@ -97,7 +96,6 @@ from dune.ufl import expression2GF
 absGrad = expression2GF(gridView3d, grad(uh3d), 2 )
 p,v = algorithm.run('sample', 'utility.hh', absGrad, x0, x1, 100)
 dx,dy = numpy.zeros(len(p)), numpy.zeros(len(p))
-length = (x1-x0).two_norm
 for i in range(len(x)):
     dx[i] = v[i][0]
     dy[i] = v[i][1]

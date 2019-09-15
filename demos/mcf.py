@@ -23,10 +23,10 @@
 # (with a $\theta$-scheme applied).
 # \begin{align*}
 # \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
-#     \tau \int_{\Gamma^n} \big(
-#     \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
-#     \colon\nabla_{\Gamma^n}\varphi
-#   =0.
+# \tau \int_{\Gamma^n} \big(
+# \theta\nabla_{\Gamma^n} U^{n+1} + (1-\theta) I \big)
+# \colon\nabla_{\Gamma^n}\varphi
+# =0.
 # \end{align*}
 # Here $U^n$ parametrizes $\Gamma(t^{n+1})$ over
 # $\Gamma^n:=\Gamma(t^{n})$, $I$ is the identity matrix, $\tau$ is the
@@ -70,7 +70,8 @@ space = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
 u = TrialFunction(space)
 v = TestFunction(space)
 x = SpatialCoordinate(space)
-positions = space.interpolate(x * (1 + 0.5*sin(2*pi*x[0]*x[1])* cos(pi*x[2])), name="position")
+# positions = space.interpolate(x * (1 + 0.5*sin(2*pi*x[0]*x[1])* cos(pi*x[2])), name="position")
+positions = space.interpolate(x * (1 + 0.5*sin(2*pi*(x[0]+x[1]))*cos(0.25*pi*x[2])), name="position")
 surface = geometryGridView(positions)
 space = solutionSpace(surface, dimRange=surface.dimWorld, order=order)
 solution = space.interpolate(x, name="solution")

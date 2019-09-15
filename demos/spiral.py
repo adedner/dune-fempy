@@ -26,8 +26,8 @@
 # where using $u^*(V):=\frac{V+b}{a}$:
 # \begin{align*}
 # f_I(u,U,V) &= \begin{cases}
-#   u\;(1-U)\;(\;U-U^*(V)\;) & U < U^*(V) \\
-#   -u\;U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+# u\;(1-U)\;(\;U-U^*(V)\;) & U < U^*(V) \\
+# -u\;U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
 # \end{cases} \\
 # \text{and} \\
 # f_E(U,V) &= \begin{cases}
@@ -38,15 +38,15 @@
 # Thus $f_I(u,U,V) = -m(U,V)u$ with
 # \begin{align*}
 # m(U,V) &= \begin{cases}
-#   (U-1)\;(\;U-U^*(V)\;) & U < U^*(V) \\
-#   U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
+# (U-1)\;(\;U-U^*(V)\;) & U < U^*(V) \\
+# U\;(\;U-U^*(V)\;)    & U \geq U^*(V)
 # \end{cases}
 # \end{align*}
 # Note that $u,v$ are assumed to take values only between zero and one so that therefore $m(u^n,v^n) > 0$. Therefore, the following time discrete version of the Barkley model has a linear, positive definite elliptic operator on its left hand side:
 # \begin{align*}
 # -\tau\Delta u^{n+1} +
-#  (1+\frac{\tau}{\varepsilon} m(u^n,v^n))\; u^{n+1}
-#      &= u^n + \frac{\tau}{\varepsilon} f_E(u^n,v^n) \\
+# (1+\frac{\tau}{\varepsilon} m(u^n,v^n))\; u^{n+1}
+# &= u^n + \frac{\tau}{\varepsilon} f_E(u^n,v^n) \\
 # v^{n+1} &= v^n + \tau h(u^n,v^n)
 # \end{align*}
 # Which can now be solved using a finite element discretization for $u^n,v^n$.
@@ -131,7 +131,7 @@ solverParameters =\
        {"newton.tolerance": 1e-3,
         "newton.verbose": False,
         "newton.linear.tolerance": 1e-5,
-        "newton.linear.preconditioning.method": "ilu",
+        "newton.linear.preconditioning.method": "jacobi",
         "newton.linear.verbose": False}
 scheme = dune.fem.scheme.galerkin( equation, space, solver="cg", parameters=solverParameters)
 

@@ -89,6 +89,21 @@ Using C++ Code Snipetts
 
 .. todo:: add some explanation on `algorithms` and closeness of Python/C++ interface
 
+.. todo:: add something on compilerflag setting, e.g., explain
+
+```
+import dune.generator as generator
+generator.addToFlags("-DWANT_CACHED_COMM_MANAGER=0",noChecks=True)
+algorithm(...)
+generator.setFlags("-g -Wfatal-errors",noChecks=True)
+algorithm(...)
+generator.reset()
+```
+
+... todo:: mention use of `ccache` and `gdb` (possibly in section for developers?)
+
+... todo:: mention `rmgenerated` script
+
 .. literalinclude:: mcf-algorithm.py
    :pyobject: calcRadius
 
@@ -98,4 +113,5 @@ Using C++ Code Snipetts
    :maxdepth: 2
 
    mcf-algorithm_nb
+   laplace-dwr_nb
    lineplot_nb

@@ -1,5 +1,9 @@
 # <markdowncell>
-# # Re-entrant Corner Problem
+# # Dual weighted reisdual estimate#
+#
+# In this problem we revisit the Re-entrant Corner Problem but instead of
+# a classical residual estimator we use a dual weighted residual estimator.
+# The aim will be to refine the grid to reduce the error at a given point.
 #
 # Here we will consider the classic _re-entrant corner_ problem,
 # \begin{align*}
@@ -25,11 +29,13 @@ import matplotlib.pyplot as pyplot
 from dune.fem.plotting import plotPointData as plot
 import dune.grid as grid
 import dune.fem as fem
+import dune.common as common
+import dune.generator.algorithm as algorithm
 from dune.fem.view import adaptiveLeafGridView as adaptiveGridView
 from dune.fem.space import lagrange as solutionSpace
 from dune.alugrid import aluConformGrid as leafGridView
 from ufl import *
-from dune.ufl import DirichletBC
+from dune.ufl import DirichletBC, expression2GF
 
 
 # set the angle for the corner (0<angle<=360)
@@ -64,7 +70,7 @@ def setup():
     domain = {"vertices": vertices, "simplices": triangles}
     gridView = adaptiveGridView( leafGridView(domain) )
     gridView.hierarchicalGrid.globalRefine(2)
-    space = solutionSpace(gridView, order=order, storage="istl")
+    space = solutionSpace(gridView, order=order)
 
     from dune.fem.scheme import galerkin as solutionScheme
     u = TrialFunction(space)
@@ -79,63 +85,42 @@ def setup():
 
     # set up the scheme
     laplace = solutionScheme([a==0, DirichletBC(space, exact, 1)], solver="cg",
-                parameters={"newton.linear.preconditioning.method":"amg-ilu"})
-    uh = space.interpolate([0], name="solution")
+            parameters={"newton.linear.preconditioning.method":"jacobi"})
+    uh = space.interpolate(0, name="solution")
     return uh, exact, laplace
 
+uh, exact, laplace = setup()
 
 # <markdowncell>
-# We will start with computing the $H^1$ error on a sequence of globally
-# refined grids
+# Now we can setup the functional which will be $J(v)=v(P)$ where
+# $P=(0.4,0.4)$ is some point in the computational domain at which we want
+# to minimize the error. To compute the dwr estimator we need the solution
+# to the dual problem with right hand side $J(\varphi_i)$ for all basis
+# functions $\varphi_i$. This is not directly expressible in UFL and we
+# therefore implement this using a small C++ function which we then export
+# to Python:
 #
-# Note that by using `fem.globalRefine` instead of
-# `hierarchicalGrid.globalRefine` we can prolongate discrete functions
-# to the next level. The second argument can also be a list/tuple
-# of discrete functions to prolong. With this approach we optain a good
-# initial guess for solving the problem on the refined grid.
-
-
-
+# .. literalinclude:: laplace-dwr.hh
+#
 # <codecell>
-uh, exact, laplace = setup()
-h1error = dot(grad(uh - exact), grad(uh - exact))
-errorGlobal = []
-dofsGlobal  = []
-for count in range(10):
-    laplace.solve(target=uh)
-    error = math.sqrt(fem.function.integrate(uh.space.grid, h1error, 5))
-    errorGlobal += [error]
-    dofsGlobal  += [uh.space.size]
-    print(count, ": size=", uh.space.grid.size(0), "error=", error)
-    fem.globalRefine(1,uh)
 
+from dune.fem.scheme import galerkin as solutionScheme
+spaceZ = solutionSpace(uh.space.grid, order=order+1)
+u = TrialFunction(spaceZ)
+v = TestFunction(spaceZ)
+x = SpatialCoordinate(spaceZ)
+a = dot(grad(u), grad(v)) * dx
+dual = solutionScheme([a==0,DirichletBC(spaceZ,0)], solver="cg")
+z = spaceZ.interpolate(0, name="dual")
+zh = uh.copy(name="dual_h")
+point = common.FieldVector([0.4,0.4])
+pointFunctional = z.copy("dual_rhs")
+eh = expression2GF( uh.space.grid, abs(exact-uh), order=order+1 )
+computeFunctional = algorithm.load("pointFunctional", "laplace-dwr.hh",
+            point, pointFunctional, eh)
 
 # <markdowncell>
-# Theory tells us that
-# \begin{align*}
-# \int_\Omega |\nabla(u-u_h)|^2 \leq \sum_K \eta_K,
-# \end{align*}
-# where on each element $K$ of the grid the local estimator is given by
-# \begin{align*}
-# \eta_K = h_K^2 \int_K |\triangle u_h|^2 +
-# frac{1}{2}\sum_{S\subset \partial K} h_S \int_S [\nabla u_h]^2.
-# \end{align*}
-# Here $[\cdot]$ is the jump in normal direction over the edges of the grid.
-#
-# We compute the elementwise indicator by defining a bilinear form
-# \begin{align*}
-# \eta(u,v) = \int_\Omega h^2 |\triangle u_h|^2 v + \int_{I_h} h_S [\nabla u_h]^2 \{v\},
-# \end{align*}
-# where $\{\cdot\}$ is the average over the cell edges and $[\cdot]$
-# the jump. With $h$ and $h_S$ we denote local grid spacings and with
-# $I_h$ the set of all facets in the grid.
-# This bilinear form can be easily written in UFL and by using it to
-# define a discrete operator $L$ from the second order Lagrange space into a space containing piecewise constant functions
-# we have $L[u_h]|_{K} = \eta_K$.
-
-
 # <codecell>
-uh, exact, laplace = setup()
 
 from dune.fem.space import finiteVolume as estimatorSpace
 from dune.fem.operator import galerkin as estimatorOp
@@ -145,13 +130,13 @@ estimate = fvspace.interpolate([0], name="estimate")
 
 u = TrialFunction(uh.space.as_ufl())
 v = TestFunction(fvspace)
-hT = MaxCellEdgeLength(fvspace.cell())
-he = MaxFacetEdgeLength(fvspace.cell())('+')
 n = FacetNormal(fvspace.cell())
-estimator_ufl = hT**2 * (div(grad(u)))**2 * v * dx +        he * inner(jump(grad(u)), n('+'))**2 * avg(v) * dS
+estimator_ufl = abs(div(grad(u)))*abs(z-zh) * v * dx +\
+                abs(inner(jump(grad(u)), n('+')))*abs(avg(z-zh)) * avg(v) * dS
 estimator = estimatorOp(estimator_ufl)
-tolerance = 0.05
+tolerance = 1e-6
 
+#########################################################
 
 # <markdowncell>
 # Let us solve over a loop (solve,estimate,mark) and plot the solutions side by side.
@@ -167,9 +152,12 @@ while True:
     laplace.solve(target=uh)
     if count%9 == 8:
         plot(uh, figure=(fig, 131+count//9), colorbar=False)
-    error = math.sqrt(fem.function.integrate(uh.space.grid, h1error, 5))
+    pointFunctional.clear()
+    error = computeFunctional(point, pointFunctional,eh)
+    dual.solve(target=z, rhs=pointFunctional)
+    zh.interpolate(z)
     estimator(uh, estimate)
-    eta = math.sqrt( sum(estimate.dofVector) )
+    eta = sum(estimate.dofVector)
     dofs           += [uh.space.size]
     errorVector    += [error]
     estimateVector += [eta]
@@ -177,7 +165,7 @@ while True:
         print(count, ": size=", uh.space.grid.size(0), "estimate=", eta, "error=", error)
     if eta < tolerance:
         break
-    marked = fem.doerflerMark(estimate,0.6,layered=0.1)
+    marked = fem.mark(estimate,eta/uh.space.grid.size(0))
     fem.adapt(uh) # can also be a list or tuple of function to prolong/restrict
     fem.loadBalance(uh)
     count += 1
@@ -187,40 +175,25 @@ pyplot.close('all')
 
 
 # <markdowncell>
-# Let's have a look at the center of the domain:
-
+# Let's take a close up look of the refined region around the point of
+# interest and the origin:
 
 # <codecell>
 fig = pyplot.figure(figsize=(30,20))
 plot(uh, figure=(fig, 231), xlim=(-0.5, 0.5), ylim=(-0.5, 0.5),
         gridLines="white", colorbar={"shrink": 0.75})
-plot(uh, figure=(fig, 232), xlim=(-0.1, 0.1), ylim=(-0.1, 0.1),
+plot(uh, figure=(fig, 232), xlim=(-0.1, 0.5), ylim=(-0.1, 0.5),
         gridLines="white", colorbar={"shrink": 0.75})
-plot(uh, figure=(fig, 233), xlim=(-0.02, 0.02), ylim=(-0.02, 0.02),
+plot(uh, figure=(fig, 233), xlim=(-0.02, 0.5), ylim=(-0.02, 0.5),
         gridLines="white", colorbar={"shrink": 0.75})
 
 from dune.fem.function import levelFunction
 levels = levelFunction(uh.space.grid)
 plot(levels, figure=(fig, 234), xlim=(-0.5, 0.5), ylim=(-0.5, 0.5),
         gridLines="white", colorbar={"shrink": 0.75})
-plot(levels, figure=(fig, 235), xlim=(-0.1, 0.1), ylim=(-0.1, 0.1),
+plot(levels, figure=(fig, 235), xlim=(-0.1, 0.5), ylim=(-0.1, 0.5),
         gridLines="white", colorbar={"shrink": 0.75})
-plot(levels, figure=(fig, 236), xlim=(-0.02, 0.02), ylim=(-0.02, 0.02),
+plot(levels, figure=(fig, 236), xlim=(-0.02, 0.5), ylim=(-0.02, 0.5),
         gridLines="white", colorbar={"shrink": 0.75})
 pyplot.show()
 pyplot.close('all')
-
-
-# <markdowncell>
-# Finally, let us compare the globally refined solution and the adaptive
-# one plotting number of degrees of freedom versus the error and the
-# estimator
-
-# <codecell>
-pyplot.loglog(dofsGlobal,errorGlobal,label="H^1 error (global refine)")
-pyplot.loglog(dofs,errorVector,label=" H^1 error (adaptive)")
-pyplot.loglog(dofs,estimateVector,label="estimator (adaptive)")
-pyplot.grid(b=True, which='major', color='black', linestyle='-')
-pyplot.grid(b=True, which='minor', color='black', linestyle='--')
-pyplot.legend(frameon=True,facecolor="white",framealpha=1)
-pyplot.show()

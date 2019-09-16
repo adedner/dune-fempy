@@ -22,7 +22,7 @@ mcf-algorithm_nb.ipynb
 nbscript2rst.sh laplace-dwr.hh  radius.hh  utility.hh  uzawa.hh
 figures _static dune-fempy.bib .special.rst
 sphere.dgf unitcube-2d.dgf wave_tank.msh
-compilegrids.py
+compilegrids.py config.opts
 )
 
 #add_custom_target(compilegrids2 ${PYTHON_EXECUTABLE} compilegrids.py 2)

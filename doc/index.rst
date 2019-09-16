@@ -54,17 +54,17 @@ the code is available for download in form of both :ref:`scripts`.
    is used to describe the basic concepts. This leads through the steps
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
-   different solver backends (including for example `scipy`_ and `petsc`_).  |br|
+   different solver backends (including for example `scipy`_ and `petsc`_).
    We then provide more detail on how to use the `Dune`_ grid interface,
-   attach data to the grid entities and define general grid functions. |br|
+   attach data to the grid entities and define general grid functions.
    Finally, some more examples building up on the general concepts described
-   in the first part. |br|
+   in the first part.
    The :ref:`scripts`
    used for each of these and the following examples can be downloaded
    and are hopefully useful as starting point for new projects.
 #. Local grid refinement and coarsening is a central feature of
    `Dune-Fem`_. Here we show how to use it for stationary and
-   time dependent problems. |br|
+   time dependent problems.
    Grid adaptivity makes use of special grid views. Other views are also
    available, one of these can be used to deform the grid given an
    arbitrary (discrete) vector field. This is used to compute the evolution

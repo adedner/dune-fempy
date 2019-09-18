@@ -183,8 +183,9 @@ gridView.hierarchicalGrid.globalRefine(-loops)
 # <markdowncell>
 # ## Time dependent Problems
 # Now we can set up our PDE model
-# As an example we will study the Forchheimer problem :cite:`Kieu` which
-# is a scalar, nonlinear parabolic equation
+# As an example we will study the Forchheimer problem
+# <cite data-cite="Kieu"></cite>
+# which is a scalar, nonlinear parabolic equation
 # \begin{equation}
 # \partial_tu - \nabla\cdot K(\nabla u)\nabla u = f
 # \end{equation}

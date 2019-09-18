@@ -9,8 +9,10 @@ This module brings python scripting support to `Dune`_.
 It serves three purposes:
 
 1. High level program control for solving partial differential equations
-   using classes from the `Dune`_ core and from `Dune-Fem`_.
-   The unified form language `UFL`_ is used to describe the mathematical
+   using classes from the `Dune`_ core and from `Dune-Fem`_
+   :cite:`Dune-Grid-Paper,Dune-Fem-Paper`.
+   The unified form language `UFL`_ :cite:`UFL-Paper`
+   is used to describe the mathematical
    model, all realizations of the `Dune`_ grid interface can be used to
    work with the domain tesselation, and the finite element spaces,
    operator, and solvers provided by `Dune-Fem`_ for the descritizations
@@ -26,11 +28,6 @@ It serves three purposes:
    tested. For `Dune-Fem`_ developers, new grid views, discrete function spaces, and
    scheme classes following the *Dune-Fem-Howto* concept can be added and tested.
 
-.. _Dune: https://www.dune-project.org
-.. _Dune-Fem: https://www.dune-project.org/modules/dune-fem/
-.. _UFL: https://bitbucket.org/fenics-project/ufl
-
-
 ############################
 An Overwiew of this Document
 ############################
@@ -44,6 +41,11 @@ some simulation you did bases on this package - it is possibly as easy as
 providing us with a Python script. More details on how to help
 us improve and extend this document see the section on :ref:`contributing`.
 
+The Python bindings are based on `pybind11`_ :cite:`Pybind11-Paper` and a detailed
+description on how we export the polymorphic interfaces in `Dune`_ is
+provided in :cite:`Dune-Python-Paper` which is part of the dune module
+`Dune-Python`_.
+
 Here is a quick summary of the different parts of this document - all of
 the code is available for download in form of both :ref:`scripts`.
 
@@ -54,7 +56,8 @@ the code is available for download in form of both :ref:`scripts`.
    is used to describe the basic concepts. This leads through the steps
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
-   different solver backends (including for example `scipy`_ and `petsc`_).
+   different solver backends (including for example `scipy`_, `petsc`_ and
+   also `petsc4py`_ see also :cite:`PETSc-Paper,SciPy-Paper`).
    We then provide more detail on how to use the `Dune`_ grid interface,
    attach data to the grid entities and define general grid functions.
    Finally, some more examples building up on the general concepts described
@@ -79,6 +82,13 @@ the code is available for download in form of both :ref:`scripts`.
 .. _petsc: https://www.mcs.anl.gov/petsc
 .. _petsc4py: https://bitbucket.org/petsc/petsc4py
 .. _docker: https://www.docker.com
+.. _pybind11: https://github.com/pybind/pybind11
+.. _Dune: https://www.dune-project.org
+.. _Dune-Fem: https://www.dune-project.org/modules/dune-fem/
+.. _Dune-Python: https://www.dune-project.org/modules/dune-python/
+.. _UFL: https://bitbucket.org/fenics-project/ufl
+
+
 
 .. toctree::
    :maxdepth: 1
@@ -131,3 +141,4 @@ Bibliography
 ############
 
 .. bibliography:: dune-fempy.bib
+   :all:

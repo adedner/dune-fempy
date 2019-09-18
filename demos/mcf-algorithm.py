@@ -1,7 +1,8 @@
 # <markdowncell>
 # # Mean Curvature Flow (revisited)
 #
-# We simulate the shrinking of a sphere under mcf using a finite element
+# [As discussed before](mcf_nb.ipynb)
+# we simulate the shrinking of a sphere under mcf using a finite element
 # approach based on
 # the following time discrete approximation:
 # \begin{align}

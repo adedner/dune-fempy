@@ -40,7 +40,7 @@ matplotlib.rc( 'image', cmap='jet' )
 import math
 
 from ufl import *
-from dune.ufl import Constant
+from dune.ufl import Constant, DirichletBC
 import dune.ufl
 import dune.geometry as geometry
 import dune.fem as fem
@@ -95,7 +95,6 @@ scheme = solutionScheme(a == 0, space, solver="cg")
 # <markdowncell>
 # Now we solve the scheme in time. We first set up the initial time variables, then we plot the initial figure's mesh, and finally we begin the loop, updating ```positions``` on each step and plotting the results side-by-side.
 
-
 # <codecell>
 count = 0
 t = 0.
@@ -117,104 +116,100 @@ while t < end_time:
 pyplot.show()
 pyplot.close('all')
 
-
 # <markdowncell>
-# In case we start with a spherical initial surface, i.e., $\Gamma(0)=R_0\;S^2$, the solution
-# to the mean curvature flow equation is easy to compute:
-# \begin{align*}
-# \Gamma(t) &= R(t)\;S^2 \\
-# R(t) &= \sqrt{R_0^2-4t}
-# \end{align*}
-# We can use this to check that our implementation is correct. To do so we first define a function that computes the averaged radius of the surface.
-
+# By chosing an initial surface with boundary we can solve the _soap film_
+# problem, i.e., compute the surface of minimum curvature:
 
 # <codecell>
-def calcRadius(surface):
-    # compute R = int_x |x| / int_x 1
-    R   = 0
-    vol = 0
-    for e in surface.elements:
-        rule = geometry.quadratureRule(e.type, 4)
-        for p in rule:
-            geo = e.geometry
-            weight = geo.volume * p.weight
-            R   += geo.toGlobal(p.position).two_norm * weight
-            vol += weight
-    return R/vol
+referenceView = leafGridView("soap.dgf", dimgrid=2, dimworld=3)
+referenceView.hierarchicalGrid.globalRefine(8)
+space = solutionSpace(referenceView, dimRange=referenceView.dimWorld,
+        order=order)
 
+# setup deformed surface
+x         = SpatialCoordinate(space)
+# npte that 'positions' also deforms the boundary which will then be fixed
+# during the evolution by the chosen boundary conditions:
+positions = space.interpolate(x * (1 + 0.5*sin(2*pi*(x[0]+x[1]))*cos(0.25*pi*x[2])), name="position")
+gridView  = geometryGridView(positions)
+space     = solutionSpace(gridView, dimRange=gridView.dimWorld, order=order)
 
-# <markdowncell>
-# Now we test the convergence rate by solving over a loop, and calculating the error in terms of the difference between the above analytical solution and our calculated one. We plot this in a figure.
+u     = TrialFunction(space)
+phi   = TestFunction(space)
+dt    = Constant(0.01, "timeStep")
+t     = Constant(0.0, "time")
+endTime      = 0.4
+saveInterval = 0.1
 
+# define storage for discrete solutions
+uh     = space.interpolate(x, name="uh")
+uh_old = uh.copy()
 
-# <codecell>
-end_time = 0.1
-scheme.model.dt = 0.02
+# problem definition
 
-import numpy as np
-pyplot.figure()
-pyplot.gca().set_xlim([0, end_time])
-pyplot.gca().set_ylabel("error")
-pyplot.gca().set_xlabel("time")
+# space form
+xForm = inner(grad(u), grad(phi)) * dx
 
-number_of_loops = 3
-errors = np.zeros(number_of_loops)
-totalIterations = np.zeros(number_of_loops, np.dtype(np.uint32))
-gridSizes = np.zeros(number_of_loops, np.dtype(np.uint32))
-for i in range(number_of_loops):
-    positions.interpolate(x * (R0/sqrt(dot(x,x))))
-    solution.interpolate(x)
-    t = 0.
-    R = calcRadius(surface)
-    Rexact = math.sqrt(R0**2 - 4.*t)
-    tvec = np.array([t])
-    evec = np.array([abs(R - Rexact)])
-    iterations = 0
-    while t < end_time:
-        info = scheme.solve(target=solution)
-        # move the surface
-        positions.dofVector.assign(solution.dofVector)
-        # store some information about the solution process
-        iterations += int( info["linear_iterations"] )
-        t += scheme.model.dt
-        R = calcRadius( surface )
-        Rexact = math.sqrt(R0*R0-4.*t)
-        tvec = np.append(tvec, [t])
-        evec = np.append(evec, [abs(R - Rexact)])
-        pyplot.semilogy(tvec, evec, label='i = '+ str(i) if t >= end_time                     else '')
-        pyplot.legend()
-        display.clear_output(wait=True)
-        display.display(pyplot.gcf())
-    errors[i] = abs(R - Rexact)
-    totalIterations[i] = iterations
-    gridSizes[i] = gridView.size(2)
-    if i < number_of_loops - 1:
-        gridView.hierarchicalGrid.globalRefine(1)
-        scheme.model.dt /= 2
+# add time discretization
+form = dot(u - uh_old, phi) * dx + dt * xForm
 
+# define dirichlet boundary conditions - freezing the boundary
+bc = DirichletBC(space,x)
+
+# setup scheme
+dune.fem.parameter.append({"fem.verboserank": 0})
+solverParameters =\
+       {"newton.tolerance": 1e-9,
+        "newton.linear.tolerance": 1e-11,
+        "newton.linear.preconditioning.method": "jacobi"}
+scheme = solutionScheme([form == 0, bc], space, solver="cg",
+                        parameters=solverParameters)
+
+nextSaveTime = saveInterval
+count = 0
 
 # <markdowncell>
-# The estimated orders of convergence (EOCs) are calculated as shown.
-
-
-# <codecell>
-eocs = np.log(errors[0:][:number_of_loops-1] / errors[1:]) / math.log(math.sqrt(2.)) # note: ALUConform only bisects
-
-
-# <markdowncell>
-# Finally we organise this information into a table using ```pandas```.
-
+# So far we can only plot x/y coordinates using matplotlib which does not
+# give a good impression of the surface (we use it nevertheless for showing
+# the evolution). To get a 3d view we can use mayavi (and that can even be
+# interactive within a jupyter notebook):
 
 # <codecell>
 try:
-    import pandas as pd
-    keys = {'size': gridSizes, 'error': errors,
-            "eoc": np.insert(eocs, 0, None),
-            'iterations': totalIterations}
-    table = pd.DataFrame(keys, index=range(number_of_loops),
-                         columns=['size', 'error', 'eoc',
-                                  'iterations'])
-    print(table)
+    from mayavi import mlab
+    from mayavi.tools.notebook import display
+    def plot3d(uh,level):
+        x, triangles = uh.space.grid.tesselate(level)
+        mlab.init_notebook("png") # use x3d for interactive plotting in the notebook
+        mlab.figure(bgcolor = (1,1,1))
+        s = mlab.triangular_mesh(x[:,0],x[:,1],x[:,2],triangles)
+        display( s )
 except ImportError:
-    print("pandas could not be used to show table with results")
-    pass
+    def plot3d(uh,level):
+        pass
+
+plot3d(uh,2)
+
+# <markdowncell>
+# Now the time loop
+# <codecell>
+
+fig = pyplot.figure(figsize=(50, 10))
+plot(solution, figure=(fig, 151+count), colorbar=False,
+     gridLines="", triplot=True)
+while t.value < endTime:
+    uh_old.assign(uh)
+    info = scheme.solve(target=uh)
+    t.value += dt.value
+
+    positions.dofVector.assign(uh.dofVector)
+
+    if t.value >= nextSaveTime or t.value >= endTime:
+        nextSaveTime += saveInterval
+        count += 1
+        plot(uh, figure=(fig, 151+count), colorbar=False,
+             gridLines="", triplot=True)
+pyplot.show()
+pyplot.close('all')
+
+plot3d(uh,2)

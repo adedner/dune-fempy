@@ -4,6 +4,11 @@
 Notebooks and Scripts
 #####################
 
+All examples (both as scripts and notebooks) as well as grid files etc
+are available in the `demo` folder of the git repository
+https://gitlab.dune-project.org/dune-fem/dune-fempy
+or can be downloaded here:
+
 ================================================= ================================================= =================================================
 Example                                           Notebooks                                         Scripts
 ================================================= ================================================= =================================================

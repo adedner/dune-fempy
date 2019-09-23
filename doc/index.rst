@@ -48,6 +48,9 @@ provided in :cite:`Dune-Python-Paper` which is part of the dune module
 
 Here is a quick summary of the different parts of this document - all of
 the code is available for download in form of both :ref:`scripts`.
+Or can be optained by cloning the git repository
+https://gitlab.dune-project.org/dune-fem/dune-fempy
+where they can be found in the demo folder.
 
 #. First off some remarks on getting the package to work: an easy way of testing
    but also developing code within the `Dune`_ python framework is to use

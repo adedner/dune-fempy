@@ -29,7 +29,7 @@ It serves three purposes:
    scheme classes following the *Dune-Fem-Howto* concept can be added and tested.
 
 ############################
-An Overwiew of this Document
+An Overview of this Document
 ############################
 
 This document tries to describe the main concepts needed to get a new user
@@ -59,12 +59,21 @@ where they can be found in the demo folder.
    is used to describe the basic concepts. This leads through the steps
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
-   different solver backends (including for example `scipy`_, `petsc`_ and
+   different solver backends (including build in solvers, solvers and
+   preconditioners available in `dune-istl`_, `scipy`_, `petsc`_ and
    also `petsc4py`_ see also :cite:`PETSc-Paper,SciPy-Paper`).
    We then provide more detail on how to use the `Dune`_ grid interface,
-   attach data to the grid entities and define general grid functions.
+   construct a grid using different formats including for
+   example `GMsh`_ but also using simple python structures like
+   dictionaries for describing general unstructured grids is available.
+   Results can be plotted using `Matplotlib`_ (for 2d) and for example
+   `Mayavi`_ (for 2d and 3d). For more advanced plotting options data can
+   be exported using `vtk` format and then analysed for example using
+   `paraview`_.
+   In this section we also give details of how to attach data to the grid entities
+   and define general grid functions.
    Finally, some more examples building up on the general concepts described
-   in the first part.
+   in the first part are presented.
    The :ref:`scripts`
    used for each of these and the following examples can be downloaded
    and are hopefully useful as starting point for new projects.
@@ -90,6 +99,8 @@ where they can be found in the demo folder.
 .. _Dune-Fem: https://www.dune-project.org/modules/dune-fem/
 .. _Dune-Python: https://www.dune-project.org/modules/dune-python/
 .. _UFL: https://bitbucket.org/fenics-project/ufl
+
+.. todo:: add more citations
 
 
 

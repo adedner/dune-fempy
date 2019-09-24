@@ -5,7 +5,7 @@ A first Example and General Concepts
 
 .. todo::
 
-   In general copy more *explanations* from the `dnne-fempy.pmd` file
+   In general copy more *explanations* from the `dune-fempy.pmd` file
 
 .. toctree::
    :maxdepth: 2

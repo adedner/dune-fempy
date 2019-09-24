@@ -102,3 +102,11 @@ for i in range(len(x)):
 pyplot.plot(x,dx)
 pyplot.plot(x,dy)
 pyplot.show()
+
+# <mardowncell>
+# Remark: plotting over a line has been included as a utility function:
+# <codecell>
+from dune.fem.utility import lineSample
+x,y = lineSample(uh3d,[0,0,0],[0,0,1],100)
+pyplot.plot(x,y)
+pyplot.show()

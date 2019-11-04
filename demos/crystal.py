@@ -160,7 +160,7 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 
 # <codecell>
 from dune.ufl import expression2GF
-indicator = expression2GF(gridView, dot(grad(u_h[0]),grad(u_h[0])), 0, name="indicator")
+indicator = dot(grad(u_h[0]),grad(u_h[0]))
 # <markdowncell>
 # We perform the initial refinement of the grid using the general form of the `mark' method
 
@@ -193,7 +193,7 @@ from dune.fem.function import levelFunction, partitionFunction
 
 matplotlib.rcParams.update({'font.size': 10})
 matplotlib.rcParams['figure.figsize'] = [10, 5]
-plotComponents(u_h, cmap=pyplot.cm.jet, show=[0])
+plotComponents(u_h, cmap=pyplot.cm.jet, show=[0], contours=[0.5],contourWidth=3)
 
 
 # <markdowncell>
@@ -209,8 +209,10 @@ t = 0.0
 # Finally we set up the time loop and solve the problem - each time this cell is run the simulation will progress to the given ```endTime``` and then the result is shown. The simulation can be progressed further by rerunning the cell while increasing the ```endTime```.
 
 
+from dune.fem.plotting import plotPointData
+u_h[0].plot(onlyContours=True,contours=[0.5], contourWidth=1, contourColor="black")
 # <codecell>
-endTime = 0.05
+endTime = 0.1
 while t < endTime:
     u_h_n.assign(u_h)
     scheme.solve(target=u_h)
@@ -223,3 +225,4 @@ while t < endTime:
 print()
 
 plotComponents(u_h, cmap=pyplot.cm.jet)
+u_h[0].plot(onlyContours=True,contours=[0.5], contourWidth=1, contourColor="yellow")

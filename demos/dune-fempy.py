@@ -13,7 +13,7 @@
 
 import time, numpy, math, sys
 import dune.plotting
-dune.plotting.block = False
+dune.plotting.block = True
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
@@ -602,8 +602,8 @@ eps = Constant(0.1,"eps")
 b    = as_vector([1,0])
 hatb = (dot(b, n) + abs(dot(b, n)))/2.0
 # boundary values (for left/right boundary)
-dD   = conditional(x[0]*(1-x[0])<1e-10,1,0)
-g    = conditional(x[0]<0.5,atan(10*x[1]),0)
+dD   = conditional((1+x[0])*(1-x[0])<1e-10,1,0)
+g    = conditional(x[0]<0,atan(10*x[1]),0)
 # penalty parameter
 beta = 10*order*order
 

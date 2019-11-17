@@ -4,6 +4,11 @@
 Notebooks and Scripts
 #####################
 
+All examples (both as scripts and notebooks) as well as grid files etc
+are available in the `demo` folder of the git repository
+https://gitlab.dune-project.org/dune-fem/dune-fempy
+or can be downloaded here:
+
 ================================================= ================================================= =================================================
 Example                                           Notebooks                                         Scripts
 ================================================= ================================================= =================================================
@@ -24,8 +29,8 @@ Mesh Files used in the Examples
 
 :download:`unit cube grid file <unitcube-2d.dgf>`
 :download:`sphere grid file <sphere.dgf>`
+:download:`three quarters sphere grid with boundary <soap.dgf>`
 :download:`slit domain mesh <wave_tank.msh>`
-
 
 ###################
 Citing this project

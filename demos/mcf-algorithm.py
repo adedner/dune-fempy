@@ -1,8 +1,9 @@
 # <markdowncell>
 # # Mean Curvature Flow (revisited)
 #
-# We simulate the shrinking of a sphere under mcf using a finite element
-# approach based on
+# [As discussed before](mcf_nb.ipynb)
+# we can simulate the shrinking of a sphere under mean curvature flow
+# using a finite element approach based on
 # the following time discrete approximation:
 # \begin{align}
 # \int_{\Gamma^n} \big( U^{n+1} - {\rm id}\big) \cdot \varphi +
@@ -16,10 +17,11 @@
 # $I$ is the identity matrix, $\tau$ is the time step and
 # $\theta\in[0,1]$ is a discretization parameter.
 #
-# In this case we have an exact formula for the evolution of the radius of
-# the surface
+# If the initial surface $\Gamma^0$ is a sphere of radius $R_0$,
+# the surface remains sphere and we have an exact formula for the evolution
+# of the radius of the surface
 #
-# $$R(t) = \sqrt{R(0)^2 - 4t}.$$
+# $$R(t) = \sqrt{R_0^2 - 4t}.$$
 #
 # To compare the accuracy of the surface approximation we compute an
 # average radius of the discrete surface in each time step $t^n$ using

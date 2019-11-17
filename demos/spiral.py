@@ -83,8 +83,9 @@ else:
     spiral_eps = 0.08
     def spiral_h(u,v): return u**3 - v
 
-initial_u = lambda x: [1   if x[1]>1.25 else 0]
-initial_v = lambda x: [0.5 if x[0]<1.25 else 0]
+x = ufl.SpatialCoordinate(ufl.triangle)
+initial_u = ufl.conditional(x[1]>1.25,1,0)
+initial_v = ufl.conditional(x[0]<1.25,0.5,0)
 
 
 # <markdowncell>

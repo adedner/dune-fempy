@@ -88,7 +88,7 @@ for i in range(len(x)):
 pyplot.plot(x,y)
 pyplot.show()
 
-# <mardowncell>
+# <markdowncell>
 # Similar we can plot both partial derivatives of the solution over the
 # given line:
 # <codecell>
@@ -101,4 +101,13 @@ for i in range(len(x)):
     dy[i] = v[i][1]
 pyplot.plot(x,dx)
 pyplot.plot(x,dy)
+pyplot.show()
+
+# <markdowncell>
+# **Remark:** plotting over a line has been included as a utility function
+# so can easily be called as shown below
+# <codecell>
+from dune.fem.utility import lineSample
+x,y = lineSample(uh3d,[0,0,0],[0,0,1],100)
+pyplot.plot(x,y)
 pyplot.show()

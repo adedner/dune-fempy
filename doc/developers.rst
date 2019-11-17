@@ -13,6 +13,16 @@ algorithm(...)
 generator.reset()
 ```
 
-... todo:: mention use of `ccache` and `gdb`
+.. todo:: mention use of `ccache` and `gdb`
 
-... todo:: mention `rmgenerated` script
+.. todo:: mention `rmgenerated` script
+
+.. todo:: mention fixes to `config.opts` e.g.
+
+```
+-DCMAKE_CXX_COMPILER=/usr/lib/ccache/g++
+-DCMAKE_POSITION_INDEPENDENT_CODE=TRUE
+-DALLOW_CXXFLAGS_OVERWRITE=ON
+-DDUNE_PYTHON_INSTALL_EDITABLE=TRUE
+-DADDITIONAL_PIP_PARAMS=\"-upgrade\"
+```

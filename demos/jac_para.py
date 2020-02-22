@@ -26,7 +26,7 @@ L  = -1.
 D  =  2.
 U  = -1.
 
-nThreads = 2
+nThreads = 4
 
 # measure CPU time
 start = time.time()
@@ -69,6 +69,9 @@ def solve(num, X):
         if converged:
             break
 
+        # store last iterate
+        np.copyto( x_old, x )
+
         # compute multi-threaded iteration
         iterate( thStart, thEnd, x, x_new )
 
@@ -79,9 +82,6 @@ def solve(num, X):
         # wait all process to arrive here
         barrier.wait()
 
-        # store last iterate
-        np.copyto( x_old, x )
-
         # update local copy of X
         for i in range(size):
             x[ i ] = X[ i ]
@@ -89,11 +89,11 @@ def solve(num, X):
         x_k = x - x_old
         err = np.dot(x_k, x_k)
 
-        if err < 1e-10:
+        if err < 1e-9:
             converged = True
 
-        if num == 0 and it_count % 1000 == 0:
-            print("Iteration %s: converged = %s, err = %s",it_count, converged, err)
+        # if num == 0 and it_count % 1000 == 0:
+        #     print("Iteration %s: converged = %s, err = %s",it_count, converged, err)
 
     ## end for loop ##
 

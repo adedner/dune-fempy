@@ -44,4 +44,6 @@ double uzawa(double nu, double mu,
     if (delta < 1e-9) break;
     auto gamma = delta/oldDelta;
     d *= gamma;
-    d += r; } }
+    d += r;
+  }
+}

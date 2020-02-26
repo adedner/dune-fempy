@@ -1,5 +1,4 @@
 #include <dune/geometry/quadraturerules.hh>
-
 template< class Surface >
 double calcRadius( const Surface &surface )
 {

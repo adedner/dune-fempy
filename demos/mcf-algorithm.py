@@ -35,7 +35,7 @@
 # is implemented in C++ using the `dune.generator.algorithm` functionality.
 
 # <codecell>
-import math, time
+import math, time, io
 import pickle
 import numpy as np
 
@@ -73,8 +73,25 @@ def calcRadius(surface):
             vol += weight
     return R/vol
 
+code = """
+#include <dune/geometry/quadraturerules.hh>
+template< class Surface >
+double calcRadius( const Surface &surface ) {
+  double R = 0, vol = 0.;
+  for( const auto &entity : elements( surface ) ) {
+    const auto& rule = Dune::QuadratureRules<double, 2>::rule(entity.type(), 4);
+    for ( const auto &p : rule ) {
+      const auto geo = entity.geometry();
+      const double weight = geo.volume() * p.weight();
+      R   += geo.global(p.position()).two_norm() * weight;
+      vol += weight;
+    }
+  }
+  return R/vol;
+}
+"""
 switchCalcRadius = lambda use_cpp,surface: \
-             algorithm.load('calcRadius', 'radius.hh', surface) \
+             algorithm.load('calcRadius', io.StringIO(code), surface) \
              if use_cpp else calcRadius
 
 # <markdowncell>

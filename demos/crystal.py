@@ -159,7 +159,6 @@ scheme = solutionScheme(a_im == a_ex, space, solver="gmres", parameters=solverPa
 # We set up the adaptive method. We start with a marking strategy based on the value of the gradient of the phase field variable.
 
 # <codecell>
-from dune.ufl import expression2GF
 indicator = dot(grad(u_h[0]),grad(u_h[0]))
 # <markdowncell>
 # We perform the initial refinement of the grid using the general form of the `mark' method

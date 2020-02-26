@@ -11,7 +11,7 @@
 #   model by the Galerkin method
 # <codecell>
 
-import time, numpy, math, sys
+import time, numpy, math, sys, io
 import dune.plotting
 dune.plotting.block = True
 import matplotlib
@@ -27,7 +27,24 @@ gridView = leafGridView([0, 0], [1, 1], [4, 4])
 
 # <markdowncell>
 # ## Grid Functions
-# We can integrate grid function
+# These are function that are defined over a given grid and are evaluated
+# by using an element of the grid and local coordinated within that
+# element:
+# ```
+#    value = gridFunction(element,localCoordinate)
+# ```
+# Alternatively one can obtain a `LocalFunction` from a grid function which
+# can be bound to an element and then evaluate via local coordinate:
+# ```
+#    localFunction = gridFunction.localFunction()
+#    for e in grid.elements:
+#        localFunction.bind(e)
+#        value = localFunction(x)
+# ```
+# There are multiple ways to construct grid functions. The easiest way it
+# to use UFL expression. Many methods expecting grid functions are argument
+# can also directly handle UFL expression.
+# We can for example integrate a UFL expression over the grid:
 # <codecell>
 
 from ufl import SpatialCoordinate, triangle
@@ -36,8 +53,7 @@ x = SpatialCoordinate(triangle)
 exact = 1/2*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
 
 from dune.fem.function import integrate
-mass = integrate(gridView, exact, order=5)
-print(mass)
+print( integrate(gridView, exact, order=5) )
 
 # <markdowncell>
 # and plot them using matplotlib or write a vtk file for postprocessing
@@ -47,31 +63,178 @@ from dune.fem.plotting import plotPointData as plot
 plot(exact, grid=gridView)
 gridView.writeVTK('exact', pointdata={'exact': exact})
 
+# <markdowncell>
+# In some cases it can be necessary to convert a UFL expression into a grid
+# function explicitly - for example to be able to evaluate it over each
+# element in the grid:
+# <codecell>
+
 from dune.fem.function import uflFunction
 exact_gf = uflFunction(gridView, name="ufl", order=1, ufl=exact)
 mass = 0
 for element in gridView.elements:
-  mass += exact_gf(element,[0.5,0.5]) * element.geometry.volume
+    mass += exact_gf(element,[0.5,0.5]) * element.geometry.volume
+print(mass,type(mass))
+
+# <markdowncell>
+# Another way to obtain a grid function is to use the `gridFunction`
+# decorator. This can be obtained from `dune.grid` but then without UFL
+# support. Using the decorator from `dune.fem.function` the resulting grid
+# function can be used seamlessly within UFL expressions:
+# <codecell>
+
+from dune.fem.function import gridFunction
+@gridFunction(gridView,name="callback",order=1)
+def exactLocal(element,xLocal):
+    x = element.geometry.toGlobal(xLocal)
+    return 1/2.*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+
+# <markdowncell>
+# we can use the same approach but with a function using global
+# coordinates but can then be used like any other grid function:
+# <codecell>
+
+from dune.fem.function import gridFunction
+@gridFunction(gridView,name="callback",order=1)
+def exactGlobal(x):
+    return 1/2.*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
+
+lf = exactGlobal.localFunction()
+mass = 0
+for element in gridView.elements:
+    lf.bind(element)
+    mass += lf([0.5,0.5]) * element.geometry.volume
 print(mass)
+
+print( integrate(gridView, [exact,exactLocal,exactGlobal], order=5) )
+
+# <markdowncell>
+# As pointed out the `dune.fem` grid function can be used like any other
+# UFL coefficient to form UFL expressions:
+# <codecell>
+
+print( integrate(gridView, abs(exact-exactLocal), order=5) )
+gf = uflFunction(gridView, name="ufl", order=1, ufl=exact+exactLocal*exactGlobal)
+fig = pyplot.figure(figsize=(20,10))
+gf.plot(figure=(fig,121))
+exactGlobal.plot(figure=(fig,122))
+
+# <markdowncell>
+# Converting UFL expressions to grid functions leads to JIT code generation
+# and is therefore efficient when used in other C++ algorithm (like
+# `integrate`). On the other hand using the `gridFunction` decorator leads
+# to a callback into Python for each evaluation and is therefore much less
+# efficient. An alternative approach is based on writing small C++ snippets
+# implementing the grid function:
+# <codecell>
+
+from dune.fem.function import cppFunction
+code="""
+#include <cmath>
+#include <dune/python/grid/function.hh>
+template <class GridView>
+auto aTimesExact(double a)
+{
+  // the return value needs to be a std::function with the correct
+  // signature so that the correct static information can be retrieved.
+  // The `stdFunction<GV,dimR>` helper class can be used for this - where
+  // `dimR=0` leads to a scalar function, `dimR>0` leads to a grid function
+  // returning a double vector of size `dimR`.
+  typedef Dune::Python::stdFunction<GridView,0> Func;
+  typename Func::value f = [a](const auto& en,const auto& xLocal) -> auto
+  {
+    auto x = en.geometry().global(xLocal);
+    return a*(1./2.*(std::pow(x[0],2)+std::pow(x[1],2)) - 1./3.*(std::pow(x[0],3) - std::pow(x[1],3)) + 1.);
+  };
+  return f;
+}
+"""
+exactCpp = cppFunction(gridView, name="exactCpp", order=2,
+                       fctName="aTimesExact",includes=io.StringIO(code))(2.)
+print( integrate(gridView, abs(2*exact-exactCpp), order=5) )
+exactCpp.plot()
+
+# <markdowncell>
+# As the above example shows it is easy to pass in parameters to the C++
+# implementation - here a double `2`. Note that it is not possible to
+# obtain a reference to this double so to make sure a change to the
+# constant on the Python side carries over to the C++ side an option is to
+# use a `dune.common.FieldVector` instead.
+# These parameters can also be more complex e.g. other grid # function -
+# note that a UFL expression can not be directly passed in - it first needs
+# to be converted into a grid function using `uflFunction`.
+# <codecell>
+
+code2="""
+#include <cmath>
+#include <dune/python/grid/function.hh>
+template <class GridView, class GF>
+auto aTimesExact(const GF &gf,Dune::FieldVector<double,1> &a)
+{
+  typedef Dune::Python::stdFunction<GridView,0> Func;
+  typename Func::value f = [lgf=localFunction(gf),&a]
+                           (const auto& en,const auto& xLocal) mutable -> auto
+  {
+    lgf.bind(en); // lambda must be mutable so that the non const function can be called
+    return a[0]*lgf(xLocal);
+  };
+  return f;
+}
+"""
+from dune.common import FieldVector
+a = FieldVector([2])
+exactCpp2 = cppFunction(gridView, name="exactCpp", order=2,
+                        fctName="aTimesExact",includes=io.StringIO(code2))(exact_gf,a)
+print( integrate(gridView, abs(exactCpp-exactCpp2), order=5) )
+a[0] = 4
+print( integrate(gridView, abs(2*exactCpp-exactCpp2), order=5) )
+
+# <markdowncell>
+# The above is just one of a few ways C++ code snippets can be used
+# together with Python code to improve efficiency or extend the existing
+# binding to Dune. In the above example there is no advantage of using the
+# C++ code over the code generated based on the UFL expression. For more
+# complicated functions e.g. with many if statements or based on more
+# information from the given element like it's neighbors the expressibility
+# of UFL might not be sufficient or lead to hard to read code. In these
+# cases directly providing C++ code (or Python code) can be a reasonable
+# alternative.
+# <codecell>
 
 # <markdowncell>
 # ## Discrete Spaces
-# Setting up a discrete function space and some grid function
+# Note that the grid functions set up so far did not involve any
+# discretization, they are exactly evaluated at the given point.
+# A special type of grid functions are discrete functions living in a
+# discrete (finite dimensional) space.
 # <codecell>
 
 from dune.fem.space import lagrange as solutionSpace
 space = solutionSpace(gridView, order=2)
 
 # <markdowncell>
-# So far we used grid functions defined globally. An important subclass of
-# grid functions are discrete functions over a given discrete function space.
-# The easiest way to construct such functions is to use the interpolate
+# The easiest way to construct a discrete function is to use the interpolate
 # method on the discrete function space.
 # <codecell>
 
 u_h = space.interpolate(exact, name='u_h')
 
 # <markdowncell>
+# On an existing discrete function the `interpolate` method can be used to
+# reinitialize it
+# <codecell>
+
+u_h.interpolate( cppFunction(gridView, name="exactCpp", order=2,
+                 fctName="aTimesExact",includes=io.StringIO(code))(2.) )
+u_h.interpolate( lambda x: 1/2.*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1 )
+
+# <markdowncell>
+# Note that in the last example the Python lambda is used as a callback
+# automatically using the same concept used in the `gridFunction`
+# decorator. As pointed out above there are some methods where these
+# conversions are implicit and no explicit generation of a grid function
+# has be carried out.
+#
 # If a discrete function is already available it is possible to call `copy`
 # to obtain further discrete functions:
 # <codecell>
@@ -79,11 +242,39 @@ u_h = space.interpolate(exact, name='u_h')
 u_h_n = u_h.copy(name="previous")
 
 # <markdowncell>
-# It is possible to plot a discrete function using matplotlib or write a vtk file for postprocessing
+# Finally, `clear` can be called on a discrete function which sets all
+# coefficient to zero and `assign` can be used to copy all coefficients
+# between two discrete function over the same space:
+# <codecell>
+
+u_h_n.clear()
+u_h_n.assign( u_h )
+
+# <markdowncell>
+# All the things we did above with grid functions can be done with discrete
+# functions, e.g., evaluate locally
+# <codecell>
+
+localUh = u_h.localFunction()
+mass = 0
+for element in gridView.elements:
+    localUh.bind(element) # using u_h(element,[0.5,0.5]) also works
+    mass += localUh([0.5,0.5]) * element.geometry.volume
+print(mass,type(mass))
+
+# <markdowncell>
+# or plot using matplotlib and write a vtk file for postprocessing
 # <codecell>
 
 u_h.plot(gridLines="white")
 gridView.writeVTK('uh', pointdata=[u_h])
+
+# <markdowncell>
+# and as before a discrete function can be used as coefficient in a UFL
+# expression
+# <codecell>
+
+print( integrate(gridView, abs(exact-u_h), order=5) )
 
 # <markdowncell>
 # Note: the discrete function `u_h` already has a `name` attribute given in
@@ -158,7 +349,9 @@ print("Number of elements:",gridView.size(0),
 # \begin{align*}
 # {\rm eoc} = \frac{\log{e_h/e_H}}{\log{h/H}}
 # \end{align*}
-# where $h,H$ refer to the spacing of two grids.
+# where $h,H$ refer to the spacing of two grids and $e_h,e_H$ are measures
+# for the accuracy of the discrete solution, i.e., $e_h=\|u-u_h\|,e_H=\|u-u_h$
+# using a suitable norm (here $h_1$ as used before):
 # <codecell>
 
 from math import log
@@ -181,7 +374,7 @@ for eocLoop in range(loops):
 gridView.hierarchicalGrid.globalRefine(-loops)
 
 # <markdowncell>
-# ## Time dependent Problems
+# ## Time Dependent Problems
 # Now we can set up our PDE model
 # As an example we will study the Forchheimer problem
 # <cite data-cite="Kieu"></cite>
@@ -570,7 +763,52 @@ plotComponents(vec, gridLines=None, level=2,
                colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 
 # <markdowncell>
-# # Discontinuous Galerkin methods
+# We can also use general grid functions (including discrete functions)
+# for the boundary conditions in the same way we could use grid functions
+# anywhere within the UFL forms. So the following code leads to the same
+# results as above:
+# <codecell>
+
+test = vec.copy()
+test.clear()
+bc = DirichletBC(vecSpace,[vec[0],None])
+@gridFunction(gridView ,name="bnd",order=2)
+def bnd(x):
+    return math.sin(4*(x[0]+x[1]))
+bcBottom = DirichletBC(vecSpace,[bnd, 0],x[1]<1e-10)
+vecScheme = solutionScheme( [a == f, bc, bcBottom],
+        parameters={"newton.linear.tolerance": 1e-9} )
+vecScheme.solve(target=test)
+assert sum([ abs(td-vd) for td,vd in zip(test.dofVector, vec.dofVector)] ) /\
+       len(vec.dofVector) < 1e-7
+
+test.clear()
+code="""
+#include <cmath>
+#include <dune/python/grid/function.hh>
+template <class GridView>
+auto bnd()
+{
+  typedef Dune::Python::stdFunction<GridView,0> Func;
+  typename Func::value f = [](const auto& en,const auto& xLocal) -> auto
+  {
+    auto x = en.geometry().global(xLocal);
+    return sin(4.*(x[0]+x[1]));
+  };
+  return f;
+}
+"""
+bndCpp = cppFunction(gridView, name="bndCpp", order=2,
+                     fctName="bnd",includes=io.StringIO(code))()
+bc = DirichletBC(vecSpace,[bndCpp,None])
+vecScheme = solutionScheme( [a == f, bc, bcBottom],
+        parameters={"newton.linear.tolerance": 1e-9} )
+vecScheme.solve(target=test)
+assert sum([ abs(td-vd) for td,vd in zip(test.dofVector, vec.dofVector)] ) /\
+       len(vec.dofVector) < 1e-7
+
+# <markdowncell>
+# # Discontinuous Galerkin Methods
 # So far we have been using Lagrange spaces of different order to solve our
 # PDE. In the following we show how to use Discontinuous Galerkin method to
 # solve an advection dominated advection-diffusion probllem:
@@ -633,7 +871,7 @@ scheme.solve(target=uh)
 uh.plot()
 
 # <markdowncell>
-# # A 3D example using a GMesh file
+# # A 3D Example Using a GMesh File
 # In this example we use pygmsh to construct a tetrahedral mesh and olve a
 # simple laplace problem
 # <codecell>
@@ -678,7 +916,22 @@ gridView3d.writeVTK('3dexample', pointdata=[uh3d])
 # <codecell>
 
 # <markdowncell>
-# # Listing installed components
+# # We Can Also Do 1D
+# <codecell>
+
+from dune.grid import onedGrid
+from ufl import sin
+v = [math.log(i) for i in range(1,100)]
+e = [(i,i+1) for i in range(1,len(v))]
+g = onedGrid(constructor={"vertices":v, "simplices":e})
+s = solutionSpace(g)
+x = SpatialCoordinate(s)
+u = s.interpolate(sin(x[0]), name="u")
+pyplot.plot(g.tesselate()[0], u.pointData(), '-p')
+pyplot.show()
+
+# <markdowncell>
+# # Listing Installed Components
 # The available realization of a given interface, i.e., the available
 # grid implementations, depends on the modules found during configuration.
 # Getting access to all available components is straightforward:

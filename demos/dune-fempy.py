@@ -94,7 +94,6 @@ def exactLocal(element,xLocal):
 # coordinates but can then be used like any other grid function:
 # <codecell>
 
-from dune.fem.function import gridFunction
 @gridFunction(gridView,name="callback",order=1)
 def exactGlobal(x):
     return 1/2.*(x[0]**2+x[1]**2) - 1/3*(x[0]**3 - x[1]**3) + 1
@@ -743,7 +742,10 @@ vec = vecSpace.interpolate([0,0], name='u_h')
 uVec,vVec = TrialFunction(vecSpace), TestFunction(vecSpace)
 a  = ( inner(grad(uVec), grad(vVec)) + inner(uVec,vVec) ) * dx
 f  = ( uVec[0]*(1-uVec[1])*vVec[0] + uVec[1]*(1-uVec[0])*vVec[1] ) * dx
+# Add nonlinear Neuman boundary conditions for all non Dirichlet boundaries
+# for second quantity:
 f  = f + uVec[0]*uVec[0] * vVec[1] * ds
+# Define dirichlet Boundary conditions for first component on all boundaries
 bc = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),None])
 vecScheme = solutionScheme( [a == f, bc],
         parameters={"newton.linear.tolerance": 1e-9} )
@@ -752,7 +754,9 @@ plotComponents(vec, gridLines=None, level=2,
                colorbar={"orientation":"horizontal", "ticks":ticker.MaxNLocator(nbins=4)})
 
 # <markdowncell>
-# To prescribe $u_2=0$ at the bottom boundary is also straightforward
+# To prescribe $u_2=0$ at the bottom boundary is also straightforward - the
+# Neuman boundary flux added to the right hand side `f` previously will
+# still be used on the top and vertical boundaries:
 # <codecell>
 
 bcBottom = DirichletBC(vecSpace,[sin(4*(x[0]+x[1])),0],x[1]<1e-10)
@@ -824,9 +828,9 @@ order = 2
 from dune.fem.space import dglegendre as dgSpace
 space = dgSpace(gridView, order=order)
 
-from ufl import avg, jump, dS, ds,\
-         CellVolume, FacetArea, FacetNormal,\
-         as_vector, atan
+from ufl import as_vector, avg, jump, dS,\
+         CellVolume, FacetArea,\
+         atan
 u    = TrialFunction(space)
 v    = TestFunction(space)
 n    = FacetNormal(space)

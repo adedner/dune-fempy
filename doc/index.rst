@@ -111,7 +111,7 @@ where they can be found in the demo folder.
    installation
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Getting Started
 
    gettingstarted

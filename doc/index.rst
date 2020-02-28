@@ -118,6 +118,12 @@ where they can be found in the demo folder.
 
 .. toctree::
    :maxdepth: 2
+   :caption: Next Steps
+
+   nextsteps
+
+.. toctree::
+   :maxdepth: 2
    :caption: Further Topics
 
    topics

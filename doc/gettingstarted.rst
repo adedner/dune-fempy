@@ -1,6 +1,6 @@
-####################################
-A first Example and General Concepts
-####################################
+################
+General Concepts
+################
 .. sectionauthor:: Lloyd Connellan <l.connellan@warwick.ac.uk>, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Robert Kl\ |oe|\ fkorn <robert.kloefkorn@iris.no>, Martin Nolte <nolte.mrtn@gmail.com>
 
 .. todo::
@@ -8,7 +8,17 @@ A first Example and General Concepts
    In general copy more *explanations* from the `dune-fempy.pmd` file
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+
+   concepts_nb
+
+#####################################################
+Solving a Time Dependent Problem and Other Extensions
+#####################################################
+.. sectionauthor:: Lloyd Connellan <l.connellan@warwick.ac.uk>, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Robert Kl\ |oe|\ fkorn <robert.kloefkorn@iris.no>, Martin Nolte <nolte.mrtn@gmail.com>
+
+.. toctree::
+   :maxdepth: 1
 
    dune-fempy_nb
 
@@ -26,7 +36,7 @@ Using the Full Grid Interface
    In general copy more *explanations* from the `dnne-corepy.pmd` file
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    dune-corepy_nb
 
@@ -35,8 +45,9 @@ Some More Examples
 ##################
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   simpleexamples_nb
    elasticity_nb
    spiral_nb
    wave_nb

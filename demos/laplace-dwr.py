@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Dual weighted reisdual estimate#
+# # Dual Weighted Reisdual Estimate
 #
 # In this problem we revisit the Re-entrant Corner Problem but instead of
 # a classical residual estimator we use a dual weighted residual estimator.

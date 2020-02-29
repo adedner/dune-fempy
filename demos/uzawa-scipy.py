@@ -1,17 +1,18 @@
 # <markdowncell>
-# # Saddle point solver (using Scipy)
+# # Saddle Point Solver (using Scipy)
 # Todo: explain uzawa algoirthm, show scipy version (here), dune-fempy version
 # (other script) and an algorithm implementation
-#
-# .. todo:: Need to remove 'create' and explain the algorithm
 # <codecell>
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
 import numpy
 from scipy.sparse import bmat, linalg
-import dune.create as create
 from dune.grid import cartesianDomain
+from dune.alugrid import aluCubeGrid
+from dune.fem.space import lagrange
+from dune.fem.operator import galerkin as galerkinOperator
+from dune.fem.scheme import galerkin as galerkinScheme
 from ufl import SpatialCoordinate, CellVolume, TrialFunction, TestFunction,\
                 inner, dot, div, grad, dx, as_vector, transpose, Identity
 from dune.ufl import Constant, DirichletBC
@@ -20,9 +21,9 @@ from dune.fem.operator import linear as linearOperator
 
 
 order = 2
-grid = create.grid("ALUCube",constructor=cartesianDomain([0,0],[3,1],[30,10]))
-spcU = create.space("lagrange", grid, dimRange=grid.dimension, order=order, storage="fem")
-spcP = create.space("lagrange", grid, dimRange=1, order=order-1, storage="fem")
+grid = aluCubeGrid(constructor=cartesianDomain([0,0],[3,1],[30,10]))
+spcU = lagrange(grid, dimRange=grid.dimension, order=order, storage="fem")
+spcP = lagrange(grid, dimRange=1, order=order-1, storage="fem")
 
 cell  = spcU.cell()
 x     = SpatialCoordinate(cell)
@@ -43,11 +44,11 @@ massModel   = inner(p,q) * dx
 preconModel = inner(grad(p),grad(q)) * dx
 
 # can also use 'operator' everywhere
-mainOp      = create.scheme("galerkin",(mainModel==0,DirichletBC(spcU,exact_u,1)),spcU)
-gradOp      = create.operator("galerkin",gradModel,spcP,spcU)
-divOp       = create.operator("galerkin",divModel,spcU,spcP)
-massOp      = create.scheme("galerkin",massModel==0,spcP)
-preconOp    = create.scheme("galerkin",preconModel==0,spcP)
+mainOp      = galerkinOperator( (mainModel==0,DirichletBC(spcU,exact_u,1)), spcU)
+gradOp      = galerkinOperator(gradModel,spcP,spcU)
+divOp       = galerkinOperator(divModel,spcU,spcP)
+massOp      = galerkinOperator(massModel==0,spcP)
+preconOp    = galerkinOperator(preconModel==0,spcP)
 
 mainOp.model.mu = 0.1
 mainOp.model.nu = 0.01

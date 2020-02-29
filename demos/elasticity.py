@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Linear elasticity: deformed beam
+# # Linear Elasticity: a Deformed Beam
 # We first setup the domain and solution space, together with the
 # vector valued discrete function $u$ which describes the displacement
 # field:

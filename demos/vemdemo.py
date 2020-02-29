@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Laplace problem
+# # Laplace Problem
 #
 # We first consider a simple Laplace problem with Dirichlet boundary conditions
 # \begin{align*}
@@ -153,7 +153,7 @@ for i,m in enumerate(methods):
 pyplot.show()
 
 # <markdowncell>
-# # Nonlinear elliptic problem
+# # Nonlinear Elliptic Problem
 # We can easily set up a non linear problem
 
 # <codecell>

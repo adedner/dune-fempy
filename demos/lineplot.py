@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Sampling the solution over a line
+# # Sampling the Solution over a Line
 # Let us revisit our simple 3d example from the introduction
 # <codecell>
 from matplotlib import pyplot

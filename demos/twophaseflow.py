@@ -1,5 +1,5 @@
 # <markdowncell>
-# # Problem description
+# # Problem Description
 # Describe model and scheme here...
 # <codecell>
 import matplotlib

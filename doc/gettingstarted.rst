@@ -1,6 +1,6 @@
-################
-General Concepts
-################
+################################################
+General Concepts (and solving a laplace problem)
+################################################
 .. sectionauthor:: Lloyd Connellan <l.connellan@warwick.ac.uk>, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Robert Kl\ |oe|\ fkorn <robert.kloefkorn@iris.no>, Martin Nolte <nolte.mrtn@gmail.com>
 
 .. todo::
@@ -12,9 +12,9 @@ General Concepts
 
    concepts_nb
 
-#####################################################
-Solving a Time Dependent Problem and Other Extensions
-#####################################################
+##########################################
+Solving a Nonlinear Time Dependent Problem
+##########################################
 .. sectionauthor:: Lloyd Connellan <l.connellan@warwick.ac.uk>, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Robert Kl\ |oe|\ fkorn <robert.kloefkorn@iris.no>, Martin Nolte <nolte.mrtn@gmail.com>
 
 .. toctree::

@@ -188,7 +188,7 @@ print( integrate(gridView, abs(2*exactCpp-exactCpp2), order=5) )
 # <codecell>
 
 # <markdowncell>
-# # Discrete Spaces
+# # Discrete Function Spaces
 # Note that the grid functions set up so far did not involve any
 # discretization, they are exactly evaluated at the given point.
 # A special type of grid functions are discrete functions living in a
@@ -395,7 +395,7 @@ print("Number of elements:",gridView.size(0),
       "number of dofs:",space.size,"H^1 error:", error)
 
 # <markdowncell>
-# # Listing Installed Components
+# # Listing Available Dune Components
 # The available realization of a given interface, i.e., the available
 # grid implementations, depends on the modules found during configuration.
 # Getting access to all available components is straightforward:

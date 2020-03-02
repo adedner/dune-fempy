@@ -11,6 +11,10 @@ Using the Full Grid Interface
 
    In general copy more *explanations* from the `dnne-corepy.pmd` file
 
+.. todo::
+
+   Give some details on the Uzawa algorithm
+
 .. toctree::
    :maxdepth: 1
 
@@ -23,7 +27,8 @@ Some More Examples
 .. toctree::
    :maxdepth: 1
 
-   simpleexamples_nb
+   othergrids_nb
+   discontinuousgalerkin_nb
    elasticity_nb
    spiral_nb
    wave_nb

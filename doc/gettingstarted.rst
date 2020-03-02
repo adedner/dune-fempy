@@ -1,6 +1,6 @@
-################################################
-General Concepts (and solving a laplace problem)
-################################################
+###########################################################
+General Concepts (including how to solve a laplace problem)
+###########################################################
 .. sectionauthor:: Lloyd Connellan <l.connellan@warwick.ac.uk>, Andreas Dedner <a.s.dedner@warwick.ac.uk>, Robert Kl\ |oe|\ fkorn <robert.kloefkorn@iris.no>, Martin Nolte <nolte.mrtn@gmail.com>
 
 .. todo::

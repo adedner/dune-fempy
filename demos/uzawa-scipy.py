@@ -1,7 +1,5 @@
 # <markdowncell>
 # # Saddle Point Solver (using Scipy)
-# Todo: explain uzawa algoirthm, show scipy version (here), dune-fempy version
-# (other script) and an algorithm implementation
 # <codecell>
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )

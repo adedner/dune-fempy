@@ -9,6 +9,7 @@ General Concepts (including how to solve a laplace problem)
 
 .. toctree::
    :maxdepth: 1
+   :name: concepts
 
    concepts_nb
 

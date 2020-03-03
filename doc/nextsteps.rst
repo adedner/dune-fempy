@@ -13,7 +13,7 @@ Using the Full Grid Interface
 
 .. todo::
 
-   Give some details on the Uzawa algorithm
+   Give some details on the Uzawa algorithm, add dune-fempy version and an algorithm implementation
 
 .. toctree::
    :maxdepth: 1

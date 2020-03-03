@@ -1,3 +1,38 @@
+##########
+Grid Views
+##########
+
+When constructing a grid, the object returned to Python is always the so
+called `LeafGridView`. Without any refinement this is simply a view on all
+the elements of the grid. As soon as the grid is refined the leaf grid view changes
+so that it always contains the `leaf` elements the grid, i.e., the elements
+on the finest level. Since it is a read only view refinement is carried out
+using the underlying `hierarchical grid`, i.e.,
+
+.. code:: python
+
+   grid.hierarchicalGrid.globalRefine(1)
+
+For a given hierarchical grid one can use different views, i.e., a view on
+all the elements of a given level:
+
+.. include:: levelgridview_nb.rst
+
+DUNE-FEM provides a number of additional views which will be discussed
+further in this chapter:
+
+*  `dune.fem.view.adaptiveLeafGridView`: this view should be used when
+   the grid is supposed to be locally adapted. The view is still on the leaf
+   elements of the grid but way data is attached to the entities of the grid
+   is optimized for frequent grid changes as caused by local adaptivity. Its
+   usage is shown in the following example.
+
+*  `dune.fem.view.geometryGridView`: this is an example of a `meta` grid
+   view which is constructed from an existing grid view and replaces some
+   aspect - in this case the geometry of each element using a given grid
+   function. This concept makes it easy to perform simulations for example on
+   complex domains or on moving grids as shown in :ref:`Evolving Domains<geomGV>`.
+
 ############################################
 Dynamic Local Grid Refinement and Coarsening
 ############################################
@@ -70,31 +105,57 @@ to integrate into the Python code.
    crystal_nb
 
 
-############
-Moving Grids
-############
+################
+Evolving Domains
+################
 
-.. todo:: add some explanation on `GridParts`
+As mentioned above DUNE-FEM provides a grid view that makes it easy to
+exchange the geometry of each entity in the grid. To setup such a grid view
+one first needs to construct a standard grid view, i.e., a `leafGridView`
+and define a grid function over this view using for example a discrete
+function, a UFL function, or one of the concepts described in the grid function section of
+:ref:`General Concepts<concepts>` chapter. Note that the topology of the
+grid does not change, i.e., how entities are connected with each other.
+The following shows an example of how to change a grid of the unit square
+into a grid of a diamond shape:
+
+.. include:: geoview_nb.rst
+
+By using a discrete function to construct a geometry grid view, it becomes
+possible to simulate problems on evolving domains where the evolution is
+itself the solution of the partial differential equation. We demonstrate
+this approach based on the example of surface mean curvature flow first in
+its simplest setting and then with the evolution of the surface depending
+on values of a computed surface quantity satisfying a heat equation on the
+surface:
+
+.. todo:: add a coupled surface diffusion/evolution problem
 
 .. toctree::
    :maxdepth: 2
+   :name: geomGV
 
    mcf_nb
 
 .. _algorithms:
 
 #######################
-Using C++ Code Snipetts
+Using C++ Code Snippets
 #######################
-
-.. todo:: add some explanation on `algorithms` and closeness of Python/C++ interface
 
 .. todo:: link to `developers.rst`
 
-.. literalinclude:: mcf-algorithm.py
-   :pyobject: calcRadius
-
-.. literalinclude:: radius.hh
+In this section we demonstrate how it possible to use small piece of C++
+code to either extend the existing functionality or improve the efficiency
+of the code by moving code from Python to C++.  We have already seen how to
+define grid functions using C++ code snippets in the
+:ref:`Grid Function<concepts_nb.ipynb>` section of the
+:ref:`General Concepts<concepts>` chapter.
+In the following we will move parts of an algorithm from
+Python to C++. The DUNE interfaces exported to
+Python are very close to their C++ counterpart so that rapid prototyping of
+new algorithms can be carried out using Python and then easily moved to
+C++. This will be demonstrated in the following examples:
 
 .. toctree::
    :maxdepth: 2

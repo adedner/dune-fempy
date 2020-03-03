@@ -7,7 +7,7 @@ installation.rst vemdemo_descr.rst gettingstarted.rst  nextsteps.rst topics.rst 
 3dexample.py          limit.py              spiral.py
 crystal.py            lineplot.py           svg2pdf.py
 dune-corepy.py        mcf-algorithm.py      twophaseflow.py
-concepts.py           dune-fempy.py         mcf_cmp_plot.py       uzawa.py
+concepts.py           dune-fempy.py         mcf_cmp_plot.py
 elasticity.py         mcf.py                uzawa-scipy.py        othergrids.py
 gitlab-formatting.py  pandoc-formatting.py  vemdemo.py            discontinuousgalerkin.py
 interpolation.py      wave.py               laplace-adaptive.py   laplace-dwr.py
@@ -22,7 +22,7 @@ mcf-algorithm_nb.ipynb
 nbscript2rst.sh laplace-dwr.hh  utility.hh  uzawa.hh
 figures _static dune-fempy.bib .special.rst
 soap.dgf sphere.dgf unitcube-2d.dgf wave_tank.msh
-compilegrids.py config.opts
+config.opts
 levelgridview_nb.rst
 geoview_nb.rst geoview_nb_files/geoview_nb_1_0.png
 )

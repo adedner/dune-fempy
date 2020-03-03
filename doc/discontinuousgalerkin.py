@@ -11,8 +11,6 @@
 # <codecell>
 
 import numpy, math
-import dune.plotting
-dune.plotting.block = True
 import matplotlib
 matplotlib.rc( 'image', cmap='jet' )
 from matplotlib import pyplot
@@ -24,9 +22,8 @@ from ufl import TestFunction, TrialFunction, SpatialCoordinate, triangle, FacetN
 from ufl import dx, ds, grad, div, grad, dot, inner, sqrt, exp, conditional
 from ufl import as_vector, avg, jump, dS, CellVolume, FacetArea, atan
 
-gridView      = leafGridView([-1, -1], [1, 1], [20, 20])
-order = 2
-space = dgSpace(gridView, order=order)
+gridView = leafGridView([-1, -1], [1, 1], [20, 20])
+space    = dgSpace(gridView, order=2)
 
 u    = TrialFunction(space)
 v    = TestFunction(space)
@@ -44,7 +41,7 @@ hatb = (dot(b, n) + abs(dot(b, n)))/2.0
 dD   = conditional((1+x[0])*(1-x[0])<1e-10,1,0)
 g    = conditional(x[0]<0,atan(10*x[1]),0)
 # penalty parameter
-beta = 10*order*order
+beta = 10*space.order**2
 
 aInternal     = dot(eps*grad(u) - b*u, grad(v)) * dx
 diffSkeleton  = eps*beta/he*jump(u)*jump(v)*dS -\
@@ -58,8 +55,12 @@ form          = aInternal + diffSkeleton + advSkeleton
 
 scheme = solutionScheme(form==0, solver="gmres",
             parameters={"newton.linear.preconditioning.method":"jacobi"})
+
+# <markdowncell>
+# <codecell>
+
 uh = space.interpolate(0, name="solution")
-scheme.solve(target=uh)
+info = scheme.solve(target=uh)
 uh.plot()
 
 # <markdowncell>
@@ -68,5 +69,6 @@ uh.plot()
 # <codecell>
 
 eps.value = 1e-5 # could also use scheme.model.eps = 1e-5
+uh.interpolate(0)
 scheme.solve(target=uh)
 uh.plot()

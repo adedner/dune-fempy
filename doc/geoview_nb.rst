@@ -1,7 +1,5 @@
 .. code:: ipython3
 
-    import dune.plotting
-    dune.plotting.block = True
     import matplotlib
     matplotlib.rc( 'image', cmap='jet' )
     from matplotlib import pyplot

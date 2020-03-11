@@ -27,7 +27,7 @@ linkcheck:
 
 clean:
 	@rm -f *.vtu *.pvtu *.p *.png $(FIGURES) $(NBS)
-	@rm -rf *_files
+	@rm -f geoview_nb_files/geoview_nb_1_0.png
 distclean: clean
 	@rm -f *.bbl
 	@rm -rf html

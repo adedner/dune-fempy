@@ -55,14 +55,17 @@ where they can be found in the demo folder.
 #. First off some remarks on getting the package to work: an easy way of testing
    but also developing code within the `Dune`_ python framework is to use
    `docker`_. Working from the git sources is also discussed.
-#. A simple scalar, non linear time dependent partial differential equation
+#. A scalar Laplace problem and a simple scalar, non linear time dependent partial
+   differential equation
    is used to describe the basic concepts. This leads through the steps
    required to set up the problem, solve the system of equations, and
    visualize the results. After this introduction we discuss how to use
    different solver backends (including build in solvers, solvers and
    preconditioners available in `dune-istl`_, `scipy`_, `petsc`_ and
    also `petsc4py`_ see also :cite:`PETSc-Paper,SciPy-Paper`).
-   We then provide more detail on how to use the `Dune`_ grid interface,
+   The introduction ends with an overview of how more complicated boundary
+   conditions are defined.
+#. We then provide more detail on how to use the `Dune`_ grid interface,
    construct a grid using different formats including for
    example `GMsh`_ but also using simple python structures like
    dictionaries for describing general unstructured grids is available.
@@ -72,18 +75,23 @@ where they can be found in the demo folder.
    `paraview`_.
    In this section we also give details of how to attach data to the grid entities
    and define general grid functions.
-   Finally, some more examples building up on the general concepts described
+#. Some more examples building up on the general concepts described
    in the first part are presented.
    The :ref:`scripts`
    used for each of these and the following examples can be downloaded
    and are hopefully useful as starting point for new projects.
-#. Local grid refinement and coarsening is a central feature of
-   `Dune-Fem`_. Here we show how to use it for stationary and
-   time dependent problems.
-   Grid adaptivity makes use of special grid views. Other views are also
-   available, one of these can be used to deform the grid given an
-   arbitrary (discrete) vector field. This is used to compute the evolution
-   of a surface under mean curvature flow.
+#. We then discuss some further topics:
+
+   * Local grid refinement and coarsening is a central feature of
+     `Dune-Fem`_. Here we show how to use it for stationary and
+     time dependent problems. Grid adaptivity makes use of special grid views.i
+   * Other views are also
+     available, one of these can be used to deform the grid given an
+     arbitrary (discrete) vector field. This is used to compute the evolution
+     of a surface under mean curvature flow.
+   * We complete our discussion by demonstrating how to straightforwardly
+     extend the functionality of the package and
+     improve performance by important additional C++ algorithms and classes.
 #. Finally other projects are presented some of them developed by
    the authors of this document, some contributed by other
    users. If you have used this package then we would like to

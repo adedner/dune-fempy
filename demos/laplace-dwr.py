@@ -136,8 +136,6 @@ estimator_ufl = abs(div(grad(u)))*abs(z-zh) * v * dx +\
 estimator = estimatorOp(estimator_ufl)
 tolerance = 1e-6
 
-#########################################################
-
 # <markdowncell>
 # Let us solve over a loop (solve,estimate,mark) and plot the solutions side by side.
 

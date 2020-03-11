@@ -1,23 +1,10 @@
 # <markdowncell>
-# In the foloowing we introduce the basic components of a finite
-# element method:
-#
-# - constructing a tesselation of the computational domain
-# - setting up a discrete function space and working with functions
-#   defined over the grid
-# - defining the mathematical model to solve
-# - solving the (non linear) system arising from the discretization of the
-#   model by the Galerkin method
-# <codecell>
-
-import time, numpy, math, sys, io
-import matplotlib
-matplotlib.rc( 'image', cmap='jet' )
-from matplotlib import pyplot
-
-# <markdowncell>
 # # Setting up the Mesh
 # <codecell>
+
+import time, numpy, math, sys, io, matplotlib
+matplotlib.rc( 'image', cmap='jet' )
+from matplotlib import pyplot
 
 from dune.grid import structuredGrid as leafGridView
 gridView = leafGridView([0, 0], [1, 1], [4, 4])
@@ -71,7 +58,7 @@ exact_gf = uflFunction(gridView, name="ufl", order=1, ufl=exact)
 mass = 0
 for element in gridView.elements:
     mass += exact_gf(element,[0.5,0.5]) * element.geometry.volume
-print(mass,type(mass))
+print(mass)
 
 # <markdowncell>
 # Another way to obtain a grid function is to use the `gridFunction`
@@ -244,7 +231,7 @@ mass = 0
 for element in gridView.elements:
     localUh.bind(element) # using u_h(element,[0.5,0.5]) also works
     mass += localUh([0.5,0.5]) * element.geometry.volume
-print(mass,type(mass))
+print(mass)
 
 # <markdowncell>
 # or plot using matplotlib and write a vtk file for postprocessing

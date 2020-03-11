@@ -33,6 +33,8 @@
 # <codecell>
 
 import time, numpy, math, sys
+import matplotlib
+matplotlib.rc( 'image', cmap='jet' )
 import matplotlib.pyplot as pyplot
 from dune.common import FieldVector, FieldMatrix
 x = FieldVector([0.25,0.25,0.25])

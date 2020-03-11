@@ -1,5 +1,20 @@
 # <markdowncell>
 # # Setting up the Mesh
+# After some general import statements we start our tutorial by setting up
+# a simple Cartesian grid over the domain $[0,1]^2$ subdivided into four
+# intervals in each dimension. We can then show the grid using the `plot`
+# method - note that direct plotting with MatPlotLib is only supported in
+# 2D, other options for visualization, e.g., using ParaView will be
+# discussed later.
+#
+# Using the `dune.grid.structuredGrid` function, is the simplest way to construct
+# a grid, more complicated
+# (unstructured) grids can be constructed using a dictionary containing the
+# vertices and the element connectivity or by for example providing a
+# `gmsh` file. This will be discussed in later section, see for example
+# here for [a 3d gmsh file](othergrids_nb.ipynb#A-3D-Example-Using-a-GMesh-File)
+# or here [for a simple example using a dictonary](dune-corepy_nb.ipynb#An-unstructured-grid)
+
 # <codecell>
 
 import time, numpy, math, sys, io, matplotlib
@@ -8,6 +23,7 @@ from matplotlib import pyplot
 
 from dune.grid import structuredGrid as leafGridView
 gridView = leafGridView([0, 0], [1, 1], [4, 4])
+gridView.plot()
 
 # <markdowncell>
 # # Grid Functions

@@ -151,7 +151,7 @@ In this section we demonstrate how it possible to use small piece of C++
 code to either extend the existing functionality or improve the efficiency
 of the code by moving code from Python to C++.  We have already seen how to
 define grid functions using C++ code snippets in the
-:ref:`Grid Function<concepts_nb.ipynb>` section of the
+:ref:`Grid Function</concepts_nb.ipynb#Grid-Functions>` section of the
 :ref:`General Concepts<concepts>` chapter.
 In the following we will move parts of an algorithm from
 Python to C++. The DUNE interfaces exported to

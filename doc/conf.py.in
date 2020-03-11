@@ -299,3 +299,14 @@ rst_epilog = "\n.. include:: .special.rst\n"
 todo_include_todos=True
 nbsphinx_timeout = -1
 nbsphinx_execute = 'never'
+nbsphinx_prolog = r"""
+
+.. raw:: html
+
+    <div class="admonition note">
+      <p>
+            This page was generated from
+            the notebook {{ env.doc2path(env.docname, base=None) }}
+      </p>
+    </div>
+"""
